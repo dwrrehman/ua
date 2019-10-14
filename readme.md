@@ -4,4 +4,4 @@ a codebase for doing experiments and related coding tasks, with the goal of find
 
 right now, i am attempting to do a symbolic m ary search, and look for cas which recreate rule 110, where m = 2, and n = 1, (where m is the modulus, and n is the dimension.)
 
-
+im going to try to edit this in sublime.
