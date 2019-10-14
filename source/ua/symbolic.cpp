@@ -35,20 +35,12 @@ std::vector<token> lex(std::string input_string) {
     
     while (input.good()) {
         std::string s = "";
-
-        input >> s;
-        
+        input >> s;        
         if (not input.good()) break;
         
-        std::cout << "new token  -->  \"" << s << "\"\n";
-        
-        
-        if (s == "+") tokens.push_back({expression_type::operator_, operator_type::add});
-        
-        else if (s == "-") tokens.push_back({expression_type::operator_, operator_type::subtract});
-        
+        if (s == "+") tokens.push_back({expression_type::operator_, operator_type::add});        
+        else if (s == "-") tokens.push_back({expression_type::operator_, operator_type::subtract});        
         else if (s == "*") tokens.push_back({expression_type::operator_, operator_type::multiply});
-        
         else if (s == "=") tokens.push_back({expression_type::operator_, operator_type::equals});
                 
         else if (s.back() == ']') {
@@ -56,15 +48,10 @@ std::vector<token> lex(std::string input_string) {
             s.erase(s.begin());
             nat n = std::stoi(s);
             std::cout << "[n] var = " << n << "\n";
-            tokens.push_back({expression_type::variable, {}, n}); 
-            
-        } else if (s == "(") {
-            tokens.push_back({expression_type::paren, {}, 0, true});
-            
-        } else if (s == ")") {
-            tokens.push_back({expression_type::paren, {}, 0, false});
-            
-        } else {
+            tokens.push_back({expression_type::variable, {}, n});
+        } else if (s == "(") tokens.push_back({expression_type::paren, {}, 0, true});
+        else if (s == ")") tokens.push_back({expression_type::paren, {}, 0, false});            
+        else {
             nat n = std::stoi(s);
             std::cout << "n lit. = " << n << "\n";
             tokens.push_back({expression_type::constant, {}, n});
@@ -72,7 +59,6 @@ std::vector<token> lex(std::string input_string) {
     }
     return tokens;
 } 
-
 
 
 std::string convert_type(enum expression_type type) {
@@ -239,10 +225,9 @@ expression parse(std::vector<token> tokens) {
     return parse_expression(tokens);
 }
 
-expression compile(std::string input) {    /// [1] + ( [3] * 2 = ( 4 ) )
+expression compile(std::string input) {  /// eg,     ( ( [1] ) + ( ( ( [3] ) * ( 2 ) ) = ( 4 ) ) )
     return parse(lex(input));
 }
-
 
 nat evaluate(const expression& given, neighborhood ns, const nat m) {
     

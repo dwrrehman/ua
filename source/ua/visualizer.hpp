@@ -24,10 +24,6 @@
 #include <vector>
 #include <thread>
 
-
-
-
-
 void visualize(const parameters& u);
     
 #endif /* visualizer_hpp */

@@ -21,6 +21,8 @@
 #include <vector>
 
 
+
+
 h_grid determine_h_grid(const expression& given, const nat m, const parameters& u) {    
     h_grid result(u.H, 0);
     for (nat h = 0; h < u.H; h++) {
@@ -34,11 +36,16 @@ h_grid determine_h_grid(const expression& given, const nat m, const parameters& 
 
 const h_grid rule_110 = { 0, 1, 1, 1, 0, 1, 1, 0 };
 
-void process(expression e, const parameters& u) {
+
+
+
+
+
+void process(expression e, const parameters& u, std::vector<score> scores) {
     
     const auto m_ary = determine_h_grid(e, u.m, u);
     const auto binary = determine_h_grid(e, 2, u);
-    
+
     if (u.n == 1) {
         if (h_grids_equal(binary, rule_110)) {
             // yay!
@@ -51,19 +58,29 @@ void process(expression e, const parameters& u) {
     }
 }
 
-void try_terminals(expression e, expression head, const parameters& u) {
+
+
+
+
+
+
+void try_terminals(expression e, expression& head, const parameters& u, std::vector<score> scores) {
     for (nat m = 0; m < u.m; m++) {
         head = {expression_type::constant, m};
-        process(e, u);
+        process(e, u, scores);
     }
     
     for (nat j = 0; j < u.nc; j++) {
         head = {expression_type::variable, 0, j};
-        process(e, u);
+        process(e, u, scores);
     }
     
     ///TODO: this function is wrong.
 }
+
+
+
+
 
 void loop_over_all_expressions(expression e, expression& head, const parameters& u, nat depth) {
     if (depth > u.max_depth) return; 
@@ -77,32 +94,35 @@ void loop_over_all_expressions(expression e, expression& head, const parameters&
     }
 }
 
+
+
+
+
+
 inline static void search(const parameters u) {
 
     std::vector<score> scores = {};  
     
     std::cout << "searching the computational universe...\n";
     
-    for (int bit = 1; bit < 31; bit++) { // DELETE ME: in favor of doing a symbolic search.
+    expression e = {};
+    loop_over_all_expressions(e, e, u, 0);
+
     
-        h_grid h_grid;
-        const nat z = unreduce(h_grid, u.m, u.H);
-        const double score = simulate_lifetime(h_grid, u);
-        
-        if (score >= u.threshold) {             
-            scores.push_back({score, z});
-            std::cout << "FOUND (" << z << ") -----> " << score << " \n";
-        }
+    h_grid h_grid;
+    const nat z = unreduce(h_grid, u.m, u.H);
+    const double score = simulate_lifetime(h_grid, u);
+    
+    if (score >= u.threshold) {             
+        scores.push_back({score, z});
+        std::cout << "FOUND (" << z << ") -----> " << score << " \n";
     }
+
     write_scores(scores, u);
     print_results(scores, u); 
 }
 
 int main(const int argc, const char * argv[]) {
-
-    printf("hello world from space!\n");
-    exit(1);
-
     srand((unsigned) time(nullptr));
     auto parameters = compute_parameters(argv, argc);    
     if (parameters.mode == search_mode) search(parameters);
