@@ -29,12 +29,7 @@ std::vector<nat> determine_h_grid(const expression& given, const nat m, const pa
     return result;
 }
 
-
 const std::vector<nat> rule_110 = { 0, 1, 1, 1, 0, 1, 1, 0 };
-
-
-
-
 
 void process(expression e, const parameters& u, std::vector<score> scores) {
     

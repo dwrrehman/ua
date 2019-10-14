@@ -170,7 +170,8 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
-				SYSTEM_HEADER_SEARCH_PATHS = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/";
+				GCC_WARN_PEDANTIC = YES;
+				WARNING_CFLAGS = "-Wall";
 			};
 			name = Debug;
 		};
@@ -180,7 +181,8 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
-				SYSTEM_HEADER_SEARCH_PATHS = "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/";
+				GCC_WARN_PEDANTIC = YES;
+				WARNING_CFLAGS = "-Wall";
 			};
 			name = Release;
 		};
