@@ -65,7 +65,6 @@ void try_terminals(expression e, expression head, const parameters& u) {
     ///TODO: this function is wrong.
 }
 
-
 void loop_over_all_expressions(expression e, expression& head, const parameters& u, nat depth) {
     if (depth > u.max_depth) return; 
 
@@ -85,7 +84,7 @@ inline static void search(const parameters u) {
     std::cout << "searching the computational universe...\n";
     
     for (int bit = 1; bit < 31; bit++) { // DELETE ME: in favor of doing a symbolic search.
-
+    
         h_grid h_grid;
         const nat z = unreduce(h_grid, u.m, u.H);
         const double score = simulate_lifetime(h_grid, u);
@@ -96,7 +95,7 @@ inline static void search(const parameters u) {
         }
     }
     write_scores(scores, u);
-    print_results(scores, u);
+    print_results(scores, u); 
 }
 
 int main(const int argc, const char * argv[]) {
@@ -106,8 +105,6 @@ int main(const int argc, const char * argv[]) {
     else if (parameters.mode == visualize_mode) visualize(parameters);
     else print_usage();
 }
-
-
 
 
 /**
