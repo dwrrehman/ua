@@ -8,7 +8,7 @@
 
 #include "io.hpp"
 
-#include "structures.h"
+#include "structures.hpp"
 #include "utilities.hpp"
 
 #include <math.h>
@@ -32,7 +32,7 @@ char getch() {
 }
 
 
-void print(vec v, const char* message, bool raw) {
+void print(std::vector<nat> v, const char* message, bool raw) {
     std::cout << message << "[ ";
     for (auto e : v) std::cout << e << " ";
     std::cout << "]";
@@ -46,7 +46,7 @@ static inline void clear_screen() {printf("\e[1;1H\e[2J");}
 #define bold_color "\033[1;38;5;%lum"
 #define reset_color "\033[0m"
 
-void print(vec h, nat timestep, const parameters& u) {
+void print(std::vector<nat> h, nat timestep, const parameters& u) {
     if (u.n_dimensional_display) clear_screen();    
     else printf("%5lu:   ", timestep); 
     for (nat i = 0; i < u.L; i++) {

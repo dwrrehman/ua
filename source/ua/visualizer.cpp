@@ -8,7 +8,7 @@
 
 #include "visualizer.hpp"
 
-#include "structures.h"
+#include "structures.hpp"
 #include "utilities.hpp"
 #include "parameters.hpp"
 
@@ -40,7 +40,7 @@ void input() {
 void visualize(const parameters& u) {
         
     std::vector<nat> g(u.L, 0), h(u.L, 0);
-    neighborhood ns(u.nc, 0);     
+    std::vector<nat> ns(u.nc, 0);
     auto z_values = read_nats(u.source);    
     std::thread input_thread(input);
     
@@ -49,7 +49,7 @@ void visualize(const parameters& u) {
         if (quit) {quit = false; break; }
         std::cout << "----- vizualizing z = " << z << ": -------- \n";
         
-        h_grid h_grid(u.H, 0);
+        std::vector<nat> h_grid(u.H, 0);
         reduce(h_grid, z, u.m, u.H);
         print(h_grid, "reduced: ");        
         initialize(g, u);

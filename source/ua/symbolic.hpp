@@ -10,7 +10,7 @@
 #define symbolic_hpp
 
 
-#include "structures.h"
+#include "structures.hpp"
 #include "utilities.hpp"
 #include "parameters.hpp"
 
@@ -37,6 +37,6 @@ expression parse_constant(std::vector<token> tokens);
 expression parse_expression(std::vector<token> tokens);
 expression parse(std::vector<token> tokens);
 expression compile(std::string input);
-nat evaluate(const expression& given, neighborhood ns, const nat m);
+nat evaluate(const expression& given, std::vector<nat> ns, const nat m);
 
 #endif /* symbolic_hpp */

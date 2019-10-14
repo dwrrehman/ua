@@ -8,8 +8,7 @@
 
 #include "symbolic.hpp"
 
-
-#include "structures.h"
+#include "structures.hpp"
 #include "utilities.hpp"
 #include "parameters.hpp"
 
@@ -229,7 +228,7 @@ expression compile(std::string input) {  /// eg,     ( ( [1] ) + ( ( ( [3] ) * (
     return parse(lex(input));
 }
 
-nat evaluate(const expression& given, neighborhood ns, const nat m) {
+nat evaluate(const expression& given, std::vector<nat> ns, const nat m) {
     
     if (given.type == expression_type::constant)
         return given.constant_value;

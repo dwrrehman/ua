@@ -9,7 +9,7 @@
 #ifndef parameters_hpp
 #define parameters_hpp
 
-#include "structures.h"
+#include "structures.hpp"
 
 void debug_parameters(parameters u);
 void print_usage();

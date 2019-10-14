@@ -6,7 +6,7 @@
 //  Copyright © 2019 Daniel Rehman. All rights reserved.
 //
 
-#include "structures.h"
+#include "structures.hpp"
 #include "utilities.hpp"
 #include "parameters.hpp"
 
@@ -20,13 +20,10 @@
 #include <iostream>
 #include <vector>
 
-
-
-
-h_grid determine_h_grid(const expression& given, const nat m, const parameters& u) {    
-    h_grid result(u.H, 0);
+std::vector<nat> determine_h_grid(const expression& given, const nat m, const parameters& u) {
+    std::vector<nat> result(u.H, 0);
     for (nat h = 0; h < u.H; h++) {
-        neighborhood ns(u.nc, 0);
+        std::vector<nat> ns(u.nc, 0);
         reduce(ns, h, m, u.nc);
         result[h] = evaluate(given, ns, m);
     }
@@ -34,11 +31,7 @@ h_grid determine_h_grid(const expression& given, const nat m, const parameters& 
 }
 
 
-const h_grid rule_110 = { 0, 1, 1, 1, 0, 1, 1, 0 };
-
-
-
-
+const std::vector<nat> rule_110 = { 0, 1, 1, 1, 0, 1, 1, 0 };
 
 
 void process(expression e, const parameters& u, std::vector<score> scores) {
@@ -107,9 +100,8 @@ inline static void search(const parameters u) {
     
     expression e = {};
     loop_over_all_expressions(e, e, u, 0);
-
     
-    h_grid h_grid;
+    std::vector<nat> h_grid;
     const nat z = unreduce(h_grid, u.m, u.H);
     const double score = simulate_lifetime(h_grid, u);
     

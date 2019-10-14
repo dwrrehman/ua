@@ -9,8 +9,8 @@
 #ifndef structures_h
 #define structures_h
 
-#include <vector>
 #include <string>
+#include <vector>
 #include <stdlib.h>
 
 using nat = size_t;
@@ -94,10 +94,6 @@ struct parameters {
     nat Z = 0;    
 };
 
-using vec = const std::vector<nat>&;
-using h_grid = std::vector<nat>; // has length H.
-using neighborhood = std::vector<nat>; // has length nc.
-
 enum class expression_type {
     null,
     operator_, 
@@ -133,7 +129,7 @@ struct expression {
     nat constant_value = 0;  // valid if type == constant.
     nat variable_index = 0;  // valid if type == variable
     enum operator_type operator_ = operator_type::null; // valid if type == operator.
-    std::vector<expression> children = {}; // nonempty if type == operator.  has length 2.    
+    std::vector<expression> children = {}; // nonempty if type == operator.  has length 2.
     bool error = false;
 };
 

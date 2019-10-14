@@ -8,20 +8,20 @@
 
 #include "utilities.hpp"
 
-#include "structures.h"
+#include "structures.hpp"
 
 #include <vector>
 #include <algorithm>
 
 
-bool h_grids_equal(h_grid a, h_grid b) {
+bool h_grids_equal(std::vector<nat> a, std::vector<nat> b) {
     if (a.size() != b.size()) return false;    
     for (nat i = 0; i < a.size(); i++) 
         if (a[i] != b[i]) return false;
     return true;
 }
 
-nat unreduce(vec v, nat radix, nat length) {
+nat unreduce(std::vector<nat> v, nat radix, nat length) {
     nat s = 0, p = 1;
     for (nat i = 0; i < length; i++, p *= radix) 
         s += p * v[i];
@@ -33,6 +33,6 @@ void reduce(std::vector<nat>& out, nat s, nat radix, nat length) {
         out[i] = (s / p) % radix;
 }
 
-bool not_in(vec v, nat e) {
+bool not_in(std::vector<nat> v, nat e) {
     return std::find_if(v.begin(), v.end(), [=](auto i) {return i == e;}) == v.end();
 }

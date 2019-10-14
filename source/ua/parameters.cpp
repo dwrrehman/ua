@@ -8,7 +8,7 @@
 
 #include "parameters.hpp"
 
-#include "structures.h"
+#include "structures.hpp"
 
 #include <stdlib.h>
 #include <math.h>
