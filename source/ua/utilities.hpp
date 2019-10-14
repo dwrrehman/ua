@@ -139,12 +139,15 @@ struct token {
     bool open = false;
 };
 
+using h_grid = std::vector<nat>; // has length H
+using neighborhood = std::vector<nat>; // has length nc.
 
-bool h_grids_equal(std::vector<nat> a, std::vector<nat> b);
 
+
+
+bool h_grids_equal(h_grid a, h_grid b);
 nat unreduce(std::vector<nat> v, nat radix, nat length);
 void reduce(std::vector<nat>& out, nat s, nat radix, nat length);
-
 bool not_in(std::vector<nat> v, nat e);
 
 #endif /* utilities_hpp */

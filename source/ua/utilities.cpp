@@ -12,7 +12,7 @@
 #include <algorithm>
 
 
-bool h_grids_equal(std::vector<nat> a, std::vector<nat> b) {
+bool h_grids_equal(h_grid a, h_grid b) {
     if (a.size() != b.size()) return false;    
     for (nat i = 0; i < a.size(); i++) 
         if (a[i] != b[i]) return false;
