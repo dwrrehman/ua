@@ -13,7 +13,6 @@
 
 #include <vector>
 
-
 void initialize(std::vector<nat>& g, const parameters& u) {
     g = std::vector<nat> (u.L, 0);
     if (u.initial_state == initially::empty) return;    

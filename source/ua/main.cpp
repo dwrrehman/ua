@@ -99,6 +99,10 @@ inline static void search(const parameters u) {
 }
 
 int main(const int argc, const char * argv[]) {
+
+    printf("hello world from space!\n");
+    exit(1);
+
     srand((unsigned) time(nullptr));
     auto parameters = compute_parameters(argv, argc);    
     if (parameters.mode == search_mode) search(parameters);
