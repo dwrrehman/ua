@@ -8,8 +8,6 @@
 
 #include "utilities.hpp"
 
-#include "structures.hpp"
-
 #include <vector>
 #include <algorithm>
 

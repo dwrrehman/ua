@@ -9,8 +9,8 @@
 #ifndef io_hpp
 #define io_hpp
 
-#include "structures.hpp"
 
+#include "utilities.hpp"
 #include <vector>
 
 char getch();

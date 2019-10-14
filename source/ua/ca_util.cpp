@@ -8,7 +8,6 @@
 
 #include "ca_util.hpp"
 
-#include "structures.hpp"
 #include "utilities.hpp"
 
 #include <vector>

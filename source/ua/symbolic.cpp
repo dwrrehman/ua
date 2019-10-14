@@ -8,7 +8,6 @@
 
 #include "symbolic.hpp"
 
-#include "structures.hpp"
 #include "utilities.hpp"
 #include "parameters.hpp"
 

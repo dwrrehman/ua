@@ -8,7 +8,6 @@
 
 #include "io.hpp"
 
-#include "structures.hpp"
 #include "utilities.hpp"
 
 #include <math.h>

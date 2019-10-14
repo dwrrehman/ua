@@ -9,7 +9,8 @@
 #ifndef parameters_hpp
 #define parameters_hpp
 
-#include "structures.hpp"
+#include "utilities.hpp"
+
 
 void debug_parameters(parameters u);
 void print_usage();

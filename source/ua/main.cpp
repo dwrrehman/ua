@@ -6,7 +6,6 @@
 //  Copyright © 2019 Daniel Rehman. All rights reserved.
 //
 
-#include "structures.hpp"
 #include "utilities.hpp"
 #include "parameters.hpp"
 
@@ -34,6 +33,9 @@ std::vector<nat> determine_h_grid(const expression& given, const nat m, const pa
 const std::vector<nat> rule_110 = { 0, 1, 1, 1, 0, 1, 1, 0 };
 
 
+
+
+
 void process(expression e, const parameters& u, std::vector<score> scores) {
     
     const auto m_ary = determine_h_grid(e, u.m, u);
@@ -50,11 +52,6 @@ void process(expression e, const parameters& u, std::vector<score> scores) {
         
     }
 }
-
-
-
-
-
 
 
 void try_terminals(expression e, expression& head, const parameters& u, std::vector<score> scores) {

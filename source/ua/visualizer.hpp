@@ -9,7 +9,6 @@
 #ifndef visualizer_hpp
 #define visualizer_hpp
 
-#include "structures.hpp"
 #include "utilities.hpp"
 #include "parameters.hpp"
 

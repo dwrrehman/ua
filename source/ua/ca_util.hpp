@@ -9,7 +9,6 @@
 #ifndef ca_util_hpp
 #define ca_util_hpp
 
-#include "structures.hpp"
 #include "utilities.hpp"
 
 #include <vector>
