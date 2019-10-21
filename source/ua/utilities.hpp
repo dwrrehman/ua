@@ -139,10 +139,10 @@ struct token {
     bool open = false;
 };
 
-using h_grid = std::vector<nat>; // has length H
-using neighborhood = std::vector<nat>; // has length nc.
 
+typedef std::vector<nat> h_grid; // has length H
 
+typedef std::vector<nat> neighborhood; // has length nc.
 
 
 bool h_grids_equal(h_grid a, h_grid b);

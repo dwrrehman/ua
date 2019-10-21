@@ -116,6 +116,18 @@ std::string stringify(expression e) {
     return "{INTERNAL ERROR}";
 } 
 
+std::string pretty_stringify(expression e) {
+    if (e.type == expression_type::constant) return  std::to_string(e.constant_value);
+    else if (e.type == expression_type::variable) return "[" + std::to_string(e.variable_index) + "]";
+    else if (e.type == expression_type::operator_) {
+        if (e.operator_ == operator_type::add) return "(" + pretty_stringify(e.children[0]) + " + " + pretty_stringify(e.children[1]) + ")";
+        if (e.operator_ == operator_type::subtract) return "(" + pretty_stringify(e.children[0]) + " - " + pretty_stringify(e.children[1]) + ")";
+        if (e.operator_ == operator_type::multiply) return "(" + pretty_stringify(e.children[0]) + " * " + pretty_stringify(e.children[1]) + ")";
+        if (e.operator_ == operator_type::equals) return "(" + pretty_stringify(e.children[0]) + " = " + pretty_stringify(e.children[1]) + ")";
+    }
+    return "{INTERNAL ERROR}";
+}
+
 
 void print_lex(std::vector<token> tokens) {
     std::cout << "---------- printing lex: --------\n";

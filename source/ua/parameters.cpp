@@ -107,9 +107,3 @@ parameters compute_parameters(const char** argv, const int argc) {
     return u;
 }
 
-
-
-
-
-
-

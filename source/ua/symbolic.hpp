@@ -25,6 +25,7 @@ std::string convert_operator(enum operator_type type);
 void print_expression(expression e, nat d);
 void print_parse(expression e);
 std::string stringify(expression e);
+std::string pretty_stringify(expression e);
 void print_lex(std::vector<token> tokens);
 
 
