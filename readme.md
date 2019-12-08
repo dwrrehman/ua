@@ -1,7 +1,9 @@
 # The Universe Algorithm.
 
-a codebase for doing experiments and related coding tasks, with the goal of finding the universe algorithm (ua). This code is a work in progress, and isn't meant to be useful outside of doing ad-hoc experiments for finding the ua.
+This is a codebase for doing experiments and related coding tasks, with the goal of finding the universe algorithm (ua). This code is a work in progress, and isn't exactly useful outside of doing ad-hoc experiments for finding the ua.
 
-right now, i am attempting to do a symbolic m ary search, and look for cas which recreate rule 110, where m = 2, and n = 1, (where m is the modulus, and n is the dimension.)
+the two ua cases which are being searched for right now, are the 3,1 case,  and the 2,2 case. (sb, s, ss)
 
-im going to try to edit this in sublime.
+in addition to searching for these CAs, the code can also visualize CAs, or a single CA, either by a set of z values, a single z value, or an h grid. these are done by the visualize commands: hg, z, v.
+
+the system has a set of parameters which are manipulated with the set and get commands (set and get)

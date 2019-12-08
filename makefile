@@ -2,7 +2,7 @@
 
 # Name
 EXEC = universe
-BASE = ./source/ua/
+BASE = ./source/
 
 
 CC_CPP = clang++ -std=c++17
