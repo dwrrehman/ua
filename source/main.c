@@ -249,13 +249,11 @@ void print_operators(nat m, nat nc) {
     const element
         add = m + nc + 0,
         sub = m + nc + 1,
-        mul = m + nc + 2,
-        eq  = m + nc + 3;
+        mul = m + nc + 2;
     
     printf("+: %d\n", (int) add);
     printf("-: %d\n", (int) sub);
     printf("*: %d\n", (int) mul);
-    printf("=: %d\n", (int) eq);
 }
 
 
@@ -308,6 +306,16 @@ void print_h_grid(vector h_grid, const struct parameters* u) {
     printf("\n");
 }
 
+void print_expression(vector expression, nat length, const struct parameters* u) { // valid for n <= 3
+    printf("{ ");
+    for (nat i = 0; i < length; i++) {
+        if (expression[i] < u->m) printf("%llu ", expression[i]);
+        else if (expression[i] >= u->m && expression[i] < u->nc + u->m) printf("%c ", "CRLUDFB"[expression[i] - u->m]);
+        else if (expression[i] >= u->nc + u->m && expression[i] < u->nc + 3 + u->m) printf("%c ", "+-*"[expression[i] - u->nc - u->m]);
+        else printf("? ");
+    }
+    printf("}");
+}
 
 
 // ------------------------- utility ---------------------------
@@ -339,13 +347,12 @@ element eval(vector* stack, nat* count, const nat m,
              const nat nc, vector ns) {
     
     const element add = m + nc + 0, sub = m + nc + 1,
-                  mul = m + nc + 2, eq  = m + nc + 3;
+                  mul = m + nc + 2;
     
     element e = pop(stack, count);
     if (e == add) push_back(stack, count, (eval(stack, count, m, nc, ns) + eval(stack, count, m, nc, ns)) % m);
     else if (e == sub) push_back(stack, count, (eval(stack, count, m, nc, ns) + m - eval(stack, count, m, nc, ns)) % m);
     else if (e == mul) push_back(stack, count, (eval(stack, count, m, nc, ns) * eval(stack, count, m, nc, ns)) % m);
-    else if (e == eq) push_back(stack, count, eval(stack, count, m, nc, ns) == eval(stack, count, m, nc, ns));
     else if (e >= m && e < m + nc) return ns[e - m];
     else return e;
     return back(*stack, *count);
@@ -364,7 +371,6 @@ void determine_h_grid(vector result, nat H,
         destroy(&save);
     }
 }
-
 
 void calcuate_rpn_expression(const struct parameters* u) {
     printf("calculating an h grid from a given rpn expression");
@@ -454,25 +460,38 @@ void rpn_search(const struct parameters* u) {
     
     element h_grid [u->H];
     
-    for (nat length = 1; length < u->max_depth; length += 2) {
+    for (nat length = 1; length <= u->max_depth; length += 2) {
         
-        printf("trying expr depth = %llu\n", length);
+        printf("------------ trying expr depth = %llu ---------------\n", length);
         
-        const nat radix = u->m + u->nc + 4;
-        const nat Z = powl(radix, length);
         
+        
+        ///TODO: remove subtraction from this. its irrelevant.
+        ///also, disallow the constant of 0 from showing up in equations.
+        ///...?
+        
+        
+        const nat radix = u->m + u->nc + 3; // num ops
+        const nat E = powl(radix, length);
         element expression[length];
-        
-        for (nat z = 0; z < Z; z++) {
+        printf("\n\n");
+        for (nat e = 0; e < E; e++) {
             
-            reduce(expression, z, radix, length);
+            reduce(expression, e, radix, length);
+            if (e % 1000 == 0) {
+                printf("\r [ %llu / %llu ]  :  trying: ", e, E);
+                print_expression(expression, length, u);
+                printf("                ");
+            }
+            
             determine_h_grid(h_grid, u->H, expression, length, u->m, u->nc);
+//            print_vector_line_message("---> h grid: ", h_grid, u->H);
             const nat lifetime = measure_lifetime(h_grid, u);
             
             if (lifetime >= u->threshold) {
                 push_back(&lifetimes, &lifetime_count, lifetime);
-                push_back(&zs, &z_count, z);
-                printf("found: %llu:  ", z);
+                push_back(&zs, &z_count, e);
+                printf("found: %llu:  ", e);
                 print_vector(h_grid, u->H);
                 printf("  --->  %llu timesteps\n", lifetime);
             }
