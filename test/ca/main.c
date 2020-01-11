@@ -10,7 +10,7 @@
 #include <math.h> // using powl()
 
 int main(int argc, const char** argv) {
-    if (argc <= 5) { printf("usage: \n\t./ca m n s t d\n\n"); return 1; }
+    if (argc <= 5) { printf("1: usage: \n\t./ca m n s t d\n\n"); return 1; }
     const unsigned long long
         m = atoll(argv[1]),
         n = atoll(argv[2]),
@@ -27,15 +27,15 @@ int main(int argc, const char** argv) {
         memcpy(h, g, sizeof h);
         for (unsigned long long j = 0; j < S; j++) {
                                     
-            const unsigned long long l = h[(j + s + 1) % s];
-            const unsigned long long r = h[(j + s - 1) % s];
-            const unsigned long long c = h[j];
+            const unsigned long long l = h[(j + s + 1) % s] % m;
+            const unsigned long long r = h[(j + s - 1) % s] % m;
+            const unsigned long long c = h[j] % m;
             
-            const unsigned long long e = (     c * (l + 1)         ) % m;
-            const unsigned long long u = (     m - e + m - 1       ) % m;
-            
-            g[j] -= r * u;
-            g[j] %= m;
+            const unsigned long long not_l = (l + 1) % m;
+            const unsigned long long c_l = (c * not_l) % m;
+            const unsigned long long not_c_l = (c_l + 1) % m;
+            const unsigned long long add = (r * not_c_l) % m;
+            g[j] = (g[j] + add) % m;
             
             printf("\033[38;5;%um██\033[0m", (unsigned)((double) h[j] / m * 24) + 232);
         }

@@ -507,6 +507,61 @@ void map(vector h_grid, vector known, vector known_indicies, vector search, cons
     for (nat i = 0; i < u->H; i++) h_grid[i] = i == known_indicies[j] ? known[j++] : search[k++];
 }
 
+bool m2n2_condition(nat z, vector h_grid, const struct parameters* u, bool* condition, vector neighborhood, vector g, vector h) {
+    bool good = true;
+
+    nat state_count = 0;
+    vector states = empty_vector;
+    initialize(g, u->m, u->L, (enum initial_state) u->initial_state);
+        
+    const nat max_lifetime_measure = u->lifetime;
+    
+    nat t = 0;
+    while (good && t < max_lifetime_measure) {
+        
+        memcpy(h, g, u->L * sizeof(element));
+        for (nat j = u->L; j--;) {
+            fill_neighbors(h, j, neighborhood, u->L, u->size);
+            g[j] = h_grid[unreduce(neighborhood, u->m, u->nc)];
+        }
+        const nat r = unreduce(h, u->m, u->L);
+        if (!in(states, state_count, r)) push_back(&states, &state_count, r);
+        else break;
+        
+        /// check 2d-triangle principle.
+        if (t < u->size - 1) {
+            for (nat f = 1; f < u->L; f *= u->size) {
+                if (h[f * (u->size - 1)]) {
+//                    printf("z = %llu : failed 2d-triangle principle @ t = %llu\n", z, t);
+                    good = false;
+                    break;
+                }
+            }
+        }
+        
+        /// check non-uniformity principle. (1s and 0s ratio > threshold)
+        if (t >= u->size) {
+            nat sum = 0;
+            const nat count = u->L;
+            for (nat j = 0; j < count; j++) sum += h[j];
+            double average = ((double) sum) / (double) count;
+            
+            if (average < u->threshold && average > 1.0 - u->threshold) {
+//                printf("z = %llu : failed non-uniformity principle with (%f).\n", z, average);
+                
+                good = false;
+                break;
+            }
+        }
+        
+        t++;
+    }
+    //    printf("z = %llu : succeeded. \n", z);
+    destroy(&states);
+    *condition = good;
+    return state_count;
+}
+
 void z_search(const struct parameters* u) {
     
     vector lifetimes = empty_vector, z_values = empty_vector;
@@ -536,6 +591,10 @@ void z_search(const struct parameters* u) {
     pthread_t thread;
     pthread_create(&thread, NULL, get_input, NULL);
     
+    vector g = create(u->L);
+    vector h = create(u->L);
+    element neighborhood[u->nc];
+    
     for (nat zi = 0; zi < Z; zi++) {
         
         if (user_quit) {user_quit = false; break; }
@@ -546,15 +605,20 @@ void z_search(const struct parameters* u) {
         reduce(search_vector, zi, u->m, search_H);
         map(h_grid, known_values, known_indicies, search_vector, u);
         const nat z = unreduce(h_grid, u->m, u->H);
-        const nat lifetime = measure_lifetime(h_grid, u);
         
-        if (lifetime >= u->threshold) {
+        bool condition = false;
+        const nat lifetime = m2n2_condition(z, h_grid, u, &condition, neighborhood, g, h);
+        
+        if (condition && lifetime > u->size) {
             push_back(&lifetimes, &lifetime_count, lifetime);
             push_back(&z_values, &z_count, z);
             printf("found: ");
             print_z_case(h_grid, lifetime, u, z);
         }
     }
+    
+    destroy(&g);
+    destroy(&h);
     
     print_results(z_values, z_count, lifetimes, lifetime_count, u);
     
@@ -982,13 +1046,13 @@ void print_welcome() {
 int main(int argc, const char * argv[]) {
     
     struct parameters u = {
-        .m = 3,
-        .n = 1,
-        .size = 15,
-        .lifetime = 10000,
+        .m = 2,
+        .n = 2,
+        .size = 10,
+        .lifetime = 80,
         .delay = 50000,
         .max_depth = 0,
-        .threshold = 0.0,
+        .threshold = 0.2,
         .n_dimensional_display = false,
         .numeric_display = false,
         .initial_state = dot_state,
