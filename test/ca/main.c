@@ -31,7 +31,7 @@ int main(int argc, const char** argv) {
             const unsigned long long r = h[(j + s - 1) % s] % m;
             const unsigned long long c = h[j] % m;
             
-            const unsigned long long not_l = (l + 1) % m;
+            const unsigned long long not_l = ((l + 1)) % m;
             const unsigned long long c_l = (c * not_l) % m;
             const unsigned long long not_c_l = (c_l + 1) % m;
             const unsigned long long add = (r * not_c_l) % m;
