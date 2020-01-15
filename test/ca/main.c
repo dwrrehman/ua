@@ -1,13 +1,11 @@
 /// current state of the ua theory.
 
-// extraneous:
 #include <unistd.h> // using:  usleep()
 #include <stdio.h>  // using:  printf()
 #include <stdlib.h> // using: atoll()
 
-// actually needed:
 #include <string.h> // using memset(), memcpy().
-#include <math.h> // using powl()
+#include <math.h>   // using powl()
 
 int main(int argc, const char** argv) {
     if (argc <= 5) { printf("1: usage: \n\t./ca m n s t d\n\n"); return 1; }
@@ -26,17 +24,10 @@ int main(int argc, const char** argv) {
         if (i % 200 == 0 && i) printf("\e[1;1H\e[2J");
         memcpy(h, g, sizeof h);
         for (unsigned long long j = 0; j < S; j++) {
-                                    
             const unsigned long long l = h[(j + s + 1) % s] % m;
             const unsigned long long r = h[(j + s - 1) % s] % m;
             const unsigned long long c = h[j] % m;
-            
-            const unsigned long long not_l = ((l + 1)) % m;
-            const unsigned long long c_l = (c * not_l) % m;
-            const unsigned long long not_c_l = (c_l + 1) % m;
-            const unsigned long long add = (r * not_c_l) % m;
-            g[j] = (g[j] + add) % m;
-            
+            g[j] = (g[j] + r * ( c * ( l + 1 ) + 1 ) ) % m;
             printf("\033[38;5;%um██\033[0m", (unsigned)((double) h[j] / m * 24) + 232);
         }
         printf("\n");
