@@ -27,7 +27,15 @@ int main(int argc, const char** argv) {
             const unsigned long long l = h[(j + s + 1) % s] % m;
             const unsigned long long r = h[(j + s - 1) % s] % m;
             const unsigned long long c = h[j] % m;
-            g[j] = (g[j] + r * ( c * ( l + 1 ) + 1 ) ) % m;
+            
+                        
+            const unsigned long long _R = r * r;
+            const unsigned long long _C = c;
+            const unsigned long long _L = l;
+            const unsigned long long _1 = 1;
+            const unsigned long long __1 = 1;
+                                    
+            g[j] = (g[j] + _R * ( _C * ( _L + _1 ) + __1 ) ) % m;
             printf("\033[38;5;%um██\033[0m", (unsigned)((double) h[j] / m * 24) + 232);
         }
         printf("\n");
