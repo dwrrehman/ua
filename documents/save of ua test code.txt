@@ -11,7 +11,7 @@ typedef unsigned long long nat;
 
 
 int main(int argc, const char** argv) {
-    if (argc <= 6) { printf("4: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
+    if (argc <= 6) { printf("2: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
     const nat
         m = atoll(argv[1]),
         n = atoll(argv[2]),
@@ -46,18 +46,21 @@ int main(int argc, const char** argv) {
             const nat u = x[3];
             const nat d = x[4];
             
-            nat t21 = 1;
-            t21 = t21 * l + 1;
-            t21 = t21 * c + 1;
-            t21 = t21 * r + 0;
-                    
-            nat t22 = 1;
-            t22 = t22 * d + 1;
-            t22 = t22 * l + 1;
-            t22 = t22 * c + 1;
-            t22 = t22 * u + 0;
+            nat a = 1;
+            a = a * l + 1;
+            a = a * c + 1;
+            a = a * r + 0;
+                        
+            nat e = 1;
             
-            g[j] = (g[j] + t21 + t22) % m;
+            e = e * d + 1;
+            
+//            e = e * c + 1;
+//            e = e * r + 1;
+//            e = e * l + 1;
+            e = e * u + 0;
+            
+            g[j] = (g[j] + a + e) % m;
             
             if (j % s == 0 && nd) printf("\n");
             printf("\033[38;5;%um██\033[0m", (unsigned)((double) h[j] / m * 24) + 232);
