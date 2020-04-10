@@ -1,0 +1,15 @@
+y = B'E + C'E + CE' + A'B
+
+
+(not b and e) or (not c and e) or (c and not e) or (not a and b)
+
+
+
+
+
+c b e ab bc ce abc abe bce
+
+
+
+
+c + b + e + a*b + b*c + c*e + a*b*c + a*b*e + b*c*e

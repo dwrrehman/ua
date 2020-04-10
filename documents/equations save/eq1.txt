@@ -1,0 +1,1 @@
+c + l + u + r*l + l*c + c*u + r*l*c + r*l*u + l*c*u

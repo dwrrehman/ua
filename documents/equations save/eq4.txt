@@ -1,0 +1,17 @@
+c
+l
+u
+lc
+lu
+cu
+du
+lcu
+cdu
+lcdu
+
+
+
+
+
+
+c + l + u + l * c + l * u + c * u + d * u + l * c * u + c * d * u + l * c * d * u
