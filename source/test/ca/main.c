@@ -8,21 +8,23 @@
 #include <math.h>   // using powl()
 typedef unsigned long long nat;
 
-#define N1 for (nat i = 0; i < n; i++)
-#define M1 for (nat j = 1; j < m; j++)
+#define N for (nat i = 0; i < n; i++)
+#define M for (nat j = 1; j < m; j++)
 
-#define N2 for (nat k = 0; k < n; k++)
+#define N2 for (nat k = 0; k < k; k++)
 #define M2 for (nat l = 1; l < m; l++)
 
 #define N3 for (nat _i = 0; _i < n; _i++)
 #define M3 for (nat _j = 1; _j < m; _j++)
 
-#define P for (nat _p = 0; _p < p[i]; _p++, f[s] = (f[s] + 1) % m)
-#define O for (nat o = f[s], _o = 0; _o < o; _o++, f[s] = (f[s] + 1) % m)
-#define Q for (nat _q = 0; _q < q[k]; _q++, f[s] = (f[s] + 1) % m)
+#define dot     f[s] = (f[s] + 1) % m
+
+#define P(i)    for (nat _p = 0; _p < p[i]; _p++)
+#define O       for (nat _o = 0; _o < o; _o++)
+#define Q(k)    for (nat _q = 0; _q < q[k]; _q++)
 
 int main(int argc, const char** argv) {
-    if (argc <= 6) { printf("17: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
+    if (argc <= 6) { printf("18: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
     const nat
         m = atoll(argv[1]),
         n = atoll(argv[2]),
@@ -48,8 +50,26 @@ int main(int argc, const char** argv) {
                 q[y++] = g[s + k * ((s / k + S - 1) % S - s / k % S)];
             }
             
-            N1 M1 P M3 O N2 M2 Q;
-            
+            for (nat i = 0; i < n; i++) {
+                
+                for (nat j = 1; j < m; j++) {
+                                                            
+                    for (nat _p = 0; _p < p[i]; _p++) {
+                                                                        
+                        for (nat _o = 0; _o < f[s]; _o++) {
+                                                                                            
+                            for (nat _q = 0; _q < q[i]; _q++) {
+                                dot;
+                            }
+                            for (nat _k = 0; _k < j; _k++) {
+                                dot;
+                            }
+                        }
+                        dot;
+                    }
+                }
+            }
+        
             if (s % S == 0 && nd) printf("\n");
             printf("\033[38;5;%um██\033[0m", (unsigned)((double) g[s] / m * 24) + 232);
             
