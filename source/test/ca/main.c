@@ -1,27 +1,15 @@
 /// current state of the ua theory.
 
-#include <unistd.h> // using:  usleep()
-#include <stdio.h>  // using:  printf()
-#include <stdlib.h> // using: atoll()
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <string.h> // using memset(), memcpy().
-#include <math.h>   // using powl()
+#include <string.h>
+#include <math.h>
 typedef unsigned long long nat;
 
-#define N for (nat i = 0; i < n; i++)
-#define M for (nat j = 1; j < m; j++)
-
-#define N2 for (nat k = 0; k < k; k++)
-#define M2 for (nat l = 1; l < m; l++)
-
-#define N3 for (nat _i = 0; _i < n; _i++)
-#define M3 for (nat _j = 1; _j < m; _j++)
-
 #define dot     f[s] = (f[s] + 1) % m
-
-#define P(i)    for (nat _p = 0; _p < p[i]; _p++)
-#define O       for (nat _o = 0; _o < o; _o++)
-#define Q(k)    for (nat _q = 0; _q < q[k]; _q++)
+#define L(x) for (nat _ = 0; _ < x; _++)
 
 int main(int argc, const char** argv) {
     if (argc <= 6) { printf("18: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
@@ -46,28 +34,17 @@ int main(int argc, const char** argv) {
             
             nat y = 0;
             for (nat k = 1; k < S_n; k *= S) {
-                p[y] = g[s + k * ((s / k + 1) % S - s / k % S)];
-                q[y++] = g[s + k * ((s / k + S - 1) % S - s / k % S)];
+                p[y] = g[s + k * ((s / k + S + 1) % S - s / k % S)];
+                q[y] = g[s + k * ((s / k + S - 1) % S - s / k % S)];
+                y++;
             }
             
             for (nat i = 0; i < n; i++) {
+                nat o = f[s];
+                o *= q[i] + 1;
+                f[s] += p[i] * (o + 1);
                 
-                for (nat j = 1; j < m; j++) {
-                                                            
-                    for (nat _p = 0; _p < p[i]; _p++) {
-                                                                        
-                        for (nat _o = 0; _o < f[s]; _o++) {
-                                                                                            
-                            for (nat _q = 0; _q < q[i]; _q++) {
-                                dot;
-                            }
-                            for (nat _k = 0; _k < j; _k++) {
-                                dot;
-                            }
-                        }
-                        dot;
-                    }
-                }
+                f[s] %= m;
             }
         
             if (s % S == 0 && nd) printf("\n");
