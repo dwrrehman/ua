@@ -6,256 +6,7 @@
 //  Copyright © 2019 Daniel Rehman. All rights reserved.
 //
 
-#include <stdio.h>
-#include <string.h>
-#include <termios.h>
-#include <stdlib.h>
-#include <math.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <stdbool.h>
-
-typedef unsigned long long int nat;
-
-enum initial_state {
-    empty_state,
-    dot_state,
-    repeating_state,
-    random_state
-};
-
-struct parameters {
-    /// the modulus.
-    nat m;
-    /// the dimension.
-    nat n;
-    /// the side length of the ncube.
-    nat size;
-    /// the lifetime duration for visualization.
-    nat lifetime;
-    /// the delay in microseconds for visualization.
-    nat delay;
-    /// the maximum expression depth for symbolic search.
-    nat max_depth;
-    /// the search score threshold to save to a file.
-    double threshold;
-    /// should visualize the CA n dimensionally, as opposed to serialize over time.
-    bool n_dimensional_display;
-    /// display the CA as a set of numbers.
-    bool numeric_display;
-    /// the initial configuration of the space.
-    nat initial_state;
-    /// the file path destintation for the scores and z values found using search method.
-    char* destination;
-    /// the file path source used to vizualize sequential automatons.
-    char* source;
-    // ------ computed parameters: ------
-    /// nc = 2n + 1 = "neighborhood count"
-    nat nc;
-    /// L = size ^ n = "total cells"
-    nat L;
-    /// H = m ^ nc = "neighborhood state count"
-    nat H;
-};
-
-
-typedef nat element;
-typedef element* vector;
-element* const empty_vector = NULL;
-
-bool user_quit = false;
-bool user_stop = false;
-bool user_pause = false;
-bool user_back = false;
-bool user_marked = false;
-
-// ----------------- vector functions --------------------
-
-vector create(nat count) {
-    return calloc(count, sizeof(element));
-}
-
-void destroy(vector* v) {
-    free(*v);
-    *v = empty_vector;
-}
-
-vector copy(vector v, nat count) {
-    vector c = create(count);
-    memcpy(c, v, sizeof(element) * count);
-    return c;
-}
-
-void set(nat value, vector v, nat count) {
-    memset(v, value, sizeof(element) * count);
-}
-
-void push_back(vector* v, nat* count, element e) {
-    *v = realloc(*v, sizeof(element) * (*count + 1));
-    (*v)[(*count)++] = e;
-}
-
-void pop_back(vector* v, nat* count) {
-    if (!*count) return;
-    (*count)--;
-    *v = realloc(*v, sizeof(element) * (*count));
-}
-
-element pop(vector* v, nat* count) {
-    if (!*count) return 0; // temp
-    (*count)--;
-    element e = (*v)[*count];
-    *v = realloc(*v, sizeof(element) * (*count));
-    return e;
-}
-
-element back(vector v, nat count) {
-    if (!count) return 0; // temp
-    return v[count - 1];
-}
-
-nat sum(vector v, nat count) {
-    nat s = 0;
-    for (nat i = 0; i < count; i++) s += v[i];
-    return s;
-}
-
-// ------------------------ utilities -------------------------
-
-
-bool vectors_equal(vector a, nat a_count, vector b, nat b_count) {
-    if (a_count != b_count) return false;
-    for (nat i = 0; i < a_count; i++) {
-        if (a[i] != b[i]) return false;
-    }
-    return true;
-}
-
-
-bool strings_equal(const char* a, const char* b) {
-    return !strcmp(a, b);
-}
-
-
-bool equals(const char* a, const char* b, const char* abbrev) {
-    return strings_equal(a, b) || strings_equal(a, abbrev);
-}
-
-nat unreduce(vector v, nat radix, nat length) {
-    nat s = 0, p = 1;
-    for (nat i = 0; i < length; i++, p *= radix)
-        s += p * v[i];
-    return s;
-}
-
-void reduce(vector out, nat s, nat radix, nat length) {
-    for (nat i = 0, p = 1; i < length; i++, p *= radix)
-        out[i] = (s / p) % radix;
-}
-
-bool in(vector v, nat count, element e) {
-    for (nat i = 0; i < count; i++) {
-        if (v[i] == e) return true;
-    }
-    return false;
-}
-
-// ----------------- IO functions --------------------
-
-
-void clear_screen() {printf("\e[1;1H\e[2J");}
-
-char get_character() {
-    struct termios t = {0}; if (tcgetattr(0, &t) < 0) perror("tcsetattr()");
-    t.c_lflag &= ~ICANON; t.c_lflag &= ~ECHO; t.c_cc[VMIN] = 1; t.c_cc[VTIME] = 0;
-    if (tcsetattr(0, TCSANOW, &t) < 0) perror("tcsetattr ICANON");
-    char c = 0; if (read(0, &c, 1) < 0) perror("read()"); t.c_lflag |= ICANON; t.c_lflag |= ECHO;
-    if (tcsetattr(0, TCSADRAIN, &t) < 0) perror("tcsetattr ~ICANON");
-    return c;
-}
-
-void* get_input(void* unused) {
-    while (!user_quit) {
-        char c = get_character();
-        
-        if (c == 'q') user_quit = true;
-        
-        if (c == 'c') user_stop = true;
-        else if (c == 'b') user_back = true;
-        
-        else if (c == 'p') user_pause = true;
-        else if (c == 'u') user_pause = false;
-        
-        else if (c == 'm') user_marked = true;
-    }
-    return unused;
-}
-
-void print_vector(vector v, nat count) {
-    printf("{ ");
-    for (nat i = 0; i < count; i++) printf("%llu ", v[i]);
-    printf("}");
-}
-
-void print_vector_line(vector v, nat count) {
-    printf("{ ");
-    for (nat i = 0; i < count; i++) printf("%llu ", v[i]);
-    printf("}\n");
-}
-
-void print_vector_line_message(const char* message, vector v, nat count) {
-    printf("%s : ", message);
-    print_vector_line(v, count);
-}
-
-nat read_nat(const char* message) {
-    char buffer[128] = {0};
-    printf("%s", message);
-    fgets(buffer, 127, stdin);
-    return atoll(buffer);
-}
-
-float read_float(const char* message) {
-    char buffer[128] = {0};
-    printf("%s", message);
-    fgets(buffer, 127, stdin);
-    return atof(buffer);
-}
-
-void read_nats(const char* message, vector v, nat count) {
-    printf("%s\ngive %llu values: ", message, count);
-    for (int i = 0; i < count; i++) scanf("%llu", &v[i]);
-    read_nat("type anything: ");
-}
-
-vector read_nats_from_file(const char* filepath, nat* count) {
-    vector v = empty_vector;
-    FILE* file = fopen(filepath, "r");
-    if (!file) { perror("fopen"); return empty_vector; }
-    char buffer[256] = {0};
-    while(fgets(buffer, 255, file)) push_back(&v, count, atoll(buffer));
-    fclose(file);
-    return v;
-}
-
-void write_nats_to_file(const char* filepath, vector v, nat count) {
-    FILE* file = fopen(filepath, "w+");
-    if (!file) { perror("fopen"); return; }
-    for (nat i = 0; i < count; i++) fprintf(file, "%llu\n", v[i]);
-    fclose(file);
-}
-
-void print_operators(nat m, nat nc) {
-    const element
-        add = m + nc + 0,
-        sub = m + nc + 1,
-        mul = m + nc + 2;
-    
-    printf("+: %d\n", (int) add);
-    printf("-: %d\n", (int) sub);
-    printf("*: %d\n", (int) mul);
-}
-
+/*
 
 void print_z_case(element* h_grid, nat lifetime, const struct parameters* u, nat z) {
     printf("[%llu]:  ", z);
@@ -339,7 +90,6 @@ void do_unreduce() {
     const nat z = unreduce(v, radix, count);
     printf("\n\n\tz = %llu\n\n", z);
 }
-
 
 // ------------------------- RPN evaluator -----------------------------
 
@@ -963,134 +713,39 @@ void set_parameter(struct parameters* u) {
     compute_derived_parameters(u);
 }
 
-void print_parameters(struct parameters* u) {
-    printf("current parameters: \n");
-    printf("\tm = %llu\n", u->m);
-    printf("\tn = %llu\n", u->n);
-    printf("\tsize = %llu\n", u->size);
-    printf("\tlifetime = %llu\n", u->lifetime);
-    printf("\tdelay = %llu\n", u->delay);
-    printf("\tmax_depth = %llu\n", u->max_depth);
-    printf("\tnd = %d\n", u->n_dimensional_display);
-    printf("\tnp = %d\n", u->numeric_display);
-    printf("\tthr = %f\n", u->threshold);
-    printf("\tdest = %s\n", u->destination);
-    printf("\tsource = %s\n", u->source);
-    printf("\tinitial_state = %llu\n", u->initial_state);
-    
-    printf("computed parameters:\n");
-    printf("\tnc = %llu\n", u->nc);
-    printf("\tH = %llu\n", u->H);
-    printf("\tL = %llu\n", u->L);
-    printf("\n");
-}
+*/
 
-void print_help() {
-    printf("commands:\n"
-           "\t- quit(q): quit the ca terminal.\n"
-           "\t- help(h): print this help menu.\n"
-           "\t- help parameters(hp): print parametre descriptions.\n"
-           "\t- clear(l): clear the screen.\n"
-           "\t- get(.): get the current set of paraemtrs.\n"
-           "\t- set(,): set a given paraemter, by name.\n"
-           "\t- visualize(v): visuzlize a set of z values, from source file\n"
-           "\t- visualize z(z): visualizes a single z value.\n"
-           "\t- visualize h grid(hg): visualizes a single z value, by h grid.\n"
-           "\t- search(s): search the ca space, using z values as the substrate. writes to the dest.\n"
-           "\t- symbolic search(ss): search the ca space, using rpn expressions as the substrate.\n\n"
-           "\n\tif (equals(input, quit, q)) quit = true;"
-           "\n\telse if (equals(input, help, h)) print_help();"
-           "\n\telse if (equals(input, help parameters, hp)) print_parameter_descriptions();"
-           "\n\telse if (equals(input, clear, l)) clear_screen();"
-           "\n\telse if (equals(input, get, .)) print_parameters(&u);"
-           "\n\telse if (equals(input, set, ,)) set_parameter(&u);"
-           "\n\telse if (equals(input, visualize, v)) visualize_set(&u);"
-           "\n\telse if (equals(input, visualize z, z)) visualize_single_z(&u);"
-           "\n\telse if (equals(input, visualize h grid, hg)) visualize_single_h_grid(&u);"
-           "\n\telse if (equals(input, symolic search, ss)) rpn_search(&u);"
-           "\n\telse if (equals(input, search, s)) z_search(&u);"
-           "\n\telse if (equals(input, calcuate, c)) calcuate_rpn_expression(&u);"
-           "\n\telse if (equals(input, pert search, ps)) pert_search(&u);"
-           "\n\telse if (equals(input, reduce, rd)) do_reduce();"
-           "\n\telse if (equals(input, unreduce, ur)) do_unreduce();"
-           );
-}
+#include "structures.h"
+#include "parameters.h"
+#include "vector.h"
+#include "hgrid.h"
+#include "ca.h"
+#include "io.h"
 
-void print_parameter_descriptions() {
-    printf("parameter semantics: \n"
-           "\t- m : M (nat0) : the modulus, also the size of the CA. \n"
-           "\t- n : N (nat0) : the number of dimensions in the CA.\n"
-           "\t- s : N-Cube Side-length (nat0) : How many cells you want to simulate the CA with. L = s^n\n"
-           "\t- i : Initial confifguration (0/1/2/3) : 0 for empty, 1 for dot, 2, for repeating, 3 for random. \n"
-           "\t- t : Threshold (nat0) : CA lifetimes found to be below this threshold will not be reported. \n"
-           "\t- md : max_depth (nat0) : the maximum depth of symbolic expressions which will be considered. \n"
-           "\t- D : Destination (file) : all found z values will be written here (truncs the file.) \n\n"
-           "\t- l : Lifetime (nat0) : the number of timesteps to simulate CAs for.\n"
-           "\t- d : delay (nat0) : the delay for usleep. eg, 100000 \n"
-           "\t- nd : N-dimensional display (0/1) : vizualize the CA N-dimensionally.\n"
-           "\t- np : Numeric print (0/1) : print the modnat values as numbers instead of hues.\n"
-           "\t- S : Source (file) : file containing all z values which will be vizualized. \n\n"
-           "\t- D : Destination (file) : file which will contain all z values which were found from searching. \n\n"
-           "commands for the visualizer: \n"
-           "\t- q to stop the viz of all automatons \n"
-           "\t- c to continue to the next z value \n"
-           "\t- p/u to pause and unpause the simulation.\n"
-           "\n");
-}
+#include <stdio.h>
+#include <string.h>
+#include <termios.h>
+#include <stdlib.h>
+#include <math.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <stdbool.h>
 
-void print_welcome() {
-    printf("welcome to the cellular automaton terminal.\n"
-           "type \"help\" for a list of commands.\n");
-}
-
-int main(int argc, const char * argv[]) {
+int main() {
     
-    struct parameters u = {
-        .m = 2,
-        .n = 2,
-        .size = 10,
-        .lifetime = 80,
-        .delay = 50000,
-        .max_depth = 0,
-        .threshold = 0.2,
-        .n_dimensional_display = false,
-        .numeric_display = false,
-        .initial_state = dot_state,
-        .destination = NULL,
-        .source = NULL
-    };
-    
-    compute_derived_parameters(&u);
-    
-    print_welcome();
+//    struct parameters u = {0};
     
     bool quit = false;
-    char input[128] = {0};
+    char input[2048] = {0};
+    
     while (!quit) {
-        
-        printf(":: ");
-        fgets(input, 127, stdin);
+        printf(" 〉");
+        fgets(input, sizeof input, stdin);
         input[strlen(input) - 1] = '\0';
   
         if (equals(input, "quit", "q")) quit = true;
-        else if (equals(input, "help", "h")) print_help();
-        else if (equals(input, "help parameters", "hp")) print_parameter_descriptions();
-        else if (equals(input, "clear", "l")) clear_screen();
-        else if (equals(input, "get", ".")) print_parameters(&u);
-        else if (equals(input, "set", ",")) set_parameter(&u);
-        else if (equals(input, "visualize", "v")) visualize_set(&u);
-        else if (equals(input, "visualize z", "z")) visualize_single_z(&u);
-        else if (equals(input, "visualize h grid", "hg")) visualize_single_h_grid(&u);
-        else if (equals(input, "symolic search", "ss")) rpn_search(&u);
-        else if (equals(input, "search", "s")) z_search(&u);
-        else if (equals(input, "calcuate", "c")) calcuate_rpn_expression(&u);
-        else if (equals(input, "pert search", "ps")) pert_search(&u);
-        else if (equals(input, "reduce", "rd")) do_reduce();
-        else if (equals(input, "unreduce", "ur")) do_unreduce();
+        else if (equals(input, "help", "h")) printf("help is coming!\n");
         else if (equals(input, "", "")) {}
         else printf("unknown command: \"%s\"\n", input);
     }
-    free(u.source);
-    free(u.destination);
-    exit(0);
 }
