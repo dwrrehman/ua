@@ -9,6 +9,8 @@
 #ifndef io_h
 #define io_h
 
+#include "structures.h"
+
 #include <stdbool.h>
 
 void clear_screen(void);

@@ -73,7 +73,7 @@ bool vectors_equal(vector a, nat al, vector b, nat bl);
  of "bits"(but radixary).) as a number, and return the
  number the vector represents.
 */
-nat unreduce(vector v, nat radix, nat length);
+nat unreduce(vector in, nat radix, nat length);
 
 /**
  convert the given natural number,

@@ -11,9 +11,12 @@
 
 #include "structures.h"
 
-void compute_derived_parameters(struct parameters* u);
+bool is_mn_case(nat m, nat n, struct parameters p);
 
-void print_parameters(struct parameters* u);
+void compute_derived_parameters(struct parameters* p);
 
+void print_parameters(struct parameters p);
+
+void load_parameters(const char* filename, struct context* p);
 
 #endif /* parameters_h */

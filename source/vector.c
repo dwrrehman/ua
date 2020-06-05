@@ -111,6 +111,6 @@ void print_vector_line(vector v, nat count) {
 }
 
 void print_vector_line_message(const char* message, vector v, nat count) {
-    printf("%s : ", message);
+    printf("%s ", message);
     print_vector_line(v, count);
 }

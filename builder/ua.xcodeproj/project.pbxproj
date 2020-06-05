@@ -13,6 +13,8 @@
 		FD5005A62487788D00A8E383 /* hgrid.c in Sources */ = {isa = PBXBuildFile; fileRef = FD5005A52487788D00A8E383 /* hgrid.c */; };
 		FD5005A9248778CF00A8E383 /* ca.c in Sources */ = {isa = PBXBuildFile; fileRef = FD5005A8248778CF00A8E383 /* ca.c */; };
 		FD5005AC24877A9500A8E383 /* parameters.c in Sources */ = {isa = PBXBuildFile; fileRef = FD5005AB24877A9500A8E383 /* parameters.c */; };
+		FD5175262489FB2900E59A65 /* help.c in Sources */ = {isa = PBXBuildFile; fileRef = FD5175252489FB2900E59A65 /* help.c */; };
+		FD5175292489FBA200E59A65 /* commands.c in Sources */ = {isa = PBXBuildFile; fileRef = FD5175282489FBA200E59A65 /* commands.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -41,6 +43,10 @@
 		FD5005A8248778CF00A8E383 /* ca.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = ca.c; path = ../../source/ca.c; sourceTree = "<group>"; };
 		FD5005AA24877A9500A8E383 /* parameters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = parameters.h; path = ../../source/parameters.h; sourceTree = "<group>"; };
 		FD5005AB24877A9500A8E383 /* parameters.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = parameters.c; path = ../../source/parameters.c; sourceTree = "<group>"; };
+		FD5175242489FB2900E59A65 /* help.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = help.h; path = ../../source/help.h; sourceTree = "<group>"; };
+		FD5175252489FB2900E59A65 /* help.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = help.c; path = ../../source/help.c; sourceTree = "<group>"; };
+		FD5175272489FBA200E59A65 /* commands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = commands.h; path = ../../source/commands.h; sourceTree = "<group>"; };
+		FD5175282489FBA200E59A65 /* commands.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = commands.c; path = ../../source/commands.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +91,10 @@
 				FD5005A8248778CF00A8E383 /* ca.c */,
 				FD5005AA24877A9500A8E383 /* parameters.h */,
 				FD5005AB24877A9500A8E383 /* parameters.c */,
+				FD5175242489FB2900E59A65 /* help.h */,
+				FD5175252489FB2900E59A65 /* help.c */,
+				FD5175272489FBA200E59A65 /* commands.h */,
+				FD5175282489FBA200E59A65 /* commands.c */,
 			);
 			path = ua;
 			sourceTree = "<group>";
@@ -148,8 +158,10 @@
 			files = (
 				FD5005A02487730E00A8E383 /* vector.c in Sources */,
 				FD5005AC24877A9500A8E383 /* parameters.c in Sources */,
+				FD5175262489FB2900E59A65 /* help.c in Sources */,
 				FD5005A32487754400A8E383 /* io.c in Sources */,
 				FD5005A9248778CF00A8E383 /* ca.c in Sources */,
+				FD5175292489FBA200E59A65 /* commands.c in Sources */,
 				FD50059C2487713900A8E383 /* main.c in Sources */,
 				FD5005A62487788D00A8E383 /* hgrid.c in Sources */,
 			);

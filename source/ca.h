@@ -9,6 +9,8 @@
 #ifndef ca_h
 #define ca_h
 
+#include "structures.h"
 
+void fill_neighbors(vector h, nat j, vector ns, nat L, nat space);
 
 #endif /* ca_h */

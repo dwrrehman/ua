@@ -11,11 +11,9 @@
 #include "structures.h"
 #include "vector.h"
 
-
 #include <stdlib.h>
 
-
-void initialize(vector g, const nat m, const nat L, enum initial_state_type initial) {
+void initialize(vector g, nat m, nat L, enum initial_state_type initial) {
     if (initial == empty_state) return;
     else if (initial == dot_state) g[0] = 1;
     else if (initial == repeating_state) {
@@ -27,11 +25,11 @@ void initialize(vector g, const nat m, const nat L, enum initial_state_type init
     }
 }
 
-void fill_neighbors(vector h, nat j, vector ns, const nat L, const nat size) {
-    ns[0] = h[j];
+void fill_neighbors(vector read_array, nat cell, vector neighbors, nat L, nat space) {
+    neighbors[0] = read_array[cell];
     nat y = 1;
-    for (nat f = 1; f < L; f *= size) {
-        ns[y++] = h[j + f * ((j / f + 1) % size - j / f % size)];
-        ns[y++] = h[j + f * ((j / f + size - 1) % size - j / f % size)];
+    for (nat f = 1; f < L; f *= space) {
+        neighbors[y++] = read_array[cell + f * ((cell / f + 1) % space - cell / f % space)];
+        neighbors[y++] = read_array[cell + f * ((cell / f + space - 1) % space - cell / f % space)];
     }
 }
