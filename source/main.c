@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-const char* default_home = "/Users/deniylreimn/Documents/projects/ua/";
+const char* default_home = "/Users/deniylreimn/Documents/projects/ua/testing";
 
 
 void load_file(char** input, nat count, struct context* context) {
