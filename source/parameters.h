@@ -13,8 +13,6 @@
 
 bool is_mn_case(nat m, nat n, struct parameters p);
 
-
-
 void print_parameters(struct parameters p);
 void verbose_print_parameters(struct parameters p);
 

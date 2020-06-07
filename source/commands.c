@@ -1186,17 +1186,7 @@ int main(int argc, const char * argv[]) {
                  q[y] = g[s + k * ((s / k + S - 1) % S - s / k % S)];
                  y++;
              }
-             const nat U = p[1], D = q[1], R = p[0], L = q[0], C = g[s];
-             
-             
-             
-             f[s] =
-              (
-               // RL + LC + LU + CU + RLC + RLU + LCU + L + C + U
-               R*L + L*C + L*U + C*U + R*L*C + R*L*U + L*C*U + L + C + U
-
-              ) % m;
-             
+    
              if (s % S == 0 && nd) printf("\n");
              printf("\033[38;5;%um██\033[0m", (unsigned)((double) g[s] / m * 24) + 232);
              

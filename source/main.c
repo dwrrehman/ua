@@ -119,25 +119,51 @@ nat find_unknowns(vector hg, vector I, nat H) {
     return count;
 }
 
-void search(char** input, nat count, struct context* c) {
-    vector hg = c->hgrid;
-    const nat m = c->parameters.m;
-    const nat H = c->parameters.H;
+struct score {
+    nat score;
+    nat z;
+};
+
+void lifetime_threshold_search(char** input, nat count, struct context* c) {
+    
+    const nat threshold = atoll(input[1]);
+    const nat
+        m = c->parameters.m,
+        H = c->parameters.H;
+    
+    vector hg = duplicate(c->hgrid, H);
     element indicies[H], search[H];
-    const nat u = find_unknowns(hg, indicies, H);
-    const nat Z = powl(m, u);
+    
+    const nat
+        u = find_unknowns(hg, indicies, H),
+        Z = powl(m, u);
     
     printf("searching over %llu unknowns...\n", u);
+
+    element definitions[Z], scores[Z];
+    nat z_value_count = 0;
+    
     for (nat z = 0; z < Z; z++) {
-        printf("[  %llu  /  %llu  ] \n", z, Z);
+        printf("\r [  %llu  /  %llu  ]       ", z, Z);
         reduce(search, z, m, u);
         map(hg, search, indicies, H);
-        print_vector_line_message("trying: ", hg, H);
+        const nat score = measure_lifetime_for_hgrid(hg, &c->parameters);
+        const nat definition = unreduce(hg, m, H);
+        
+        if (score >= threshold) {
+             printf("\n[z = %llu] ---> %llu timesteps\n\n",
+                    definition, score);
+            
+            definitions[z_value_count] = definition;
+            scores[z_value_count] = score;
+            z_value_count++;
+        }
     }
+    puts("\n");
+    printf("found %llu z values above threshold. (%f%%) \n", z_value_count, ((float)z_value_count / Z));
 }
 
 int main(void) {
-        
     struct context context = {default_home};
     bool quit = false;
     nat count = 0;
@@ -156,7 +182,7 @@ int main(void) {
         else if (equals(*input, "load", "load")) load_file(input, count, &context);
         else if (equals(*input, "calculate", "c")) calculate_function(input, count, context);
         else if (equals(*input, "set", "set")) set(input, count, &context);
-        else if (equals(*input, "search", "s")) search(input, count, &context);
+        else if (equals(*input, "threshold", "thr")) lifetime_threshold_search(input, count, &context);
         else if (equals(*input, "convert", "v")) convert_expressions();
         else {
             printf("error: %s: unknown command:\n", line);

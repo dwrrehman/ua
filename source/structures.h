@@ -21,7 +21,6 @@ typedef nat element;
 typedef element* vector;
 
 
-
 enum initial_state_type {
     empty_state,
     dot_state,
@@ -74,7 +73,6 @@ struct parameters {
     nat H;    
 };
 
-
 struct rule {
     /// Always has count of nc.
     /// and, is always ordered according to the
@@ -88,24 +86,11 @@ struct rule {
     nat future;
 };
 
-
-/// an h grid, aka, ruleset, that was specified by a .hg.txt file.
-/// it might not contain a transition for every rule, and thus cannot
-/// simply be a truer representation, which is just a vector of
-/// modnats with length H.
-struct ruleset {
-    struct rule* rules;
-    nat count;
-};
-
-
 struct context {
     const char* home;
     struct parameters parameters;    
     vector hgrid;
     nat z;
 };
-
-
 
 #endif /* structures_h */
