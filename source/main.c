@@ -12,6 +12,9 @@
 #include "io.h"
 #include "help.h"
 #include "commands.h"
+#include "converter.h"
+
+#include <math.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -19,7 +22,6 @@
 #include <stdbool.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-
 
 const char* default_home = "/Users/deniylreimn/Documents/projects/ua/testing/";
 
@@ -39,10 +41,8 @@ void load_file(char** input, nat count, struct context* context) {
 
 void read_values_from_input(vector in, nat in_length, char** input, nat input_count, nat offset) {
     for (nat i = 0; i < in_length; i++) {
-        
         if (i + offset < input_count) {
             in[i] = atoll(input[i + offset ]);
-            
         } else {
             printf("error: unexpected end of input\n");
             return;
@@ -52,25 +52,31 @@ void read_values_from_input(vector in, nat in_length, char** input, nat input_co
 
 void calculate_function(char** input, nat count, struct context context) {
     const nat H = context.parameters.H;
-    if (strings_equal(input[1], "reduce")) {
+    if (strings_equal(input[1], "z"))
+        printf("%llu\n", unreduce(context.hgrid, context.parameters.m, H));
+    
+    else if (strings_equal(input[1], "reduce")) {
         element out[H];
         reduce(out, atoll(input[2]), context.parameters.m, H);
         print_vector_line_message("result = ", out, H);
+        
     } else if (strings_equal(input[1], "unreduce")) {
-        element in[H]; zero(in, H);
+        element in[H]; fill(0, in, H);
         read_values_from_input(in, H, input, count, 2);
-        const nat result = unreduce(in, context.parameters.m, H);
-        printf("%llu\n", result);
+        printf("%llu\n", unreduce(in, context.parameters.m, H));
     } else {
         printf("error: calculate: unknown function: %s\n", input[1]);
         printf("available functions: \n"
-               "\t - unreduce <a> <b> <c> <d> <e> <f> <g> <h> ... \n"
-               "\t - reduce <value>\n\n");
+               "\t  z\n"
+               "\t  reduce <value>\n"
+               "\t  unreduce <a> <b> <c> <d> <e> <f> <g> <h> ... \n"
+               "\n");
     }
 }
 
 void print_information(char** input, nat count, struct context context) {
     if (strings_equal(input[1], "home")) puts(context.home);
+    else if (strings_equal(input[1], "z")) printf("z = %llu\n", context.z);
     else if (strings_equal(input[1], "param")) print_parameters(context.parameters);
     else if (strings_equal(input[1], "parameters")) verbose_print_parameters(context.parameters);
     else if (strings_equal(input[1], "hgrid")) {
@@ -80,9 +86,12 @@ void print_information(char** input, nat count, struct context context) {
     } else {
         printf("error: print: unknown info spec: %s\n", input[1]);
         printf("available information: \n"
+               "\t home\n"
+               "\t z\n"
                "\t param\n"
+               "\t parameters\n"
                "\t hgrid\n"
-               "\t home\n\n");
+               "\n");
     }
 }
 
@@ -97,19 +106,38 @@ void set(char** input, nat count, struct context* context) {
         printf("error: set: unknown target: %s\n", input[1]);
         printf("available information: \n"
                "\t param <name> <value>\n"
-               "\t hgrid <a> <b> <c> ...\n"
                "\t z <zvalue> ...\n"
+               "\t hgrid <a> <b> <c> ...\n"
                "\n");
     }
 }
 
-void search(char** input, nat count, struct context* context) {
-    puts("search: unimplemented.");
+nat find_unknowns(vector hg, vector I, nat H) {
+    nat count = 0;
+    for (nat i = 0; i < H; i++)
+        if (hg[i] == unknown_dummy_value) I[count++] = i;
+    return count;
+}
+
+void search(char** input, nat count, struct context* c) {
+    vector hg = c->hgrid;
+    const nat m = c->parameters.m;
+    const nat H = c->parameters.H;
+    element indicies[H], search[H];
+    const nat u = find_unknowns(hg, indicies, H);
+    const nat Z = powl(m, u);
+    
+    printf("searching over %llu unknowns...\n", u);
+    for (nat z = 0; z < Z; z++) {
+        printf("[  %llu  /  %llu  ] \n", z, Z);
+        reduce(search, z, m, u);
+        map(hg, search, indicies, H);
+        print_vector_line_message("trying: ", hg, H);
+    }
 }
 
 int main(void) {
-    
-    
+        
     struct context context = {default_home};
     bool quit = false;
     nat count = 0;
@@ -129,11 +157,10 @@ int main(void) {
         else if (equals(*input, "calculate", "c")) calculate_function(input, count, context);
         else if (equals(*input, "set", "set")) set(input, count, &context);
         else if (equals(*input, "search", "s")) search(input, count, &context);
+        else if (equals(*input, "convert", "v")) convert_expressions();
         else {
             printf("error: %s: unknown command:\n", line);
             print_command(input, count);
         }
-        free(line);
     }
-    clear_history();
 }

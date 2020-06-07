@@ -20,9 +20,10 @@
  
  which is needed for the wolfram ANF.
  */
+
 void pretty_print_boolean_expr() {
     char buffer[4096] = {0};
-    printf("expression: ");
+    printf("give boolean expression: ");
     fgets(buffer, 4096, stdin);
     printf("\n\n        ANF (");
     for (size_t i = 0; i < strlen(buffer); i++) {
@@ -47,7 +48,7 @@ void pretty_print_boolean_expr() {
 */
 void pretty_print_wolfram_ANF() {
     char buffer[4096] = {0};
-    printf("wolfram: ");
+    printf("give wolfram anf: ");
     fgets(buffer, 4096, stdin);
     printf("\n\n\t\t");
     for (size_t i = 0; i < strlen(buffer); i++) {
@@ -62,9 +63,7 @@ void pretty_print_wolfram_ANF() {
     } puts("\n\n");
 }
 
-void main5(void) {
-    while (1) {
-        pretty_print_boolean_expr();
-        pretty_print_wolfram_ANF();
-    }
+void convert_expressions() {
+    pretty_print_boolean_expr();
+    pretty_print_wolfram_ANF();
 }

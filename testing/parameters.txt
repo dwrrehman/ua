@@ -5,11 +5,12 @@
 m = 2
 n = 2
 
-s = 10
-t = 10000
+s = 15
+t = 100
 
 initial = dot
 display = intuitive
 nd = false
 
 delay = 100000
+

@@ -37,20 +37,6 @@ bool equals(const char* a, const char* b, const char* abbrev) {
     return strings_equal(a, b) || strings_equal(a, abbrev);
 }
 
-nat read_nat(const char* message) {
-    char buffer[128] = {0};
-    printf("%s", message);
-    fgets(buffer, 127, stdin);
-    return atoll(buffer);
-}
-
-float read_float(const char* message) {
-    char buffer[128] = {0};
-    printf("%s", message);
-    fgets(buffer, 127, stdin);
-    return atof(buffer);
-}
-
 vector read_nats_from_file(const char* filepath, nat* count) {
         
     FILE* file = fopen(filepath, "r");

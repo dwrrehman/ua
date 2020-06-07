@@ -8,20 +8,39 @@
 
 #include "help.h"
 
+#include "io.h"
+
 void print_description_for_command(const char* c) {
-    printf("no descriptions for commands have been added yet.\n");
+    if (0) {}
+    
+    else if (strings_equal(c, "quit")) printf("\n\tquit ::\n\n\t\t quit the UA terminal utility.\n");
+    else if (strings_equal(c, "clear")) printf("\n\tclear ::\n\n\t\t clear the screen.\n");
+    else if (strings_equal(c, "help")) printf("\n\thelp [command]::\n\n\t\t print the help menu, or descriptions for commands, if one is given.\n");
+    else if (strings_equal(c, "print")) printf("\n\tprint ... ::\n\n\t\t display helpful information about the internal state of the system. this includes parameter information, h grids, z values, etc.\n");
+    else if (strings_equal(c, "load")) printf("\n\tload ... ::\n\n\t\t load information from a file. either a parameter file or a hgrid file can be specified. \n");
+    else if (strings_equal(c, "calculate")) printf("\n\tcalculate ... ::\n\n\t\t calculate a mathematical CA-useful function, such as a reduce or unreduce.\n");
+    else if (strings_equal(c, "set")) printf("\n\tset ... ::\n\n\t\t set parameter values, or the h grid or z values by hand, as opposed to loading them from a file.\n");
+    else if (strings_equal(c, "search")) printf("\n\tsearch ::\n\n\t\t search over the unknown values in the current hgrid specified by a file.\n");
+    else if (strings_equal(c, "convert")) printf("\n\tconvert ::\n\n\t\t a quick and dirty utility used for translating boolean expressions into ANF, and into a prettier representation. not for general use, only useful for 2,2, really.\n");
+    else {
+        printf("error: no desciption for command \"%s\"\n", c);
+        return;
+    }
+    printf("\n\t note: type the command for more info on \"...\") \n\n");
 }
 
 void print_help_menu(char** input, nat count) {
     if (count == 1)
-        printf("available utilities: \n\n"
+        printf("available commands: \n\n"
                "\t quit\n"
+               "\t clear\n"
                "\t help\n"
                "\t print\n"
                "\t load\n"
+               "\t calculate\n"
                "\t set\n"
                "\t search\n"
-               "\t calculate\n"
+               "\t convert\n"               
                "\n");
-    else print_description_for_command(input[2]);
+    else print_description_for_command(input[1]);
 }

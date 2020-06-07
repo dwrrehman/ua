@@ -28,11 +28,7 @@ vector duplicate(vector v, nat count) {
 }
 
 void fill(nat value, vector v, nat count) {
-    memset(v, value, sizeof(element) * count);
-}
-
-void zero(vector v, nat c) {
-    fill(0, v, c);
+    for (nat i = 0; i < count; i++) v[i] = value;
 }
 
 void push_back(vector* v, nat* count, element e) {

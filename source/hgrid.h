@@ -12,19 +12,13 @@
 #include "structures.h"
 #include "vector.h"
 
+extern const nat unknown_dummy_value;
+
 /**
- maps a set of search(unknown) and
- known hgrid values into the h grid,
+ maps a set of search(unknown) values into the h grid,
  in the right positions.
-
- ie, the search ones are interpolated around the known ones,
- according to the known indicies
- (ie, the positions of where the known should be.)
-
-     note: assumes:     |search| + |known| = H.
- 
 */
-void map(vector hgrid, vector known, vector known_indicies, vector search, nat H);
+void map(vector h, vector search, vector indicies, nat H);
 
 void print_hgrid(vector h, struct parameters p);
 void print_m2n2_hgrid(vector h, struct parameters p);
