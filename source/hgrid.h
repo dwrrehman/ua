@@ -12,13 +12,13 @@
 #include "structures.h"
 #include "vector.h"
 
-extern const nat unknown_dummy_value;
-
 /**
  maps a set of search(unknown) values into the h grid,
  in the right positions.
 */
 void map(vector h, vector search, vector indicies, nat H);
+
+
 
 void print_hgrid(vector h, struct parameters p);
 void print_m2n2_hgrid(vector h, struct parameters p);

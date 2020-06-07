@@ -23,7 +23,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-const char* default_home = "/Users/deniylreimn/Documents/projects/ua/testing/";
+const char* default_home = "/Users/deniylreimn/Documents/projects/ua/";
 
 void load_file(char** input, nat count, struct context* context) {
     if (strings_equal(input[1], "param")) load_parameters_from_file(input[2], context);
@@ -42,7 +42,7 @@ void load_file(char** input, nat count, struct context* context) {
 void read_values_from_input(vector in, nat in_length, char** input, nat input_count, nat offset) {
     for (nat i = 0; i < in_length; i++) {
         if (i + offset < input_count) {
-            in[i] = atoll(input[i + offset ]);
+            in[i] = atoll(input[i + offset]);
         } else {
             printf("error: unexpected end of input\n");
             return;
@@ -51,23 +51,30 @@ void read_values_from_input(vector in, nat in_length, char** input, nat input_co
 }
 
 void calculate_function(char** input, nat count, struct context context) {
-    const nat H = context.parameters.H;
-    if (strings_equal(input[1], "z"))
-        printf("%llu\n", unreduce(context.hgrid, context.parameters.m, H));
+    const nat H = context.parameters.H, m = context.parameters.m;
     
-    else if (strings_equal(input[1], "reduce")) {
+    if (strings_equal(input[1], "z"))
+        printf("%llu\n", unreduce(context.hgrid, m, H));
+    
+    if (strings_equal(input[1], "hgrid")) {
+        reduce(context.hgrid, context.z, m, H);
+        print_vector_line_message("hgrid = ", context.hgrid, H);
+    
+    } else if (strings_equal(input[1], "reduce")) {
         element out[H];
-        reduce(out, atoll(input[2]), context.parameters.m, H);
-        print_vector_line_message("result = ", out, H);
+        reduce(out, atoll(input[2]), m, H);
+        print_vector_line(out, H);
         
     } else if (strings_equal(input[1], "unreduce")) {
         element in[H]; fill(0, in, H);
         read_values_from_input(in, H, input, count, 2);
-        printf("%llu\n", unreduce(in, context.parameters.m, H));
+        printf("%llu\n", unreduce(in, m, H));
+        
     } else {
         printf("error: calculate: unknown function: %s\n", input[1]);
         printf("available functions: \n"
                "\t  z\n"
+               "\t  hgrid\n"
                "\t  reduce <value>\n"
                "\t  unreduce <a> <b> <c> <d> <e> <f> <g> <h> ... \n"
                "\n");
@@ -112,78 +119,72 @@ void set(char** input, nat count, struct context* context) {
     }
 }
 
-nat find_unknowns(vector hg, vector I, nat H) {
-    nat count = 0;
-    for (nat i = 0; i < H; i++)
-        if (hg[i] == unknown_dummy_value) I[count++] = i;
-    return count;
-}
-
-struct score {
-    nat score;
-    nat z;
-};
-
-void lifetime_threshold_search(char** input, nat count, struct context* c) {
+void visualize(char** input, nat count, struct context context) {
     
-    const nat threshold = atoll(input[1]);
-    const nat
-        m = c->parameters.m,
-        H = c->parameters.H;
+    if (strings_equal(input[1], "hgrid"))
+        visualize_lifetime(context.hgrid, &context.parameters);
     
-    vector hg = duplicate(c->hgrid, H);
-    element indicies[H], search[H];
-    
-    const nat
-        u = find_unknowns(hg, indicies, H),
-        Z = powl(m, u);
-    
-    printf("searching over %llu unknowns...\n", u);
-
-    element definitions[Z], scores[Z];
-    nat z_value_count = 0;
-    
-    for (nat z = 0; z < Z; z++) {
-        printf("\r [  %llu  /  %llu  ]       ", z, Z);
-        reduce(search, z, m, u);
-        map(hg, search, indicies, H);
-        const nat score = measure_lifetime_for_hgrid(hg, &c->parameters);
-        const nat definition = unreduce(hg, m, H);
+    else if (strings_equal(input[1], "z")) {
+        element hgrid[context.parameters.H];
+        reduce(hgrid, context.z, context.parameters.m, context.parameters.H);
+        visualize_lifetime(hgrid, &context.parameters);
         
-        if (score >= threshold) {
-             printf("\n[z = %llu] ---> %llu timesteps\n\n",
-                    definition, score);
-            
-            definitions[z_value_count] = definition;
-            scores[z_value_count] = score;
-            z_value_count++;
-        }
+    } else if (strings_equal(input[1], "zset")) {
+        nat z_count = 0;
+        vector zset = read_nats_from_file(input[2], &z_count);
+        //        visualize_zset(zset, z_count, context.parameters);
+        printf("error: visualize: unimplemented.\n");
+        
+    } else {
+        printf("error: visualize: unknown mode: %s\n", input[1]);
+        printf("available modes: \n"
+               "\t hgrid \n"
+               "\t z \n"
+               "\t zset <filename> \n"
+               "\n");
     }
-    puts("\n");
-    printf("found %llu z values above threshold. (%f%%) \n", z_value_count, ((float)z_value_count / Z));
 }
 
-int main(void) {
-    struct context context = {default_home};
+void search(char** input, nat input_count, struct context* c) {
+    
+    if (strings_equal(input[1], "threshold")) {
+        threshold_search(atoll(input[2]), input[3], c);
+        
+    } else if (strings_equal(input[1], "other")) {
+        printf("unimplemented.\n");
+                
+    } else {
+        printf("error: search: unknown search type: %s\n", input[1]);
+        printf("available modes: \n"
+               "\t threshold <thr> <out_zset_filename> \n"
+               "\n");
+    }
+}
+
+int main() {
+    signal(SIGINT, handler);
+    struct context context = {};
+    context.home = default_home;
     bool quit = false;
     nat count = 0;
-    char* input[2048] = {0}, *line = 0;
+    char* input[2048] = {0};
     using_history();
     while (!quit) {
-        line = readline(" 〉");
+        char* line = readline(" 〉");
         add_history(line);
         split(line, input, &count);
         
         if (equals(*input, "", "")) {}
         else if (equals(*input, "quit", "q")) quit = true;
         else if (equals(*input, "clear", "l")) clear_screen();
-        else if (equals(*input, "help", "h")) print_help_menu(input, count);
+        else if (equals(*input, "help", "help")) print_help_menu(input, count);
         else if (equals(*input, "print", "p")) print_information(input, count, context);
         else if (equals(*input, "load", "load")) load_file(input, count, &context);
         else if (equals(*input, "calculate", "c")) calculate_function(input, count, context);
         else if (equals(*input, "set", "set")) set(input, count, &context);
-        else if (equals(*input, "threshold", "thr")) lifetime_threshold_search(input, count, &context);
-        else if (equals(*input, "convert", "v")) convert_expressions();
+        else if (equals(*input, "convert", "convert")) convert_expressions();
+        else if (equals(*input, "search", "s")) search(input, count, &context);
+        else if (equals(*input, "visualize", "v")) visualize(input, count, context);
         else {
             printf("error: %s: unknown command:\n", line);
             print_command(input, count);

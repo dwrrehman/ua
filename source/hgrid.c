@@ -11,13 +11,12 @@
 #include "structures.h"
 #include "vector.h"
 #include "io.h"
+#include "ca.h"
 
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-
-const nat unknown_dummy_value = 999;
 
 void map(vector h, vector search, vector indicies, nat H) {
     for (nat i = 0, s = 0; i < H; i++)
@@ -34,10 +33,6 @@ void print_hgrid(vector hgrid, struct parameters p) {
         printf(" ---> %llu\n", hgrid[h]);
     }
     printf("\n");
-}
-
-void graph(nat x, nat m) {
-    printf("\033[38;5;%um██\033[0m", (unsigned)((double) x / m * 24) + 232);
 }
 
 void print_n2_rule(vector h, nat f, enum display_type display_as, nat m) {
