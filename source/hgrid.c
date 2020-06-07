@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 void map(vector hgrid, vector known,
          vector known_indicies,
          vector search, nat H) {
@@ -29,6 +28,7 @@ void map(vector hgrid, vector known,
 }
 
 void print_hgrid(vector hgrid, struct parameters p) {
+    if (!hgrid) { puts("{null hgrid}"); return; }
     element ns[p.nc];
     printf("(%llu,%llu): \n", p.m, p.n);
     for (nat h = 0; h < p.H; h++) {
@@ -39,20 +39,52 @@ void print_hgrid(vector hgrid, struct parameters p) {
     printf("\n");
 }
 
+void graph(nat x, nat m) {
+    printf("\033[38;5;%um██\033[0m", (unsigned)((double) x / m * 24) + 232);
+}
+
+void print_n2_rule(vector h, nat f, enum display_type display_as, nat m) {
+    if (display_as == no_display) return;
+    else if (display_as == intuitive_display) {
+        puts("");
+        printf("    ");
+        graph(h[4], m);
+        puts("");
+        printf("  ");
+        graph(h[2],m);
+        graph(h[0],m);
+        graph(h[1],m);
+        printf("  -->  ");
+        graph(f, m);
+        puts("");
+        printf("    ");
+        graph(h[3], m);
+        puts("\n");
+        
+    } else if (display_as == numeric_display) {
+        printf("\n");
+        printf("     %llu\n", h[4]);
+        printf("   %llu %llu %llu --> %llu\n", h[2], h[0], h[1], f);
+        printf("     %llu \n", h[3]);
+        printf("\n");
+    }
+}
+
 void print_m2n2_hgrid(vector hgrid, struct parameters p) {
+    if (!hgrid) { puts("{null hgrid}"); return; }
     printf("2,2 hg printer: unimplemented\n");
     
     element ns[p.nc];
     printf("(%llu,%llu): \n", p.m, p.n);
     for (nat h = 0; h < p.H; h++) {
         reduce(ns, h, p.m, p.nc);
-        print_vector(ns, p.nc);
-        printf(" ---> %llu\n", hgrid[h]);
+        print_n2_rule(ns, hgrid[h], p.display_as, p.m);
     }
     printf("\n");
 }
 
 void print_m3n1_hgrid(vector hgrid, struct parameters p) {
+    if (!hgrid) { puts("{null hgrid}"); return; }
     printf("3,1 hg printer: unimplemented\n");
     
     element ns[p.nc];
@@ -64,8 +96,6 @@ void print_m3n1_hgrid(vector hgrid, struct parameters p) {
     }
     printf("\n");
 }
-
-
 
 void load_m2n2_hgrid(const char* filename, struct context* c) {
     
@@ -79,14 +109,25 @@ void load_m2n2_hgrid(const char* filename, struct context* c) {
         return;
     }
     
-    char line[2048] = {0};
+    char l[2048] = {0};
     nat line_count = 0;
     
-    while (fgets(line, sizeof line, file)) {
+    element g[c->parameters.nc];
+    nat f = 0;
+    
+    while (fgets(l, sizeof l, file)) {
         line_count++;
-        line[strlen(line) - 1] = '\0';
-        if (line[0] == '#') continue;
-            
+        l[strlen(l) - 1] = '\0';
+        if (*l == '#') continue;
+        else if (*l == '[') g[4] = l[6] - '0';
+        else if (*l == '|') { g[2] = l[5] - '0'; g[0] = l[6] - '0'; g[1] = l[7] - '0'; f = l[13] - '0'; }
+        else if (*l == ']') g[3] = l[6] - '0';        
+        else if (*l == '.') {
+            printf("just read rule: ");
+            print_vector(g, 5);
+            printf(" ----> %llu\n\n", f);
+        }
+        
     }
     fclose(file);
     printf("read %llu lines.\n", line_count);
@@ -94,28 +135,9 @@ void load_m2n2_hgrid(const char* filename, struct context* c) {
 
 
 void load_m3n1_hgrid(const char* filename, struct context* c) {
-    
-    printf("unimplemented!\n");
-    
-//    char path[2048] = {0};
-//    strcpy(path, c->home);
-//    strcat(path, filename);
-//
-//    FILE* file = fopen(path, "r");
-//    if (!file) {
-//        perror("fopen");
-//        return;
-//    }
-//
-//    char line[2048] = {0};
-//    nat line_count = 0;
-//
-//    while (fgets(line, sizeof line, file)) {
-//        line_count++;
-//        line[strlen(line) - 1] = '\0';
-//        if (line[0] == '#') continue;
-//
-//    }
-//    fclose(file);
-//    printf("read %llu lines.\n", line_count);
+    printf("load_m3n1_hgrid: unimplemented!\n");
+}
+
+void load_hgrid(const char* filename, struct context* c) {
+    printf("load_hgrid: unimplemented!\n");
 }

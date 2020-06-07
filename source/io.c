@@ -30,7 +30,7 @@ char get_character() {
 }
 
 bool strings_equal(const char* a, const char* b) {
-    return !strcmp(a, b);
+    return a && b && !strcmp(a, b);
 }
 
 bool equals(const char* a, const char* b, const char* abbrev) {

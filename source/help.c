@@ -19,6 +19,8 @@ void print_help_menu(char** input, nat count) {
                "\t help\n"
                "\t print\n"
                "\t load\n"
+               "\t set\n"
+               "\t search\n"
                "\t calculate\n"
                "\n");
     else print_description_for_command(input[2]);

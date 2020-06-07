@@ -24,6 +24,7 @@ void pretty_print_boolean_expr() {
     char buffer[4096] = {0};
     printf("expression: ");
     fgets(buffer, 4096, stdin);
+    printf("\n\n        ANF (");
     for (size_t i = 0; i < strlen(buffer); i++) {
         const char c = buffer[i];
         if (isalpha(c)) {
@@ -33,7 +34,7 @@ void pretty_print_boolean_expr() {
             if (i + 1 < strlen(buffer) && isalpha(buffer[i + 1])) printf("and ");
         } else if (c == '+') printf("or ");
     }
-    puts("");
+    puts(")\n\n");
 }
 
 
@@ -46,7 +47,7 @@ void pretty_print_boolean_expr() {
 */
 void pretty_print_wolfram_ANF() {
     char buffer[4096] = {0};
-    printf("ANF: ");
+    printf("wolfram: ");
     fgets(buffer, 4096, stdin);
     printf("\n\n\t\t");
     for (size_t i = 0; i < strlen(buffer); i++) {
@@ -62,6 +63,8 @@ void pretty_print_wolfram_ANF() {
 }
 
 void main5(void) {
-    pretty_print_boolean_expr();
-    pretty_print_wolfram_ANF();
+    while (1) {
+        pretty_print_boolean_expr();
+        pretty_print_wolfram_ANF();
+    }
 }

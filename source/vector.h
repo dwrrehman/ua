@@ -30,7 +30,13 @@ vector duplicate(vector v, nat count);
  fill the given vector entirely
  with one particular value.
 */
-void set(nat value, vector v, nat count);
+void fill(nat value, vector v, nat count);
+
+/**
+ zero out a vector, ie,
+ call fill with a value of 0.
+ */
+void zero(vector v, nat c);
 
 /**
  push a nat onto the back of a vector.

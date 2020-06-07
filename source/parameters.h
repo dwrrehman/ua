@@ -13,10 +13,15 @@
 
 bool is_mn_case(nat m, nat n, struct parameters p);
 
-void compute_derived_parameters(struct parameters* p);
+
 
 void print_parameters(struct parameters p);
+void verbose_print_parameters(struct parameters p);
 
-void load_parameters(const char* filename, struct context* p);
+void set_parameter(struct parameters* p, const char* name, const char* value);
+
+void compute_derived_parameters(struct parameters* p);
+
+void load_parameters_from_file(const char* filename, struct context* p);
 
 #endif /* parameters_h */

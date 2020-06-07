@@ -101,8 +101,7 @@ struct ruleset {
 
 struct context {
     const char* home;
-    struct parameters parameters;
-    struct ruleset ruleset;
+    struct parameters parameters;    
     vector hgrid;
     nat z;
 };

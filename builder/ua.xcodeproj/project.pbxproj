@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FD38600E248C4A7600B51168 /* converter.c in Sources */ = {isa = PBXBuildFile; fileRef = FD38600D248C4A7600B51168 /* converter.c */; };
 		FD50059C2487713900A8E383 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = FD50059B2487713900A8E383 /* main.c */; };
 		FD5005A02487730E00A8E383 /* vector.c in Sources */ = {isa = PBXBuildFile; fileRef = FD50059F2487730E00A8E383 /* vector.c */; };
 		FD5005A32487754400A8E383 /* io.c in Sources */ = {isa = PBXBuildFile; fileRef = FD5005A22487754400A8E383 /* io.c */; };
@@ -30,6 +31,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FD38600C248C4A7600B51168 /* converter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = converter.h; path = ../../source/converter.h; sourceTree = "<group>"; };
+		FD38600D248C4A7600B51168 /* converter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = converter.c; path = ../../source/converter.c; sourceTree = "<group>"; };
 		FD500591248770E800A8E383 /* ua */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ua; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD50059B2487713900A8E383 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../source/main.c; sourceTree = "<group>"; };
 		FD50059D2487714F00A8E383 /* structures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = structures.h; path = ../../source/structures.h; sourceTree = "<group>"; };
@@ -85,6 +88,8 @@
 				FD50059F2487730E00A8E383 /* vector.c */,
 				FD5005A12487754400A8E383 /* io.h */,
 				FD5005A22487754400A8E383 /* io.c */,
+				FD38600D248C4A7600B51168 /* converter.c */,
+				FD38600C248C4A7600B51168 /* converter.h */,
 				FD5005A42487788D00A8E383 /* hgrid.h */,
 				FD5005A52487788D00A8E383 /* hgrid.c */,
 				FD5005A7248778CF00A8E383 /* ca.h */,
@@ -156,6 +161,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FD38600E248C4A7600B51168 /* converter.c in Sources */,
 				FD5005A02487730E00A8E383 /* vector.c in Sources */,
 				FD5005AC24877A9500A8E383 /* parameters.c in Sources */,
 				FD5175262489FB2900E59A65 /* help.c in Sources */,
@@ -285,6 +291,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JTMD2SW5KN;
 				ENABLE_HARDENED_RUNTIME = YES;
+				OTHER_LDFLAGS = "-lreadline";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -295,6 +302,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JTMD2SW5KN;
 				ENABLE_HARDENED_RUNTIME = YES;
+				OTHER_LDFLAGS = "-lreadline";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

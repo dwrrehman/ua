@@ -29,7 +29,7 @@ void fill_neighbors(vector read_array, nat cell, vector neighbors, nat L, nat sp
     neighbors[0] = read_array[cell];
     nat y = 1;
     for (nat f = 1; f < L; f *= space) {
-        neighbors[y++] = read_array[cell + f * ((cell / f + 1) % space - cell / f % space)];
-        neighbors[y++] = read_array[cell + f * ((cell / f + space - 1) % space - cell / f % space)];
+        neighbors[y++] = read_array[cell + f * ((cell / f + 1) % space - cell / f % space)]; // R
+        neighbors[y++] = read_array[cell + f * ((cell / f + space - 1) % space - cell / f % space)]; // L
     }
 }

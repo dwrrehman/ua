@@ -27,8 +27,12 @@ vector duplicate(vector v, nat count) {
     return c;
 }
 
-void set(nat value, vector v, nat count) {
+void fill(nat value, vector v, nat count) {
     memset(v, value, sizeof(element) * count);
+}
+
+void zero(vector v, nat c) {
+    fill(0, v, c);
 }
 
 void push_back(vector* v, nat* count, element e) {

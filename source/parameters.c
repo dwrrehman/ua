@@ -67,7 +67,39 @@ void verbose_print_parameters(struct parameters p) {
     printf("\n");
 }
 
-void load_parameters(const char* filename, struct context* c) {
+void set_parameter(struct parameters* p, const char* name, const char* value) {
+    
+    const nat v = atoll(value);
+    
+    if (equals(name, "m", "m")) p->m = v;
+    else if (equals(name, "n", "n")) p->n = v;
+    else if (equals(name, "s", "s")) p->space = v;
+    else if (equals(name, "t", "t")) p->time = v;
+    else if (equals(name, "delay", "D")) p->delay = v;
+    
+    else if (strings_equal(name, "initial")) {
+        if (strings_equal(value, "empty")) p->initial_state = empty_state;
+        else if (strings_equal(value, "dot")) p->initial_state = dot_state;
+        else if (strings_equal(value, "random")) p->initial_state = random_state;
+        else if (strings_equal(value, "repeating")) p->initial_state = repeating_state;
+        else printf("error: set_param: initial: unknown initial state value: %s\n", value);
+        
+    } else if (strings_equal(name, "display")) {
+        if (strings_equal(value, "none")) p->display_as = no_display;
+        else if (strings_equal(value, "numeric")) p->display_as = numeric_display;
+        else if (strings_equal(value, "intuitive")) p->display_as = intuitive_display;
+        else printf("error: set_param: display: unknown display value: %s\n", value);
+        
+    } else if (strings_equal(name, "nd")) {
+        if (strings_equal(value, "false")) p->n_dimensional_display = false;
+        else if (strings_equal(value, "true")) p->n_dimensional_display = true;
+        else printf("error: set_param: nd: must be a boolean: true or false, got: %s\n", value);
+    }
+    
+    compute_derived_parameters(p);
+}
+
+void load_parameters_from_file(const char* filename, struct context* c) {
     
     char path[2048] = {0};
     strcpy(path, c->home);
@@ -88,32 +120,9 @@ void load_parameters(const char* filename, struct context* c) {
         if (line[0] == '#') continue;
         char name[128] = {0}, value[128] = {0};
         sscanf(line, "%s = %s", name, value);
-                 
-        if (strings_equal(name, "m")) c->parameters.m = atoll(value);
-        else if (strings_equal(name, "n")) c->parameters.n = atoll(value);
-        else if (strings_equal(name, "s")) c->parameters.space = atoll(value);
-        else if (strings_equal(name, "t")) c->parameters.time = atoll(value);
-        else if (strings_equal(name, "delay")) c->parameters.delay = atoll(value);
-        
-        else if (strings_equal(name, "initial")) {
-            if (strings_equal(value, "empty")) c->parameters.initial_state = empty_state;
-            else if (strings_equal(value, "dot")) c->parameters.initial_state = dot_state;
-            else if (strings_equal(value, "random")) c->parameters.initial_state = random_state;
-            else if (strings_equal(value, "repeating")) c->parameters.initial_state = repeating_state;
-            else printf("error: load: param: initial: line %llu: error in file \n", line_count);
-        }
-        else if (strings_equal(name, "display")) {
-            if (strings_equal(value, "none")) c->parameters.display_as = no_display;
-            else if (strings_equal(value, "numeric")) c->parameters.display_as = numeric_display;
-            else if (strings_equal(value, "intuitive")) c->parameters.display_as = intuitive_display;
-            else printf("error: load: param: display: line %llu: error in file \n", line_count);
-        }
-        else if (strings_equal(name, "nd")) {
-            if (strings_equal(value, "false")) c->parameters.n_dimensional_display = false;
-            else if (strings_equal(value, "true")) c->parameters.n_dimensional_display = true;
-            else printf("error: load: param: nd: line %llu: error in file \n", line_count);
-        }
+        set_parameter(&c->parameters, name, value);
     }
+    
     fclose(file);
     printf("read %llu lines.\n", line_count);
     compute_derived_parameters(&c->parameters);

@@ -32,7 +32,7 @@ void print_m3n1_hgrid(vector h, struct parameters p);
 
 void load_m2n2_hgrid(const char* filename, struct context* c);
 void load_m3n1_hgrid(const char* filename, struct context* c);
-        
+void load_hgrid(const char* filename, struct context* c);
 
 
 

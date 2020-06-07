@@ -1,0 +1,1 @@
+/Users/deniylreimn/Library/Developer/Xcode/DerivedData/ua-gwhvltwgbnofqqcteajkmebvdqpm/Build/Products/Debug/ua $@
