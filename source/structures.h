@@ -32,6 +32,7 @@ enum display_type {
     no_display,
     numeric_display,
     intuitive_display,
+    binary_display,
 };
 
 struct parameters {

@@ -1,0 +1,21 @@
+-------- manual for UA cli utility. -----------
+
+
+
+
+
+
+
+
+note:
+ 
+
+	its a good idea to always do a "set hgrid", after initializing new parameters, or changing them.
+
+	its very easy to accienily segfault by having the wrong H sized hgrid, and trying to print it.
+
+	
+		so be careful about that.
+
+
+

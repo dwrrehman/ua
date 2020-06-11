@@ -37,7 +37,20 @@ void print_hgrid(vector hgrid, struct parameters p) {
 
 void print_n2_rule(vector h, nat f, enum display_type display_as, nat m) {
     if (display_as == no_display) return;
-    else if (display_as == intuitive_display) {
+    else if (display_as == binary_display) {
+        puts(""); printf("    ");
+        fputs(h[4] ? "##" : "  ", stdout);
+        puts(""); printf("  ");
+        fputs(h[2] ? "##" : "  ", stdout);
+        fputs(h[0] ? "##" : "  ", stdout);
+        fputs(h[1] ? "##" : "  ", stdout);
+        printf("  -->  ");
+        if (f == unknown_dummy_value) printf("?"); else fputs(f ? "##" : "  ", stdout);
+        puts(""); printf("    ");
+        fputs(h[3] ? "##" : "  ", stdout);
+        puts("\n");
+           
+    } else if (display_as == intuitive_display) {
         puts(""); printf("    ");
         graph(h[4], m);
         puts(""); printf("  ");

@@ -56,7 +56,7 @@ void calculate_function(char** input, nat count, struct context context) {
     if (strings_equal(input[1], "z"))
         printf("%llu\n", unreduce(context.hgrid, m, H));
     
-    if (strings_equal(input[1], "hgrid")) {
+    else if (strings_equal(input[1], "hgrid")) {
         reduce(context.hgrid, context.z, m, H);
         print_vector_line_message("hgrid = ", context.hgrid, H);
     
@@ -86,7 +86,9 @@ void print_information(char** input, nat count, struct context context) {
     else if (strings_equal(input[1], "z")) printf("z = %llu\n", context.z);
     else if (strings_equal(input[1], "param")) print_parameters(context.parameters);
     else if (strings_equal(input[1], "parameters")) verbose_print_parameters(context.parameters);
+    else if (strings_equal(input[1], "vector-hgrid")) print_vector_line_message("hgrid = ", context.hgrid, context.parameters.H);
     else if (strings_equal(input[1], "hgrid")) {
+        ///TODO: make these print functions generic over m. havbe a 1d and a 2d printing functions.
         if (is_mn_case(2, 2, context.parameters)) print_m2n2_hgrid(context.hgrid, context.parameters);
         else if (is_mn_case(3, 1, context.parameters)) print_m3n1_hgrid(context.hgrid, context.parameters);
         else print_hgrid(context.hgrid, context.parameters);
@@ -98,6 +100,7 @@ void print_information(char** input, nat count, struct context context) {
                "\t param\n"
                "\t parameters\n"
                "\t hgrid\n"
+               "\t vector-hgrid\n"
                "\n");
     }
 }
@@ -119,28 +122,34 @@ void set(char** input, nat count, struct context* context) {
     }
 }
 
-void visualize(char** input, nat count, struct context context) {
+void visualize(char** input, nat count, struct context* context) {
     
     if (strings_equal(input[1], "hgrid"))
-        visualize_lifetime(context.hgrid, &context.parameters);
+        visualize_lifetime(0, 0, 0, context->hgrid, context->parameters);
     
     else if (strings_equal(input[1], "z")) {
-        element hgrid[context.parameters.H];
-        reduce(hgrid, context.z, context.parameters.m, context.parameters.H);
-        visualize_lifetime(hgrid, &context.parameters);
+        element hgrid[context->parameters.H];
+        reduce(hgrid, context->z, context->parameters.m, context->parameters.H);
+        visualize_lifetime(0, 0, 0, hgrid, context->parameters);
+                    
+    } else if (strings_equal(input[1], "set")) {
+                        
+        if (count != 6) {
+            printf("error: visualize set: incorrect number of arguments! expected: \n"
+                   "\t set <begin_index> <zset_file> <saved_file> <blacklist_file> \n");
+            return;
+        }
         
-    } else if (strings_equal(input[1], "zset")) {
         nat z_count = 0;
-        vector zset = read_nats_from_file(input[2], &z_count);
-        //        visualize_zset(zset, z_count, context.parameters);
-        printf("error: visualize: unimplemented.\n");
-        
+        vector zset = read_nats_from_file(input[3], &z_count);
+        visualize_set(atoll(input[2]), zset, z_count, input[4], input[5], context);
+       
     } else {
         printf("error: visualize: unknown mode: %s\n", input[1]);
         printf("available modes: \n"
                "\t hgrid \n"
                "\t z \n"
-               "\t zset <filename> \n"
+               "\t set <begin_index> <zset_file> <saved_file> <blacklist_file> \n"
                "\n");
     }
 }
@@ -161,15 +170,11 @@ void search(char** input, nat input_count, struct context* c) {
     }
 }
 
-int main() {
-    signal(SIGINT, handler);
-    struct context context = {};
-    context.home = default_home;
+void user_interface(struct context *context) {
     bool quit = false;
-    nat count = 0;
-    char* input[2048] = {0};
-    using_history();
     while (!quit) {
+        nat count = 0;
+        char* input[2048] = {0};
         char* line = readline(" 〉");
         add_history(line);
         split(line, input, &count);
@@ -178,16 +183,28 @@ int main() {
         else if (equals(*input, "quit", "q")) quit = true;
         else if (equals(*input, "clear", "l")) clear_screen();
         else if (equals(*input, "help", "help")) print_help_menu(input, count);
-        else if (equals(*input, "print", "p")) print_information(input, count, context);
-        else if (equals(*input, "load", "load")) load_file(input, count, &context);
-        else if (equals(*input, "calculate", "c")) calculate_function(input, count, context);
-        else if (equals(*input, "set", "set")) set(input, count, &context);
+        else if (equals(*input, "print", "p")) print_information(input, count, *context);
+        else if (equals(*input, "load", "load")) load_file(input, count, context);
+        else if (equals(*input, "calculate", "c")) calculate_function(input, count, *context);
+        else if (equals(*input, "set", "set")) set(input, count, context);
         else if (equals(*input, "convert", "convert")) convert_expressions();
-        else if (equals(*input, "search", "s")) search(input, count, &context);
+        else if (equals(*input, "search", "s")) search(input, count, context);
         else if (equals(*input, "visualize", "v")) visualize(input, count, context);
         else {
             printf("error: %s: unknown command:\n", line);
             print_command(input, count);
         }
     }
+}
+
+int main() {
+    struct context context = {
+        .home = default_home,
+        .parameters = {0},
+        .hgrid = NULL,
+        .z = 0
+    };
+    using_history();
+    signal(SIGINT, handler);
+    user_interface(&context);
 }

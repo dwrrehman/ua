@@ -1198,3 +1198,80 @@ int main(int argc, const char * argv[]) {
  }
 
  */
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ we need:
+ 
+ 
+    the ability to move ono the next z value.
+    ie, quit, a viz, early.
+ 
+ 
+    but, not for our zset. that will be much different
+                    based around the idea of "pages" or CA lifetime.
+ 
+            the idea is that we can request another page of lfietime, by saying "d"
+ 
+        
+ 
+        and we can flag an automaton, by saying "f"
+ 
+ 
+                we iterate over all flagged autmatons, at the end...?
+ 
+                    for another batch of flagging??? idk...
+ 
+ 
+ 
+ 
+                and we also write the flagged autkmatons to a seperate file.
+ 
+ 
+        
+            
+ 
+    
+        and so, basically, we dont need to
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+            okay, we need the idea of paging, where we basically, do a clear screen every X number of timesteps,
+ 
+            where X is actually determined based on the screen size. very important.
+ 
+            we need to do a ioctl call every single timestep?
+ 
+ 
+ 
+ 
+        nope, just on pause.
+ 
+ 
+            also we dont need a   whole loop, for pause.  thats dumb.
+ 
+ 
+ 
+ 
+ 
+ 
+ */

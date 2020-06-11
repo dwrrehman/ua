@@ -36,6 +36,7 @@ const char* stringify_display_type(enum display_type d) {
     if (d == no_display) return "no display";
     if (d == numeric_display) return "numeric";
     if (d == intuitive_display) return "intuitive";
+    if (d == binary_display) return "binary";
     return "unknown display";
 }
 
@@ -68,6 +69,7 @@ void verbose_print_parameters(struct parameters p) {
 }
 
 void set_parameter(struct parameters* p, const char* name, const char* value) {
+    if (!name || !value) return;
     
     const nat v = atoll(value);
     
@@ -88,6 +90,7 @@ void set_parameter(struct parameters* p, const char* name, const char* value) {
         if (strings_equal(value, "none")) p->display_as = no_display;
         else if (strings_equal(value, "numeric")) p->display_as = numeric_display;
         else if (strings_equal(value, "intuitive")) p->display_as = intuitive_display;
+        else if (strings_equal(value, "binary")) p->display_as = binary_display;
         else printf("error: set_param: display: unknown display value: %s\n", value);
         
     } else if (strings_equal(name, "nd")) {
