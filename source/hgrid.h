@@ -15,6 +15,20 @@
 /**
  maps a set of search(unknown) values into the h grid,
  in the right positions.
+ 
+ indicies are a vector of indicies
+ (ie, rule numbers, with the dimensional neighborhood ordering)
+ of the h grid cases, which have "unknown" for their output.
+ 
+ h is the output. search is the input vector, which is the current try
+ (ie, an unreduce of z in Z)
+ for rules which are unknown.
+ this function simply maps the vlaues in that
+ search array to the correct hgrid positions,
+ by going through each index in indicies,
+ and putting it where it needs to go.
+ 
+ super wordy explanation.
 */
 void map(vector h, vector search, vector indicies, nat H);
 

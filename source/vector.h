@@ -72,6 +72,15 @@ bool vectors_equal(vector a, nat al, vector b, nat bl);
  representation of (with length number
  of "bits"(but radixary).) as a number, and return the
  number the vector represents.
+ 
+ eg,
+ 
+ with radix = 2, length = 3, vector in = [1,1,1]
+ the output would be 7.
+ and similarly,
+ 
+ with radix = 4, length = 2, vector in = [3,2]
+ the outptu would be 3 + 8 = 11. the output would be 11.
 */
 nat unreduce(vector in, nat radix, nat length);
 
@@ -81,6 +90,15 @@ nat unreduce(vector in, nat radix, nat length);
  with given radix, with a total of length "bits" (but radixary).
  
  fills the vector with these radix-ary nats.
+ 
+ eg,
+ 
+ with radix = 2, length = 3, s = 7
+ the output vector would be [1,1,1].
+ and similarly,
+ 
+ with radix = 4, length = 2, s = 11,
+ the outptu would be the vector [3,2].
 */
 void reduce(vector out, nat s, nat radix, nat length);
 

@@ -12,7 +12,7 @@ typedef unsigned long long nat;
 #define L(x) for (nat _ = 0; _ < x; _++)
 
 int main(int argc, const char** argv) {
-    if (argc <= 6) { printf("new: 20: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
+    if (argc <= 6) { printf("new: 21: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
     const nat
         m = atoll(argv[1]),
         n = atoll(argv[2]),
@@ -40,11 +40,11 @@ int main(int argc, const char** argv) {
             }
             const nat U = p[1], D = q[1], R = p[0], L = q[0], C = g[s];
             
-            const nat c1 = C + L * (1 + C + D + R * D + C * D + R * D * C);
+//            const nat c1 = C + L * (1 + C + D + R * D + C * D + R * D * C);
             
             f[s] =
              (
-              c1 + U * (c1 * (D + 1) + 1)
+              R*L + R*C + R*D + L*C + L*D + C*D + C*U + R*L*C + R*L*D + R*C*D + R*C*U + L*C*D + L*C*U + R*L*C*D + R*L*C*U + L*C*D*U + R + L + C + D
              ) % m;
             
             if (s % S == 0 && nd) printf("\n");

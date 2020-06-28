@@ -28,6 +28,34 @@ void print_description_for_command(const char* c) {
         return;
     }
     printf("\n\t note: type the command for more info on \"...\") \n\n");
+    
+    if (strings_equal(c, "visualize")) {
+        printf("list of commands for the v set utility:\n"
+               
+               "    d - scrolls down on the lifetime.\n"
+               "    s - scrolls up on the lifetime.\n"
+               
+               "    f - go to next z value in the z set.\n"
+               "    e - go to the previous z value in the z set.\n"
+               
+               "    w - save the current z value to the savelist file.\n"
+               "    a - save the current z value to the blacklist file.\n"
+                              
+               "    j - move the begin of the visualized slice backwards.\n"
+               "    i - move the begin of the visualized slice forwards.\n"
+               
+               "    o - move the end of the visualized slice backwards.\n"
+               "    ; - move the end of the visualized slice forwards.\n"
+               
+               "    g - break out into command mode, to execute commands in the command line terminal.\n"
+               "        use the quit command, as usual, to end up back in the visualizer, right where you left off.\n"
+               
+               "    Q - end the visualization of the set. you will be prompted to save the save list and black list.\n"
+               "    \n"
+               );
+                
+    }
+    
 }
 
 void print_help_menu(char** input, nat count) {

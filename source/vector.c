@@ -78,10 +78,10 @@ bool vectors_equal
     return true;
 }
 
-nat unreduce(vector v, nat radix, nat length) {
-    nat s = 0, p = 1;
-    for (nat i = 0; i < length; i++, p *= radix)
-        s += p * v[i];
+nat unreduce(vector in, nat radix, nat length) {
+    nat s = 0;
+    for (nat i = 0, p = 1; i < length; i++, p *= radix)
+        s += p * in[i];
     return s;
 }
 

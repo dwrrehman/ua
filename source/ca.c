@@ -94,10 +94,10 @@ nat measure_lifetime(vector h, struct parameters* p) {
         for (nat s = 0; s < S; s++) {
             fill_neighbors(g, s, ns, S, space);
             f[s] = h[unreduce(ns, m, nc)];
-            const nat r = unreduce(g, m, S);
-            if (!contains(states, count, r))
-                states[count++] = r;
         }
+        const nat r = unreduce(g, m, S);
+        if (contains(states, count, r)) return count;
+        else states[count++] = r;
     }
     return count;
 }
@@ -109,11 +109,14 @@ void visualize_lifetime(nat begin, nat begin_slice, nat end_slice, vector h, str
     initialize(f, m, n, S, space, p.initial_state);
     
     for (nat t = 0; t < begin + time && mode != stopped; t++) {
-        if (p.n_dimensional_display) clear_screen();
         
+        if (p.n_dimensional_display) clear_screen();
         memcpy(g, f, sizeof g);
         
         for (nat s = 0; s < S; s++) {
+            
+            if (!(s % space) && p.n_dimensional_display) puts("");
+            
             fill_neighbors(g, s, ns, S, space);
             f[s] = h[unreduce(ns, m, nc)];
 
@@ -125,12 +128,8 @@ void visualize_lifetime(nat begin, nat begin_slice, nat end_slice, vector h, str
                 if (p.display_as == intuitive_display) graph(g[s], m);
                 else if (p.display_as == numeric_display) printf(" %llu", g[s]);
                 else if (p.display_as == binary_display) fputs(g[s] ? "##" : "  ", stdout);
-                
-                if (s % space == 0 && s && p.n_dimensional_display) puts("");
             }
-            
         }
-        
         if (t >= begin) {
             puts("");
             if (p.delay) fflush(stdout);
@@ -192,7 +191,7 @@ void visualize_set(nat begin, vector set, nat count,
                    const char* savelist_out_filename,
                    const char* blacklist_out_filename,
                    struct context* context) {
-        
+    
     nat offset = 0, at = begin, begin_slice = 0, end_slice = 1;
     element blacklist[count], savelist[count], hgrid[context->parameters.H];
     fill(0, blacklist, count); fill(0, savelist, count);
