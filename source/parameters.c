@@ -80,22 +80,23 @@ void set_parameter(struct parameters* p, const char* name, const char* value) {
     else if (equals(name, "delay", "D")) p->delay = v;
     
     else if (strings_equal(name, "initial")) {
-        if (strings_equal(value, "empty")) p->initial_state = empty_state;
-        else if (strings_equal(value, "dot")) p->initial_state = dot_state;
+        if (equals(value, "empty", "e")) p->initial_state = empty_state;
+        else if (equals(value, "dot", "d")) p->initial_state = dot_state;
         else if (strings_equal(value, "random")) p->initial_state = random_state;
         else if (strings_equal(value, "repeating")) p->initial_state = repeating_state;
+        else if (equals(value, "centerdot", "c")) p->initial_state = center_dot_state;
         else printf("error: set_param: initial: unknown initial state value: %s\n", value);
         
     } else if (strings_equal(name, "display")) {
         if (strings_equal(value, "none")) p->display_as = no_display;
-        else if (strings_equal(value, "numeric")) p->display_as = numeric_display;
-        else if (strings_equal(value, "intuitive")) p->display_as = intuitive_display;
-        else if (strings_equal(value, "binary")) p->display_as = binary_display;
+        else if (equals(value, "numeric", "n")) p->display_as = numeric_display;
+        else if (equals(value, "intuitive", "i")) p->display_as = intuitive_display;
+        else if (equals(value, "binary", "b")) p->display_as = binary_display;
         else printf("error: set_param: display: unknown display value: %s\n", value);
         
     } else if (strings_equal(name, "nd")) {
-        if (strings_equal(value, "false")) p->n_dimensional_display = false;
-        else if (strings_equal(value, "true")) p->n_dimensional_display = true;
+        if (equals(value, "false", "0")) p->n_dimensional_display = false;
+        else if (equals(value, "true", "1")) p->n_dimensional_display = true;
         else printf("error: set_param: nd: must be a boolean: true or false, got: %s\n", value);
     }
     

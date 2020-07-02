@@ -134,22 +134,29 @@ void visualize(char** input, nat count, struct context* context) {
                     
     } else if (strings_equal(input[1], "set")) {
                         
-        if (count != 6) {
+        if (count != 8) {
             printf("error: visualize set: incorrect number of arguments! expected: \n"
-                   "\t set <begin_index> <zset_file> <saved_file> <blacklist_file> \n");
+                   "\t set <begin_index> <begin_slice> <end_slice> <zset_file> <saved_file> <blacklist_file> \n");
             return;
         }
         
         nat z_count = 0;
-        vector zset = read_nats_from_file(input[3], &z_count);
-        visualize_set(atoll(input[2]), zset, z_count, input[4], input[5], context);
+        vector zset = read_nats_from_file(input[5], &z_count);
+        visualize_set(
+                      atoll(input[2]),
+                      atoll(input[3]),
+                      atoll(input[4]),
+                      
+                      zset, z_count,
+                      input[6], input[7],
+                      context);
        
     } else {
         printf("error: visualize: unknown mode: %s\n", input[1]);
         printf("available modes: \n"
                "\t hgrid \n"
                "\t z \n"
-               "\t set <begin_index> <zset_file> <saved_file> <blacklist_file> \n"
+               "\t set <begin_index> <begin_slice> <end_slice> <zset_file> <saved_file> <blacklist_file> \n"
                "\n");
     }
 }
@@ -170,6 +177,34 @@ void search(char** input, nat input_count, struct context* c) {
     }
 }
 
+void filter_utility(char** input, nat input_count) {
+    
+    if (strings_equal(input[1], "blacklist")) {
+        printf("filter: filtering z values not in blacklist...\n");
+        nat z_count = 0, bl_count = 0, count = 0;
+        vector
+            z_values = read_nats_from_file(input[2], &z_count),
+            blacklist = read_nats_from_file(input[3], &bl_count),
+            out = create(z_count);
+        
+        for (nat i = 0; i < z_count; i++) {
+            bool is_blacklisted = false;
+            for (nat j = 0; j < bl_count; j++) if (z_values[i] == blacklist[j]) is_blacklisted = true;
+            if (!is_blacklisted) out[count++] = z_values[i];
+        }
+        
+        printf("filter: writing %llu filtered z values...\n", count);
+        write_nats_to_file(input[4], out, count);
+        destroy(&out);
+        
+    } else {
+        printf("error: filter: unknown filter mode: %s\n", input[1]);
+        printf("available modes: \n"
+               "\t blacklist <zset> <blacklist> <outfile> \n"
+               "\n");
+    }
+}
+
 void user_interface(struct context *context) {
     bool quit = false;
     while (!quit) {
@@ -182,13 +217,14 @@ void user_interface(struct context *context) {
         if (equals(*input, "", "")) {}
         else if (equals(*input, "quit", "q")) quit = true;
         else if (equals(*input, "clear", "l")) clear_screen();
-        else if (equals(*input, "help", "help")) print_help_menu(input, count);
+        else if (equals(*input, "help", "h")) print_help_menu(input, count);
         else if (equals(*input, "print", "p")) print_information(input, count, *context);
-        else if (equals(*input, "load", "load")) load_file(input, count, context);
+        else if (equals(*input, "load", "l")) load_file(input, count, context);
         else if (equals(*input, "calculate", "c")) calculate_function(input, count, *context);
-        else if (equals(*input, "set", "set")) set(input, count, context);
-        else if (equals(*input, "convert", "convert")) convert_expressions();
-        else if (equals(*input, "search", "s")) search(input, count, context);
+        else if (equals(*input, "set", "s")) set(input, count, context);
+        else if (equals(*input, "convert", "k")) convert_expressions();
+        else if (equals(*input, "filter", "f")) filter_utility(input, count);
+        else if (equals(*input, "search", "S")) search(input, count, context);
         else if (equals(*input, "visualize", "v")) visualize(input, count, context);
         else {
             printf("error: %s: unknown command:\n", line);
@@ -207,4 +243,5 @@ int main() {
     using_history();
     signal(SIGINT, handler);
     user_interface(&context);
+    clear_history();
 }

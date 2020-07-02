@@ -25,7 +25,8 @@ enum initial_state_type {
     empty_state,
     dot_state,
     repeating_state,
-    random_state
+    random_state,
+    center_dot_state,
 };
 
 enum display_type {
@@ -79,7 +80,7 @@ struct rule {
     /// and, is always ordered according to the
     /// "Natrual Ordering", which is:
     ///
-    ///          C  R L  U D  F B  A P     etc...
+    ///          C  L R  U D  F B  A P     etc...
     ///
     nat* neighborhood;
     

@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 void map(vector h, vector search, vector indicies, nat H) {
     for (nat i = 0, s = 0; i < H; i++)
@@ -41,9 +42,9 @@ void print_n2_rule(vector h, nat f, enum display_type display_as, nat m) {
         puts(""); printf("    ");
         fputs(h[4] ? "##" : "  ", stdout);
         puts(""); printf("  ");
-        fputs(h[2] ? "##" : "  ", stdout);
-        fputs(h[0] ? "##" : "  ", stdout);
         fputs(h[1] ? "##" : "  ", stdout);
+        fputs(h[0] ? "##" : "  ", stdout);
+        fputs(h[2] ? "##" : "  ", stdout);
         printf("  -->  ");
         if (f == unknown_dummy_value) printf("?"); else fputs(f ? "##" : "  ", stdout);
         puts(""); printf("    ");
@@ -54,7 +55,7 @@ void print_n2_rule(vector h, nat f, enum display_type display_as, nat m) {
         puts(""); printf("    ");
         graph(h[4], m);
         puts(""); printf("  ");
-        graph(h[2],m); graph(h[0],m); graph(h[1],m);
+        graph(h[1],m); graph(h[0],m); graph(h[2],m);
         printf("  -->  ");
         if (f == unknown_dummy_value) printf("?"); else graph(f, m);
         puts(""); printf("    ");
@@ -64,7 +65,7 @@ void print_n2_rule(vector h, nat f, enum display_type display_as, nat m) {
     } else if (display_as == numeric_display) {
         printf("\n");
         printf("     %llu\n", h[4]);
-        printf("   %llu %llu %llu --> %llu\n", h[2], h[0], h[1], f);
+        printf("   %llu %llu %llu --> %llu\n", h[1], h[0], h[2], f);
         printf("     %llu \n", h[3]);
         printf("\n");
     }
@@ -133,11 +134,28 @@ void load_m2n2_hgrid(const char* filename, struct context* c) {
     while (fgets(l, sizeof l, file)) {
         line_count++;
         l[strlen(l) - 1] = '\0';
+        
         if (*l == '#') continue;
-        else if (*l == '[') g[4] = l[6] - '0';
-        else if (*l == '|') { g[2] = l[5] - '0'; g[0] = l[6] - '0'; g[1] = l[7] - '0'; f = l[13] - '0'; }
-        else if (*l == ']') g[3] = l[6] - '0';
-        else if (*l == '.') {
+        
+        else if (*l == '[') {
+            assert(isdigit(l[6]) && "formatting incorrect in hgrid parse!");
+            g[4] = l[6] - '0';
+        } else if (*l == '|') {
+            assert(isdigit(l[5]) &&
+                   isdigit(l[6]) &&
+                   isdigit(l[7]) &&
+                   isdigit(l[13]) && "formatting incorrect in hgrid parse!");
+            
+            g[1] = l[5] - '0';
+            g[0] = l[6] - '0';
+            g[2] = l[7] - '0';
+            f = l[13] - '0';
+        }
+        else if (*l == ']') {
+            assert(isdigit(l[6]) && "formatting incorrect in hgrid parse!");
+            g[3] = l[6] - '0';
+            
+        } else if (*l == '.') {
             c->hgrid[unreduce(g, c->parameters.m, c->parameters.nc)] = f;
             fill(0, g, c->parameters.nc);
         }

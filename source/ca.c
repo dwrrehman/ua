@@ -24,12 +24,19 @@ const nat unknown_dummy_value = 999;
 char mode = stopped;
 
 void handler(int e) {
-    printf("interrupt(q/r/X) ");
+    printf("modes: \n"
+           "\t X = kill process\n"
+           "\t q = stop command\n"
+           "\t r = resume/running\n"
+           "\t s = step thru\n"
+           );
+    printf("interrupt(q/r/X/s) ");
     fflush(stdout);
     const int c = get_character();
     if (c == 'X') exit(0);
     else if (c == 'q') mode = stopped;
     else if (c == 'r') mode = running;
+    else if (c == 's') mode = stepping;
     printf("\n");
 }
 
@@ -44,17 +51,14 @@ nat find_unknown_indicies(vector hg, vector I, nat H) {
     return count;
 }
 
-
 void initialize(vector g, nat m, nat n, nat L, nat s,
                 enum initial_state_type initial) {
     fill(0, g, L);
     if (initial == empty_state) return;
-    else if (initial == dot_state) {
-        
-        if (n == 2) g[L / 2 + s / 2] = 1;
-        else ++*g;
-    }
-    else if (initial == repeating_state) {
+    else if (initial == dot_state) ++*g;
+    else if (initial == center_dot_state) {
+        if (n == 2) g[L / 2 + s / 2] = 1; else ++*g;
+    } else if (initial == repeating_state) {
         for (nat i = 0; i < L; i++) g[i] = i % 2 == 0;
     } else if (initial == random_state) {
         for (nat i = 0; i < L; i++) g[i] = rand() % m;
@@ -65,17 +69,19 @@ void fill_neighbors(vector read_array, nat cell,
                     vector neighbors, nat L, nat space) {
     neighbors[0] = read_array[cell];
     nat y = 1;
-    for (nat f = 1; f < L; f *= space) {
+    for (nat i = 1; i < L; i *= space) {
+       
         neighbors[y++] = read_array
-        [cell + f * ((cell / f + 1) % space
-                     - cell / f % space)]; // R
+        [cell + i * ((cell / i + space - 1) % space
+                     - cell / i % space)]; // P (L,U,F,...)
+        
         neighbors[y++] = read_array
-        [cell + f * ((cell / f + space - 1) % space
-                     - cell / f % space)]; // L
+               [cell + i * ((cell / i + 1) % space
+                            - cell / i % space)]; // Q (R,D,B,...)
     }
 }
 
-nat measure_lifetime(vector h, struct parameters* p) {
+nat measure_lifetime(vector hgrid, struct parameters* p) {
     
     const nat
         S = p->L,
@@ -93,7 +99,7 @@ nat measure_lifetime(vector h, struct parameters* p) {
         memcpy(g, f, sizeof g);
         for (nat s = 0; s < S; s++) {
             fill_neighbors(g, s, ns, S, space);
-            f[s] = h[unreduce(ns, m, nc)];
+            f[s] = hgrid[unreduce(ns, m, nc)];
         }
         const nat r = unreduce(g, m, S);
         if (contains(states, count, r)) return count;
@@ -109,6 +115,8 @@ void visualize_lifetime(nat begin, nat begin_slice, nat end_slice, vector h, str
     initialize(f, m, n, S, space, p.initial_state);
     
     for (nat t = 0; t < begin + time && mode != stopped; t++) {
+        
+        if (mode == stepping) get_character();
         
         if (p.n_dimensional_display) clear_screen();
         memcpy(g, f, sizeof g);
@@ -140,7 +148,8 @@ void visualize_lifetime(nat begin, nat begin_slice, nat end_slice, vector h, str
 
 void save_values(const char* out_filename, vector values, nat count) {
     while (true) {
-        printf("would you like to write the %llu values to the file \"%s\"? (yes/no) ", count, out_filename);
+        printf("would you like to write the %llu values to the file \"%s\"? (yes/no) ",
+               count, out_filename);
         fflush(stdout);
         
         char response[128] = {0};
@@ -171,6 +180,9 @@ void threshold_search(nat threshold, const char* outfile, struct context* c) {
     
     printf("searching over %llu unknowns...\n", u);
     for (nat z = 0; z < Z && mode != stopped; z++) {
+        
+        if (mode == stepping) get_character();
+        
         printf("\r [  %llu  /  %llu  ]       ", z, Z);
         reduce(search, z, m, u);
         map(hg, search, indicies, H);
@@ -187,32 +199,44 @@ void threshold_search(nat threshold, const char* outfile, struct context* c) {
     save_values(outfile, definitions, count);
 }
 
-void visualize_set(nat begin, vector set, nat count,
-                   const char* savelist_out_filename,
-                   const char* blacklist_out_filename,
-                   struct context* context) {
+void visualize_set
+(nat begin,
+ 
+ nat user_begin_slice,
+ nat user_end_slice,
+ 
+ vector set, nat count,
+ 
+ const char* savelist_out_filename,
+ const char* blacklist_out_filename,
+ 
+ struct context* context) {
     
-    nat offset = 0, at = begin, begin_slice = 0, end_slice = 1;
+    bool should_display = true;
+    nat offset = 0, at = begin, begin_slice = user_begin_slice, end_slice = user_end_slice;
     element blacklist[count], savelist[count], hgrid[context->parameters.H];
-    fill(0, blacklist, count); fill(0, savelist, count);
+    
+    fill(0, blacklist, count);
+    fill(0, savelist, count);
     
     while (true) {
         clear_screen();
         
         if (at < count) {
             nat z = set[at];
-            reduce(hgrid, z, context->parameters.m, context->parameters.H);
-            nat d = context->parameters.delay; context->parameters.delay = 0;
-            visualize_lifetime(offset, begin_slice, end_slice, hgrid, context->parameters);
-            context->parameters.delay = d;
+            
+            if (should_display) {
+                reduce(hgrid, z, context->parameters.m, context->parameters.H);
+                nat d = context->parameters.delay; context->parameters.delay = 0;
+                visualize_lifetime(offset, begin_slice, end_slice, hgrid, context->parameters);
+                context->parameters.delay = d;
+            }
             
             printf("\n  [z = %llu]  %llu  /  %llu  ", z, at, count);
             if (blacklist[at]) printf("(blacklisted) ");
             if (savelist[at]) printf("(saved) ");
             printf(":> ");
         } else printf("\n  [END]  %llu  /  %llu  :> ", at, count);
-        
-
         
         fflush(stdout);
         const int c = get_character();
@@ -225,6 +249,9 @@ void visualize_set(nat begin, vector set, nat count,
         
         else if (c == 'w') savelist[at] = !savelist[at];
         else if (c == 'a') blacklist[at] = !blacklist[at];
+        else if (c == 't') should_display = !should_display;
+        
+        else if (c == 'p') printf(" offset: %llu, begin: %llu, end: %llu \n", offset, begin_slice, end_slice);
         
         else if (c == 'j' && begin_slice) begin_slice--;
         else if (c == 'i' && begin_slice + 1 < end_slice) begin_slice++;

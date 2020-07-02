@@ -5,12 +5,12 @@
 m = 2
 n = 2
 
-s = 100
-t = 280
+s = 10
+t = 20
 
 initial = dot
-display = binary
-nd = false
+display = intuitive
+nd = true
 
 delay = 100000
 

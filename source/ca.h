@@ -11,7 +11,7 @@
 
 #include "structures.h"
 
-enum mode_type {stopped, running, paused};
+enum mode_type {stopped, running, paused, stepping};
 
 extern const nat unknown_dummy_value;
 extern char mode;
@@ -33,9 +33,15 @@ void visualize_lifetime(nat begin, nat begin_slice, nat end_slice, vector h, str
 
 extern void user_interface(struct context *context);
 
-void visualize_set(nat begin, vector set, nat count,
+void visualize_set(nat begin,
+                   
+                   nat user_begin_slice,
+                   nat user_end_slice,
+                   
+                   vector set, nat count,
+                   
                    const char* savelist_out_filename,
                    const char* blacklist_out_filename,
+                   
                    struct context* context);
-
 #endif /* ca_h */
