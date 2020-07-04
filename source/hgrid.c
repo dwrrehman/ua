@@ -40,7 +40,7 @@ void print_n2_rule(vector h, nat f, enum display_type display_as, nat m) {
     if (display_as == no_display) return;
     else if (display_as == binary_display) {
         puts(""); printf("    ");
-        fputs(h[4] ? "##" : "  ", stdout);
+        fputs(h[3] ? "##" : "  ", stdout);
         puts(""); printf("  ");
         fputs(h[1] ? "##" : "  ", stdout);
         fputs(h[0] ? "##" : "  ", stdout);
@@ -48,25 +48,25 @@ void print_n2_rule(vector h, nat f, enum display_type display_as, nat m) {
         printf("  -->  ");
         if (f == unknown_dummy_value) printf("?"); else fputs(f ? "##" : "  ", stdout);
         puts(""); printf("    ");
-        fputs(h[3] ? "##" : "  ", stdout);
+        fputs(h[4] ? "##" : "  ", stdout);
         puts("\n");
-           
+        
     } else if (display_as == intuitive_display) {
         puts(""); printf("    ");
-        graph(h[4], m);
+        graph(h[3], m);
         puts(""); printf("  ");
         graph(h[1],m); graph(h[0],m); graph(h[2],m);
         printf("  -->  ");
         if (f == unknown_dummy_value) printf("?"); else graph(f, m);
         puts(""); printf("    ");
-        graph(h[3], m);
+        graph(h[4], m);
         puts("\n");
         
     } else if (display_as == numeric_display) {
         printf("\n");
-        printf("     %llu\n", h[4]);
+        printf("     %llu\n", h[3]);
         printf("   %llu %llu %llu --> %llu\n", h[1], h[0], h[2], f);
-        printf("     %llu \n", h[3]);
+        printf("     %llu \n", h[4]);
         printf("\n");
     }
 }

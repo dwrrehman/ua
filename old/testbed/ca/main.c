@@ -9,7 +9,7 @@
 typedef unsigned long long nat;
 
 #define dot     f[s] = (f[s] + 1) % m
-#define L(x) for (nat _ = 0; _ < x; _++)
+#define LRS(x) for (nat _ = 0; _ < x; _++)
 
 int main(int argc, const char** argv) {
     if (argc <= 6) { printf("new: 21: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
@@ -21,7 +21,7 @@ int main(int argc, const char** argv) {
         delay = atoll(argv[5]),
         nd = atoll(argv[6]);
     
-    nat f[S_n], g[S_n], p[n], q[n];
+    nat f[S_n], g[S_n], p[n], q[n]; // including C_0, n + n + 1 = 2n+1 total neighbors
     
     memset(f, 0, sizeof f);
     if (n == 2) f[S_n / 2 + S / 2] = 1;
@@ -38,13 +38,16 @@ int main(int argc, const char** argv) {
                 p[y] = g[s + k * ((s / k + S - 1) % S - s / k % S)];
                 y++;
             }
-            const nat U = p[1], D = q[1], R = p[0], L = q[0], C = g[s];
             
-//            const nat c1 = C + L * (1 + C + D + R * D + C * D + R * D * C);
+            nat U = p[1], D = q[1], R = q[0], L = p[0], C = g[s];
+        
+            nat first = L * (C * (R + 1) + 1);
+            nat composite = R * ((C + first) * (U + 1) + 1);
+            nat second = U * ((C + first + composite) * (D + 1) + 1);
             
             f[s] =
              (
-              R*L + R*C + R*D + L*C + L*D + C*D + C*U + R*L*C + R*L*D + R*C*D + R*C*U + L*C*D + L*C*U + R*L*C*D + R*L*C*U + L*C*D*U + R + L + C + D
+              C + first + composite + second
              ) % m;
             
             if (s % S == 0 && nd) printf("\n");
@@ -54,5 +57,6 @@ int main(int argc, const char** argv) {
         printf("\n");
         fflush(stdout);
         usleep((unsigned) delay);
+        if (!delay) getchar();
     }
 }

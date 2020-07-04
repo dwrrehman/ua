@@ -66,16 +66,16 @@ void initialize(vector g, nat m, nat n, nat L, nat s,
 }
 
 void fill_neighbors(vector read_array, nat cell,
-                    vector neighbors, nat L, nat space) {
+                    vector neighbors, nat S, nat space) {
     neighbors[0] = read_array[cell];
-    nat y = 1;
-    for (nat i = 1; i < L; i *= space) {
+    nat count = 1;
+    for (nat i = 1; i < S; i *= space) {
        
-        neighbors[y++] = read_array
+        neighbors[count++] = read_array
         [cell + i * ((cell / i + space - 1) % space
                      - cell / i % space)]; // P (L,U,F,...)
         
-        neighbors[y++] = read_array
+        neighbors[count++] = read_array
                [cell + i * ((cell / i + 1) % space
                             - cell / i % space)]; // Q (R,D,B,...)
     }
@@ -188,14 +188,14 @@ void threshold_search(nat threshold, const char* outfile, struct context* c) {
         map(hg, search, indicies, H);
         nat score = measure_lifetime(hg, &c->parameters), definition = unreduce(hg, m, H);
         if (score >= threshold) {
-             printf("\n[z = %llu] ---> %llu timesteps\n\n", definition, score);
+            printf("\n[z = %llu] ---> %llu timesteps\n\n", definition, score);
             definitions[count] = definition;
             scores[count++] = score;
         }
     }
     
     puts("\n");
-    printf("found %llu z values above threshold. (%f%%) \n", count, ((float)count / Z));
+    printf("found %llu z values >= threshold. (%f%%) \n", count, ((float)count / Z));
     save_values(outfile, definitions, count);
 }
 

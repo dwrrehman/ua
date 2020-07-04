@@ -5,8 +5,8 @@
 m = 2
 n = 2
 
-s = 10
-t = 20
+s = 30
+t = 1000
 
 initial = dot
 display = intuitive
