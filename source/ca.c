@@ -44,6 +44,20 @@ void graph(nat x, nat m) {
     printf("\033[38;5;%um██\033[0m", (unsigned)((double) x / m * 24) + 232);
 }
 
+void generate_ppm(const char* filename, const int* g, const int m, const int s, const int L) {
+    FILE* file = fopen(filename, "wb");
+    fprintf(file, "P6\n%d %d\n255\n", s, s);
+    for (int cell = 0; cell < L; cell++) {
+        double x = (double) g[cell] / (double) m;
+        unsigned char r = x * 255, g = x * 255, b = x * 255;
+        fwrite(&r, 1, 1, file);
+        fwrite(&g, 1, 1, file);
+        fwrite(&b, 1, 1, file);
+    }
+    fclose(file);
+}
+
+
 nat find_unknown_indicies(vector hg, vector I, nat H) {
     nat count = 0;
     for (nat i = 0; i < H; i++)
