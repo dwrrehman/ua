@@ -139,7 +139,7 @@ void load_m2n2_hgrid(const char* filename, struct context* c) {
         
         else if (*l == '[') {
             assert(isdigit(l[6]) && "formatting incorrect in hgrid parse!");
-            g[4] = l[6] - '0';
+            g[3] = l[6] - '0';
         } else if (*l == '|') {
             assert(isdigit(l[5]) &&
                    isdigit(l[6]) &&
@@ -153,10 +153,13 @@ void load_m2n2_hgrid(const char* filename, struct context* c) {
         }
         else if (*l == ']') {
             assert(isdigit(l[6]) && "formatting incorrect in hgrid parse!");
-            g[3] = l[6] - '0';
+            g[4] = l[6] - '0';
             
         } else if (*l == '.') {
             c->hgrid[unreduce(g, c->parameters.m, c->parameters.nc)] = f;
+            fill(0, g, c->parameters.nc);
+        } else if (*l == '?') {
+            c->hgrid[unreduce(g, c->parameters.m, c->parameters.nc)] = unknown_dummy_value;
             fill(0, g, c->parameters.nc);
         }
     }

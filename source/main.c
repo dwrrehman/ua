@@ -26,23 +26,23 @@
 const char* default_home = "/Users/deniylreimn/Documents/projects/ua/";
 
 void load_file(char** input, nat count, struct context* context) {
-    if (strings_equal(input[1], "param")) load_parameters_from_file(input[2], context);
-    else if (strings_equal(input[1], "hgrid")) {
-        if (strings_equal(input[2],"2,2")) load_m2n2_hgrid(input[3], context);
-        else if (strings_equal(input[2],"3,1")) load_m3n1_hgrid(input[3], context);
-        else if (strings_equal(input[2],"generic")) load_hgrid(input[3], context);
+    if (equals(input[1], "param", "p")) load_parameters_from_file(input[2], context);
+    else if (equals(input[1], "hgrid", "h")) {
+        if (equals(input[2],"2,2", "2")) load_m2n2_hgrid(input[3], context);
+        else if (equals(input[2],"3,1", "3")) load_m3n1_hgrid(input[3], context);
+        else if (equals(input[2], "generic", "g")) load_hgrid(input[3], context);
     } else {
         printf("error: load: unknown load type: %s\n", input[1]);
         printf("available file types: \n"
-               "\t param <filename> \n"
-               "\t hgrid <2,2/3,1/generic> <filename> \n\n");
+               "\t param(p) <filename> \n"
+               "\t hgrid(h) <2,2(2)/3,1(3)/generic(g)> <filename> \n\n");
     }
 }
 
-void read_values_from_input(vector in, nat in_length, char** input, nat input_count, nat offset) {
+void read_values_from_input(vector out, nat in_length, char** input, nat input_count, nat offset) {
     for (nat i = 0; i < in_length; i++) {
         if (i + offset < input_count) {
-            in[i] = atoll(input[i + offset]);
+            out[i] = atoll(input[i + offset]);
         } else {
             printf("error: unexpected end of input\n");
             return;
@@ -84,10 +84,10 @@ void calculate_function(char** input, nat count, struct context context) {
 void print_information(char** input, nat count, struct context context) {
     if (strings_equal(input[1], "home")) puts(context.home);
     else if (strings_equal(input[1], "z")) printf("z = %llu\n", context.z);
-    else if (strings_equal(input[1], "param")) print_parameters(context.parameters);
+    else if (equals(input[1], "param", "p")) print_parameters(context.parameters);
     else if (strings_equal(input[1], "parameters")) verbose_print_parameters(context.parameters);
     else if (strings_equal(input[1], "vector-hgrid")) print_vector_line_message("hgrid = ", context.hgrid, context.parameters.H);
-    else if (strings_equal(input[1], "hgrid")) {
+    else if (equals(input[1], "hgrid", "h")) {
         ///TODO: make these print functions generic over m. havbe a 1d and a 2d printing functions.
         if (is_mn_case(2, 2, context.parameters)) print_m2n2_hgrid(context.hgrid, context.parameters);
         else if (is_mn_case(3, 1, context.parameters)) print_m3n1_hgrid(context.hgrid, context.parameters);
@@ -97,9 +97,9 @@ void print_information(char** input, nat count, struct context context) {
         printf("available information: \n"
                "\t home\n"
                "\t z\n"
-               "\t param\n"
+               "\t param(p)\n"
                "\t parameters\n"
-               "\t hgrid\n"
+               "\t hgrid(h)\n"
                "\t vector-hgrid\n"
                "\n");
     }
@@ -115,9 +115,15 @@ void set(char** input, nat count, struct context* context) {
     } else {
         printf("error: set: unknown target: %s\n", input[1]);
         printf("available information: \n"
-               "\t param <name> <value>\n"
+               "\t param <name> <value> \n"
+               "\t\t available parameters: \n"
+               "\t\t\t nats: m n s t delay(D) initial\n"
+               "\t\t\t enum: initial={empty(e), dot(d), random, repeating, centerdot(c)}\n"
+               "\t\t\t enum: display={none, numeric(n), intuitive(i), binary(b)}\n"
+               "\t\t\t bool: nd={true(1), false(0)}\n"
                "\t z <zvalue> ...\n"
                "\t hgrid <a> <b> <c> ...\n"
+               "\t\t note: \"set hgrid\" simply writes all zeros to a new hgrid.\n"
                "\n");
     }
 }
@@ -133,7 +139,7 @@ void visualize(char** input, nat count, struct context* context) {
         visualize_lifetime(0, 0, 0, hgrid, context->parameters);
                     
     } else if (strings_equal(input[1], "set")) {
-                        
+        
         if (count != 8) {
             printf("error: visualize set: incorrect number of arguments! expected: \n"
                    "\t set <begin_index> <begin_slice> <end_slice> <zset_file> <saved_file> <blacklist_file> \n");
@@ -142,14 +148,7 @@ void visualize(char** input, nat count, struct context* context) {
         
         nat z_count = 0;
         vector zset = read_nats_from_file(input[5], &z_count);
-        visualize_set(
-                      atoll(input[2]),
-                      atoll(input[3]),
-                      atoll(input[4]),
-                      
-                      zset, z_count,
-                      input[6], input[7],
-                      context);
+        visualize_set(atoll(input[2]), atoll(input[3]), atoll(input[4]), zset, z_count, input[6], input[7], context);
        
     } else {
         printf("error: visualize: unknown mode: %s\n", input[1]);
@@ -205,6 +204,43 @@ void filter_utility(char** input, nat input_count) {
     }
 }
 
+void generate_utility(char** input, nat input_count, struct context* context) {
+    
+    if (strings_equal(input[1], "lifetimes")) {
+        
+        const char* destination_dir = input[5];
+        nat z_count = 0, begin = atoll(input[3]), end = atoll(input[4]);
+        vector z_values = read_nats_from_file(input[2], &z_count);
+                        
+        printf("generate: generating %llu lifetimes .ppm's...\n", z_count);
+                        
+        element hgrid[context->parameters.H];
+        mode = running;
+        
+        for (nat i = 0; i < z_count && mode != stopped; i++) {
+            nat z = z_values[i];
+            printf("\r [  %llu  /  %llu  ] : %llu                  ", i, z_count, z);
+            fflush(stdout);
+            
+            char filename[4096] = {0}, stringified_z_value[4096] = {0};
+            sprintf(stringified_z_value, "z_%llu.ppm", z);
+            strcpy(filename, destination_dir);
+            strcat(filename, "/");
+            strcat(filename, stringified_z_value);
+            
+            reduce(hgrid, z, context->parameters.m, context->parameters.H);
+            generate_lifetime_image(filename, 0, begin, end, hgrid, context->parameters);
+        }
+        printf("generate: generated all images.\n");
+        
+    } else {
+        printf("error: generate: unknown generation mode: %s\n", input[1]);
+        printf("available modes: \n"
+               "\t lifetimes <zvalues_file> <begin_slice> <end_slice> <destination_dir>\n"
+               "\t\t note: use begin=0 and end=0, for the whole lifetime.\n");
+    }
+}
+
 void user_interface(struct context *context) {
     bool quit = false;
     while (!quit) {
@@ -219,13 +255,14 @@ void user_interface(struct context *context) {
         else if (equals(*input, "clear", "l")) clear_screen();
         else if (equals(*input, "help", "h")) print_help_menu(input, count);
         else if (equals(*input, "print", "p")) print_information(input, count, *context);
-        else if (equals(*input, "load", "l")) load_file(input, count, context);
+        else if (equals(*input, "load", "d")) load_file(input, count, context);
         else if (equals(*input, "calculate", "c")) calculate_function(input, count, *context);
         else if (equals(*input, "set", "s")) set(input, count, context);
         else if (equals(*input, "convert", "k")) convert_expressions();
         else if (equals(*input, "filter", "f")) filter_utility(input, count);
-        else if (equals(*input, "search", "S")) search(input, count, context);
+        else if (equals(*input, "search", "t")) search(input, count, context);
         else if (equals(*input, "visualize", "v")) visualize(input, count, context);
+        else if (equals(*input, "generate", "g")) generate_utility(input, count, context);
         else {
             printf("error: %s: unknown command:\n", line);
             print_command(input, count);

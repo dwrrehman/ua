@@ -12,7 +12,7 @@ typedef unsigned long long nat;
 #define LRS(x) for (nat _ = 0; _ < x; _++)
 
 int main(int argc, const char** argv) {
-    if (argc <= 6) { printf("new: 21: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
+    if (argc <= 6) { printf("new: 22: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
     const nat
         m = atoll(argv[1]),
         n = atoll(argv[2]),
@@ -39,16 +39,15 @@ int main(int argc, const char** argv) {
                 y++;
             }
             
-            nat U = p[1], D = q[1], R = q[0], L = p[0], C = g[s];
-        
-            nat first = L * (C * (R + 1) + 1);
-            nat composite = R * ((C + first) * (U + 1) + 1);
-            nat second = U * ((C + first + composite) * (D + 1) + 1);
+            for (nat i = 0; i < n; i++) {
+                for (nat j = 0; j < i; j++) {
+                    f[s] += q[j] * (f[s] + 1);
+                }
+                f[s] += p[i] * (f[s] * (q[i] + 1) + 1);
+            }
+            f[s] %= m;
             
-            f[s] =
-             (
-              C + first + composite + second
-             ) % m;
+            // what we have to work with:           pi      pj     qi
             
             if (s % S == 0 && nd) printf("\n");
             printf("\033[38;5;%um██\033[0m", (unsigned)((double) g[s] / m * 24) + 232);
@@ -60,3 +59,16 @@ int main(int argc, const char** argv) {
         if (!delay) getchar();
     }
 }
+
+    
+//            nat U = p[1], D = q[1], R = q[0], L = p[0], C = g[s];
+//
+//            nat first = L * (C * (R + 1) + 1);
+//            nat composite = R * ((C + first) * (U + 1) + 1);
+//            nat second = U * ((C + first + composite) * (D + 1) + 1);
+//
+//            f[s] =
+//             (
+//              C + first + composite + second
+//             ) % m;
+        

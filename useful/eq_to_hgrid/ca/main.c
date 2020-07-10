@@ -40,13 +40,18 @@ int main(int argc, const char** argv) {
     for (int k = 0; k < H; k++) {
         
         reduce(h, k, m, nc);
-        const nat U = h[4], D = h[3], R = h[2], L = h[1], C = h[0];
+        const nat p[] = {h[1], h[3]};
+        const nat q[] = {h[2], h[4]};
+        nat f = h[0];
         
-        nat first = L * (C * (R + 1) + 1);
-        nat composite = R * ((C + first) * (U + 1) + 1);
-        nat second = U * ((C + first + composite) * (D + 1) + 1);
-        
-        const nat f = (C + first + composite + second) % m;
+        for (nat i = 0; i < n; i++) {
+            for (nat j = 0; j < i; j++) {
+                f += q[j] * (f + 1);
+            }
+            f += p[i] * (f * (q[i] + 1) + 1);
+        }
+        f %= m;
+                
         
         printf("\n");
         printf("     %llu\n", h[3]);
@@ -72,3 +77,12 @@ int main(int argc, const char** argv) {
     
     printf("printed %llu rules.\n", H);
 }
+
+
+
+//        nat first = L * (C * (R + 1) + 1);
+//        nat composite = R * ((C + first) * (U + 1) + 1);
+//        nat second = U * ((C + first + composite) * (D + 1) + 1);
+//
+//        const nat f = (C + first + composite + second) % m;
+//

@@ -24,6 +24,7 @@ void print_description_for_command(const char* c) {
     else if (strings_equal(c, "filter")) printf("\n\tfilter ...::\n\n\t\t a utility for filtering z values, using a list of blacklisted values, or a savelist. only bl is implemented so far.\n");
     else if (strings_equal(c, "search")) printf("\n\t search ::\n\n\t\t search over the unknown values in the current hgrid specified by a file. if thr mode, then record which z values have alifetime length above a given threshold. there will be other modes too.\n");
     else if (strings_equal(c, "visualize")) printf("\n\tvisualize ... ::\n\n\t\t a utility for visualizing cellular automata lifetimes. you can viz a single z value, or an hgrid, or a set of z values from a file.\n");
+    else if (strings_equal(c, "generate")) printf("\n\tgenerate ... ::\n\n\t\t a utility for generating ppm images of cellular automata lifetimes, gotten from a file of z values. if begin and end are 0, the whole lifetime is written. its always based on s and t. works best if s^n == t.\n");
     else {
         printf("error: no desciption for command \"%s\"\n", c);
         return;
@@ -57,9 +58,7 @@ void print_description_for_command(const char* c) {
                "    Q - end the visualization of the set. you will be prompted to save the save list and black list.\n"
                "    \n"
                );
-                
     }
-    
 }
 
 void print_help_menu(char** input, nat count) {
@@ -74,8 +73,9 @@ void print_help_menu(char** input, nat count) {
                "\t set(s)\n"
                "\t convert(k)\n"
                "\t filter(f)\n"
-               "\t search(S)\n"
+               "\t search(t)\n"
                "\t visualize(v)\n"
+               "\t generate(g)\n"
                "\n");
     else print_description_for_command(input[1]);
 }

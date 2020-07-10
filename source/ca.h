@@ -44,4 +44,17 @@ void visualize_set(nat begin,
                    const char* blacklist_out_filename,
                    
                    struct context* context);
+
+
+void generate_lifetime_image(const char* filename,
+                             nat begin,
+                             
+                             nat begin_slice,
+                             nat end_slice,
+                             
+                             vector h,
+                             struct parameters p);
+
+
+
 #endif /* ca_h */

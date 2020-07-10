@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <errno.h>
 
 const nat unknown_dummy_value = 999;
 
@@ -158,6 +159,46 @@ void visualize_lifetime(nat begin, nat begin_slice, nat end_slice, vector h, str
             usleep((unsigned) p.delay);
         }
     }
+}
+
+void generate_lifetime_image(const char* filename, nat begin, nat begin_slice, nat end_slice, vector h, struct parameters p) {
+            
+    const nat S = p.L, m = p.m, n = p.n, nc = p.nc, space = p.space, time = p.time;
+    
+    FILE* file = fopen(filename, "wb");
+    
+    if (!file) {
+        fprintf(stderr, "error: %s: could not open file for writing: %s\n", filename, strerror(errno));
+        return;
+    }
+    
+    fprintf(file, "P6\n%llu %llu\n255\n", S, time);
+    
+    mode = running;
+    element ns[nc], f[S], g[S];
+    initialize(f, m, n, S, space, p.initial_state);
+    
+    for (nat t = 0; t < begin + time && mode != stopped; t++) {
+        memcpy(g, f, sizeof g);
+        for (nat s = 0; s < S; s++) {
+            
+            fill_neighbors(g, s, ns, S, space);
+            f[s] = h[unreduce(ns, m, nc)];
+            
+            const nat slice = s / space;
+            if (t >= begin &&
+                ((begin_slice <= slice && slice < end_slice)
+                 || (!end_slice && !begin_slice))
+                ) {
+                double x = (double) g[s] / (double) m;
+                unsigned char r = x * 255, g = x * 255, b = x * 255;
+                fwrite(&r, 1, 1, file);
+                fwrite(&g, 1, 1, file);
+                fwrite(&b, 1, 1, file);
+            }
+        }
+    }
+    fclose(file);
 }
 
 void save_values(const char* out_filename, vector values, nat count) {
