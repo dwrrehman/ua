@@ -29,7 +29,7 @@ void print_description_for_command(const char* c) {
         printf("error: no desciption for command \"%s\"\n", c);
         return;
     }
-    printf("\n\t note: type the command for more info on the \"...\") \n\n");
+    print_menu_for(c);
     
     if (strings_equal(c, "visualize")) {
         printf("list of commands for the v set utility:\n"
@@ -60,6 +60,77 @@ void print_description_for_command(const char* c) {
                );
     }
 }
+
+
+
+void print_menu_for(const char* command) {
+    
+    if (strings_equal(command, "load"))
+        printf("available file types: \n"
+               "\t param(p) <filename> \n"
+               "\t hgrid(h) <filename> \n\n");
+    
+    
+    if (strings_equal(command, "calculate"))
+        printf("available functions: \n"
+               "\t  z\n"
+               "\t  hgrid\n"
+               "\t  reduce <value>\n"
+               "\t  unreduce <a> <b> <c> <d> <e> <f> <g> <h> ... \n"
+               "\n");
+    
+    if (strings_equal(command, "print"))
+        printf("available information: \n"
+               "\t home\n"
+               "\t z\n"
+               "\t param(p)\n"
+               "\t parameters\n"
+               "\t hgrid(h)\n"
+               "\t hgrid(h) generic\n"
+               "\t vector-hgrid\n"
+               "\n");
+    
+    if (strings_equal(command, "set"))
+        printf("available information: \n"
+               "\t param <name> <value> \n"
+               "\t\t available parameters: \n"
+               "\t\t\t nats: m n s t delay(D) initial\n"
+               "\t\t\t enum: initial={empty(e), dot(d), random, repeating, centerdot(c)}\n"
+               "\t\t\t enum: display={none, numeric(n), intuitive(i), binary(b)}\n"
+               "\t\t\t bool: nd={true(1), false(0)}\n"
+               "\t z <zvalue> \n"
+               "\t hgrid <a> <b> <c> ...\n"
+               "\t\t note: \"set hgrid\" simply writes all zeros to a new hgrid.\n"
+               "\n");
+        
+    
+    if (strings_equal(command, "visualize"))
+        printf("available modes: \n"
+               "\t hgrid \n"
+               "\t z \n"
+               "\t set <begin_index> <begin_slice> <end_slice> <zset_file> <saved_file> <blacklist_file> \n"
+               "\n");
+    
+    
+    if (strings_equal(command, "search"))
+        printf("available modes: \n"
+               "\t threshold <thr> <out_zset_filename> \n"
+               "\n");
+    
+    
+    if (strings_equal(command, "filter"))
+        printf("available modes: \n"
+               "\t blacklist <zset> <blacklist> <outfile> \n"
+               "\n");
+    
+    
+    if (strings_equal(command, "generate"))
+        printf("available modes: \n"
+               "\t lifetimes <zvalues_file> <begin_slice> <end_slice> <destination_dir>\n"
+               "\t\t note: use begin=0 and end=0, for the whole lifetime.\n");
+    
+}
+
 
 void print_help_menu(char** input, nat count) {
     if (count == 1)

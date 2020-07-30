@@ -14,6 +14,10 @@
 #include <stdio.h>
 
 void print_description_for_command(const char* c);
+
 void print_help_menu(char** input, nat count);
+
+void print_menu_for(const char* command);
+
 
 #endif /* help_h */

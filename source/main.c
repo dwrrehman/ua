@@ -26,16 +26,17 @@
 const char* default_home = "/Users/deniylreimn/Documents/projects/ua/";
 
 void load_file(char** input, nat count, struct context* context) {
+    
+    const nat n = context->parameters.n;
+    
     if (equals(input[1], "param", "p")) load_parameters_from_file(input[2], context);
     else if (equals(input[1], "hgrid", "h")) {
-        if (equals(input[2],"2,5", "2,5")) load_m2n5_hgrid(input[3], context);
-        else if (equals(input[2],"3,3", "3,3")) load_m3n3_hgrid(input[3], context);
-        else if (equals(input[2], "generic", "g")) load_hgrid(input[3], context);
+        if (n == 3) load_n3_hgrid(input[2], context);
+        if (n == 4) load_n4_hgrid(input[2], context);
+        if (n == 5) load_n5_hgrid(input[2], context);
     } else {
         printf("error: load: unknown load type: %s\n", input[1]);
-        printf("available file types: \n"
-               "\t param(p) <filename> \n"
-               "\t hgrid(h) <2,2(2)/3,1(3)/generic(g)> <filename> \n\n");
+        print_menu_for("load");
     }
 }
 
@@ -73,12 +74,7 @@ void calculate_function(char** input, nat count, struct context context) {
         
     } else {
         printf("error: calculate: unknown function: %s\n", input[1]);
-        printf("available functions: \n"
-               "\t  z\n"
-               "\t  hgrid\n"
-               "\t  reduce <value>\n"
-               "\t  unreduce <a> <b> <c> <d> <e> <f> <g> <h> ... \n"
-               "\n");
+        print_menu_for("calculate");
     }
 }
 
@@ -92,20 +88,11 @@ void print_information(char** input, nat count, struct context context) {
     else if (strings_equal(input[1], "parameters")) verbose_print_parameters(context.parameters);
     else if (strings_equal(input[1], "vector-hgrid")) print_vector_line_message("hgrid = ", context.hgrid, H);
         
-    else if (equals(input[1], "hgrid", "h")) { ///TODO: make these print functions generic over m. havbe a 1d and a 2d printing functions.
-        if (equals(input[2],"2,5", "2,5")) print_m2n5_hgrid(context.hgrid, context.parameters);
-        else if (equals(input[2],"3,3", "3,3")) print_m3n3_hgrid(context.hgrid, context.parameters);
-        else if (equals(input[2], "generic", "g")) print_hgrid(context.hgrid, context.parameters);
-    } else {
+    else if (equals(input[1], "hgrid", "h"))
+        print_hgrid(context.hgrid, context.parameters, strings_equal(input[2], "generic"));
+    else {
         printf("error: print: unknown info spec: %s\n", input[1]);
-        printf("available information: \n"
-               "\t home\n"
-               "\t z\n"
-               "\t param(p)\n"
-               "\t parameters\n"
-               "\t hgrid(h)\n"
-               "\t vector-hgrid\n"
-               "\n");
+        print_menu_for("print");
     }
 }
 
@@ -121,17 +108,7 @@ void set(char** input, nat count, struct context* context) {
         read_values_from_input(context->hgrid, H, input, count, 2);
     } else {
         printf("error: set: unknown target: %s\n", input[1]);
-        printf("available information: \n"
-               "\t param <name> <value> \n"
-               "\t\t available parameters: \n"
-               "\t\t\t nats: m n s t delay(D) initial\n"
-               "\t\t\t enum: initial={empty(e), dot(d), random, repeating, centerdot(c)}\n"
-               "\t\t\t enum: display={none, numeric(n), intuitive(i), binary(b)}\n"
-               "\t\t\t bool: nd={true(1), false(0)}\n"
-               "\t z <zvalue> \n"
-               "\t hgrid <a> <b> <c> ...\n"
-               "\t\t note: \"set hgrid\" simply writes all zeros to a new hgrid.\n"
-               "\n");
+        print_menu_for("set");
     }
 }
 
@@ -150,8 +127,8 @@ void visualize(char** input, nat count, struct context* context) {
     } else if (strings_equal(input[1], "set")) {
         
         if (count != 8) {
-            printf("error: visualize set: incorrect number of arguments! expected: \n"
-                   "\t set <begin_index> <begin_slice> <end_slice> <zset_file> <saved_file> <blacklist_file> \n");
+            printf("error: visualize set: incorrect number of arguments!\n");
+            print_menu_for("visualize");
             return;
         }
         
@@ -161,11 +138,7 @@ void visualize(char** input, nat count, struct context* context) {
        
     } else {
         printf("error: visualize: unknown mode: %s\n", input[1]);
-        printf("available modes: \n"
-               "\t hgrid \n"
-               "\t z \n"
-               "\t set <begin_index> <begin_slice> <end_slice> <zset_file> <saved_file> <blacklist_file> \n"
-               "\n");
+        print_menu_for("visualize");
     }
 }
 
@@ -179,79 +152,25 @@ void search(char** input, nat input_count, struct context* c) {
                 
     } else {
         printf("error: search: unknown search type: %s\n", input[1]);
-        printf("available modes: \n"
-               "\t threshold <thr> <out_zset_filename> \n"
-               "\n");
+        print_menu_for("search");
     }
 }
 
 void filter_utility(char** input, nat input_count) {
-    
-    if (strings_equal(input[1], "blacklist")) {
-        printf("filter: filtering z values not in blacklist...\n");
-        nat z_count = 0, bl_count = 0, count = 0;
-        vector
-            z_values = read_nats_from_file(input[2], &z_count),
-            blacklist = read_nats_from_file(input[3], &bl_count),
-            out = create(z_count);
-        
-        for (nat i = 0; i < z_count; i++) {
-            bool is_blacklisted = false;
-            for (nat j = 0; j < bl_count; j++) if (z_values[i] == blacklist[j]) is_blacklisted = true;
-            if (!is_blacklisted) out[count++] = z_values[i];
-        }
-        
-        printf("filter: writing %llu filtered z values...\n", count);
-        write_nats_to_file(input[4], out, count);
-        destroy(&out);
-        
-    } else {
+    if (strings_equal(input[1], "blacklist"))
+        filter_using_blacklist(input);
+    else {
         printf("error: filter: unknown filter mode: %s\n", input[1]);
-        printf("available modes: \n"
-               "\t blacklist <zset> <blacklist> <outfile> \n"
-               "\n");
+        print_menu_for("filter");
     }
-}
-
-static void generate_lifetime_images(char** input, struct context* context) {
-    
-    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
-    
-    const char* destination_dir = input[5];
-    nat z_count = 0, begin = atoll(input[3]), end = atoll(input[4]);
-    vector z_values = read_nats_from_file(input[2], &z_count);
-    
-    printf("generate: generating %llu lifetimes .ppm's...\n", z_count);
-    
-    element hgrid[H];
-    
-    mode = running;
-    
-    for (nat i = 0; i < z_count && mode != stopped; i++) {
-        nat z = z_values[i];
-        printf("\r [  %llu  /  %llu  ] : %llu                  ", i, z_count, z);
-        fflush(stdout);
-        
-        char filename[4096] = {0}, stringified_z_value[4096] = {0};
-        sprintf(stringified_z_value, "z_%llu.ppm", z);
-        strcpy(filename, destination_dir);
-        strcat(filename, "/");
-        strcat(filename, stringified_z_value);
-        
-        reduce(hgrid, z, m, H);
-        generate_lifetime_image(filename, 0, begin, end, hgrid, context->parameters);
-    }
-    printf("generate: generated all images.\n");
 }
 
 void generate_utility(char** input, nat input_count, struct context* context) {
-            
-    if (strings_equal(input[1], "lifetimes")) generate_lifetime_images(input, context);
+    if (strings_equal(input[1], "lifetimes"))
+        generate_lifetime_images(input, context);
     else {
         printf("error: generate: unknown generation mode: %s\n", input[1]);
-        printf("available modes: \n"
-               "\t lifetimes <zvalues_file> <begin_slice> <end_slice> <destination_dir>\n"
-               "\t\t note: use begin=0 and end=0, for the whole lifetime.\n");
+        print_menu_for("generate");
     }
 }
 

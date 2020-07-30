@@ -130,7 +130,7 @@
 		FD500589248770E800A8E383 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1150;
+				LastUpgradeCheck = 1160;
 				ORGANIZATIONNAME = "Daniel Rehman";
 				TargetAttributes = {
 					FD500590248770E800A8E383 = {
@@ -288,6 +288,7 @@
 		FD500599248770E800A8E383 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JTMD2SW5KN;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -299,6 +300,7 @@
 		FD50059A248770E800A8E383 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JTMD2SW5KN;
 				ENABLE_HARDENED_RUNTIME = YES;

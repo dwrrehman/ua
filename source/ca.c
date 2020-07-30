@@ -136,13 +136,7 @@ nat measure_lifetime(vector hgrid, struct parameters* p) {
 
 void visualize_lifetime(nat begin_timestep, nat begin_slice, nat end_slice, vector hgrid, struct parameters p) {
     
-    const nat
-        m = p.m,
-        n = p.n,
-        cell_count = p.s,
-        timesteps = p.t,
-        sidelength = p.l;
-    
+    const nat m = p.m, n = p.n, cell_count = p.s, timesteps = p.t, sidelength = p.l;
     mode = running;
     
     element
@@ -221,6 +215,37 @@ void generate_lifetime_image(const char* filename, nat begin_timestep, nat begin
         }
     }
     fclose(file);
+}
+
+void generate_lifetime_images(char** input, struct context* context) {
+    
+    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
+    
+    const char* destination_dir = input[5];
+    nat z_count = 0, begin = atoll(input[3]), end = atoll(input[4]);
+    vector z_values = read_nats_from_file(input[2], &z_count);
+    
+    printf("generate: generating %llu lifetimes .ppm's...\n", z_count);
+    
+    element hgrid[H];
+    
+    mode = running;
+    
+    for (nat i = 0; i < z_count && mode != stopped; i++) {
+        nat z = z_values[i];
+        printf("\r [  %llu  /  %llu  ] : %llu                  ", i, z_count, z);
+        fflush(stdout);
+        
+        char filename[4096] = {0}, stringified_z_value[4096] = {0};
+        sprintf(stringified_z_value, "z_%llu.ppm", z);
+        strcpy(filename, destination_dir);
+        strcat(filename, "/");
+        strcat(filename, stringified_z_value);
+        
+        reduce(hgrid, z, m, H);
+        generate_lifetime_image(filename, 0, begin, end, hgrid, context->parameters);
+    }
+    printf("generate: generated all images.\n");
 }
 
 void save_values(const char* out_filename, vector values, nat count) {
