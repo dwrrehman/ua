@@ -28,8 +28,8 @@ const char* default_home = "/Users/deniylreimn/Documents/projects/ua/";
 void load_file(char** input, nat count, struct context* context) {
     if (equals(input[1], "param", "p")) load_parameters_from_file(input[2], context);
     else if (equals(input[1], "hgrid", "h")) {
-        if (equals(input[2],"2,2", "2")) load_m2n2_hgrid(input[3], context);
-        else if (equals(input[2],"3,1", "3")) load_m3n1_hgrid(input[3], context);
+        if (equals(input[2],"2,5", "2,5")) load_m2n5_hgrid(input[3], context);
+        else if (equals(input[2],"3,3", "3,3")) load_m3n3_hgrid(input[3], context);
         else if (equals(input[2], "generic", "g")) load_hgrid(input[3], context);
     } else {
         printf("error: load: unknown load type: %s\n", input[1]);
@@ -51,7 +51,8 @@ void read_values_from_input(vector out, nat in_length, char** input, nat input_c
 }
 
 void calculate_function(char** input, nat count, struct context context) {
-    const nat H = context.parameters.H, m = context.parameters.m;
+    
+    const nat m = context.parameters.m, n = context.parameters.n, H = to(m,n);
     
     if (strings_equal(input[1], "z"))
         printf("%llu\n", unreduce(context.hgrid, m, H));
@@ -82,16 +83,19 @@ void calculate_function(char** input, nat count, struct context context) {
 }
 
 void print_information(char** input, nat count, struct context context) {
+    
+    const nat m = context.parameters.m, n = context.parameters.n, H = to(m,n);
+    
     if (strings_equal(input[1], "home")) puts(context.home);
     else if (strings_equal(input[1], "z")) printf("z = %llu\n", context.z);
     else if (equals(input[1], "param", "p")) print_parameters(context.parameters);
     else if (strings_equal(input[1], "parameters")) verbose_print_parameters(context.parameters);
-    else if (strings_equal(input[1], "vector-hgrid")) print_vector_line_message("hgrid = ", context.hgrid, context.parameters.H);
-    else if (equals(input[1], "hgrid", "h")) {
-        ///TODO: make these print functions generic over m. havbe a 1d and a 2d printing functions.
-        if (is_mn_case(2, 2, context.parameters)) print_m2n2_hgrid(context.hgrid, context.parameters);
-        else if (is_mn_case(3, 1, context.parameters)) print_m3n1_hgrid(context.hgrid, context.parameters);
-        else print_hgrid(context.hgrid, context.parameters);
+    else if (strings_equal(input[1], "vector-hgrid")) print_vector_line_message("hgrid = ", context.hgrid, H);
+        
+    else if (equals(input[1], "hgrid", "h")) { ///TODO: make these print functions generic over m. havbe a 1d and a 2d printing functions.
+        if (equals(input[2],"2,5", "2,5")) print_m2n5_hgrid(context.hgrid, context.parameters);
+        else if (equals(input[2],"3,3", "3,3")) print_m3n3_hgrid(context.hgrid, context.parameters);
+        else if (equals(input[2], "generic", "g")) print_hgrid(context.hgrid, context.parameters);
     } else {
         printf("error: print: unknown info spec: %s\n", input[1]);
         printf("available information: \n"
@@ -106,12 +110,15 @@ void print_information(char** input, nat count, struct context context) {
 }
 
 void set(char** input, nat count, struct context* context) {
+    
+    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
+    
     if (strings_equal(input[1], "param")) set_parameter(&context->parameters, input[2], input[3]);
     else if (strings_equal(input[1], "z")) context->z = atoll(input[2]);
     else if (strings_equal(input[1], "hgrid")) {
         destroy(&context->hgrid);
-        context->hgrid = create(context->parameters.H);
-        read_values_from_input(context->hgrid, context->parameters.H, input, count, 2);
+        context->hgrid = create(H);
+        read_values_from_input(context->hgrid, H, input, count, 2);
     } else {
         printf("error: set: unknown target: %s\n", input[1]);
         printf("available information: \n"
@@ -121,7 +128,7 @@ void set(char** input, nat count, struct context* context) {
                "\t\t\t enum: initial={empty(e), dot(d), random, repeating, centerdot(c)}\n"
                "\t\t\t enum: display={none, numeric(n), intuitive(i), binary(b)}\n"
                "\t\t\t bool: nd={true(1), false(0)}\n"
-               "\t z <zvalue> ...\n"
+               "\t z <zvalue> \n"
                "\t hgrid <a> <b> <c> ...\n"
                "\t\t note: \"set hgrid\" simply writes all zeros to a new hgrid.\n"
                "\n");
@@ -130,12 +137,14 @@ void set(char** input, nat count, struct context* context) {
 
 void visualize(char** input, nat count, struct context* context) {
     
+    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
+    
     if (strings_equal(input[1], "hgrid"))
         visualize_lifetime(0, 0, 0, context->hgrid, context->parameters);
     
     else if (strings_equal(input[1], "z")) {
-        element hgrid[context->parameters.H];
-        reduce(hgrid, context->z, context->parameters.m, context->parameters.H);
+        element hgrid[H];
+        reduce(hgrid, context->z, m, H);
         visualize_lifetime(0, 0, 0, hgrid, context->parameters);
                     
     } else if (strings_equal(input[1], "set")) {
@@ -204,36 +213,41 @@ void filter_utility(char** input, nat input_count) {
     }
 }
 
-void generate_utility(char** input, nat input_count, struct context* context) {
+static void generate_lifetime_images(char** input, struct context* context) {
     
-    if (strings_equal(input[1], "lifetimes")) {
+    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
+    
+    const char* destination_dir = input[5];
+    nat z_count = 0, begin = atoll(input[3]), end = atoll(input[4]);
+    vector z_values = read_nats_from_file(input[2], &z_count);
+    
+    printf("generate: generating %llu lifetimes .ppm's...\n", z_count);
+    
+    element hgrid[H];
+    
+    mode = running;
+    
+    for (nat i = 0; i < z_count && mode != stopped; i++) {
+        nat z = z_values[i];
+        printf("\r [  %llu  /  %llu  ] : %llu                  ", i, z_count, z);
+        fflush(stdout);
         
-        const char* destination_dir = input[5];
-        nat z_count = 0, begin = atoll(input[3]), end = atoll(input[4]);
-        vector z_values = read_nats_from_file(input[2], &z_count);
-                        
-        printf("generate: generating %llu lifetimes .ppm's...\n", z_count);
-                        
-        element hgrid[context->parameters.H];
-        mode = running;
+        char filename[4096] = {0}, stringified_z_value[4096] = {0};
+        sprintf(stringified_z_value, "z_%llu.ppm", z);
+        strcpy(filename, destination_dir);
+        strcat(filename, "/");
+        strcat(filename, stringified_z_value);
         
-        for (nat i = 0; i < z_count && mode != stopped; i++) {
-            nat z = z_values[i];
-            printf("\r [  %llu  /  %llu  ] : %llu                  ", i, z_count, z);
-            fflush(stdout);
+        reduce(hgrid, z, m, H);
+        generate_lifetime_image(filename, 0, begin, end, hgrid, context->parameters);
+    }
+    printf("generate: generated all images.\n");
+}
+
+void generate_utility(char** input, nat input_count, struct context* context) {
             
-            char filename[4096] = {0}, stringified_z_value[4096] = {0};
-            sprintf(stringified_z_value, "z_%llu.ppm", z);
-            strcpy(filename, destination_dir);
-            strcat(filename, "/");
-            strcat(filename, stringified_z_value);
-            
-            reduce(hgrid, z, context->parameters.m, context->parameters.H);
-            generate_lifetime_image(filename, 0, begin, end, hgrid, context->parameters);
-        }
-        printf("generate: generated all images.\n");
-        
-    } else {
+    if (strings_equal(input[1], "lifetimes")) generate_lifetime_images(input, context);
+    else {
         printf("error: generate: unknown generation mode: %s\n", input[1]);
         printf("available modes: \n"
                "\t lifetimes <zvalues_file> <begin_slice> <end_slice> <destination_dir>\n"

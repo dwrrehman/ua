@@ -5,10 +5,10 @@
 m = 2
 n = 2
 
-s = 50
-t = 2500
+s = 100
+t = 7000
 
-initial = centerdot
+initial = dot
 display = intuitive
 nd = true
 

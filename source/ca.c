@@ -59,101 +59,123 @@ void generate_ppm(const char* filename, const int* g, const int m, const int s, 
 }
 
 
-nat find_unknown_indicies(vector hg, vector I, nat H) {
+nat find_unknown_indicies(vector hgrid, nat hgrid_count, vector indicies) {
     nat count = 0;
-    for (nat i = 0; i < H; i++)
-        if (hg[i] == unknown_dummy_value) I[count++] = i;
+    for (nat i = 0; i < hgrid_count; i++)
+        if (hgrid[i] == unknown_dummy_value) indicies[count++] = i;
     return count;
 }
 
-void initialize(vector g, nat m, nat n, nat L, nat s,
+void initialize(vector cells, nat m, nat n,
+                nat cell_count, nat sidelength,
                 enum initial_state_type initial) {
-    fill(0, g, L);
+    fill(0, cells, cell_count);
     if (initial == empty_state) return;
-    else if (initial == dot_state) ++*g;
+    else if (initial == dot_state) ++*cells;
     else if (initial == center_dot_state) {
-        if (n == 2) g[L / 2 + s / 2] = 1; else ++*g;
+        if (n == 2) cells[cell_count / 2 + (sidelength / 2) /* * (s % 2 == 0)*/] = 1;
+        if (n == 1) cells[cell_count / 2] = 1;
     } else if (initial == repeating_state) {
-        for (nat i = 0; i < L; i++) g[i] = i % 2 == 0;
+        for (nat i = 0; i < cell_count; i++) cells[i] = i % m;
     } else if (initial == random_state) {
-        for (nat i = 0; i < L; i++) g[i] = rand() % m;
+        for (nat i = 0; i < cell_count; i++) cells[i] = rand() % m;
     }
 }
 
 void fill_neighbors(vector read_array, nat cell,
-                    vector neighbors, nat S, nat space) {
+                    vector neighbors, nat cell_count, nat sidelength) {
     neighbors[0] = read_array[cell];
     nat count = 1;
-    for (nat i = 1; i < S; i *= space) {
+    for (nat i = 1; i < cell_count; i *= sidelength) {
        
         neighbors[count++] = read_array
-        [cell + i * ((cell / i + space - 1) % space
-                     - cell / i % space)]; // P (L,U,F,...)
+        [cell + i * ((cell / i + sidelength - 1) % sidelength
+                     - cell / i % sidelength)]; // P (L,U,F,...)
         
         neighbors[count++] = read_array
-               [cell + i * ((cell / i + 1) % space
-                            - cell / i % space)]; // Q (R,D,B,...)
+               [cell + i * ((cell / i + 1) % sidelength
+                            - cell / i % sidelength)]; // Q (R,D,B,...)
     }
+}
+
+bool doesnt_contain_vector(nat element_length, vector* states, nat state_count, vector state) {
+    for (nat i = 0; i < state_count; i++)
+        if (vectors_equal(states[i], element_length, state, element_length))
+            return false;
+    return true;
 }
 
 nat measure_lifetime(vector hgrid, struct parameters* p) {
     
-    const nat
-        S = p->L,
-        m = p->m,
-        n = p->n,
-        nc = p->nc,
-        space = p->space,
-        time = p->time;
+    const nat m = p->m, n = p->n, cell_count = p->s, timesteps = p->t, sidelength = p->l;
     
-    nat count = 0;
-    element ns[nc], f[S], g[S], states[time];
-    initialize(f, m, n, S, space, p->initial_state);
+    element neighborhood[n], write_cells[cell_count], read_cells[cell_count];
     
-    for (nat t = 0; t < time; t++) {
-        memcpy(g, f, sizeof g);
-        for (nat s = 0; s < S; s++) {
-            fill_neighbors(g, s, ns, S, space);
-            f[s] = hgrid[unreduce(ns, m, nc)];
+    nat state_count = 0;
+    vector states[timesteps];
+    
+    initialize(write_cells, m, n, cell_count, sidelength, p->initial_state);
+    
+    for (nat timestep = 0; timestep < timesteps; timestep++) {
+        
+        memcpy(read_cells, write_cells, sizeof read_cells);
+        
+        for (nat cell = 0; cell < cell_count; cell++) {
+            fill_neighbors(read_cells, cell, neighborhood, cell_count, sidelength);
+            write_cells[cell] = hgrid[unreduce(neighborhood, m, n)];
         }
-        const nat r = unreduce(g, m, S);
-        if (contains(states, count, r)) return count;
-        else states[count++] = r;
+        
+        if (doesnt_contain_vector(cell_count, states, state_count, read_cells))
+            states[state_count++] = duplicate(read_cells, cell_count);
+        else break;
     }
-    return count;
+    
+    for (nat i = 0; i < state_count; i++) destroy(states + i);
+    return state_count;
 }
 
-void visualize_lifetime(nat begin, nat begin_slice, nat end_slice, vector h, struct parameters p) {
-    const nat S = p.L, m = p.m, n = p.n, nc = p.nc, space = p.space, time = p.time;
-    mode = running;
-    element ns[nc], f[S], g[S];
-    initialize(f, m, n, S, space, p.initial_state);
+void visualize_lifetime(nat begin_timestep, nat begin_slice, nat end_slice, vector hgrid, struct parameters p) {
     
-    for (nat t = 0; t < begin + time && mode != stopped; t++) {
+    const nat
+        m = p.m,
+        n = p.n,
+        cell_count = p.s,
+        timesteps = p.t,
+        sidelength = p.l;
+    
+    mode = running;
+    
+    element
+        neighborhood[n],
+        write_cells[cell_count],
+        read_cells[cell_count];
+    
+    initialize(write_cells, m, n, cell_count, sidelength, p.initial_state);
+    
+    for (nat timestep = 0; timestep < begin_timestep + timesteps && mode != stopped; timestep++) {
         
         if (mode == stepping) get_character();
-        
         if (p.n_dimensional_display) clear_screen();
-        memcpy(g, f, sizeof g);
         
-        for (nat s = 0; s < S; s++) {
+        memcpy(read_cells, write_cells, sizeof read_cells);
+        
+        for (nat cell = 0; cell < cell_count; cell++) {
             
-            if (!(s % space) && p.n_dimensional_display) puts("");
-            
-            fill_neighbors(g, s, ns, S, space);
-            f[s] = h[unreduce(ns, m, nc)];
+            if (!(cell % sidelength) && p.n_dimensional_display) puts("");
+                        
+            fill_neighbors(read_cells, cell, neighborhood, cell_count, sidelength);
+            write_cells[cell] = hgrid[unreduce(neighborhood, m, n)];
 
-            const nat slice = s / space;
-            if (t >= begin &&
-                ((begin_slice <= slice && slice < end_slice)
-                 || (!end_slice && !begin_slice))
+            const nat slice = cell / sidelength;
+            if (timestep >= begin_timestep &&
+                ((begin_slice <= slice && slice < end_slice) || (!end_slice && !begin_slice))
                 ) {
-                if (p.display_as == intuitive_display) graph(g[s], m);
-                else if (p.display_as == numeric_display) printf(" %llu", g[s]);
-                else if (p.display_as == binary_display) fputs(g[s] ? "##" : "  ", stdout);
+                if (p.display_as == intuitive_display) graph(read_cells[cell], m);
+                else if (p.display_as == numeric_display) printf(" %llu", read_cells[cell]);
+                else if (p.display_as == binary_display) fputs(read_cells[cell] ? "##" : "  ", stdout);
             }
         }
-        if (t >= begin) {
+        if (timestep >= begin_timestep) {
             puts("");
             if (p.delay) fflush(stdout);
             usleep((unsigned) p.delay);
@@ -161,9 +183,9 @@ void visualize_lifetime(nat begin, nat begin_slice, nat end_slice, vector h, str
     }
 }
 
-void generate_lifetime_image(const char* filename, nat begin, nat begin_slice, nat end_slice, vector h, struct parameters p) {
+void generate_lifetime_image(const char* filename, nat begin_timestep, nat begin_slice, nat end_slice, vector hgrid, struct parameters p) {
             
-    const nat S = p.L, m = p.m, n = p.n, nc = p.nc, space = p.space, time = p.time;
+    const nat m = p.m, n = p.n, cell_count = p.s, timesteps = p.t, sidelength = p.l;
     
     FILE* file = fopen(filename, "wb");
     
@@ -172,25 +194,25 @@ void generate_lifetime_image(const char* filename, nat begin, nat begin_slice, n
         return;
     }
     
-    fprintf(file, "P6\n%llu %llu\n255\n", S, time);
+    fprintf(file, "P6\n%llu %llu\n255\n", cell_count, timesteps);
     
     mode = running;
-    element ns[nc], f[S], g[S];
-    initialize(f, m, n, S, space, p.initial_state);
+    element neighborhood[n], write_cells[cell_count], read_cells[cell_count];
+    initialize(write_cells, m, n, cell_count, sidelength, p.initial_state);
     
-    for (nat t = 0; t < begin + time && mode != stopped; t++) {
-        memcpy(g, f, sizeof g);
-        for (nat s = 0; s < S; s++) {
+    for (nat timestep = 0; timestep < begin_timestep + timesteps && mode != stopped; timestep++) {
+        memcpy(read_cells, write_cells, sizeof read_cells);
+        for (nat cell = 0; cell < cell_count; cell++) {
             
-            fill_neighbors(g, s, ns, S, space);
-            f[s] = h[unreduce(ns, m, nc)];
+            fill_neighbors(read_cells, cell, neighborhood, cell_count, sidelength);
+            write_cells[cell] = hgrid[unreduce(neighborhood, m, n)];
             
-            const nat slice = s / space;
-            if (t >= begin &&
+            const nat slice = cell / sidelength;
+            if (timestep >= begin_timestep &&
                 ((begin_slice <= slice && slice < end_slice)
                  || (!end_slice && !begin_slice))
                 ) {
-                double x = (double) g[s] / (double) m;
+                double x = (double) read_cells[cell] / (double) m;
                 unsigned char r = x * 255, g = x * 255, b = x * 255;
                 fwrite(&r, 1, 1, file);
                 fwrite(&g, 1, 1, file);
@@ -224,34 +246,45 @@ void save_values(const char* out_filename, vector values, nat count) {
     }
 }
 
-void threshold_search(nat threshold, const char* outfile, struct context* c) {
+void threshold_search(nat threshold, const char* outfile, struct context* context) {
     
-    nat m = c->parameters.m, H = c->parameters.H;
-    vector hg = duplicate(c->hgrid, H);
-    element indicies[H], search[H];
-    nat u = find_unknown_indicies(hg, indicies, H), Z = powl(m, u), count = 0;
-    element definitions[Z], scores[Z];
+    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
+    
+    vector hgrid_copy = duplicate(context->hgrid, H);
+    
+    element indicies[H], search[H]; // these will have the same length.
+    
+    nat indicies_count = find_unknown_indicies(hgrid_copy, H, indicies), search_space = powl(m, indicies_count), z_count = 0;
+    element definitions[search_space], scores[search_space];
+    
+    print_vector_line_message("hgrid", hgrid_copy, H);
+    print_vector_line_message("indicies", indicies, indicies_count);
+    
+    get_character();
+    
     mode = running;
     
-    printf("searching over %llu unknowns...\n", u);
-    for (nat z = 0; z < Z && mode != stopped; z++) {
+    printf("searching over %llu unknowns...\n", indicies_count);
+    for (nat z_try = 0; z_try < search_space && mode != stopped; z_try++) {
         
         if (mode == stepping) get_character();
         
-        printf("\r [  %llu  /  %llu  ]       ", z, Z);
-        reduce(search, z, m, u);
-        map(hg, search, indicies, H);
-        nat score = measure_lifetime(hg, &c->parameters), definition = unreduce(hg, m, H);
+        printf("\r [  %llu  /  %llu  ]       ", z_try, search_space);
+        reduce(search, z_try, m, indicies_count);
+        map(hgrid_copy, search, indicies, H);
+        nat score = measure_lifetime(hgrid_copy, &context->parameters), z_definition = unreduce(hgrid_copy, m, H);
         if (score >= threshold) {
-            printf("\n[z = %llu] ---> %llu timesteps\n\n", definition, score);
-            definitions[count] = definition;
-            scores[count++] = score;
+            printf("\n[z = %llu] ---> %llu timesteps\n\n", z_definition, score);
+            definitions[z_count] = z_definition;
+            scores[z_count++] = score;
         }
     }
     
     puts("\n");
-    printf("found %llu z values >= threshold. (%f%%) \n", count, ((float)count / Z));
-    save_values(outfile, definitions, count);
+    printf("found %llu z values >= threshold. (%f%%) \n", z_count, ((float)z_count / search_space));
+    save_values(outfile, definitions, z_count);
+    
+    destroy(&hgrid_copy);
 }
 
 void visualize_set
@@ -268,8 +301,12 @@ void visualize_set
  struct context* context) {
     
     bool should_display = true;
+    
     nat offset = 0, at = begin, begin_slice = user_begin_slice, end_slice = user_end_slice;
-    element blacklist[count], savelist[count], hgrid[context->parameters.H];
+    
+    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
+    
+    element blacklist[count], savelist[count], hgrid[H];
     
     fill(0, blacklist, count);
     fill(0, savelist, count);
@@ -281,10 +318,10 @@ void visualize_set
             nat z = set[at];
             
             if (should_display) {
-                reduce(hgrid, z, context->parameters.m, context->parameters.H);
-                nat d = context->parameters.delay; context->parameters.delay = 0;
+                reduce(hgrid, z, m, H);
+                nat save_delay = context->parameters.delay; context->parameters.delay = 0;
                 visualize_lifetime(offset, begin_slice, end_slice, hgrid, context->parameters);
-                context->parameters.delay = d;
+                context->parameters.delay = save_delay;
             }
             
             printf("\n  [z = %llu]  %llu  /  %llu  ", z, at, count);
@@ -296,8 +333,8 @@ void visualize_set
         fflush(stdout);
         const int c = get_character();
         
-        if (c == 'd') offset += context->parameters.time;
-        else if (c == 's' && offset >= context->parameters.time) offset -= context->parameters.time;
+        if (c == 'd') offset += context->parameters.t;
+        else if (c == 's' && offset >= context->parameters.t) offset -= context->parameters.t;
         
         else if (c == 'f' && at < count) { at++; offset = 0; }
         else if (c == 'e' && at) { at--; offset = 0; }

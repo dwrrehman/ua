@@ -6,69 +6,48 @@
 
 #include <string.h>
 #include <math.h>
+
 typedef unsigned long long nat;
 
 #define dot     f[s] = (f[s] + 1) % m
 #define LRS(x) for (nat _ = 0; _ < x; _++)
 
 int main(int argc, const char** argv) {
-    if (argc <= 6) { printf("new: 22: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
+    if (argc <= 6) { printf("new: 23: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
     const nat
         m = atoll(argv[1]),
         n = atoll(argv[2]),
-        S = atoll(argv[3]), S_n = powl(S, n),
-        T = atoll(argv[4]),
+        s = atoll(argv[3]), S = powl(s, n / 2),
+        t = atoll(argv[4]),
         delay = atoll(argv[5]),
         nd = atoll(argv[6]);
     
-    nat f[S_n], g[S_n], p[n], q[n]; // including C_0, n + n + 1 = 2n+1 total neighbors
+    nat f[S], g[S], h[n]; // excluding C_0.
+    memset(f, 0, sizeof f); ++*f;    // construct dot state.
     
-    memset(f, 0, sizeof f);
-    if (n == 2) f[S_n / 2 + S / 2] = 1;
-    else ++*f;
-    
-    for (nat t = 0; t < T; t++) {
+    for (nat _t = 0; _t < t; _t++) {
         if (nd) printf("\e[1;1H\e[2J");
         memcpy(g, f, sizeof g);
-        for (nat s = 0; s < S_n; s++) {
+        for (nat _s = 0; _s < S; _s++) {
             
             nat y = 0;
-            for (nat k = 1; k < S_n; k *= S) {
-                q[y] = g[s + k * ((s / k + S + 1) % S - s / k % S)];
-                p[y] = g[s + k * ((s / k + S - 1) % S - s / k % S)];
-                y++;
+            h[y++] = g[_s];
+            for (nat x = 1; x < S; x *= s) {
+                h[y++] = g[_s + x * ((_s / x + s + 1) % s - _s / x % s)];
+                h[y++] = g[_s + x * ((_s / x + s - 1) % s - _s / x % s)];
             }
             
-            for (nat i = 0; i < n; i++) {
-                for (nat j = 0; j < i; j++) {
-                    f[s] += q[j] * (f[s] + 1);
-                }
-                f[s] += p[i] * (f[s] * (q[i] + 1) + 1);
+            for (nat i = 1; i < n; i++) {
+                f[_s] += h[i] * (f[_s] * (h[i - 1] + 1) + 1);
             }
-            f[s] %= m;
             
-            // what we have to work with:           pi      pj     qi
             
-            if (s % S == 0 && nd) printf("\n");
-            printf("\033[38;5;%um██\033[0m", (unsigned)((double) g[s] / m * 24) + 232);
-            
+            f[_s] %= m;
+            if (_s % s == 0 && nd) printf("\n");
+            printf("\033[38;5;%um██\033[0m", (unsigned)((double) g[_s] / m * 24) + 232);
         }
         printf("\n");
         fflush(stdout);
-        usleep((unsigned) delay);
-        if (!delay) getchar();
+        if (!delay) getchar(); else usleep((unsigned) delay);
     }
 }
-
-    
-//            nat U = p[1], D = q[1], R = q[0], L = p[0], C = g[s];
-//
-//            nat first = L * (C * (R + 1) + 1);
-//            nat composite = R * ((C + first) * (U + 1) + 1);
-//            nat second = U * ((C + first + composite) * (D + 1) + 1);
-//
-//            f[s] =
-//             (
-//              C + first + composite + second
-//             ) % m;
-        

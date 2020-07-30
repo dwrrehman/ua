@@ -41,14 +41,17 @@ struct parameters {
     /// the modulus.
     nat m;
     
-    /// the dimension.
+    /// the neighborhood count.
     nat n;
     
-    /// the side length of the n-cube. cell count will be space ^ n.
-    nat space;
+    /// the number of cells.
+    nat s;
+
+    /// the number of timesteps. (ie, lifetime duration, for visualization.
+    nat t;
     
-    /// the time, or lifetime duration, for visualization.
-    nat time;
+    /// the sidelength of the (d dimensional) cube of s cells.
+    nat l;
         
     /// the delay in microseconds for visualization.
     nat delay;
@@ -62,17 +65,10 @@ struct parameters {
     /// should visualize the CA n dimensionally, as opposed to serialize over time.
     bool n_dimensional_display;
     
-            
-    // ------ computed parameters: ------
     
-    /// nc = 2n + 1 = "neighborhood count"
-    nat nc;
-    
-    /// L = size ^ n = "total cells"
-    nat L;
-    
-    /// H = m ^ nc = "neighborhood state count"
-    nat H;    
+//    // ------ computed parameters: ------
+//    /// m_to_n = H = m ^ n = "number of the possible neighborhood arrangments".
+//    nat H;   /// DELETED.
 };
 
 struct rule {

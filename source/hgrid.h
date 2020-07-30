@@ -34,12 +34,18 @@ void map(vector h, vector search, vector indicies, nat H);
 
 
 void print_hgrid(vector h, struct parameters p);
-void print_m2n2_hgrid(vector h, struct parameters p);
-void print_m3n1_hgrid(vector h, struct parameters p);
+void print_m2n5_hgrid(vector h, struct parameters p);
+void print_m2n4_hgrid(vector h, struct parameters p);
+void print_m3n3_hgrid(vector h, struct parameters p);
 
-void load_m2n2_hgrid(const char* filename, struct context* c);
-void load_m3n1_hgrid(const char* filename, struct context* c);
+void load_m2n5_hgrid(const char* filename, struct context* c);
+void load_m2n4_hgrid(const char* filename, struct context* c);
+void load_m3n3_hgrid(const char* filename, struct context* c);
 void load_hgrid(const char* filename, struct context* c);
+
+//nat compute_H_p(struct parameters p);
+//nat compute_H_c(struct context context);
+nat to(nat base, nat exponent);
 
 
 #endif /* hgrid_h */

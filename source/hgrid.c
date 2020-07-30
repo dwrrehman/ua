@@ -18,20 +18,37 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
+//
+//nat compute_H_p(struct parameters p) {
+//    return powl(p.m,p.n);
+//}
+//
+//nat compute_H_c(struct context context) {
+//    return powl(context.parameters.m,context.parameters.n);
+//}
+
+nat to(nat base, nat exponent) {
+    return powl(base, exponent);
+}
 
 void map(vector h, vector search, vector indicies, nat H) {
     for (nat i = 0, s = 0; i < H; i++)
         if (i == indicies[s]) h[i] = search[s++];
 }
 
-void print_hgrid(vector hgrid, struct parameters p) {
+void print_hgrid(vector hgrid, struct parameters parameters) {
     if (!hgrid) { puts("{null hgrid}"); return; }
-    element ns[p.nc];
-    printf("(%llu,%llu): \n", p.m, p.n);
-    for (nat h = 0; h < p.H; h++) {
-        reduce(ns, h, p.m, p.nc);
-        print_vector(ns, p.nc);
-        printf(" ---> %llu\n", hgrid[h]);
+    
+    const nat m = parameters.m, n = parameters.n, H = to(m,n);
+    
+    element neighborhood[n];
+    
+    printf("(%llu,%llu): \n", m, n);
+    for (nat rule = 0; rule < H; rule++) {
+        reduce(neighborhood, rule, m, n);
+        print_vector(neighborhood, n);
+        printf(" ---> %llu\n", hgrid[H]);
     }
     printf("\n");
 }
@@ -71,50 +88,54 @@ void print_n2_rule(vector h, nat f, enum display_type display_as, nat m) {
     }
 }
 
-void print_m2n2_hgrid(vector hgrid, struct parameters p) {
+void print_m2n2_hgrid(vector hgrid, struct parameters parameters) {
     if (!hgrid) { puts("{null hgrid}"); return; }
-    element ns[p.nc];
-    printf("(%llu,%llu): \n", p.m, p.n);
-    for (nat h = 0; h < p.H; h++) {
-        reduce(ns, h, p.m, p.nc);
-        print_n2_rule(ns, hgrid[h], p.display_as, p.m);
-    }
-    printf("\n");
-}
-
-void print_m3n1_hgrid(vector hgrid, struct parameters p) {
-    if (!hgrid) { puts("{null hgrid}"); return; }
-    printf("3,1 hg printer: unimplemented. printing as generic instead...\n");
     
-    element ns[p.nc];
-    printf("(%llu,%llu): \n", p.m, p.n);
-    for (nat h = 0; h < p.H; h++) {
-        reduce(ns, h, p.m, p.nc);
-        print_vector(ns, p.nc);
-        printf(" ---> %llu\n", hgrid[h]);
+    const nat m = parameters.m, n = parameters.n, H = to(m,n);
+    
+    element neighborhood[n];
+    printf("(%llu,%llu): \n", m, n);
+    for (nat rule = 0; rule < H; rule++) {
+        reduce(neighborhood, rule, m, n);
+        print_n2_rule(neighborhood, hgrid[H], parameters.display_as, m);
     }
     printf("\n");
 }
 
-void check_hgrid(struct context* c) {
+void print_m3n3_hgrid(vector hgrid, struct parameters parameters) {
+    printf("3,3 hg printer: unimplemented. printing as generic instead...\n");
+    print_hgrid(hgrid, parameters);
+}
+
+void check_hgrid(struct context* context) {
     printf("checking file...\n");
+    
+    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
+    
     nat unknown_count = 0;
-    for (nat i = 0; i < c->parameters.H; i++) {
-        if (c->hgrid[i] == unknown_dummy_value) {
+    
+    for (nat i = 0; i < H; i++) {
+        if (context->hgrid[i] == unknown_dummy_value) {
             printf("\nwarning: unspecified hgrid element: \n");
-            element ns[c->parameters.nc];
-            reduce(ns, i, c->parameters.m, c->parameters.nc);
-            print_n2_rule(ns, unknown_dummy_value, c->parameters.display_as, c->parameters.m);
+            
+            element neighborhood[n];
+            reduce(neighborhood, i, m, n);
+            print_n2_rule(neighborhood, unknown_dummy_value, context->parameters.display_as, m);
+            
             unknown_count++;
         }
     }
     printf("checking complete: %llu unknowns.\n", unknown_count);
 }
 
-void load_m2n2_hgrid(const char* filename, struct context* c) {
+void load_m2n5_hgrid(const char* filename, struct context* context) {
+    
+    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
+    assert(n == 5);
+    
     
     char path[2048] = {0};
-    strcpy(path, c->home);
+    strcpy(path, context->home);
     strcat(path, filename);
     
     FILE* file = fopen(path, "r");
@@ -123,49 +144,50 @@ void load_m2n2_hgrid(const char* filename, struct context* c) {
         return;
     }
     
-    char l[2048] = {0};
-    nat line_count = 0, f = 0;
-    element g[c->parameters.nc];
+    char line[2048] = {0};
+    nat line_count = 0, future = 0;
+    element neighborhood[n];
     
-    destroy(&c->hgrid);
-    c->hgrid = create(c->parameters.H);
-    fill(unknown_dummy_value, c->hgrid, c->parameters.H);
+    destroy(&context->hgrid);
+    context->hgrid = create(H);
+    fill(unknown_dummy_value, context->hgrid, H);
             
-    while (fgets(l, sizeof l, file)) {
+    while (fgets(line, sizeof line, file)) {
         line_count++;
-        l[strlen(l) - 1] = '\0';
+        line[strlen(line) - 1] = '\0';
         
-        if (*l == '#') continue;
+        if (*line == '#') continue;
         
-        else if (*l == '[') {
-            assert(isdigit(l[6]) && "formatting incorrect in hgrid parse!");
-            g[3] = l[6] - '0';
-        } else if (*l == '|') {
-            assert(isdigit(l[5]) &&
-                   isdigit(l[6]) &&
-                   isdigit(l[7]) &&
-                   isdigit(l[13]) && "formatting incorrect in hgrid parse!");
+        else if (*line == '[') {
+            assert(isdigit(line[6]) && "formatting incorrect in hgrid parse!");
+            neighborhood[3] = line[6] - '0';
             
-            g[1] = l[5] - '0';
-            g[0] = l[6] - '0';
-            g[2] = l[7] - '0';
-            f = l[13] - '0';
+        } else if (*line == '|') {
+            assert(isdigit(line[5]) &&
+                   isdigit(line[6]) &&
+                   isdigit(line[7]) &&
+                   isdigit(line[13]) && "formatting incorrect in hgrid parse!");
+            
+            neighborhood[1] = line[5] - '0';
+            neighborhood[0] = line[6] - '0';
+            neighborhood[2] = line[7] - '0';
+            future = line[13] - '0';
         }
-        else if (*l == ']') {
-            assert(isdigit(l[6]) && "formatting incorrect in hgrid parse!");
-            g[4] = l[6] - '0';
+        else if (*line == ']') {
+            assert(isdigit(line[6]) && "formatting incorrect in hgrid parse!");
+            neighborhood[4] = line[6] - '0';
             
-        } else if (*l == '.') {
-            c->hgrid[unreduce(g, c->parameters.m, c->parameters.nc)] = f;
-            fill(0, g, c->parameters.nc);
-        } else if (*l == '?') {
-            c->hgrid[unreduce(g, c->parameters.m, c->parameters.nc)] = unknown_dummy_value;
-            fill(0, g, c->parameters.nc);
+        } else if (*line == '.') {
+            context->hgrid[unreduce(neighborhood, m, n)] = future;
+            fill(0, neighborhood, n);
+        } else if (*line == '?') {
+            context->hgrid[unreduce(neighborhood, m, n)] = unknown_dummy_value;
+            fill(0, neighborhood, n);
         }
     }
     fclose(file);
     printf("read %llu lines.\n", line_count);
-    check_hgrid(c);
+    check_hgrid(context);
 }
 
 void load_m3n1_hgrid(const char* filename, struct context* c) {

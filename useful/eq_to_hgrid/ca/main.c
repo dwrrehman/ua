@@ -9,7 +9,10 @@
 typedef unsigned long long nat;
 
 #define dot     f[s] = (f[s] + 1) % m
+
 #define LRS(x) for (nat _ = 0; _ < x; _++)
+
+
 
 
 nat unreduce(nat* in, nat radix, nat length) {
@@ -25,7 +28,7 @@ void reduce(nat* out, nat s, nat radix, nat length) {
 
 
 int main(int argc, const char** argv) {
-    if (argc <= 2) { printf("hgrid printer: 0: usage: \n\t./ca m n\n\n"); return 1; }
+    if (argc <= 2) { printf("hgrid printer: 1: usage: \n\t./ca m n\n\n"); return 1; }
     
     const nat
         m = atoll(argv[1]),
@@ -52,7 +55,7 @@ int main(int argc, const char** argv) {
         }
         f %= m;
                 
-        
+        printf("%d\n", k);
         printf("\n");
         printf("     %llu\n", h[3]);
         printf("   %llu %llu %llu --> %llu\n", h[1], h[0], h[2], f);
