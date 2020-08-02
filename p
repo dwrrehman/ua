@@ -3,12 +3,13 @@
 # written on: 2006044.202259
 
 m = 2
-n = 2
+n = 3
 
 s = 100
-t = 7000
+l = 100
+t = 2000
 
-initial = dot
+initial = centerdot
 display = intuitive
 nd = true
 

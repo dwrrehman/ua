@@ -101,7 +101,7 @@ void set(char** input, nat count, struct context* context) {
     const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
     
     if (strings_equal(input[1], "param")) set_parameter(&context->parameters, input[2], input[3]);
-    else if (strings_equal(input[1], "z")) context->z = atoll(input[2]);
+    else if (strings_equal(input[1], "z") && input[2]) context->z = atoll(input[2]);
     else if (strings_equal(input[1], "hgrid")) {
         destroy(&context->hgrid);
         context->hgrid = create(H);

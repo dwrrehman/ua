@@ -36,23 +36,23 @@ const char* stringify_display_type(enum display_type d) {
 }
 
 void print_parameters(struct parameters p) { 
-    printf("(%llu,%llu : %llu,%llu) ", p.m, p.n, p.s, p.t);
+    printf("(%llu,%llu) : s=%llu:l=%llu,t=%llu : ", p.m, p.n, p.s, p.l, p.t);
     printf("[%s, %s] ", stringify_initial_state(p.initial_state), stringify_display_type(p.display_as));
     if (p.n_dimensional_display) printf("ND ");
-    printf("delay=%llu ", p.delay);
-    printf("\n");
+    printf("delay=%llu \n", p.delay);
 }
 
 void verbose_print_parameters(struct parameters p) {
     printf("current parameters: \n");
     printf("\tm = %llu\n", p.m);
     printf("\tn = %llu\n", p.n);
-    printf("\tspace = %llu\n", p.s);
-    printf("\ttime = %llu\n", p.t);
+    printf("\tcell count = %llu\n", p.s);
+    printf("\tside length = %llu\n", p.l);
+    printf("\ttimestep count = %llu\n", p.t);
     printf("\tdelay = %llu\n", p.delay);
-    printf("\tinitial_state_type = %d\n", p.initial_state);
-    printf("\tn_dimensional_display = %d\n", p.n_dimensional_display);
-    printf("\tdisplay_type = %d\n", p.display_as);
+    printf("\tinitial state type = %s : %d\n",stringify_initial_state(p.initial_state), p.initial_state);
+    printf("\tn dimensional display = %d\n", p.n_dimensional_display);
+    printf("\tdisplay type = %s : %d\n", stringify_display_type(p.display_as), p.display_as);
     printf("\n");
 }
 
@@ -65,6 +65,7 @@ void set_parameter(struct parameters* p, const char* name, const char* value) {
     else if (equals(name, "n", "n")) p->n = v;
     else if (equals(name, "s", "s")) p->s = v;
     else if (equals(name, "t", "t")) p->t = v;
+    else if (equals(name, "l", "l")) p->l = v;
     else if (equals(name, "delay", "D")) p->delay = v;
     
     else if (strings_equal(name, "initial")) {

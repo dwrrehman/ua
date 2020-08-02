@@ -139,14 +139,17 @@ void print_hgrid(vector hgrid, struct parameters parameters, bool generic) {
     printf("(%llu,%llu): \n", m, n);
     
     for (nat rule = 0; rule < H; rule++) {
+        
         reduce(neighborhood, rule, m, n);
+        nat future = hgrid[rule];
+        
         if (generic) {
             print_vector(neighborhood, n);
-            printf(" ---> %llu\n", hgrid[H]);
+            printf(" ---> %llu\n", future);
         } else {
-            if (n == 3) print_n3_rule(neighborhood, hgrid[H], parameters.display_as, m);
-            if (n == 4) print_n4_rule(neighborhood, hgrid[H], parameters.display_as, m);
-            if (n == 5) print_n5_rule(neighborhood, hgrid[H], parameters.display_as, m);
+            if (n == 3) print_n3_rule(neighborhood, future, parameters.display_as, m);
+            if (n == 4) print_n4_rule(neighborhood, future, parameters.display_as, m);
+            if (n == 5) print_n5_rule(neighborhood, future, parameters.display_as, m);
         }
     }
     printf("\n");

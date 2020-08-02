@@ -73,8 +73,10 @@ void initialize(vector cells, nat m, nat n,
     if (initial == empty_state) return;
     else if (initial == dot_state) ++*cells;
     else if (initial == center_dot_state) {
-        if (n == 2) cells[cell_count / 2 + (sidelength / 2) /* * (s % 2 == 0)*/] = 1;
-        if (n == 1) cells[cell_count / 2] = 1;
+        if (n == 5) cells[cell_count / 2 + (sidelength / 2) /* * (s % 2 == 0)*/] = 1;
+        else if (n == 4) cells[cell_count / 2] = 1;
+        else if (n == 3) cells[cell_count / 2] = 1;
+        else ++*cells;
     } else if (initial == repeating_state) {
         for (nat i = 0; i < cell_count; i++) cells[i] = i % m;
     } else if (initial == random_state) {
