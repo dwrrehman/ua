@@ -84,19 +84,26 @@ void initialize(vector cells, nat m, nat n,
     }
 }
 
-void fill_neighbors(vector read_array, nat cell,
-                    vector neighbors, nat cell_count, nat sidelength) {
-    neighbors[0] = read_array[cell];
-    nat count = 1;
+void fill_neighbors(nat n, /*input*/vector read_array, nat cell,
+                    /*output*/vector neighbors, nat cell_count, nat sidelength) {
+    
+    /// fills the neighborhood according to the natural ordering:
+    ///
+    ///     h(x)  =  { C L R U D F B A P ...etc }
+    ///
+    
+    nat count = 0;
+    if (count < n) neighbors[count++] = read_array[cell]; /// C : center cell.  [read-only]
+    
     for (nat i = 1; i < cell_count; i *= sidelength) {
        
-        neighbors[count++] = read_array
+        if (count < n) neighbors[count++] = read_array
         [cell + i * ((cell / i + sidelength - 1) % sidelength
-                     - cell / i % sidelength)]; // P (L,U,F,...)
-        
-        neighbors[count++] = read_array
+                     - cell / i % sidelength)]; ///   L, U, F, A, ...
+                        
+        if (count < n) neighbors[count++] = read_array
                [cell + i * ((cell / i + 1) % sidelength
-                            - cell / i % sidelength)]; // Q (R,D,B,...)
+                            - cell / i % sidelength)]; ///  R, D, B, P, ...
     }
 }
 
@@ -123,7 +130,7 @@ nat measure_lifetime(vector hgrid, struct parameters* p) {
         memcpy(read_cells, write_cells, sizeof read_cells);
         
         for (nat cell = 0; cell < cell_count; cell++) {
-            fill_neighbors(read_cells, cell, neighborhood, cell_count, sidelength);
+            fill_neighbors(n, read_cells, cell, neighborhood, cell_count, sidelength);
             write_cells[cell] = hgrid[unreduce(neighborhood, m, n)];
         }
         
@@ -159,7 +166,7 @@ void visualize_lifetime(nat begin_timestep, nat begin_slice, nat end_slice, vect
             
             if (!(cell % sidelength) && p.n_dimensional_display) puts("");
                         
-            fill_neighbors(read_cells, cell, neighborhood, cell_count, sidelength);
+            fill_neighbors(n, read_cells, cell, neighborhood, cell_count, sidelength);
             write_cells[cell] = hgrid[unreduce(neighborhood, m, n)];
 
             const nat slice = cell / sidelength;
@@ -200,7 +207,7 @@ void generate_lifetime_image(const char* filename, nat begin_timestep, nat begin
         memcpy(read_cells, write_cells, sizeof read_cells);
         for (nat cell = 0; cell < cell_count; cell++) {
             
-            fill_neighbors(read_cells, cell, neighborhood, cell_count, sidelength);
+            fill_neighbors(n, read_cells, cell, neighborhood, cell_count, sidelength);
             write_cells[cell] = hgrid[unreduce(neighborhood, m, n)];
             
             const nat slice = cell / sidelength;

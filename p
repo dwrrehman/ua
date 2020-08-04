@@ -3,15 +3,15 @@
 # written on: 2006044.202259
 
 m = 2
-n = 3
+n = 4
 
-s = 100
-l = 100
-t = 2000
+s = 2500
+l = 50
+t = 3000
 
-initial = centerdot
+initial = dot
 display = intuitive
-nd = true
+nd = false
 
 delay = 100000
 

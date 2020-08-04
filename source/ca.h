@@ -25,7 +25,7 @@ void graph(nat x, nat m);
 void initialize(vector g, nat m, nat n, nat L, nat s,
 enum initial_state_type initial);
 
-void fill_neighbors(vector h, nat j, vector ns, nat L, nat space);
+void fill_neighbors(nat n, vector read_cells, nat cell, vector neighbors, nat cell_count, nat sidelength);
 
 
 nat measure_lifetime(vector h, struct parameters* p);
