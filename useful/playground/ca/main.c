@@ -9,46 +9,53 @@
 typedef unsigned long long nat;
 
 int main(int argc, const char** argv) {
+    if (argc <= 7) exit(puts("\n\t./ua m n s l t D d\n"));
+    const nat
+    modulus = atoll(argv[1]),
+    numerus = atoll(argv[2]),
+    cell_count = atoll(argv[3]),
+    sidelength = atoll(argv[4]),
+    timesteps = atoll(argv[5]),
+    delay = atoll(argv[6]),
+    dimensional = atoll(argv[7]);
     
-    const nat m = 2, n = 5;
-    const nat s = 50, S = s * s, t = 10000, delay = 200000, nd = 1;
-    nat f[S], g[S], h[n];
-    memset(f, 0, sizeof f);
+    nat write_cells[cell_count], read_cells[cell_count], neighborhood[numerus];
+    memset(write_cells, 0, sizeof write_cells);
+    write_cells[0]++;
     
-    if (n != 5) ++*f;
-    else {
-        f[S / 2 + s / 2]++;
-    }
-    
-    for (nat _ = 0; _ < t; _++) {
-        if (nd) printf("\e[1;1H\e[2J");
-        memcpy(g, f, sizeof g);
-        for (nat c = 0; c < S; c++) {
-            
-            nat y = 0;
-            h[y++] = g[c];
-            for (nat x = 1; x < S; x *= s) {
-                h[y++] = g[c + x * ((c / x + s + 1) % s - c / x % s)];
-                h[y++] = g[c + x * ((c / x + s - 1) % s - c / x % s)];
+    for (nat timestep = 0; timestep < timesteps; timestep++) {
+        
+        if (dimensional) printf("\e[1;1H\e[2J");
+        
+        memcpy(read_cells, write_cells, sizeof read_cells);
+        for (nat cell = 0; cell < cell_count; cell++) {
+                        
+            for (nat i = 0; i < numerus; i++) {
+                neighborhood[i] = read_cells[(cell + i + 0) % cell_count];
             }
-            if (y != n) abort();
+                        
+            for (nat i = 2; i < numerus; i++) {
+                
+            }
+                        
+            write_cells[cell] += neighborhood[1] * (neighborhood[0] * (neighborhood[2] + 1) + 1);
             
-            const nat L = h[1], R = h[2], U = h[3], D = h[4];               // C = h[0],
+            write_cells[cell] %= modulus;
             
-            f[c] += L * (f[c] * (R + 1) + 1);
-            f[c] += R * (f[c] * (U + 1) + 1);
-//            f[c] += U * (f[c] * (D + 1) + 1);
-            
-            f[c] %= m;
-            
-            if (c % s == 0 && nd) printf("\n");
-            printf("\033[38;5;%um██\033[0m", (unsigned)((double) g[c] / m * 24) + 232);
+            if (cell % sidelength == 0 && dimensional) printf("\n");
+            printf("\033[38;5;%um██\033[0m", (unsigned)((double) read_cells[cell] / modulus * 24) + 232);
         }
         printf("\n");
         fflush(stdout);
         if (!delay) getchar(); else usleep((unsigned) delay);
     }
 }
+
+
+
+
+
+
 
 
 
@@ -131,4 +138,19 @@ int main(int argc, const char** argv) {
         if (!delay) getchar(); else usleep((unsigned) delay);
     }
 }
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ const nat L = h[1], R = h[2], U = h[3], D = h[4];               // C = h[0],
+             
+             f[c] += L * (f[c] * (R + 1) + 1);
+             f[c] += R * (f[c] * (U + 1) + 1);
+ //            f[c] += U * (f[c] * (D + 1) + 1);
+             
+ 
 */

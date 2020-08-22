@@ -84,13 +84,22 @@ void initialize(vector cells, nat m, nat n,
     }
 }
 
-void fill_neighbors(nat n, /*input*/vector read_array, nat cell,
+void fill_balanced_neighbors(nat n, /*input*/vector read_array, nat cell,
                     /*output*/vector neighbors, nat cell_count, nat sidelength) {
     
     /// fills the neighborhood according to the natural ordering:
     ///
     ///     h(x)  =  { C L R U D F B A P ...etc }
     ///
+    /// uses an algorithm as follows:
+    ///
+    /// the index for the positive and negative
+    /// neighbor along the i / l dimension:
+    ///
+    ///     c + i * ((c / i + l ± 1) % l - c / i % l
+    ///
+    /// this would then be indexed into the read array,
+    /// to get the neighbors.
     
     nat count = 0;
     if (count < n) neighbors[count++] = read_array[cell]; /// C : center cell.  [read-only]
@@ -130,7 +139,7 @@ nat measure_lifetime(vector hgrid, struct parameters* p) {
         memcpy(read_cells, write_cells, sizeof read_cells);
         
         for (nat cell = 0; cell < cell_count; cell++) {
-            fill_neighbors(n, read_cells, cell, neighborhood, cell_count, sidelength);
+            fill_balanced_neighbors(n, read_cells, cell, neighborhood, cell_count, sidelength);
             write_cells[cell] = hgrid[unreduce(neighborhood, m, n)];
         }
         
@@ -166,7 +175,7 @@ void visualize_lifetime(nat begin_timestep, nat begin_slice, nat end_slice, vect
             
             if (!(cell % sidelength) && p.n_dimensional_display) puts("");
                         
-            fill_neighbors(n, read_cells, cell, neighborhood, cell_count, sidelength);
+            fill_balanced_neighbors(n, read_cells, cell, neighborhood, cell_count, sidelength);
             write_cells[cell] = hgrid[unreduce(neighborhood, m, n)];
 
             const nat slice = cell / sidelength;
@@ -207,7 +216,7 @@ void generate_lifetime_image(const char* filename, nat begin_timestep, nat begin
         memcpy(read_cells, write_cells, sizeof read_cells);
         for (nat cell = 0; cell < cell_count; cell++) {
             
-            fill_neighbors(n, read_cells, cell, neighborhood, cell_count, sidelength);
+            fill_balanced_neighbors(n, read_cells, cell, neighborhood, cell_count, sidelength);
             write_cells[cell] = hgrid[unreduce(neighborhood, m, n)];
             
             const nat slice = cell / sidelength;
@@ -242,17 +251,18 @@ void generate_lifetime_images(char** input, struct context* context) {
     
     for (nat i = 0; i < z_count && mode != stopped; i++) {
         nat z = z_values[i];
-        printf("\r [  %llu  /  %llu  ] : %llu                  ", i, z_count, z);
+        printf("\r [  %llu  /  %llu  ] : %llu                  "
+               , i, z_count, z);
         fflush(stdout);
         
-        char filename[4096] = {0}, stringified_z_value[4096] = {0};
-        sprintf(stringified_z_value, "z_%llu.ppm", z);
-        strcpy(filename, destination_dir);
-        strcat(filename, "/");
-        strcat(filename, stringified_z_value);
+        char path[4096] = {0}, filename[4096] = {0};
+        sprintf(filename, "z_%llu.ppm", z);
+        strcpy(path, destination_dir);
+        strcat(path, "/");
+        strcat(path, filename);
         
         reduce(hgrid, z, m, H);
-        generate_lifetime_image(filename, 0, begin, end, hgrid, context->parameters);
+        generate_lifetime_image(path, 0, begin, end, hgrid, context->parameters);
     }
     printf("generate: generated all images.\n");
 }
@@ -286,7 +296,7 @@ void threshold_search(nat threshold, const char* outfile, struct context* contex
     
     vector hgrid_copy = duplicate(context->hgrid, H);
     
-    element indicies[H], search[H]; // these will have the same length.
+    element indicies[H], search[H];
     
     nat indicies_count = find_unknown_indicies(hgrid_copy, H, indicies), search_space = powl(m, indicies_count), z_count = 0;
     element definitions[search_space], scores[search_space];
@@ -377,7 +387,10 @@ void visualize_set
         else if (c == 'a') blacklist[at] = !blacklist[at];
         else if (c == 't') should_display = !should_display;
         
-        else if (c == 'p') printf(" offset: %llu, begin: %llu, end: %llu \n", offset, begin_slice, end_slice);
+        else if (c == 'p') {
+            printf(" offset: %llu, begin: %llu, end: %llu \n", offset, begin_slice, end_slice);
+            fflush(stdout); sleep(1);
+        }
         
         else if (c == 'j' && begin_slice) begin_slice--;
         else if (c == 'i' && begin_slice + 1 < end_slice) begin_slice++;

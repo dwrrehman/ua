@@ -52,7 +52,7 @@ struct parameters {
     
     /// the sidelength of the (d dimensional) cube of s cells.
     nat l;
-        
+    
     /// the delay in microseconds for visualization.
     nat delay;
             

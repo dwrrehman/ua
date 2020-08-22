@@ -3,48 +3,57 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <string.h>
 #include <math.h>
 
 typedef unsigned long long nat;
 
-#define dot     f[s] = (f[s] + 1) % m
-#define LRS(x) for (nat _ = 0; _ < x; _++)
-
 int main(int argc, const char** argv) {
-    if (argc <= 6) { printf("new: 23: usage: \n\t./ca m n s t d nd\n\n"); return 1; }
+    
+    if (argc <= 7) exit(puts("new: 24: usage: \n\t./ca m n s l t D d\n"));
+                        
     const nat
-        m = atoll(argv[1]),
-        n = atoll(argv[2]),
-        s = atoll(argv[3]), S = powl(s, n / 2),
-        t = atoll(argv[4]),
-        delay = atoll(argv[5]),
-        nd = atoll(argv[6]);
+        modulus = atoll(argv[1]),
+        numerus = atoll(argv[2]),
+        cell_count = atoll(argv[3]),
+        sidelength = atoll(argv[4]),
+        timesteps = atoll(argv[5]),
+        delay = atoll(argv[6]),
+        dimensional = atoll(argv[7]);
     
-    nat f[S], g[S], h[n]; // excluding C_0.
-    memset(f, 0, sizeof f); ++*f;    // construct dot state.
+    nat write_cells[cell_count], read_cells[cell_count], neighborhood[numerus];
     
-    for (nat _t = 0; _t < t; _t++) {
-        if (nd) printf("\e[1;1H\e[2J");
-        memcpy(g, f, sizeof g);
-        for (nat _s = 0; _s < S; _s++) {
+    memset(write_cells, 0, sizeof write_cells);
+    ++*write_cells;
+    
+    for (nat timestep = 0; timestep < timesteps; timestep++) {
+        
+        if (dimensional) printf("\e[1;1H\e[2J");
+        memcpy(read_cells, write_cells, sizeof read_cells);
+        
+        for (nat cell = 0; cell < cell_count; cell++) {
             
             nat y = 0;
-            h[y++] = g[_s];
-            for (nat x = 1; x < S; x *= s) {
-                h[y++] = g[_s + x * ((_s / x + s + 1) % s - _s / x % s)];
-                h[y++] = g[_s + x * ((_s / x + s - 1) % s - _s / x % s)];
+            if (y < numerus) neighborhood[y++] = read_cells[cell];
+            for (nat x = 1; x < cell_count; x *= sidelength) {
+                if (y < numerus) neighborhood[y++] = read_cells[cell + x * ((cell / x + sidelength + 1) % sidelength - cell / x % sidelength)];
+                if (y < numerus) neighborhood[y++] = read_cells[cell + x * ((cell / x + sidelength - 1) % sidelength - cell / x % sidelength)];
             }
             
-            for (nat i = 1; i < n; i++) {
-                f[_s] += h[i] * (f[_s] * (h[i - 1] + 1) + 1);
+//            for (nat i = 1; i < numerus - 1; i++) {
+//                write_cells[cell] += neighborhood[numerus - 1] * (neighborhood[i] + 1);
+//            }
+            
+            nat* const h = neighborhood;
+            
+            if (numerus == 5) {
+                write_cells[cell] += h[4] * (h[3] * (h[2] * (h[1] * h[0] + 1) + 1) + 1);
             }
+    
             
-            
-            f[_s] %= m;
-            if (_s % s == 0 && nd) printf("\n");
-            printf("\033[38;5;%um██\033[0m", (unsigned)((double) g[_s] / m * 24) + 232);
+            write_cells[cell] %= modulus;
+            if (cell % sidelength == 0 && dimensional) printf("\n");
+            printf("\033[38;5;%um██\033[0m", (unsigned)((double) read_cells[cell] / modulus * 24) + 232);
         }
         printf("\n");
         fflush(stdout);

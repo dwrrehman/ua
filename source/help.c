@@ -139,7 +139,7 @@ void print_help_menu(char** input, nat count) {
                "\t clear(l)\n"
                "\t help(h)\n"
                "\t print(p)\n"
-               "\t load(l)\n"
+               "\t load(d)\n"
                "\t calculate(c)\n"
                "\t set(s)\n"
                "\t convert(k)\n"

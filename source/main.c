@@ -196,6 +196,7 @@ void user_interface(struct context *context) {
         else if (equals(*input, "search", "t")) search(input, count, context);
         else if (equals(*input, "visualize", "v")) visualize(input, count, context);
         else if (equals(*input, "generate", "g")) generate_utility(input, count, context);
+        else if (equals(*input, "ls", "sl")) print_parameters(context->parameters);
         else {
             printf("error: %s: unknown command:\n", line);
             print_command(input, count);

@@ -25,11 +25,9 @@ void graph(nat x, nat m);
 void initialize(vector g, nat m, nat n, nat L, nat s,
 enum initial_state_type initial);
 
-void fill_neighbors(nat n, vector read_cells, nat cell, vector neighbors, nat cell_count, nat sidelength);
-
+void fill_balanced_neighbors(nat n, vector read_cells, nat cell, vector neighbors, nat cell_count, nat sidelength);
 
 nat measure_lifetime(vector h, struct parameters* p);
-
 
 void threshold_search(nat threshold, const char* outfile, struct context* c);
 
