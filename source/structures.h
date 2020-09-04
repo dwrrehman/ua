@@ -85,7 +85,6 @@ struct rule {
 };
 
 struct context {
-    const char* home;
     struct parameters parameters;    
     vector hgrid;
     nat z;

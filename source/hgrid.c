@@ -180,7 +180,6 @@ void load_n5_hgrid(const char* filename, struct context* context) {
     assert(n == 5);
         
     char path[2048] = {0};
-    strcpy(path, context->home);
     strcat(path, filename);
     
     FILE* file = fopen(path, "r");

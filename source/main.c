@@ -23,8 +23,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-const char* default_home = "/Users/deniylreimn/Documents/projects/ua/";
-
 void load_file(char** input, nat count, struct context* context) {
     
     const nat n = context->parameters.n;
@@ -82,8 +80,7 @@ void print_information(char** input, nat count, struct context context) {
     
     const nat m = context.parameters.m, n = context.parameters.n, H = to(m,n);
     
-    if (strings_equal(input[1], "home")) puts(context.home);
-    else if (strings_equal(input[1], "z")) printf("z = %llu\n", context.z);
+    if (strings_equal(input[1], "z")) printf("z = %llu\n", context.z);
     else if (equals(input[1], "param", "p")) print_parameters(context.parameters);
     else if (strings_equal(input[1], "parameters")) verbose_print_parameters(context.parameters);
     else if (strings_equal(input[1], "vector-hgrid")) print_vector_line_message("hgrid = ", context.hgrid, H);
@@ -143,14 +140,13 @@ void visualize(char** input, nat count, struct context* context) {
 }
 
 void search(char** input, nat input_count, struct context* c) {
-    
-    if (strings_equal(input[1], "threshold")) {
+    if (strings_equal(input[1], "threshold"))
         threshold_search(atoll(input[2]), input[3], c);
-        
-    } else if (strings_equal(input[1], "other")) {
-        printf("unimplemented.\n");
-                
-    } else {
+    
+    else if (strings_equal(input[1], "target"))
+        target_search(atoll(input[2]), atoll(input[3]), input[4], c);
+    
+    else {
         printf("error: search: unknown search type: %s\n", input[1]);
         print_menu_for("search");
     }
@@ -205,12 +201,7 @@ void user_interface(struct context *context) {
 }
 
 int main() {
-    struct context context = {
-        .home = default_home,
-        .parameters = {0},
-        .hgrid = NULL,
-        .z = 0
-    };
+    struct context context = {0};
     using_history();
     signal(SIGINT, handler);
     user_interface(&context);

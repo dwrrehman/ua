@@ -81,7 +81,6 @@ void print_menu_for(const char* command) {
     
     if (strings_equal(command, "print"))
         printf("available information: \n"
-               "\t home\n"
                "\t z\n"
                "\t param(p)\n"
                "\t parameters\n"
@@ -115,6 +114,7 @@ void print_menu_for(const char* command) {
     if (strings_equal(command, "search"))
         printf("available modes: \n"
                "\t threshold <thr> <out_zset_filename> \n"
+               "\t target <target:nat> <tolerance:nat> <out_zset_filename> \n"
                "\n");
     
     

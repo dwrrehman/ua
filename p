@@ -5,9 +5,9 @@
 m = 2
 n = 4
 
-s = 2500
-l = 50
-t = 3000
+s = 256
+l = 16
+t = 6000
 
 initial = dot
 display = intuitive

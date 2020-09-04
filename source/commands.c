@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 void print_command(char** commands, nat count) {
     printf("command: (%llu) {\n", count);
     for (size_t i = 0; i < count; i++) {

@@ -94,7 +94,7 @@ void fill_balanced_neighbors(nat n, /*input*/vector read_array, nat cell,
     /// uses an algorithm as follows:
     ///
     /// the index for the positive and negative
-    /// neighbor along the i / l dimension:
+    /// neighbor along the i / l dimension, for the cell index "c":
     ///
     ///     c + i * ((c / i + l ± 1) % l - c / i % l
     ///
@@ -102,18 +102,35 @@ void fill_balanced_neighbors(nat n, /*input*/vector read_array, nat cell,
     /// to get the neighbors.
     
     nat count = 0;
-    if (count < n) neighbors[count++] = read_array[cell]; /// C : center cell.  [read-only]
     
-    for (nat i = 1; i < cell_count; i *= sidelength) {
-       
+    if (count < n) neighbors[count++] = read_array[cell];
+    
+    if (n == 3) {
+        
         if (count < n) neighbors[count++] = read_array
-        [cell + i * ((cell / i + sidelength - 1) % sidelength
-                     - cell / i % sidelength)]; ///   L, U, F, A, ...
-                        
+            [cell + ((cell + sidelength - 1) % sidelength - cell % sidelength)];
+        
         if (count < n) neighbors[count++] = read_array
-               [cell + i * ((cell / i + 1) % sidelength
-                            - cell / i % sidelength)]; ///  R, D, B, P, ...
-    }
+            [cell + ((cell + 1) % sidelength - cell % sidelength)];
+        
+    } else if (n == 4) {
+        
+        if (count < n) neighbors[count++] = read_array
+            [cell + ((cell + sidelength - 1) % sidelength - cell % sidelength)];
+        
+        if (count < n) neighbors[count++] = read_array
+            [cell + ((cell + 1) % sidelength - cell % sidelength)];
+        
+        if (count < n) neighbors[count++] = read_array
+            [cell + ((cell + 2) % sidelength - cell % sidelength)];
+        
+    } else if ( n == 5) {
+        for (nat i = 1; i < cell_count; i *= sidelength) {
+            if (count < n) neighbors[count++] = read_array [cell + i * ((cell / i + sidelength - 1) % sidelength - cell / i % sidelength)];
+            if (count < n) neighbors[count++] = read_array [cell + i * ((cell / i + 1) % sidelength - cell / i % sidelength)];
+        }
+    } else
+        abort(); // lol :P
 }
 
 bool doesnt_contain_vector(nat element_length, vector* states, nat state_count, vector state) {
@@ -304,16 +321,17 @@ void threshold_search(nat threshold, const char* outfile, struct context* contex
     print_vector_line_message("hgrid", hgrid_copy, H);
     print_vector_line_message("indicies", indicies, indicies_count);
     
+    printf("searching over %llu unknowns...\n", indicies_count);
     get_character();
     
     mode = running;
-    
-    printf("searching over %llu unknowns...\n", indicies_count);
     for (nat z_try = 0; z_try < search_space && mode != stopped; z_try++) {
         
         if (mode == stepping) get_character();
         
         printf("\r [  %llu  /  %llu  ]       ", z_try, search_space);
+        fflush(stdout);
+        
         reduce(search, z_try, m, indicies_count);
         map(hgrid_copy, search, indicies, H);
         nat score = measure_lifetime(hgrid_copy, &context->parameters), z_definition = unreduce(hgrid_copy, m, H);
@@ -323,13 +341,54 @@ void threshold_search(nat threshold, const char* outfile, struct context* contex
             scores[z_count++] = score;
         }
     }
-    
     puts("\n");
-    printf("found %llu z values >= threshold. (%f%%) \n", z_count, ((float)z_count / search_space));
+    printf("found %llu z values >= threshold. (%f%%) \n", z_count, 100.0 * ((float)z_count / search_space));
     save_values(outfile, definitions, z_count);
     
     destroy(&hgrid_copy);
 }
+
+void target_search(nat target, nat tolerance, const char* outfile, struct context* context) {
+    
+    const nat m = context->parameters.m, n = context->parameters.n, H = to(m,n);
+    
+    vector hgrid_copy = duplicate(context->hgrid, H);
+    
+    element indicies[H], search[H];
+    
+    nat indicies_count = find_unknown_indicies(hgrid_copy, H, indicies), search_space = powl(m, indicies_count), z_count = 0;
+    element definitions[search_space], scores[search_space];
+    
+    print_vector_line_message("hgrid", hgrid_copy, H);
+    print_vector_line_message("indicies", indicies, indicies_count);
+    
+    printf("searching over %llu unknowns...\n", indicies_count);
+    get_character();
+    
+    mode = running;
+    for (nat z_try = 0; z_try < search_space && mode != stopped; z_try++) {
+        
+        if (mode == stepping) get_character();
+        
+        printf("\r [  %llu  /  %llu  ]       ", z_try, search_space);
+        fflush(stdout);
+
+        reduce(search, z_try, m, indicies_count);
+        map(hgrid_copy, search, indicies, H);
+        nat score = measure_lifetime(hgrid_copy, &context->parameters), z_definition = unreduce(hgrid_copy, m, H);
+        if (score < target + tolerance && score > target - tolerance) {
+            printf("\n[z = %llu] ---> %llu timesteps\n\n", z_definition, score);
+            definitions[z_count] = z_definition;
+            scores[z_count++] = score;
+        }
+    }
+    puts("\n");
+    printf("found %llu z values >= threshold. (%f%%) \n", z_count, 100.0 * ((float)z_count / search_space));
+    save_values(outfile, definitions, z_count);
+    
+    destroy(&hgrid_copy);
+}
+
 
 void visualize_set
 (nat begin,

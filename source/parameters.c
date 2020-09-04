@@ -93,7 +93,6 @@ void set_parameter(struct parameters* p, const char* name, const char* value) {
 void load_parameters_from_file(const char* filename, struct context* c) {
     
     char path[2048] = {0};
-    strcpy(path, c->home);
     strcat(path, filename);
     
     FILE* file = fopen(path, "r");
