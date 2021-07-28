@@ -87,6 +87,53 @@ int main() {
 			char string[33] = {0};
 			stringify_graph(string);
 			printf("running graph: %s\n", string);
+			
+			unsigned long long array[4096] = {0};
+			unsigned long long m = 100, n = 4095;
+			
+			int8_t ins = 0x0E;
+			
+			while (ins) {
+				unsigned long long display_limit = 10;				
+
+
+				// display:
+				printf("    *0:[ %3llu ] ", array[0]);
+				for (unsigned long long i = 1; i < display_limit; i++) { // how much do we print of the thing?...
+					printf(" [ %3llu ] ", array[i]);
+				} 
+				printf("    ...  *n:[ %3llu ]\n", array[n]);
+				
+				// put marker note:
+				printf("           ");
+				for (unsigned long long i = 0; i < array[0] and i < display_limit; i++) {
+					printf("         ");
+				}
+				printf("^\n");
+
+				// execute:
+
+				if (ins == 0) printf("halting...\n");
+				else if (ins == 1) { array[0]++; ins = graph[ins][0]; }
+				else if (ins == 2) { array[n]++; ins = graph[ins][0]; } 
+				else if (ins == 3) { array[array[0]]++; ins = graph[ins][0]; }
+				else if (ins == 4) { /* nop */ ins = graph[ins][0]; }
+				else if (ins == 5) { array[0] = 0; ins = graph[ins][0]; }
+				else if (ins == 6) { array[n] = 0; ins = graph[ins][0]; } 
+				else if (ins == 7) { array[array[0]] = 0; ins = graph[ins][0]; }
+				else if (ins == 8) { ins = graph[ins][1]; }
+				else if (ins == 9) { ins = (array[0] < n ? graph[ins][1] : graph[ins][0]); }
+				else if (ins == 0xA) { ins = (array[n] < array[0] ? graph[ins][1] : graph[ins][0]); }
+				else if (ins == 0xB) { ins = (array[array[0]] < m ? graph[ins][1] : graph[ins][0]); }
+				else if (ins == 0xC) { /* do nothing */ }
+				else if (ins == 0xD) { ins = (array[0] < array[n] ? graph[ins][1] : graph[ins][0]); }
+				else if (ins == 0xE) { ins = (array[n] < array[array[0]] ? graph[ins][1] : graph[ins][0]); }
+				else if (ins == 0xF) { ins = (array[array[0]] < array[n] ? graph[ins][1] : graph[ins][0]); }
+
+				printf("[%hhX] continue? ", ins);
+				if (getchar() == 'q') break;
+			}
+	
 			printf("execution done.\n");
 
 		} else if (not strcmp(buffer, "init")) {
@@ -100,7 +147,9 @@ int main() {
 			char string[33] = {0};
 			stringify_graph(string);
 			printf("graph:  %s \n", string);
-			
+
+		} else if (not strcmp(buffer, "")) {
+		
 		} else {
 			printf("error: unknown command: %s\n", buffer);
 		}
@@ -109,3 +158,6 @@ int main() {
 	return 0;
 }
 
+
+
+// 00E0A0F000D0E0000000D6000021325A
