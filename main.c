@@ -94,11 +94,72 @@ int main() {
 			int8_t ins = 0x0E;
 			
 			while (ins) {
-				unsigned long long display_limit = 10;				
 
+				if (ins == 1) {
+					array[0]++; ins = graph[ins][0]; 
+					printf("[1]"); 
+
+				} else if (ins == 2) { 
+					array[n]++; ins = graph[ins][0]; 
+					printf("[2]"); 
+
+				} else if (ins == 3) { 
+					array[array[0]]++; ins = graph[ins][0]; 
+					printf("[3]");
+
+				} else if (ins == 4) { 
+					/* nop */ ins = graph[ins][0]; 
+					printf("[4]");
+
+				} else if (ins == 5) { 
+					array[0] = 0; ins = graph[ins][0]; 
+					printf("[5]"); 
+
+				} else if (ins == 6) { 
+					array[n] = 0; ins = graph[ins][0]; 
+					printf("[6]"); 
+
+				} else if (ins == 7) { 
+					array[array[0]] = 0; ins = graph[ins][0]; 
+					printf("[7]"); 
+
+				} else if (ins == 8) { 
+					ins = graph[ins][1]; 
+					printf("[8][T]"); 
+
+				} else if (ins == 9) {
+					ins = (array[0] < n ? graph[ins][1] : graph[ins][0]); 
+					printf("[9][%d]", array[0] < n);
+
+				} else if (ins == 0xA) {
+					ins = (array[n] < array[0] ? graph[ins][1] : graph[ins][0]); 
+					printf("[A][%d]", array[n] < array[0]); 
+
+				} else if (ins == 0xB) {
+					ins = (array[array[0]] < m ? graph[ins][1] : graph[ins][0]); 
+					printf("[B][%d]", array[array[0]] < m);
+				
+				} else if (ins == 0xC) {
+					printf("[C]"); /* do nothing */ 
+
+				} else if (ins == 0xD) {
+					ins = (array[0] < array[n] ? graph[ins][1] : graph[ins][0]);
+					printf("[D][%d]", array[0] < array[n]); 
+
+ 				} else if (ins == 0xE) {
+					ins = (array[n] < array[array[0]] ? graph[ins][1] : graph[ins][0]); 
+					printf("[E][%d]", array[n] < array[array[0]]);  
+
+				} else if (ins == 0xF) {
+					ins = (array[array[0]] < array[n] ? graph[ins][1] : graph[ins][0]); 
+					printf("[F][%d]", array[array[0]] < array[n]);
+				}
+
+
+				const unsigned long long display_limit = 10;
 
 				// display:
-				printf("    *0:[ %3llu ] ", array[0]);
+				printf("\n    *0:[ %3llu ] ", array[0]);
 				for (unsigned long long i = 1; i < display_limit; i++) { // how much do we print of the thing?...
 					printf(" [ %3llu ] ", array[i]);
 				} 
@@ -111,30 +172,11 @@ int main() {
 				}
 				printf("^\n");
 
-				// execute:
-
-				if (ins == 0) printf("halting...\n");
-				else if (ins == 1) { array[0]++; ins = graph[ins][0]; }
-				else if (ins == 2) { array[n]++; ins = graph[ins][0]; } 
-				else if (ins == 3) { array[array[0]]++; ins = graph[ins][0]; }
-				else if (ins == 4) { /* nop */ ins = graph[ins][0]; }
-				else if (ins == 5) { array[0] = 0; ins = graph[ins][0]; }
-				else if (ins == 6) { array[n] = 0; ins = graph[ins][0]; } 
-				else if (ins == 7) { array[array[0]] = 0; ins = graph[ins][0]; }
-				else if (ins == 8) { ins = graph[ins][1]; }
-				else if (ins == 9) { ins = (array[0] < n ? graph[ins][1] : graph[ins][0]); }
-				else if (ins == 0xA) { ins = (array[n] < array[0] ? graph[ins][1] : graph[ins][0]); }
-				else if (ins == 0xB) { ins = (array[array[0]] < m ? graph[ins][1] : graph[ins][0]); }
-				else if (ins == 0xC) { /* do nothing */ }
-				else if (ins == 0xD) { ins = (array[0] < array[n] ? graph[ins][1] : graph[ins][0]); }
-				else if (ins == 0xE) { ins = (array[n] < array[array[0]] ? graph[ins][1] : graph[ins][0]); }
-				else if (ins == 0xF) { ins = (array[array[0]] < array[n] ? graph[ins][1] : graph[ins][0]); }
-
-				printf("[%hhX] continue? ", ins);
+				printf(". ");
 				if (getchar() == 'q') break;
 			}
 	
-			printf("execution done.\n");
+			printf("[HALT]\n");
 
 		} else if (not strcmp(buffer, "init")) {
 		
@@ -158,6 +200,8 @@ int main() {
 	return 0;
 }
 
-
+///  tried graphs:
 
 // 00E0A0F000D0E0000000D6000021325A
+
+// 00E0A0F000D0E000000016000021325A
