@@ -1,74 +1,165 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <iso646.h>
+#include <stdbool.h>
 #include <ctype.h>
 
-#include <stdbool.h>
-#include <iso646.h>
-#include <stdint.h>
-
-// compile me with     clang -O0 -Weverything -fsanitize=address,undefined main.c -o run
 
 
-static int8_t graph[16][2];
+// a test framework to visualize the possibility space and search it manually, but make it easier to see what the graphs do, ie their computation, and whether that edge is sensical. searching the graph possible edges space.
 
-static inline void stringify_graph(char* string) {
-	int s = 0;
-	for (int8_t i = 0; i < 16; i++) {
-		for (int8_t j = 0; j < 2; j++) {
-			int8_t c = graph[i][j];
-			if (c < 10) string[s++] = '0' + c;
-			else string[s++] = c - 10 + 'A';
+typedef unsigned long long nat;
+typedef int8_t byte;
+
+static const nat display_limit = 10;
+
+static inline void display_state(nat* array, nat n) {
+	printf("\n    *0:[ %3llu ] ", array[0]);
+	for (nat i = 1; i < display_limit; i++) { 
+		printf(" [ %3llu ] ", array[i]);
+	} 
+	printf("    ...  *n:[ %3llu ]\n", array[n]);
+			
+	printf("           ");
+	for (nat i = 0; i < array[0] and i < display_limit; i++) {
+		printf("         ");
+	}
+	printf("^\n. \n");
+}
+
+
+static inline char hex(byte i) {
+	return i < 10 ? '0' + i : i - 10 + 'A';
+}
+
+static inline char nonzero_hex(byte i) {
+	if (not i) return ' '; else return hex(i);
+}
+
+
+static inline char* hex_string(byte* graph) {
+
+	static char string[33] = {0};
+	byte s = 0;
+
+	for (byte i = 0; i < 16; i++) {
+		for (byte j = 0; j < 2; j++) {
+			const byte c = graph[i * 2 + j];
+			string[s++] = hex(c);
 		}
 	}
 	string[s++] = 0;
+	return string;
 }
 
-// example input: 000000F000D000000000000700E223A5
+static inline void run(nat m, nat n, byte* graph, byte start, bool should_display) {
+	
+	nat* array = calloc(n + 1, sizeof(nat));
+	byte i = start;
 
-static inline void initialize_graph_from_string(char* string) {
+	if (should_display) display_state(array, n);
+
+	while (i) {
+		
+		if (should_display) printf("[%c]", hex(i));
+		
+		if (i == 9) {
+			i = graph[i * 2 + (array[0] < n)];
+			if (should_display) printf("[%c]\n", array[0] < n ? 't' : 'f');
+
+		} else if (i == 0xA) {
+			i = graph[i * 2 + (array[n] < array[0])]; 
+			if (should_display) printf("[%c]\n", array[n] < array[0] ? 't' : 'f'); 
+
+		} else if (i == 0xB) {
+			i = graph[i * 2 + (array[array[0]] < m)]; 
+			if (should_display) printf("[%c]\n", array[array[0]] < m ? 't' : 'f');
+		
+		} else if (i == 0xD) {
+			i = graph[i * 2 + (array[0] < array[n])]; 
+			if (should_display) printf("[%c]\n", array[0] < array[n] ? 't' : 'f'); 
+
+		} else if (i == 0xE) {
+			i = graph[i * 2 + (array[n] < array[array[0]])];
+			if (should_display) printf("[%c]\n", array[n] < array[array[0]] ? 't' : 'f');
+
+		} else if (i == 0xF) {
+			i = graph[i * 2 + (array[array[0]] < array[n])];
+			if (should_display) printf("[%c]\n", array[array[0]] < array[n] ? 't' : 'f');
+		}
+
+		else if (i == 1) { array[0]++; 			i = graph[i * 2];  printf("\n"); }
+		else if (i == 2) { array[n]++; 			i = graph[i * 2];  printf("\n"); }
+		else if (i == 3) { array[array[0]]++; 		i = graph[i * 2];  printf("\n"); }
+		else if (i == 4) { 		 		i = graph[i * 2];  printf("\n"); }
+		else if (i == 5) { array[0] = 0; 		i = graph[i * 2];  printf("\n"); }
+		else if (i == 6) { array[n] = 0; 		i = graph[i * 2];  printf("\n"); }
+		else if (i == 7) { array[array[0]] = 0; 	i = graph[i * 2];  printf("\n"); }
+		else if (i == 8) { 		 		i = graph[i * 2];  printf("\n"); }
+
+		if (should_display) display_state(array, n);
+
+		if (should_display) { printf("> "); if (getchar() == 'q') break; }
+	}
+
+	printf("[HALT]\n");
+
+}
+
+static inline void print_as_adjacency_list(byte* graph) {
+
+	printf("graph:\n");
+
+	for (byte i = 0; i < 8; i++) {
+		if (i == 4 or i == 0) { printf("\n"); continue; }
+		printf("\t%c: %c, %c    ", hex(i), nonzero_hex(graph[i * 2 + 0]), nonzero_hex(graph[i * 2 + 1]));
+		printf("%c: %c, %c\n", hex(i + 8), nonzero_hex(graph[(i + 8) * 2 + 0]), nonzero_hex(graph[(i + 8) * 2 + 1]));
+	}
+}
+
+static inline void initialize_graph_from_string(byte* graph, char* string) {
 	int s = 0;
-	for (int8_t i = 0; i < 16; i++) {
-		for (int8_t j = 0; j < 2; j++) {
+	for (byte i = 0; i < 16; i++) {
+		for (byte j = 0; j < 2; j++) {
 			int c = string[s++];
 			int g = isalpha(c) ? toupper(c) - 'A' + 10 : c - '0';
-			graph[i][j] = (int8_t) g;
+			graph[i * 2 + j] = (byte) g;
 		}
 	}
 }
 
-int main() {
-	printf("this is a program to help with finding the XFG, in the UA theory.\ntype help for more info.\n");
-	char buffer[128] = {0};
-	memset(graph, 0, 32);
 
+
+int main() {
+
+	printf("this is a program to help with finding the XFG, in the UA theory.\ntype help for more info.\n");
+
+	byte* graph = calloc(32, 1);
+	
+	char buffer[128] = {0};
 	while (1) {
 
 		printf("::> ");
 		fgets(buffer, sizeof buffer, stdin);
 		buffer[strlen(buffer) - 1] = 0;
 		
-		if (not strcmp(buffer, "quit")) {
+		if (not strcmp(buffer, "quit") or not strcmp(buffer, "q")) {
 			printf("quitting...\n");
 			break;
+		} else if (not strcmp(buffer, "")) {} 
+		else if (not strcmp(buffer, "clear") or not strcmp(buffer, "l")) printf("\033[2J\033[H");
 		
-		} else if (not strcmp(buffer, "help")) {
+
+
+		else if (not strcmp(buffer, "help")) {
 			printf("available commands:\n\t- quit\n\t- help\n\t- show\n\t- edit\n\t- run\n\t- init\n\t- dump\n\t \n");
 
-		} else if (not strcmp(buffer, "show")) {
+		} else if (not strcmp(buffer, "edit")) {  // [format: {source}{false}{true} ]
 
-			printf("current graph:\n");
-
-			for (int8_t i = 0; i < 8; i++) {
-				printf("\t%hhX: %hhX, %hhX    %hhX: %hhX, %hhX\n", 
-					i, graph[i][0], graph[i][1], (int8_t) (i + 8), graph[i + 8][0], graph[i + 8][1]);
-			}
-
-		} else if (not strcmp(buffer, "edit")) {
-			printf("[format: {source}{false}{true} ]\nedge string: ");
-			
+			printf("edge: ");
 			fgets(buffer, sizeof buffer, stdin);
+
 			int s_c = buffer[0];
 			int f_c = buffer[1];
 			int t_c = buffer[2];
@@ -79,129 +170,31 @@ int main() {
 			
 			if (source < 0 or source >= 16) { printf("error: source out of bounds\n"); continue; }
 
-			graph[source][0] = (int8_t) false_destination;
-			graph[source][1] = (int8_t) true_destination;
-	
-		} else if (not strcmp(buffer, "run")) {
-
-			char string[33] = {0};
-			stringify_graph(string);
-			printf("running graph: %s\n", string);
-			
-			unsigned long long array[4096] = {0};
-			unsigned long long m = 100, n = 4095;
-			
-			int8_t ins = 0x0E;
-			
-			while (ins) {
-
-				if (ins == 1) {
-					array[0]++; ins = graph[ins][0]; 
-					printf("[1]"); 
-
-				} else if (ins == 2) { 
-					array[n]++; ins = graph[ins][0]; 
-					printf("[2]"); 
-
-				} else if (ins == 3) { 
-					array[array[0]]++; ins = graph[ins][0]; 
-					printf("[3]");
-
-				} else if (ins == 4) { 
-					/* nop */ ins = graph[ins][0]; 
-					printf("[4]");
-
-				} else if (ins == 5) { 
-					array[0] = 0; ins = graph[ins][0]; 
-					printf("[5]"); 
-
-				} else if (ins == 6) { 
-					array[n] = 0; ins = graph[ins][0]; 
-					printf("[6]"); 
-
-				} else if (ins == 7) { 
-					array[array[0]] = 0; ins = graph[ins][0]; 
-					printf("[7]"); 
-
-				} else if (ins == 8) { 
-					ins = graph[ins][1]; 
-					printf("[8][T]"); 
-
-				} else if (ins == 9) {
-					ins = (array[0] < n ? graph[ins][1] : graph[ins][0]); 
-					printf("[9][%d]", array[0] < n);
-
-				} else if (ins == 0xA) {
-					ins = (array[n] < array[0] ? graph[ins][1] : graph[ins][0]); 
-					printf("[A][%d]", array[n] < array[0]); 
-
-				} else if (ins == 0xB) {
-					ins = (array[array[0]] < m ? graph[ins][1] : graph[ins][0]); 
-					printf("[B][%d]", array[array[0]] < m);
-				
-				} else if (ins == 0xC) {
-					printf("[C]"); /* do nothing */ 
-
-				} else if (ins == 0xD) {
-					ins = (array[0] < array[n] ? graph[ins][1] : graph[ins][0]);
-					printf("[D][%d]", array[0] < array[n]); 
-
- 				} else if (ins == 0xE) {
-					ins = (array[n] < array[array[0]] ? graph[ins][1] : graph[ins][0]); 
-					printf("[E][%d]", array[n] < array[array[0]]);  
-
-				} else if (ins == 0xF) {
-					ins = (array[array[0]] < array[n] ? graph[ins][1] : graph[ins][0]); 
-					printf("[F][%d]", array[array[0]] < array[n]);
-				}
-
-
-				const unsigned long long display_limit = 10;
-
-				// display:
-				printf("\n    *0:[ %3llu ] ", array[0]);
-				for (unsigned long long i = 1; i < display_limit; i++) { // how much do we print of the thing?...
-					printf(" [ %3llu ] ", array[i]);
-				} 
-				printf("    ...  *n:[ %3llu ]\n", array[n]);
-				
-				// put marker note:
-				printf("           ");
-				for (unsigned long long i = 0; i < array[0] and i < display_limit; i++) {
-					printf("         ");
-				}
-				printf("^\n");
-
-				printf(". ");
-				if (getchar() == 'q') break;
-			}
-	
-			printf("[HALT]\n");
+			graph[source * 2 + 0] = (byte) false_destination;
+			graph[source * 2 + 1] = (byte) true_destination;
 
 		} else if (not strcmp(buffer, "init")) {
-		
 			printf("hex[32] string: ");
 			fgets(buffer, sizeof buffer, stdin);
-			initialize_graph_from_string(buffer);
+			initialize_graph_from_string(graph, buffer);
 
-		} else if (not strcmp(buffer, "dump")) {
-			
-			char string[33] = {0};
-			stringify_graph(string);
-			printf("graph:  %s \n", string);
-
-		} else if (not strcmp(buffer, "")) {
-		
-		} else {
-			printf("error: unknown command: %s\n", buffer);
-		}
+		} else if (not strcmp(buffer, "show") or not strcmp(buffer, "ls")) print_as_adjacency_list(graph);
+		else if (not strcmp(buffer, "run")) run(2048, 4096, graph, 0xE, true);
+		else if (not strcmp(buffer, "dump")) printf("graph: %s\n", hex_string(graph));
+		else printf("error: unknown command.\n");
 	}
-
-	return 0;
 }
 
-///  tried graphs:
 
-// 00E0A0F000D0E0000000D6000021325A
+/// mtrc:
 
-// 00E0A0F000D0E000000016000021325A
+// 000000F000D000000000000000203050
+
+
+
+
+// try
+
+// 00E0A0F000D0A0000000DE0000213056
+
+
