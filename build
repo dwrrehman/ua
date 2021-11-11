@@ -1,1 +1,1 @@
-clang -O0 -Weverything -fsanitize=address,undefined main.c -o run
+clang -g -O0 -Weverything -Wno-poison-system-directories -fsanitize=address,undefined main.c -o run
