@@ -13,8 +13,57 @@
 // and whether that edge is sensical. searching the graph possible edges space.
 
 
+
+
+/// -------------------- data types ------------------------
+
 typedef unsigned long long nat;
 typedef int8_t byte;
+
+
+struct option {
+	// (source is implied.)
+	byte operation;  //ISA ins
+	byte destination; //ISA ins
+};
+
+struct options {
+	struct option* options;
+	nat count;
+};
+
+
+struct stack_frame {
+	struct options options;
+
+	nat array_state[array_size];
+
+	nat try;
+
+	int padding2;
+
+	byte source;
+	byte side;
+
+	byte padding0;
+	byte padding1;
+
+};
+
+
+enum expansion_type {
+	no_expansion,            // eg,    x 0 0 0 0 0 0 0 0 0 0 0 .. y   ie, no expansion at all.
+	constant_expansion,      // eg,    x 1 1 1 1 1 1 1 1 1 0 0 .. y   ie, no internal structure, just expansion and never ER.
+	good_expansion,          // eg,    x 4 2 6 1 5 2 1 1 0 0 0 .. y   ie, what we are looking for. does ER, and has structure.
+	hole_expansion,          // eg,    x 3 4 2 0 1 1 0 0 0 0 0 .. y   ie, has a hole, which means that it double skipped on LE. bad.
+	
+};
+
+struct candidate {
+	byte graph[32];
+	enum expansion_type expansion;
+	byte lifetime[64]
+};
 
 
 // -------------------- constants --------------------
@@ -24,11 +73,17 @@ static const nat array_display_limit = 20;			// how many cells you print, when d
 
 static const nat array_size = 2048; 				// finite size of the arrray, used to simulate n = infinity.    make this reasonably big.
 
-static const nat max_stack_size = 1024; 			// how many stack frames at max. 
+static const nat max_stack_size = 128; 			// how many stack frames at max. 
 
 static const nat execution_limit = 100; 		// how many ins to be exec'd before calling it quits for an option.
 
 
+
+
+
+
+
+// ---------------------- functions ----------------------
 
 
 
@@ -90,6 +145,16 @@ static inline void initialize_graph_from_string(byte* graph, char* string) {
 		}
 	}
 }
+
+
+static inline void write_array_to_file(byte**)
+
+
+
+
+
+
+
 
 static inline void read_graph_edit(byte* graph, char* buffer) {  // [format: {source}{false}{true} ]
 
@@ -168,35 +233,6 @@ static inline void run(const nat m, const nat n, byte* graph, const byte start) 
 }
 
 
-
-struct option {
-	// (source is implied.)
-	byte operation;  //ISA ins
-	byte destination; //ISA ins
-};
-
-struct options {
-	struct option* options;
-	nat count;
-};
-
-
-struct stack_frame {
-	struct options options;
-
-	nat array_state[array_size];
-
-	nat try;
-
-	int padding2;
-
-	byte source;
-	byte side;
-
-	byte padding0;
-	byte padding1;
-
-};
 
 static inline bool is_consistent(byte* graph, struct option option) {
 	if (not graph[2 * option.operation]) return true; // this operation hasnt been chosen yet. ie, its fresh and we can do whatever with it. 
@@ -313,11 +349,7 @@ static inline void print_stack(struct stack_frame* stack, nat stack_count) {
 
 
 
-struct candidate {
-	byte graph[32];
-	nat score;
-	nat rating;
-};
+
 
 
 
@@ -350,6 +382,8 @@ static inline void search(byte* graph, byte start) {
 	
 	// test_generate(graph);
 
+	nat tried = 0;
+
 	struct candidate* candidates = NULL;
 	nat candidate_count = 0;
 	
@@ -371,15 +405,15 @@ begin:
 	while (executed_count < execution_limit) {
 	
 
-		printf("info: [instruction pointer = %hhX]\n", i);
+		// printf("info: [instruction pointer = %hhX]\n", i);
 
 		if (i == 0) {
 
-			printf("found hole at %hhX%c (parent=%hhX, parent_side=%d) generating a list of options to fill it...\n", parent, parent_side ? 't' : 'f', parent, parent_side);
+			// printf("found hole at %hhX%c (parent=%hhX, parent_side=%d) generating a list of options to fill it...\n", parent, parent_side ? 't' : 'f', parent, parent_side);
 
 			struct options options = generate(graph, parent, parent_side);
 
-			print_options(options, parent, parent_side); // debug.
+			// print_options(options, parent, parent_side); // debug.
 			
 			struct stack_frame frame;
 			frame.try = 0; // start with the first option.
@@ -390,27 +424,27 @@ begin:
 		
 			stack[stack_count++] = frame;
 
-			printf("pushed new stack frame [sf count=%llu]: {.try=%llu, .source=%d, .side=%d, .options.count=%llu}\n", 
-				stack_count, frame.try, frame.source, frame.side, frame.options.count);
+			// printf("pushed new stack frame [sf count=%llu]: {.try=%llu, .source=%d, .side=%d, .options.count=%llu}\n", 
+				// stack_count, frame.try, frame.source, frame.side, frame.options.count);
 
-			printf("state of array before push:\n"); 
-			display_state(array, n);
+			// printf("state of array before push:\n"); 
+			// display_state(array, n);
 
 	
 
-			print_stack(stack, stack_count);
+			// print_stack(stack, stack_count);
+// 
 
-
-			printf("[info: executed %llu / %llu ins before generate() call.]\n", executed_count, execution_limit);
+			// printf("[info: executed %llu / %llu ins before generate() call.]\n", executed_count, execution_limit);
 			executed_count = 0;
 
 
 			instantiate_option_try(graph, frame);
-			printf("current graph is now: \n");
-			print_as_adjacency_list(graph);
+			// printf("current graph is now: \n");
+			// print_as_adjacency_list(graph);
 
 
-			printf("reverting instruction pointer to go back before we had executed the hole, %hhX...\n", parent);
+			// printf("reverting instruction pointer to go back before we had executed the hole, %hhX...\n", parent);
 			i = parent;
 
 			// printf("generate: continue? > "); 
@@ -419,7 +453,7 @@ begin:
 
 		} else {
 
-			printf("[%llu / %llu] executing %hhX...\n", executed_count, execution_limit, i);
+			// printf("[%llu / %llu] executing %hhX...\n", executed_count, execution_limit, i);
 
 			executed_count++;
 			parent = i;
@@ -427,7 +461,7 @@ begin:
 
 			// execute instruction.
 	
-			printf("[%c]", hex(i));
+			// printf("[%c]", hex(i));
 	
 
 			if (i == 9) {
@@ -439,7 +473,7 @@ begin:
 			} else if (i == 0xA) {
 				i = graph[i * 2 + (array[n] < array[0])]; 
 				parent_side = (array[n] < array[0]);
-				printf("[%c]\n", array[n] < array[0] ? 't' : 'f'); 
+				// printf("[%c]\n", array[n] < array[0] ? 't' : 'f'); 
 
 
 			} else if (i == 0xB) { 
@@ -451,31 +485,31 @@ begin:
 			} else if (i == 0xD) {
 				i = graph[i * 2 + (array[0] < array[n])]; 
 				parent_side = (array[0] < array[n]);
-				printf("[%c]\n", array[0] < array[n] ? 't' : 'f'); 
+				// printf("[%c]\n", array[0] < array[n] ? 't' : 'f'); 
 
 			} else if (i == 0xE) {
 				i = graph[i * 2 + (array[n] < array[array[0]])];
 				parent_side = (array[n] < array[array[0]]);
-				printf("[%c]\n", array[n] < array[array[0]] ? 't' : 'f');
+				// printf("[%c]\n", array[n] < array[array[0]] ? 't' : 'f');
 
 			} else if (i == 0xF) {
 				i = graph[i * 2 + (array[array[0]] < array[n])];
 				parent_side = (array[array[0]] < array[n]);
-				printf("[%c]\n", array[array[0]] < array[n] ? 't' : 'f');
+				// printf("[%c]\n", array[array[0]] < array[n] ? 't' : 'f');
 			}
 
-			else if (i == 1) { array[0]++; 			i = graph[i * 2];  printf("\n"); }
-			else if (i == 2) { array[n]++; 			i = graph[i * 2];  printf("\n"); }
-			else if (i == 3) { array[array[0]]++; 		i = graph[i * 2];  printf("\n"); }
-			else if (i == 4) { 		 		i = graph[i * 2];  printf("\n"); }
-			else if (i == 5) { array[0] = 0; 		i = graph[i * 2];  printf("\n"); }
-			else if (i == 6) { array[n] = 0; 		i = graph[i * 2];  printf("\n"); }
+			else if (i == 1) { array[0]++; 			i = graph[i * 2];  }//printf("\n"); }
+			else if (i == 2) { array[n]++; 			i = graph[i * 2];  }//printf("\n"); }
+			else if (i == 3) { array[array[0]]++; 		i = graph[i * 2];  }//printf("\n"); }
+			else if (i == 4) { 		 		i = graph[i * 2];  }//printf("\n"); }
+			else if (i == 5) { array[0] = 0; 		i = graph[i * 2];  }//printf("\n"); }
+			else if (i == 6) { array[n] = 0; 		i = graph[i * 2];  }//printf("\n"); }
 
 			else if (i == 7) abort(); 	// { array[array[0]] = 0; i = graph[i * 2];  printf("\n"); }
 			else if (i == 8) abort(); 	// { 	    		  i = graph[i * 2];  printf("\n"); }
 
-			printf("search: printing array state:\n");
-			display_state(array, n);
+			// printf("search: printing array state:\n");
+			// display_state(array, n);
 
 			// printf("execute: continue? > "); 
 			// if (getchar() == 'q') return;
@@ -483,86 +517,127 @@ begin:
 		
 	} // while()
 	
-	
-
 	// printf("[unimplemented.]\n");
 	// now we need to backtrack! so.... we need to check to see if   try == options.count - 1,     if so, then we need to pop TOS.
 	// if less than, then we need to incr try while the option is inconsistent. (easy, ie, skip over inconsistent ones.)
-
 	
 	// first, uninstatnate the current option.
 
 	// look at TOS to find where it is, and then, remove it, incr the try, and then inst again.
 
+	printf("state of the stack: \n");
+	print_stack(stack, stack_count);
 	
 	printf("tried candidate graph: \n");
 	print_as_adjacency_list(graph);
 	puts("");
 
-	
 	// &candidates, &candidate_count, 
 	evaluate(graph, array, n);
-	if (getchar() == 'q') return;
-
+	tried++;
+	// if (getchar() == 'q') {
+	// 	printf("info: ending graph search early...\n");
+	// 	return;
+	// }
 
 backtrack:
 
-	printf("backtracking!...\n");
-	print_stack(stack, stack_count);
+	for (int op = 1; op < 7; op++) {       // {1, 2, 3, 4, 5, 6}
+
+		bool operation_is_used = false;
+
+		for (int each = 0; each < 32; each++) { // loop over every single connection in the graph so far:
+
+			if (graph[each] == op) {
+				operation_is_used = true;
+			}
+		}
+
+		if (not operation_is_used) {
+			// printf("debug: the operation %d isnt being used, deleting now...\n", op);
+			graph[2 * op] = 0; 
+		}
+	}
+
+
+	
+	if (stack_count == 0) {
+		printf("error: no hole was found in the partial graph, after %llu instructions executed.\n", executed_count);
+		return;
+	}
+
+	// printf("backtracking!...\n");
+	// print_stack(stack, stack_count);
 
 	memcpy(array, stack[stack_count - 1].array_state, array_size * sizeof(nat));
-	printf("reverted state of the array back to:\n");
-	display_state(array, n);
+	// printf("reverted state of the array back to:\n");
+	// display_state(array, n);
 
 	if (stack[stack_count - 1].try < stack[stack_count - 1].options.count - 1) {
 		
 		stack[stack_count - 1].try++;
-		printf("incremented stack[%llu].try to be %llu... instantiating..\n", stack_count - 1, stack[stack_count - 1].try);
+		// printf("incremented stack[%llu].try to be %llu... instantiating..\n", stack_count - 1, stack[stack_count - 1].try);
 		instantiate_option_try(graph, stack[stack_count - 1]);
-		printf("current graph is now: \n");
-		print_as_adjacency_list(graph);
+		// printf("current graph is now: \n");
+		// print_as_adjacency_list(graph);
 
-		printf("trying this option now... starting from [i = %hhX]...\n", stack[stack_count - 1].source);
+		// printf("trying this option now... starting from [i = %hhX]...\n", stack[stack_count - 1].source);
 		i = stack[stack_count - 1].source;
 
-		printf("reseting the executed count (which was %llu...\n", executed_count);
+		// printf("reseting the executed count (which was %llu...\n", executed_count);
 		executed_count = 0;
-
 		// printf("backtrack: continue? > "); 
 		// if (getchar() == 'q') return;
-
 		goto begin;
 	} else {
-
 		// delete the last option that we tried for this stack frame, from the graph. (so it doesnt fill up with gunk over time)
 		// "uninstantiate"()
 		struct stack_frame top = stack[stack_count - 1];
-		struct option last = top.options.options[top.try];
+		// struct option last = top.options.options[top.try];
 
 		// wipe out the connection from the source to the op. 
 		// now, if we were the owner, then now the op will be dangling- ie no one can get to it. so it should be deleted. 
+		// printf("debug: reseting the options source-operation edge...\n");
+		graph[2 * top.source + top.side] = 0;//(0 := unknown)   		 
+		// always done no matter what. always applicable.
+	
+		/*       
+				[source] --> [operation] --> [destination] 
 
-		graph[2 * top.source + top.side] = 0;//(0 := unknown)   		  // always done no matter what. always applicable.
+					  ^               ^
+					  |               |
+				this edge is           this edge is only removed 
+				always removed.        if NO ONE is going to this 
+						       operation anymore. 
 
-		bool owns_operation = true;
-		// we set this to true, if and only if there is no one who can get to the operation at all- not even us. (because we wiped out our connection to it)
-		// ie, we go through the true and false of all other branches, and see if they take you to the oepration,   if they do, then we dont own this. 
-		for (nat j = 0xA; j < 16; j++) {
-			if (j == 0xB or j == 0xC) continue;
-			if (graph[2 * j + 0] == last.operation or graph[2 * j + 1] == last.operation) owns_operation = false;
+
+			cool, i think this makes sense. 
+
+			alrighty lets code it up! 
+		*/
+
+
+		for (int op = 1; op < 7; op++) {       // {1, 2, 3, 4, 5, 6}
+
+			bool operation_is_used = false;
+
+			for (int each = 0; each < 32; each++) { // loop over every single connection in the graph so far:
+
+				if (graph[each] == op) {
+					operation_is_used = true;
+				}
+			}
+
+			if (not operation_is_used) {
+				// printf("debug: the operation %d isnt being used, deleting now...\n", op);
+				graph[2 * op] = 0; 
+			}
 		}
 
-		if (owns_operation) graph[2 * last.operation] = 0; 
 	
-			// delete the destination. /// should we even do this!?
-			// are we the ones who came up with this operation, or not!?
-			// is it even harmful to wipe this all the time?
-
-			//DELETE ME:   tood: we should be checking the stack of decisions that we made, and checking to see if our operation is in another decisions data. if so, we arent responsible for it. only when no one else below us (in the stack) has claimed this operation, are we allowed to delete it ourselves, because then we know its ours. 
-
-
 		if (stack_count <= 1) goto done;
 		else {
+			// printf("popping...\n");
 			stack_count--;
 			goto backtrack;
 		}
@@ -572,7 +647,32 @@ backtrack:
 done:
 
 	printf("success: [exited search function successfully: exhausted all graph extension possibilities.]\n");
+
+
+	printf("----> tried %llu control flow graphs.\n", tried);
 }
+
+
+
+		// bool owns_operation = true;
+		// // we set this to true, if and only if there is no one who can get to the operation at all- not even us. (because we wiped out our connection to it)
+		// // ie, we go through the true and false of all other branches, and see if they take you to the oepration,   if they do, then we dont own this. 
+		// for (nat j = 0xA; j < 16; j++) {
+		// 	if (j == 0xB or j == 0xC) continue;
+		// 	if (graph[2 * j + 0] == last.operation or graph[2 * j + 1] == last.operation) owns_operation = false;
+		// }
+
+		// if (owns_operation) {
+		// 	printf("debug: this option owns the operation, so we are reseting the op too...\n");
+		// 	graph[2 * last.operation] = 0; 
+		// }
+
+			// delete the destination. /// should we even do this!?
+			// are we the ones who came up with this operation, or not!?
+			// is it even harmful to wipe this all the time?
+
+			//DELETE ME:   tood: we should be checking the stack of decisions that we made, and checking to see if our operation is in another decisions data. if so, we arent responsible for it. only when no one else below us (in the stack) has claimed this operation, are we allowed to delete it ourselves, because then we know its ours. 
+
 
 
 int main() {
@@ -585,8 +685,8 @@ int main() {
 	// initialize the graph with just the basic edge that we think we know from the mtrc. just so its a nonzero graph.   
 	// not technically required to do this. 
 
-	graph[2 * 0xE] = 0x3;
-	graph[2 * 0x3] = 0xF;
+	// graph[2 * 0xE] = 0x3;
+	// graph[2 * 0x3] = 0xF;
 	
 	char buffer[4096] = {0};
 
