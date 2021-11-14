@@ -5,20 +5,40 @@
 #include <stdbool.h>
 #include <ctype.h>
 
-/// 	XFG  search and run  utility.  used for finding the UA.
-/// 		written by daniel rehman on 2110317.093242 .
+/// 	XFG  search and run  utility.  used for finding the XFG, a special case of the UA.
+/// 		written by Daniel W. R. Rehman on 2110317.093242 .
+///                               edited on 2111147.004706
 
-// description: a test framework to visualize the possibility space and search it manually, 
-// but make it easier to see what the graphs do, ie their computation, 
-// and whether that edge is sensical. searching the graph possible edges space.
-
-
+// description: a test framework to brute force search the possibility space and search it manually, 
+// and make it easier to see what the graphs do, ie their computation/lifetime after some number of ins.
 
 
-/// -------------------- data types ------------------------
+
+
+
 
 typedef unsigned long long nat;
 typedef int8_t byte;
+
+
+
+
+
+static const nat array_display_limit = 20;			// how many cells you print, when displaying the arrray. must be ≤ array size.
+
+static const nat array_size = 4096; 				// finite size of the arrray, used to simulate n = infinity.    make this reasonably big.
+
+static const nat max_stack_size = 128; 			// how many stack frames at max. 
+
+static const nat execution_limit = 800; 		// how many ins to be exec'd before calling it quits for an option.
+							// we seem to bottom out around between 600 and 800, so im doing 800 just to be safe, to get the whole search space, basically.
+
+
+
+
+
+
+
 
 
 struct option {
@@ -56,34 +76,22 @@ enum expansion_type {
 	constant_expansion,      // eg,    x 1 1 1 1 1 1 1 1 1 0 0 .. y   ie, no internal structure, just expansion and never ER.
 	good_expansion,          // eg,    x 4 2 6 1 5 2 1 1 0 0 0 .. y   ie, what we are looking for. does ER, and has structure.
 	hole_expansion,          // eg,    x 3 4 2 0 1 1 0 0 0 0 0 .. y   ie, has a hole, which means that it double skipped on LE. bad.
-	
+};
+
+static const char* expansion_type_spelling[] = {
+	"no",
+	"constant",
+	"good",
+	"hole",
 };
 
 struct candidate {
+	nat expansion_type;
 	byte graph[32];
-	enum expansion_type expansion;
-	byte lifetime[64]
+	nat lifetime[64];
 };
 
 
-// -------------------- constants --------------------
-
-
-static const nat array_display_limit = 20;			// how many cells you print, when displaying the arrray. must be ≤ array size.
-
-static const nat array_size = 2048; 				// finite size of the arrray, used to simulate n = infinity.    make this reasonably big.
-
-static const nat max_stack_size = 128; 			// how many stack frames at max. 
-
-static const nat execution_limit = 100; 		// how many ins to be exec'd before calling it quits for an option.
-
-
-
-
-
-
-
-// ---------------------- functions ----------------------
 
 
 
@@ -91,17 +99,33 @@ static inline char hex(byte i) { return i < 10 ? '0' + i : i - 10 + 'A'; }
 static inline char nonzero_hex(byte i) { if (not i) return ' '; else return hex(i); }
 
 static inline char* hex_string(byte* graph) {
-
 	static char string[33] = {0};
-	byte s = 0;
+	nat s = 0;
+	for (nat i = 0; i < 32; i++) string[s++] = hex(graph[i]);
+	string[s] = 0;
+	return string;
+}
 
-	for (byte i = 0; i < 16; i++) {
-		for (byte j = 0; j < 2; j++) {
-			const byte c = graph[i * 2 + j];
-			string[s++] = hex(c);
-		}
+static inline char* lifetime_string(nat* array) {
+
+	static char string[4096] = {0};
+	// memset(string, 0, 4096);
+	int length = 0;
+	
+	length += sprintf(string + length, "%2llu  ", array[0]);
+	for (nat i = 1; i < 63; i++) {
+		length += sprintf(string + length, "%2llu ", array[i]);
 	}
-	string[s++] = 0;
+	length += sprintf(string + length, ".. %2llu", array[63]);
+
+
+	// printf("printing string that we generated: \n");
+	
+	// for (int i = 0; i < length + 10; i++) {
+	// 	printf("\"%c\" = %d\n", string[i], string[i]);
+	// }
+	// printf("done.\n");
+		
 	return string;
 }
 
@@ -136,18 +160,27 @@ static inline void print_as_adjacency_list(byte* graph) {
 }
 
 static inline void initialize_graph_from_string(byte* graph, char* string) {
-	int s = 0;
-	for (byte i = 0; i < 16; i++) {
-		for (byte j = 0; j < 2; j++) {
-			int c = string[s++];
-			int g = isalpha(c) ? toupper(c) - 'A' + 10 : c - '0';
-			graph[i * 2 + j] = (byte) g;
-		}
+	nat s = 0;
+	for (nat i = 0; i < 32; i++) {
+		char c = string[s++];
+		int g = isalpha(c) ? toupper(c) - 'A' + 10 : c - '0';
+		graph[i] = (byte) g;
 	}
 }
 
 
-static inline void write_array_to_file(byte**)
+static inline void write_candidates_to_file(const char* filename, struct candidate* candidates, nat count) {
+	FILE* file = fopen(filename, "w+");
+	if (not file) { perror("fopen"); return; }
+	
+	for (nat i = 0; i < count; i++) {
+		fprintf(file, "%s  :  ", hex_string(candidates[i].graph));
+		fprintf(file, "%s  :  ", expansion_type_spelling[candidates[i].expansion_type]);
+		fprintf(file, "%s\n", lifetime_string(candidates[i].lifetime));
+	}
+
+	fclose(file);
+}
 
 
 
@@ -258,7 +291,7 @@ static inline struct options generate(byte*  graph, byte source, bool side) {
 								// // A: 10,  D: 13,  E: 14,  F: 15
 			if (dest == source or dest == 11 or dest == 12) continue;
 			
-			printf("generating edge:  %hhX%c --(%hhX)--> %hhX \n", source, side ? 't' : 'f', op, dest);
+			// printf("generating edge:  %hhX%c --(%hhX)--> %hhX \n", source, side ? 't' : 'f', op, dest);
 			options[count].operation = op;
 			options[count].destination = dest;
 			if (is_consistent(graph, options[count])) count++;
@@ -298,17 +331,17 @@ static inline void test_generate(byte* graph) {
 
 static inline void instantiate_option_try(byte* graph, struct stack_frame frame) {
 
-	printf("INSTANTIATE: instantiating option try #%llu / %llu  at  %hhX%c...\n", frame.try, frame.options.count, frame.source, frame.side ? 't':'f');
+	// printf("INSTANTIATE: instantiating option try #%llu / %llu  at  %hhX%c...\n", frame.try, frame.options.count, frame.source, frame.side ? 't':'f');
 
 	
 
-	printf("[info: was previously using option %hhX%c %hhX ...]\n", frame.source, frame.side ?'t':'f', graph[2 * frame.source + frame.side]);
+	// printf("[info: was previously using option %hhX%c %hhX ...]\n", frame.source, frame.side ?'t':'f', graph[2 * frame.source + frame.side]);
 
 	struct option option = frame.options.options[frame.try];
 	graph[2 * frame.source + frame.side] = option.operation;
 	graph[2 * option.operation] = option.destination;
 
-	printf("---> using option %hhX%c %hhX %hhX now.\n", frame.source, frame.side ?'t':'f', option.operation, option.destination);
+	// printf("---> using option %hhX%c %hhX %hhX now.\n", frame.source, frame.side ?'t':'f', option.operation, option.destination);
 }
 
 
@@ -325,7 +358,7 @@ static inline void print_stack(struct stack_frame* stack, nat stack_count) {
 		printf("\tframe #%llu:  [%hhX%c]  {.try=%llu, .source=%d, .side=%d, .options.count=%llu} :: ", 
 		i, stack[i].source, stack[i].side ? 't':'f', 
 		stack[i].try, stack[i].source, stack[i].side, stack[i].options.count);
-		display_state_compact(stack[i].array_state, 2047);
+		display_state_compact(stack[i].array_state, array_size - 1);
 	}
 	printf("}\n");
 }
@@ -355,14 +388,53 @@ static inline void print_stack(struct stack_frame* stack, nat stack_count) {
 
 
 
+static inline nat determine_expansion_type(nat* lifetime) {
+
+	bool is_no_expansion = true;
+
+	for (int i = 1; i < 63; i++) {
+		if (lifetime[i]) is_no_expansion = false;
+	}
+	if (is_no_expansion) return no_expansion;
+
+	return good_expansion;
+}
+
 
 static inline void evaluate(byte* graph, nat* array, nat n) {
 
 
-	printf("---> tried:  %s:   ", hex_string(graph));
-	display_state_compact(array, n);
+	// printf("---> tried:  %s:   ", hex_string(graph));
+	// display_state_compact(array, n);
+
+
+	struct candidate candidate = {no_expansion,{0},{0}};	
+	memcpy(candidate.graph, graph, 32);
 	
+	for (nat i = 0; i < 63; i++) {
+		candidate.lifetime[i] = array[i];
+	}
+	candidate.lifetime[63] = array[array_size - 1];
+
+	/// generate verdict for each graph, based on the xp of the arrray lifetime state. 
+	candidate.expansion_type = determine_expansion_type(candidate.lifetime);
 	
+
+	//testing out what the file lines will look like..
+	printf("%s  :  ", hex_string(candidate.graph));
+	printf("%s  :  ", expansion_type_spelling[candidate.expansion_type]);
+	printf("%s\n", lifetime_string(candidate.lifetime));
+
+
+
+
+
+
+	// printf("%2llu ", array[0]);
+	// for (nat i = 1; i < array_display_limit; i++) { 
+	// 	printf("%2llu ", array[i]);
+	// } 
+	// printf(".. %2llu\n", array[n]);
 
 }
 
@@ -525,12 +597,12 @@ begin:
 
 	// look at TOS to find where it is, and then, remove it, incr the try, and then inst again.
 
-	printf("state of the stack: \n");
-	print_stack(stack, stack_count);
+	// printf("state of the stack: \n");
+	// print_stack(stack, stack_count);
 	
-	printf("tried candidate graph: \n");
-	print_as_adjacency_list(graph);
-	puts("");
+	// printf("tried candidate graph: \n");
+	// print_as_adjacency_list(graph);
+	// puts("");
 
 	// &candidates, &candidate_count, 
 	evaluate(graph, array, n);
@@ -542,11 +614,11 @@ begin:
 
 backtrack:
 
-	for (int op = 1; op < 7; op++) {       // {1, 2, 3, 4, 5, 6}
+	for (byte op = 1; op < 7; op++) {       // {1, 2, 3, 4, 5, 6}
 
 		bool operation_is_used = false;
 
-		for (int each = 0; each < 32; each++) { // loop over every single connection in the graph so far:
+		for (nat each = 0; each < 32; each++) { // loop over every single connection in the graph so far:
 
 			if (graph[each] == op) {
 				operation_is_used = true;
@@ -617,22 +689,22 @@ backtrack:
 		*/
 
 
-		for (int op = 1; op < 7; op++) {       // {1, 2, 3, 4, 5, 6}
+		// for (byte op = 1; op < 7; op++) {       // {1, 2, 3, 4, 5, 6}
 
-			bool operation_is_used = false;
+		// 	bool operation_is_used = false;
 
-			for (int each = 0; each < 32; each++) { // loop over every single connection in the graph so far:
+		// 	for (nat each = 0; each < 32; each++) { // loop over every single connection in the graph so far:
 
-				if (graph[each] == op) {
-					operation_is_used = true;
-				}
-			}
+		// 		if (graph[each] == op) {
+		// 			operation_is_used = true;
+		// 		}
+		// 	}
 
-			if (not operation_is_used) {
-				// printf("debug: the operation %d isnt being used, deleting now...\n", op);
-				graph[2 * op] = 0; 
-			}
-		}
+		// 	if (not operation_is_used) {
+		// 		// printf("debug: the operation %d isnt being used, deleting now...\n", op);
+		// 		graph[2 * op] = 0; 
+		// 	}
+		// }
 
 	
 		if (stack_count <= 1) goto done;
