@@ -390,18 +390,52 @@ static inline void print_stack(struct stack_frame* stack, nat stack_count) {
 
 static inline nat determine_expansion_type(nat* lifetime) {
 
-	bool is_no_expansion = true;
 
-	for (int i = 1; i < 63; i++) {
-		if (lifetime[i]) is_no_expansion = false;
+	// ------------ no expansion test: -------------                    0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+
+	bool is_no_expansion = true;
+	for (nat i = 1; i < 63; i++) {
+		if (lifetime[i]) { is_no_expansion = false; break; }
 	}
 	if (is_no_expansion) return no_expansion;
+
+
+	// --------------- hole expansion ----------------                  1 2 4 2 0 3 2 3 0 0 0 0 0 
+	//									    ^
+	nat first = 1, last = 63;
+	for (;last--;) 
+		if (lifetime[last]) break;     // go from the last modnat, to the first, looking for where the first nonzero cell is.
+
+	// we are now looking at the first positive cell. move forwards back to where the most recent zero cell is.
+	last++;
+	
+	for (;first < last; first++)
+		if (not lifetime[first]) break; // go from the first modnat to the last, looking for where the first zero cell is.
+	
+	// if the left most zero cell (ie, last) is the same cell as the first zero cell that we found going forwards, then we say its good. if not, then there must be a hole.
+	if (last != first) return hole_expansion;
+	
+
+	// ------------------ constant expansion -------------------      1 1 1 1 1 1 1 1 1 1 0 0 0 0 0
+
+	bool is_constant_expansion = true;
+	for (nat i = 1; i < last; i++) {
+		if (lifetime[i] != 1) { is_constant_expansion = false; break; }
+	}
+	
+	if (is_constant_expansion) return constant_expansion;
+
+
+
+
+
+	// everything else:
 
 	return good_expansion;
 }
 
 
-static inline void evaluate(byte* graph, nat* array, nat n) {
+static inline struct candidate evaluate(byte* graph, nat* array, nat n) {
 
 
 	// printf("---> tried:  %s:   ", hex_string(graph));
@@ -426,6 +460,8 @@ static inline void evaluate(byte* graph, nat* array, nat n) {
 	printf("%s\n", lifetime_string(candidate.lifetime));
 
 
+	
+	return candidate;
 
 
 
@@ -454,7 +490,7 @@ static inline void search(byte* graph, byte start) {
 	
 	// test_generate(graph);
 
-	nat tried = 0;
+	nat tried = 0, good_count = 0, constant_count = 0, none_count = 0, hole_count = 0;
 
 	struct candidate* candidates = NULL;
 	nat candidate_count = 0;
@@ -605,8 +641,15 @@ begin:
 	// puts("");
 
 	// &candidates, &candidate_count, 
-	evaluate(graph, array, n);
+	struct candidate new = evaluate(graph, array, n);
+	// candidates = realloc(candidates, sizeof(struct candidate) * (candidate_count + 1));
+	// candidates[candidate_count++] = new;
+	
 	tried++;
+	if (new.expansion_type == good_expansion) good_count++;
+	if (new.expansion_type == no_expansion) none_count++;
+	if (new.expansion_type == constant_expansion) constant_count++;
+	if (new.expansion_type == hole_expansion) hole_count++;
 	// if (getchar() == 'q') {
 	// 	printf("info: ending graph search early...\n");
 	// 	return;
@@ -689,22 +732,22 @@ backtrack:
 		*/
 
 
-		// for (byte op = 1; op < 7; op++) {       // {1, 2, 3, 4, 5, 6}
+		for (byte op = 1; op < 7; op++) {       // {1, 2, 3, 4, 5, 6}
 
-		// 	bool operation_is_used = false;
+			bool operation_is_used = false;
 
-		// 	for (nat each = 0; each < 32; each++) { // loop over every single connection in the graph so far:
+			for (nat each = 0; each < 32; each++) { // loop over every single connection in the graph so far:
 
-		// 		if (graph[each] == op) {
-		// 			operation_is_used = true;
-		// 		}
-		// 	}
+				if (graph[each] == op) {
+					operation_is_used = true;
+				}
+			}
 
-		// 	if (not operation_is_used) {
-		// 		// printf("debug: the operation %d isnt being used, deleting now...\n", op);
-		// 		graph[2 * op] = 0; 
-		// 	}
-		// }
+			if (not operation_is_used) {
+				// printf("debug: the operation %d isnt being used, deleting now...\n", op);
+				graph[2 * op] = 0; 
+			}
+		}
 
 	
 		if (stack_count <= 1) goto done;
@@ -722,6 +765,16 @@ done:
 
 
 	printf("----> tried %llu control flow graphs.\n", tried);
+	printf("----> statistics:\n \t %llu good\n \t %llu constant\n \t %llu none\n \t %llu hole\n  \n", 
+			good_count, constant_count, none_count, hole_count);
+
+
+	printf("----> percentages:\n \t %lf good\n \t %lf constant\n \t %lf none\n \t %lf hole\n  \n", 
+			(double)good_count / (double)tried * 100.0,
+			(double)constant_count / (double)tried * 100.0,
+			(double)none_count / (double)tried * 100.0,
+			(double)hole_count / (double)tried * 100.0
+		); 
 }
 
 
