@@ -30,7 +30,7 @@ static const nat array_size = 4096; 				// finite size of the arrray, used to si
 
 static const nat max_stack_size = 128; 			// how many stack frames at max. 
 
-static const nat execution_limit = 800; 		// how many ins to be exec'd before calling it quits for an option.
+static nat execution_limit = 800; 		// how many ins to be exec'd before calling it quits for an option.
 							// we seem to bottom out around between 600 and 800, so im doing 800 just to be safe, to get the whole search space, basically.
 
 
@@ -76,6 +76,9 @@ enum expansion_type {
 	constant_expansion,      // eg,    x 1 1 1 1 1 1 1 1 1 0 0 .. y   ie, no internal structure, just expansion and never ER.
 	good_expansion,          // eg,    x 4 2 6 1 5 2 1 1 0 0 0 .. y   ie, what we are looking for. does ER, and has structure.
 	hole_expansion,          // eg,    x 3 4 2 0 1 1 0 0 0 0 0 .. y   ie, has a hole, which means that it double skipped on LE. bad.
+	short_expansion,  	 // eg,    x 3 4 1 0 0 0 0 0 0 0 0 .. y   ie, is good, but very short, and thus bad. 
+
+	expansion_type_count
 };
 
 static const char* expansion_type_spelling[] = {
@@ -83,20 +86,82 @@ static const char* expansion_type_spelling[] = {
 	"constant",
 	"good",
 	"hole",
+	"short",
 };
 
 struct candidate {
 	nat expansion_type;
+	nat is_complete;
 	byte graph[32];
 	nat lifetime[64];
 };
 
+struct edge {
+	byte source, side, operation, destination;
+};
+
+
+static nat blacklist_count = 0;
+static struct edge* blacklist = NULL;
+
+static const char* blacklisted_edges[] = {
+
+
+// trichotomy reducability principle:
+	"At4D", "Dt4A",
+	"Et4F", "Ft4E",
+
+	"At2D", "Af2D",
+	"Dt1A", "Df1A",
+
+	"Et2F", "Ef2F",
+	"Ft3E", "Ff3E",
+
+	
+
+// negative reset destination reducability principle:
+	"Ft5A", "Ff5A",
+	"Et5A", "Ef5A",
+	"Dt5A", "Df5A",
+
+	"Ft5E", "Ff5E",
+	"At5E", "Af5E",
+	"Dt5E", "Df5E",
+
+	"Ft6D","Ff6D",
+	"At6D","Af6D",
+	"Et6D","Ef6D",
+
+	"Dt6F","Df6F",
+	"At6F","Af6F",
+	"Et6F","Ef6F",
+
+
+0};
+/*
+	A :   *n < *0
+
+	D :   *0 < *n
+
+	E :   *n < **0
+
+	F :   **0 < *n
+
+
+	5 :   *0 = 0           (note: implies **0 = 0.)
+
+	6 :   *n = 0
 
 
 
+*/
 
+
+
+static inline void clear_screen() { printf("\033[2J\033[H"); }
 static inline char hex(byte i) { return i < 10 ? '0' + i : i - 10 + 'A'; }
 static inline char nonzero_hex(byte i) { if (not i) return ' '; else return hex(i); }
+static inline int read_hex(int c) { return isalpha(c) ? toupper(c) - 'A' + 10 : c - '0'; }
 
 static inline char* hex_string(byte* graph) {
 	static char string[33] = {0};
@@ -169,19 +234,6 @@ static inline void initialize_graph_from_string(byte* graph, char* string) {
 }
 
 
-static inline void write_candidates_to_file(const char* filename, struct candidate* candidates, nat count) {
-	FILE* file = fopen(filename, "w+");
-	if (not file) { perror("fopen"); return; }
-	
-	for (nat i = 0; i < count; i++) {
-		fprintf(file, "%s  :  ", hex_string(candidates[i].graph));
-		fprintf(file, "%s  :  ", expansion_type_spelling[candidates[i].expansion_type]);
-		fprintf(file, "%s\n", lifetime_string(candidates[i].lifetime));
-	}
-
-	fclose(file);
-}
-
 
 
 
@@ -198,9 +250,9 @@ static inline void read_graph_edit(byte* graph, char* buffer) {  // [format: {so
 	int f = buffer[1];
 	int t = buffer[2];
 
-	int source = isalpha(s) ? toupper(s) - 'A' + 10 : s - '0';
-	int false_destination = isalpha(f) ? toupper(f) - 'A' + 10 : f - '0';
-	int true_destination = isalpha(t) ? toupper(t) - 'A' + 10 : t - '0';
+	int source = read_hex(s);
+	int false_destination = read_hex(f);
+	int true_destination = read_hex(t);
 	
 	if (source < 0 or source >= 16) { printf("error: source out of bounds\n"); return; }
 	if (false_destination < 0 or false_destination >= 16) { printf("error: false_destination out of bounds\n"); return; }
@@ -263,9 +315,278 @@ static inline void run(const nat m, const nat n, byte* graph, const byte start) 
 
 	printf("[HALT]\n");
 
+	free(array);
 }
 
 
+
+
+
+static inline byte** read_z_list_from_file(const char* filename, nat* result_count) {
+	FILE* file = fopen(filename, "r");
+	if (not file) { perror("fopen"); return NULL; }
+	
+	byte** list = NULL;
+	nat list_count = 0;
+	char buffer[1024] = {0};
+
+	while (fgets(buffer, sizeof buffer, file)) {
+		byte* new_graph = malloc(32);
+		initialize_graph_from_string(new_graph, buffer);
+		list = realloc(list, sizeof(byte*) * (list_count + 1));
+		list[list_count++] = new_graph;
+	}
+	fclose(file);
+	*result_count = list_count;
+	return list;
+	
+}
+
+static inline void print_z_list(byte** list, nat list_count) {
+	printf("printing list of z values:\n");
+	for (nat i = 0; i < list_count; i++) {
+		printf("#%llu:   %s\n", i, hex_string(list[i]));
+	}
+	printf("list done.\n");
+}
+
+
+// // DELETE ME: merge with visualize set. 
+// static inline void visualize(byte* graph, byte start, nat width, nat height) {
+	
+// 	const nat n = array_size - 1;
+	
+// 	nat* array = calloc(n + 1, sizeof(nat));
+// 	byte i = start;
+
+// 	printf("visualizing:  %s  :  [%llu,%llu]\n",hex_string(graph), width, height);
+
+// 	nat timestep = 0;
+
+// 	while (i) {
+		
+// 		if (i == 5) {
+// 			for (nat o = 0; o < width; o++) { 
+// 				printf(" %3llu ", array[o]);
+// 			} 
+// 			printf(" .. %3llu\n", array[n]);
+// 		}
+		
+// 		if (i == 9) {
+// 			// i = graph[i * 2 + (array[0] < n)];
+// 			// printf("[%c]\n", array[0] < n ? 't' : 'f');
+// 			abort();
+
+// 		} else if (i == 0xA) {
+// 			i = graph[i * 2 + (array[n] < array[0])]; 
+// 			// printf("[%c]\n", array[n] < array[0] ? 't' : 'f'); 
+
+// 		} else if (i == 0xB) {
+// 			// i = graph[i * 2 + (array[array[0]] < m)]; 
+// 			// printf("[%c]\n", array[array[0]] < m ? 't' : 'f');
+// 			abort();
+		
+// 		} else if (i == 0xD) {
+// 			i = graph[i * 2 + (array[0] < array[n])]; 
+// 			// printf("[%c]\n", array[0] < array[n] ? 't' : 'f'); 
+
+// 		} else if (i == 0xE) {
+// 			i = graph[i * 2 + (array[n] < array[array[0]])];
+// 			// printf("[%c]\n", array[n] < array[array[0]] ? 't' : 'f');
+
+// 		} else if (i == 0xF) {
+// 			i = graph[i * 2 + (array[array[0]] < array[n])];
+// 			// printf("[%c]\n", array[array[0]] < array[n] ? 't' : 'f');
+// 		}
+
+// 		else if (i == 1) { array[0]++; 			i = graph[i * 2];  }
+// 		else if (i == 2) { array[n]++; 			i = graph[i * 2];  }
+// 		else if (i == 3) { array[array[0]]++; 		i = graph[i * 2];  }
+// 		else if (i == 4) { 		 		i = graph[i * 2];  }
+// 		else if (i == 5) { array[0] = 0; 		i = graph[i * 2];  }
+// 		else if (i == 6) { array[n] = 0; 		i = graph[i * 2];  }
+// 		else if (i == 7) { abort(); }//array[array[0]] = 0; 	i = graph[i * 2];  }
+// 		else if (i == 8) { abort();	}//	 		i = graph[i * 2];  }
+
+// 		if (timestep < height) continue;
+
+// 		printf("(q/e/f/j/i)> "); 
+// 		if (getchar() == 'q') break;
+// 	}
+
+// 	free(array);
+// }
+
+
+static inline void visualize_set(const char* filename, byte* graph, byte start, nat width, nat height) {
+	nat list_count = 0;
+	byte** list = read_z_list_from_file(filename, &list_count);
+	
+	print_z_list(list, list_count);
+	printf("loaded %llu z values. continue? ", list_count);
+	getchar();
+
+
+	const nat n = array_size - 1;
+	nat* array = calloc(n + 1, sizeof(nat));
+
+	for (nat z = 0; z < list_count; z++) {
+
+		// initialize the graph to the z vlaue.
+		memcpy(graph, list[z], 32);
+
+		// reset the array back to the void.
+		memset(array, 0, array_size * sizeof(nat));
+
+		// reset the origin back to start.
+		byte i = start;
+		nat timestep = 0, max_timesteps = height;
+
+		printf("[ ( %llu / %llu ) ; {%llu,%llu} ] visualizing:   %s  \n", z, list_count, width, height, hex_string(graph));
+		
+		while (i) {
+			
+			if (i == 5) {
+				for (nat o = 0; o < width; o++) { 
+					printf(" %3llu ", array[o]);
+				} 
+				printf(" .. %3llu\n", array[n]);
+			}
+			
+			if (i == 9) {
+				// i = graph[i * 2 + (array[0] < n)];
+				// printf("[%c]\n", array[0] < n ? 't' : 'f');
+				abort();
+
+			} else if (i == 0xA) {
+				i = graph[i * 2 + (array[n] < array[0])]; 
+				// printf("[%c]\n", array[n] < array[0] ? 't' : 'f'); 
+
+			} else if (i == 0xB) {
+				// i = graph[i * 2 + (array[array[0]] < m)]; 
+				// printf("[%c]\n", array[array[0]] < m ? 't' : 'f');
+				abort();
+			
+			} else if (i == 0xD) {
+				i = graph[i * 2 + (array[0] < array[n])]; 
+				// printf("[%c]\n", array[0] < array[n] ? 't' : 'f'); 
+
+			} else if (i == 0xE) {
+				i = graph[i * 2 + (array[n] < array[array[0]])];
+				// printf("[%c]\n", array[n] < array[array[0]] ? 't' : 'f');
+
+			} else if (i == 0xF) {
+				i = graph[i * 2 + (array[array[0]] < array[n])];
+				// printf("[%c]\n", array[array[0]] < array[n] ? 't' : 'f');
+			}
+
+			else if (i == 1) { array[0]++; 			i = graph[i * 2];  }
+			else if (i == 2) { array[n]++; 			i = graph[i * 2];  }
+			else if (i == 3) { array[array[0]]++; 		i = graph[i * 2];  }
+			else if (i == 4) { 		 		i = graph[i * 2];  }
+			else if (i == 5) { array[0] = 0; 		i = graph[i * 2];  }
+			else if (i == 6) { array[n] = 0; 		i = graph[i * 2];  }
+			else if (i == 7) { abort(); }//array[array[0]] = 0; 	i = graph[i * 2];  }
+			else if (i == 8) { abort();	}//	 		i = graph[i * 2];  }
+
+			timestep++;
+
+			if (timestep < max_timesteps) continue;
+
+		re_input:
+			printf("(q/e/f/j/i)> "); 
+			int c = getchar();
+
+			if (c == 'q') goto done;
+			else if (c == 'f') break;
+			else if (c == 'e') { if (z) z -= 2; break; }
+			else if (c == 'd') { max_timesteps += height - 1; clear_screen(); continue; }
+			else if (c == 'j') { /* blacklist z value */ }
+			else if (c == 'i') { /* save z value */ }
+			else {
+				printf("error: unknown input\n");
+				goto re_input;
+			}
+			
+		}
+
+	}
+done:
+	printf("exiting visualize utility...\n");
+	free(array);
+}
+
+
+/*
+
+
+	TODO:  fix input so that you dont have to press enter. very annoying. 
+
+		make the prompt less noisy. add a help menu to it. 
+
+		add the visulize utility to the general command help menu. 
+
+		make there print new lines, for height timesteps, emptyts, if no say 5 
+
+
+		clear screen every new z value. 
+
+		have a command to print the z adjacnceyc list for the z vlaue. 
+
+
+		
+
+
+
+
+
+*/
+
+
+
+
+
+static inline void generate_blacklist() {
+
+	for (nat i = 0; blacklisted_edges[i]; i++) {
+
+		const char* string = blacklisted_edges[i];
+
+		struct edge edge = {
+			.source = string[0] - 'A' + 10,
+			.side = string[1] == 't',
+			.operation = string[2] - '0',
+			.destination = string[3] - 'A' + 10,
+		};
+		
+		blacklist = realloc(blacklist, sizeof(struct edge) * (blacklist_count + 1));
+		blacklist[blacklist_count++] = edge;
+	}
+
+	return;
+}
+
+
+static inline void print_blacklist() {
+	printf("current blacklist = {\n\n");
+	for (nat i = 0; i < blacklist_count; i++) {
+		const struct edge edge = blacklist[i];
+		printf("%llu.\t%hhX%c%hhX%hhX\n\n", i, edge.source, edge.side ? 't' : 'f', edge.operation, edge.destination);
+	}
+	printf("}\n");
+}
+
+
+static inline bool is_blacklisted(byte source, bool side, byte operation, byte destination) {
+	for (nat i = 0; i < blacklist_count; i++) {
+		if (	blacklist[i].source == source and 
+			blacklist[i].side == side and 
+			blacklist[i].operation == operation and 
+			blacklist[i].destination == destination) 
+				return true;
+	}
+	return false;
+}
 
 static inline bool is_consistent(byte* graph, struct option option) {
 	if (not graph[2 * option.operation]) return true; // this operation hasnt been chosen yet. ie, its fresh and we can do whatever with it. 
@@ -294,7 +615,8 @@ static inline struct options generate(byte*  graph, byte source, bool side) {
 			// printf("generating edge:  %hhX%c --(%hhX)--> %hhX \n", source, side ? 't' : 'f', op, dest);
 			options[count].operation = op;
 			options[count].destination = dest;
-			if (is_consistent(graph, options[count])) count++;
+			if (        is_consistent(graph, options[count])
+			    and not is_blacklisted(source, side, op, dest)) count++;
 
 		}
 	}
@@ -427,12 +749,48 @@ static inline nat determine_expansion_type(nat* lifetime) {
 
 
 
-
+	if (last < 5) return short_expansion;
 
 	// everything else:
 
 	return good_expansion;
 }
+
+
+static inline bool is_complete(byte* graph) {
+
+	if (not graph[2 * 0x1]) return false;
+	if (not graph[2 * 0x2]) return false;
+	if (not graph[2 * 0x3]) return false;
+	if (not graph[2 * 0x4]) return false;
+	if (not graph[2 * 0x5]) return false;
+	if (not graph[2 * 0x6]) return false;
+
+	if (not graph[2 * 0xA + 0]) return false;
+	if (not graph[2 * 0xA + 1]) return false;
+
+	if (not graph[2 * 0xD + 0]) return false;
+	if (not graph[2 * 0xD + 1]) return false;
+
+	if (not graph[2 * 0xE + 0]) return false;
+	if (not graph[2 * 0xE + 1]) return false;
+
+	if (not graph[2 * 0xF + 0]) return false;
+	if (not graph[2 * 0xF + 1]) return false;
+
+	return true;
+}
+
+
+// for (int i = 0; i < 32; i++) {
+	// 	if (i == 0 	or i == 7 or 
+	// 	    i == 8 	or i == 9 or
+	// 	    i == 0xB 	or i == 0xC) continue;     
+	// 		// 10 instructions left, because 4 branches {A,D,E,F}, and 6 operations {1,2,3,4,5,6}.
+
+	// 	if (not graph[i]) return false;
+	// }
+	// return true;
 
 
 static inline struct candidate evaluate(byte* graph, nat* array, nat n) {
@@ -442,35 +800,25 @@ static inline struct candidate evaluate(byte* graph, nat* array, nat n) {
 	// display_state_compact(array, n);
 
 
-	struct candidate candidate = {no_expansion,{0},{0}};	
+	struct candidate candidate = {no_expansion,false,{0},{0}};
 	memcpy(candidate.graph, graph, 32);
-	
-	for (nat i = 0; i < 63; i++) {
-		candidate.lifetime[i] = array[i];
-	}
-	candidate.lifetime[63] = array[array_size - 1];
+	for (nat i = 0; i < 63; i++) candidate.lifetime[i] = array[i];
+	candidate.lifetime[63] = array[n];
 
 	/// generate verdict for each graph, based on the xp of the arrray lifetime state. 
 	candidate.expansion_type = determine_expansion_type(candidate.lifetime);
 	
+	// determine whether the graph is complete or not. (whether it uses every XFG instruction or not.)
+	candidate.is_complete = is_complete(graph);
+	
 
 	//testing out what the file lines will look like..
-	printf("%s  :  ", hex_string(candidate.graph));
-	printf("%s  :  ", expansion_type_spelling[candidate.expansion_type]);
-	printf("%s\n", lifetime_string(candidate.lifetime));
 
-
-	
+	// printf("%s  :  ", hex_string(candidate.graph));
+	// printf("%s  :  ", expansion_type_spelling[candidate.expansion_type]);
+	// printf("%s  :  ", candidate.is_complete ? "complete" : "incomplete");
+	// printf("%s\n", lifetime_string(candidate.lifetime));
 	return candidate;
-
-
-
-
-	// printf("%2llu ", array[0]);
-	// for (nat i = 1; i < array_display_limit; i++) { 
-	// 	printf("%2llu ", array[i]);
-	// } 
-	// printf(".. %2llu\n", array[n]);
 
 }
 
@@ -485,12 +833,31 @@ static inline struct candidate evaluate(byte* graph, nat* array, nat n) {
 
 
 
+static inline void write_candidates_to_file(const char* filename, struct candidate* candidates, nat count) {
+	FILE* file = fopen(filename, "w+");
+	if (not file) { perror("fopen"); return; }
+	
+	for (nat i = 0; i < count; i++) {
+		fprintf(file, "%s\n", hex_string(candidates[i].graph));
+		// fprintf(file, "%s  :  ", expansion_type_spelling[candidates[i].expansion_type]);
+		// fprintf(file, "%s  :  ", candidates[i].is_complete ? "complete" : "incomplete");
+		// fprintf(file, "%s\n", lifetime_string(candidates[i].lifetime));
+	}
+
+	fclose(file);
+}
+
+
+
+
 
 static inline void search(byte* graph, byte start) {
 	
 	// test_generate(graph);
 
-	nat tried = 0, good_count = 0, constant_count = 0, none_count = 0, hole_count = 0;
+	nat tried = 0;
+	
+	nat counts[expansion_type_count][2] = {{0,0},{0,0},{0,0},{0,0},{0,0}};
 
 	struct candidate* candidates = NULL;
 	nat candidate_count = 0;
@@ -531,6 +898,8 @@ begin:
 			memcpy(frame.array_state, array, sizeof(nat) * array_size);
 		
 			stack[stack_count++] = frame;
+
+			if (stack_count == max_stack_size) { printf("error: stack overflow\n"); abort(); }
 
 			// printf("pushed new stack frame [sf count=%llu]: {.try=%llu, .source=%d, .side=%d, .options.count=%llu}\n", 
 				// stack_count, frame.try, frame.source, frame.side, frame.options.count);
@@ -640,16 +1009,16 @@ begin:
 	// print_as_adjacency_list(graph);
 	// puts("");
 
-	// &candidates, &candidate_count, 
+
 	struct candidate new = evaluate(graph, array, n);
-	// candidates = realloc(candidates, sizeof(struct candidate) * (candidate_count + 1));
-	// candidates[candidate_count++] = new;
+
+	if (new.is_complete and new.expansion_type == good_expansion) {
+		candidates = realloc(candidates, sizeof(struct candidate) * (candidate_count + 1));
+		candidates[candidate_count++] = new;
+	}
 	
 	tried++;
-	if (new.expansion_type == good_expansion) good_count++;
-	if (new.expansion_type == no_expansion) none_count++;
-	if (new.expansion_type == constant_expansion) constant_count++;
-	if (new.expansion_type == hole_expansion) hole_count++;
+	counts[new.expansion_type][new.is_complete]++;
 	// if (getchar() == 'q') {
 	// 	printf("info: ending graph search early...\n");
 	// 	return;
@@ -764,18 +1133,138 @@ done:
 	printf("success: [exited search function successfully: exhausted all graph extension possibilities.]\n");
 
 
+
 	printf("----> tried %llu control flow graphs.\n", tried);
-	printf("----> statistics:\n \t %llu good\n \t %llu constant\n \t %llu none\n \t %llu hole\n  \n", 
-			good_count, constant_count, none_count, hole_count);
+
+	printf("statistics:\n");
+
+	for (nat xp = 0; xp < expansion_type_count; xp++) { // for each possible expansion type, 
+		for (nat com = 0; com < 2; com++) { // for either complete or not,
+			printf("\t%s:%s = %llu (%2.2lf%%)   ",
+				expansion_type_spelling[xp], com ? "complete" : "incomplete", 
+				counts[xp][com], 
+				(double)counts[xp][com] / (double)tried * 100.0
+			);
+		}
+		puts("");
+	}
+	puts("");
 
 
-	printf("----> percentages:\n \t %lf good\n \t %lf constant\n \t %lf none\n \t %lf hole\n  \n", 
-			(double)good_count / (double)tried * 100.0,
-			(double)constant_count / (double)tried * 100.0,
-			(double)none_count / (double)tried * 100.0,
-			(double)hole_count / (double)tried * 100.0
-		); 
+	const char* dest_filename = "/Users/dwrr/Documents/projects/ua/good_complete_zs.txt";
+
+	printf("writing list of candidate z values to a file...\n");
+	write_candidates_to_file(dest_filename, candidates, candidate_count);
+
+	free(array);
 }
+
+
+
+
+
+
+int main() {
+
+
+	printf("this is a program to help with finding the XFG, in the UA theory.\ntype help for more info.\n");
+
+	byte origin = 0xE;
+	byte* graph = calloc(32, 1);
+
+	char buffer[4096] = {0};
+
+	printf("pre-generating blacklist... ");
+	generate_blacklist();	
+	printf("using %llu blacklist edges.\n", blacklist_count);
+
+	while (1) {
+
+		printf("::> ");
+		fgets(buffer, sizeof buffer, stdin);
+		buffer[strlen(buffer) - 1] = 0;
+		
+		if (not strcmp(buffer, "quit") or not strcmp(buffer, "q")) {
+			printf("quitting...\n");
+			break;
+
+		} else if (not strcmp(buffer, "help")) {
+			printf( "available commands:\n"
+				"\t- quit : quit the XFG utility.\n"
+				"\t- help : this help menu.\n"
+				"\t- show : display the current graph as an adjacency list. (spaces are the value 0.) values for 0 and 8 are not displayed.\n"
+				"\t- edit : add, remove or change an edge in the graph. format: {source}{false_destination}{true_destination}\n"
+				"\t- run : run the current graph, using the full UA ISA and DS.\n"
+				"\t- init : initialize the graph via a 32 digit hex string.\n"
+				"\t- search : search over all possible extensions of the current partial graph starting execution from origin. 0's represent unknowns to be searched over.\n"
+				"\t- show-blacklist : display the current list of disallowed (reducable) edges. these won't be generated by generate().\n"
+				"\t- show-origin : show which instruction execution is starting at.\n"
+				"\t- edit-origin : edit which instruction execute should start at.\n"
+				"\t- edit-limit : edit the execution limit, the number of instructions to try per option, before giving up.\n"
+				"\t- dump : dump the current graph as a hex string.\n"
+				"\t- mtrc : emit the partial graph's hex string corresponding to the MTRC, (the Mode Trichotomy Correspondence)\n"
+				"\t- clear : clear the screen.\n"
+				"\t\n"
+			);
+
+		} else if (not strcmp(buffer, "init")) {
+			printf("hex[32] string: ");
+			fgets(buffer, sizeof buffer, stdin);
+			initialize_graph_from_string(graph, buffer);
+
+		} else if (not strcmp(buffer, "edit-limit")) {
+			printf("execution limit currently = %llu.\nnew value for execution limit: ", execution_limit);
+			fgets(buffer, sizeof buffer, stdin);
+			execution_limit = (nat) atoi(buffer);
+			printf("execution limit now is = %llu.\n", execution_limit);
+		} 
+
+		else if (not strcmp(buffer, "")) {} 
+		else if (not strcmp(buffer, "clear") or not strcmp(buffer, "l")) clear_screen();
+		else if (not strcmp(buffer, "edit")) read_graph_edit(graph, buffer);
+		else if (not strcmp(buffer, "run")) run(2048, 4096, graph, origin);
+		else if (not strcmp(buffer, "show") or not strcmp(buffer, "ls")) print_as_adjacency_list(graph);
+		else if (not strcmp(buffer, "dump")) printf("graph: %s\n", hex_string(graph));
+		else if (not strcmp(buffer, "mtrc")) printf("\n\t000000F000D000000000000000003050\n\n");
+		else if (not strcmp(buffer, "show-origin")) printf("\n\torigin instruction = %hhX\n\n", origin);
+		else if (not strcmp(buffer, "show-blacklist")) { printf("using %llu blacklist edges.\n", blacklist_count); print_blacklist(); } 
+		else if (not strcmp(buffer, "edit-origin")) { 
+			printf(":origin:> "); 
+			origin = (byte) read_hex(getchar()); 
+			if (origin < 0 or origin >= 16) { printf("error: origin out of bounds\n"); origin = 0; }
+			
+		} else if (not strcmp(buffer, "search") or not strcmp(buffer, "s")) {
+			printf("searching the graph space...\n");
+			printf("using the partial graph: %s starting from %hhX with limit = %llu\n", hex_string(graph), origin, execution_limit);
+			printf("   (0's are unknowns.)\n");
+			search(graph, origin);
+			printf("main: finished call to search.\n");
+	
+		} else if (not strcmp(buffer, "visualize") or not strcmp(buffer, "v")) {
+
+			visualize_set("good_complete_zs.txt", graph, origin, 20, 10);
+
+
+		} else printf("error: unknown command.\n");
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+	// initialize the graph with just the basic edge that we think we know from the mtrc. just so its a nonzero graph.   
+	// not technically required to do this. 
+
+	// graph[2 * 0xE] = 0x3;
+	// graph[2 * 0x3] = 0xF;
+
 
 
 
@@ -800,209 +1289,43 @@ done:
 
 
 
-int main() {
 
-	printf("this is a program to help with finding the XFG, in the UA theory.\ntype help for more info.\n");
 
-	byte* graph = calloc(32, 1);
-	
 
-	// initialize the graph with just the basic edge that we think we know from the mtrc. just so its a nonzero graph.   
-	// not technically required to do this. 
-
-	// graph[2 * 0xE] = 0x3;
-	// graph[2 * 0x3] = 0xF;
-	
-	char buffer[4096] = {0};
-
-	while (1) {
-
-		printf("::> ");
-		fgets(buffer, sizeof buffer, stdin);
-		buffer[strlen(buffer) - 1] = 0;
-		
-		if (not strcmp(buffer, "quit") or not strcmp(buffer, "q")) {
-			printf("quitting...\n");
-			break;
-
-		} else if (not strcmp(buffer, "help")) {
-			printf("available commands:\n\t- quit\n\t- help\n\t- show\n\t- edit\n\t- run\n\t- init\n\t- search\n\t- x\n\t- x\n\t- dump\n\t- clear\n\t\n");
-
-		} else if (not strcmp(buffer, "init")) {
-			printf("hex[32] string: ");
-			fgets(buffer, sizeof buffer, stdin);
-			initialize_graph_from_string(graph, buffer);
-		} 
-		else if (not strcmp(buffer, "")) {} 
-		else if (not strcmp(buffer, "clear") or not strcmp(buffer, "l")) printf("\033[2J\033[H");
-		else if (not strcmp(buffer, "edit")) read_graph_edit(graph, buffer);
-		else if (not strcmp(buffer, "show") or not strcmp(buffer, "ls")) print_as_adjacency_list(graph);
-		else if (not strcmp(buffer, "run")) run(2048, 4096, graph, 0xE);
-
-		else if (not strcmp(buffer, "search") or not strcmp(buffer, "s")) {
-			printf("searching the graph space...\n");
-			printf("using the partial graph: %s\n", hex_string(graph));
-			printf("   (0's are unknowns.)\n");
-
-			search(graph, 0xE);
-
-			printf("main: finished call to search.\n");
-		}
-		
-		else if (not strcmp(buffer, "dump")) printf("graph: %s\n", hex_string(graph));
-		else printf("error: unknown command.\n");
-	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-an in variant that i think i should state-
-because of the fact that operations can never be the soruce supplied to the generate function, (in other words, we always sandwhich operations between two branchs, (because 1,5) and thus we never have just a naked bare  operation)
-
-	that means that we essentially can look at whether the operations are taken just by looking at that position in the array, namely:
-
-	graph[2 * source + side] = ...;    that will get either the false or true side of the given source, based on what side is. 
-
-	so basically, we can look at     g[2 * 1], g[2 * 2], g[2 * 3], g[2 * 5], g[2 * 6],
-
-		to basically just see if an operation is already taken up. 
-
-		because like, basically, the problem that i am seeing is that 
-		if we try to do an option, then like,    what if 
-
-
-
-	no okay stop 
-
-
-
-	this isnt actually a problem lol.     because basically, we dont need to know the take operations- we dont care=
-		we should be able to use them again- its just 
-
-			then, when we go through the options and start using them, we need to make sure the given option we want to try, is      "consistent" meaning, that if it says for 5 to go to D, already existing in the graph,     then like the option shouldnt make 5 go to A or something, instead, as what the option is.    remember, we can approach an operaion from many different branches, but an operation can itself only have a single child. (place that it goes to, after saying the op)
-
-
-	so yeah, basically, that consisnency check is really all we need to add, and it isnt done in the generate function at all lol. it is basically just a "yes or no, do we keep this option?" question when we are trying the option.   we ask,  "is it consistent" and there should be some function that we can call, called 
-			
-	
-	
-	
-						"	is_consistent( options[try] )    "     im giving an example call here- it returns a bool. 
-
-
-
-
-
-
-
-	so yeah. im pretty sure thats it for that part. 
-
-
-
-
-*/
-
-
-
-
-
-
-
-
-
-/// mtrc:
-
-// 000000F000D000000000000000203050
-
-
-
-
-// try
-
-// 00E0A0F000D0A0000000DE0000213056
-
-
-
-
-
-
-
-
-
-
-// ------------------------- dead code ------------------------------------------------------------
-
-
-
-
-
-
-// static inline bool all_constraints_hold(byte* g) {
-// 	// verifies that all static constraints that we have hold, such as nerdp, operation branch interactions, etc.
-
-// 	if (g[6] == 0xD or g[6] == 0xF) return false; // nerd principle
-
-	
-
-// 	return true;
-
-// }
-
-
-
-
-
-
-
-/*
-
-
-	2111066.150948:
-
-			fun fact:
-
-
-
-	the computer generated this graph, just now!
-
-
-
-	1: A,      9:  ,  
-	2: D,      A:  , 2
-	3: F,      B:  ,  
-
-	5:  ,      D: 1,  
-	6:  ,      E: 3,  
-	7:  ,      F: 1,  
 
 
 
 	
-		its crap, but i mean, still!	
+	// printf("----> statistics:\n \t %llu good\n \t %llu constant\n \t %llu none\n \t %llu hole\n  \n", 
+	// 		good_count, constant_count, none_count, hole_count);
+
+
+	// printf("----> percentages:\n \t %lf good\n \t %lf constant\n \t %lf none\n \t %lf hole\n  \n", 
+	// 		(double)good_count / (double)tried * 100.0,
+	// 		(double)constant_count / (double)tried * 100.0,
+	// 		(double)none_count / (double)tried * 100.0,
+	// 		(double)hole_count / (double)tried * 100.0
+	// 	); 
 
 
 
-				i havent implemented backtracking yet, but ive implemented the rest of the forward logic! i think it works lol. yay. thats cool.
 
 
-				
+	// printf("%2llu ", array[0]);
+	// for (nat i = 1; i < array_display_limit; i++) { 
+	// 	printf("%2llu ", array[i]);
+	// } 
+	// printf(".. %2llu\n", array[n]);
 
-*/
+
+
+
+
+
+
+
+
+
+
 
 
