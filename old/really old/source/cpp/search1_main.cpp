@@ -3,7 +3,7 @@
 //  search1
 //
 //  Created by Daniel Rehman on 1909043.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
+//                                                       
 //
 
 /*
@@ -58,7 +58,6 @@ int main(int argc, const char * argv[]) {
 //  fast-asl
 //
 //  Created by Daniel Rehman on 1908051.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
 //
 
 #include <stdio.h>

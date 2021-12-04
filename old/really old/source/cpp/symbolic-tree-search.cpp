@@ -3,7 +3,7 @@
 //  symbolic-tree-search
 //
 //  Created by Daniel Rehman on 1912286.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
+//                                                       
 //
 /**
 

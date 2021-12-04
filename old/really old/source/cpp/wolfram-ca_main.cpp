@@ -3,7 +3,6 @@
 //  wolfram-ca
 //
 //  Created by Daniel Rehman on 1906171.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
 //
 
 #include <iostream>

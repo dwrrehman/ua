@@ -3,7 +3,7 @@
 //  filter_cas
 //
 //  Created by Daniel Rehman on 1909087.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
+//                                                       
 //
 
 #include <stdio.h>

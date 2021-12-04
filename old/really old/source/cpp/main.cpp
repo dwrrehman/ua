@@ -3,7 +3,7 @@
 //  search1
 //
 //  Created by Daniel Rehman on 1909043.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
+//                                                       
 //
 
 #include "utilities.hpp"

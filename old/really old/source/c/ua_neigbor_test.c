@@ -3,7 +3,6 @@
 //  sandbox16
 //
 //  Created by Daniel Rehman on 2002171.
-//  Copyright © 2020 Daniel Rehman. All rights reserved.
 //
 
 /// tests the positive and negative neighbor-computation for the ua.

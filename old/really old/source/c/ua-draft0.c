@@ -3,7 +3,6 @@
 //  ua-draft0
 //
 //  Created by Daniel Rehman on 2002226.
-//  Copyright © 2020 Daniel Rehman. All rights reserved.
 //
 #include <string.h> ///TODO: get rid of these.
 #include <math.h>

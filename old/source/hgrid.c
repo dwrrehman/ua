@@ -3,7 +3,7 @@
 //  ua
 //
 //  Created by Daniel Rehman on 2006022.
-//  Copyright © 2020 Daniel Rehman. All rights reserved.
+//                                                       
 //
 
 #include "hgrid.h"

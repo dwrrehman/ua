@@ -3,7 +3,7 @@
 //  ua
 //
 //  Created by Daniel Rehman on 2006044.
-//  Copyright © 2020 Daniel Rehman. All rights reserved.
+//                                                       
 //
 
 #include "commands.h"

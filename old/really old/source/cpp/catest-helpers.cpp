@@ -3,7 +3,7 @@
 //  catest
 //
 //  Created by Daniel Rehman on 1907232.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
+//                                                       
 //
 
 #include "helpers.hpp"

@@ -3,7 +3,6 @@
 //  sandbox15
 //
 //  Created by Daniel Rehman on 2002134.
-//  Copyright © 2020 Daniel Rehman. All rights reserved.
 //
 #include <stdio.h>
 #include <string.h>

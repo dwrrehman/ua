@@ -3,7 +3,6 @@
 //  sandbox24
 //
 //  Created by Daniel Rehman on 1909146.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
 //
 
 #include <unistd.h>

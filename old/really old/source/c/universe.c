@@ -3,7 +3,6 @@
 //  universe.
 //
 //  Created by Daniel Rehman on 1910141.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
 //
 
 #include <stdio.h>

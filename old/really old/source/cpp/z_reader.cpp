@@ -3,7 +3,6 @@
 //  z_reader
 //
 //  Created by Daniel Rehman on 1911203.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
 //
 
 #include <iostream>

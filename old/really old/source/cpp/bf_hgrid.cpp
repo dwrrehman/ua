@@ -3,7 +3,6 @@
 //  bf-hgrid
 //
 //  Created by Daniel Rehman on 1908051.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
 //
 
 #include <iostream>

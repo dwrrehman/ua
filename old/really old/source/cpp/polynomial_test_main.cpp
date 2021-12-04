@@ -3,7 +3,7 @@
 //  sandbox14
 //
 //  Created by Daniel Rehman on 2001271.
-//  Copyright © 2020 Daniel Rehman. All rights reserved.
+//                                                       
 //
 #include <iostream>
 using nat = unsigned long long;

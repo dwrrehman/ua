@@ -2,7 +2,7 @@
 //  binary_expression_converter.c
 //
 //  Created by Daniel Rehman on 2005085.
-//  Copyright © 2020 Daniel Rehman. All rights reserved.
+//                                                       
 //
 
 #include <stdio.h>

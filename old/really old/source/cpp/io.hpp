@@ -3,7 +3,7 @@
 //  ua
 //
 //  Created by Daniel Rehman on 1910137.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
+//                                                       
 //
 
 #ifndef io_hpp

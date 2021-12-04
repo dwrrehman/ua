@@ -3,7 +3,7 @@
 //  bf-m3
 //
 //  Created by Daniel Rehman on 1907287.
-//  Copyright © 2019 Daniel Rehman. All rights reserved.
+//                                                       
 //
 
 #include <iostream>
