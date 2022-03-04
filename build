@@ -1,1 +1,17 @@
-clang -g -O0 -Weverything -Wno-poison-system-directories -fsanitize=address,undefined main.c -o run
+#!/bin/zsh
+
+if [ "release" = "$1" ]; then
+	clang -Ofast main.c -o run
+
+
+elif [ "clean" = "$1" ]; then
+	rm -rf run
+	rm -rf run.dSYM
+
+elif [ "" = "$1" ]; then 
+	clang -g -O0 -Weverything -Wno-poison-system-directories -fsanitize=address,undefined main.c -o run
+
+else 
+	echo "build: unknown target: $1"
+fi
+

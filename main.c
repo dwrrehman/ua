@@ -1,3 +1,20 @@
+
+/*
+	ohhhh i found a bug 
+
+		its a big bug
+		its that 
+
+
+		when we are reverting the array, we aren;t taking into account the fact that our parent did something to the array, and we are doing that same thing again, 
+
+		because of the fact that our parent can be not a branch now. 
+
+
+
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,8 +28,7 @@
 /// 		written by Daniel W. R. Rehman , started on 2110317.093242 .
 ///                               edited on 2112046.134422
 
-///	NOTE:  this is a rewrite, which replaces the notion of an option from being   "{source-br}{side(0/1)}{operation}{destination-br}" to being "{source-instruction}{destination-instruction}".  ie, more general- allowing for direct extensions, and true direct branches, which arent using the instruction 4 at all. furthermore, having a blacklist is harder in the new system, but thats okay.
-
+///	NOTE:  this is a new version of the uaility, which replaces the notion of an option from being   "{source-br}{side(0/1)}{operation}{destination-br}" to being "{source-instruction}{destination-instruction}".  ie, more general- allowing for direct extensions, and true direct branches, which arent using the instruction 4 at all. furthermore, having a blacklist is harder in the new system, but thats okay.
 
 // description: a test framework to brute force search the possibility space and search it manually, 
 // and make it easier to see what the graphs do, ie their computation/lifetime after some number of ins.
@@ -86,10 +102,31 @@ struct candidate {
 	nat lifetime[64];
 };
 
-// static nat blacklist_count = 0;
-// static struct edge* blacklist = NULL;
+struct edge {
+	byte source;
+	bool side;
+	byte destination;
+};
 
-// static const char* blacklisted_edges[] = {
+static nat blacklist_count = 0;
+static struct edge* blacklist = NULL;
+
+static const char* blacklisted_edges[] = {
+
+	"5fA", "5fE", "6fF",    // nerdp reduc
+
+	"EtF", "FtE",          // trichotomy reducabilities
+
+	"1f5", "2f6",         // increment-reset reduc.
+
+ 	"5f2", "5f3",               // other
+
+	
+
+
+
+0};
+
 
 
 // trichotomy reducability principle:
@@ -198,6 +235,7 @@ static inline void display_state_compact(nat* array, nat n) {
 static inline void print_as_adjacency_list(byte* graph) {
 	printf("graph:\n\n");
 	for (byte i = 1; i < 8; i++) {
+		if (i == 4) { puts(""); continue; }
 		printf("\t%c: %c, %c    ", hex(i), nonzero_hex(graph[i * 2 + 0]), nonzero_hex(graph[i * 2 + 1]));
 		printf("%c: %c, %c\n", hex(i + 8), nonzero_hex(graph[(i + 8) * 2 + 0]), nonzero_hex(graph[(i + 8) * 2 + 1]));
 	}
@@ -463,58 +501,66 @@ done:
 
 
 
-// static inline void generate_blacklist() {
+static inline void generate_blacklist() {
 
-// 	for (nat i = 0; blacklisted_edges[i]; i++) {
+	for (nat i = 0; blacklisted_edges[i]; i++) {
 
-// 		const char* string = blacklisted_edges[i];
+		const char* string = blacklisted_edges[i];
 
-// 		struct edge edge = {
-// 			.source = string[0] - 'A' + 10,
-// 			.side = string[1] == 't',
-// 			.operation = string[2] - '0',
-// 			.destination = string[3] - 'A' + 10,
-// 		};
+		struct edge edge = {
+			.source = (byte) read_hex(string[0]),
+			.side = string[1] == 't',
+			.destination = (byte) read_hex(string[2]),
+		};
 		
-// 		blacklist = realloc(blacklist, sizeof(struct edge) * (blacklist_count + 1));
-// 		blacklist[blacklist_count++] = edge;
-// 	}
+		blacklist = realloc(blacklist, sizeof(struct edge) * (blacklist_count + 1));
+		blacklist[blacklist_count++] = edge;
+	}
 
-// 	return;
-// }
-
-
-// static inline void print_blacklist() {
-// 	printf("current blacklist = {\n\n");
-// 	for (nat i = 0; i < blacklist_count; i++) {
-// 		const struct edge edge = blacklist[i];
-// 		printf("%llu.\t%hhX%c%hhX%hhX\n\n", i, edge.source, edge.side ? 't' : 'f', edge.operation, edge.destination);
-// 	}
-// 	printf("}\n");
-// }
+	return;
+}
 
 
-// static inline bool is_blacklisted(byte source, bool side, byte operation, byte destination) {
-// 	for (nat i = 0; i < blacklist_count; i++) {
-// 		if (	blacklist[i].source == source and 
-// 			blacklist[i].side == side and 
-// 			blacklist[i].operation == operation and 
-// 			blacklist[i].destination == destination) 
-// 				return true;
-// 	}
-// 	return false;
-// }
+static inline void print_blacklist() {
+	printf("current blacklist = {\n\n");
+	for (nat i = 0; i < blacklist_count; i++) {
+		const struct edge edge = blacklist[i];
+		printf("%llu.\t%hhX%c%hhX\n\n", i, edge.source, edge.side ? 't' : 'f', edge.destination);
+	}
+	printf("}\n");
+}
 
 
-static inline struct options generate(/*byte*  graph, byte source, bool side*/) {
+static inline bool is_blacklisted(byte source, bool side, byte destination) {
+	for (nat i = 0; i < blacklist_count; i++) {
+		if (	blacklist[i].source == source and 
+			blacklist[i].side == side and 
+			blacklist[i].destination == destination) 
+				return true;
+	}
+	return false;
+}
+
+
+static inline struct options generate(byte* graph, byte source, bool side) {
 
 	byte* options = malloc(9); 
 	nat count = 0;
 
-	byte all_possibilities[] = {1, 2, 3, 5, 6, 0xA, 0xD, 0xE, 0xF};
+	// const byte destinations[] = {1, 2, 3, 5, 6, 0xA, 0xD, 0xE, 0xF};
+	const byte destinations[] = {1, 2, 3, 5, 6, 0xA, 0xE, 0xF};          // trying removing d from the ua isa, and seeing what it does. 
 
-	for (int i = 1; i < 9; i++) 
-		options[count++] = all_possibilities[i];
+
+	for (int i = 0; i < (int) sizeof destinations; i++) {
+		if (destinations[i] == source) continue;
+
+		// if (source < 7) {
+		// 	if (destinations[i] < 7) continue;      // not assuming    "no op-op transistions"   anymore.
+		// }
+
+
+		if (not is_blacklisted(source, side, destinations[i])) options[count++] = destinations[i];
+	}
 
 	struct options result = {0};
 	result.options = options;
@@ -522,13 +568,13 @@ static inline struct options generate(/*byte*  graph, byte source, bool side*/) 
 	return result;
 }
 
-static inline nat determine_expansion_type(nat* lifetime) {
+static inline nat determine_expansion_type(nat* lifetime, nat n) {
 
 
 	// ------------ no expansion test: -------------            eg        0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 
 	bool is_no_expansion = true;
-	for (nat i = 1; i < 63; i++) {
+	for (nat i = 1; i < n; i++) {
 		if (lifetime[i]) { is_no_expansion = false; break; }
 	}
 	if (is_no_expansion) return no_expansion;
@@ -536,7 +582,7 @@ static inline nat determine_expansion_type(nat* lifetime) {
 
 	// --------------- hole expansion ----------------         eg         1 2 4 2 0 3 2 3 0 0 0 0 0 
 	//									    ^
-	nat first = 1, last = 63;
+	nat first = 1, last = n;
 	for (;last--;) 
 		if (lifetime[last]) break;     // go from the last modnat, to the first, looking for where the first nonzero cell is.
 
@@ -571,17 +617,20 @@ static inline nat determine_expansion_type(nat* lifetime) {
 static inline bool is_complete(byte* graph) {
 
 	if (not graph[2 * 0x1]) return false;
+
 	if (not graph[2 * 0x2]) return false;
+
 	if (not graph[2 * 0x3]) return false;
-	if (not graph[2 * 0x4]) return false;
+
 	if (not graph[2 * 0x5]) return false;
+
 	if (not graph[2 * 0x6]) return false;
 
 	if (not graph[2 * 0xA + 0]) return false;
 	if (not graph[2 * 0xA + 1]) return false;
 
-	if (not graph[2 * 0xD + 0]) return false;
-	if (not graph[2 * 0xD + 1]) return false;
+	// if (not graph[2 * 0xD + 0]) return false;
+	// if (not graph[2 * 0xD + 1]) return false;
 
 	if (not graph[2 * 0xE + 0]) return false;
 	if (not graph[2 * 0xE + 1]) return false;
@@ -592,33 +641,38 @@ static inline bool is_complete(byte* graph) {
 	return true;
 }
 
-static inline struct candidate evaluate(byte* graph, nat* array, nat n) {
+// static inline struct candidate evaluate(byte* graph, nat* array, nat n) {
 
-
-	// printf("---> tried:  %s:   ", hex_string(graph));
-	// display_state_compact(array, n);
-
-	struct candidate candidate = {no_expansion,false,{0},{0}};
-	memcpy(candidate.graph, graph, 32);
-	for (nat i = 0; i < 63; i++) candidate.lifetime[i] = array[i];
-	candidate.lifetime[63] = array[n];
-
-	/// generate verdict for each graph, based on the xp of the arrray lifetime state. 
-	candidate.expansion_type = determine_expansion_type(candidate.lifetime);
 	
-	// determine whether the graph is complete or not. (whether it uses every XFG instruction or not.)
-	candidate.is_complete = is_complete(graph);
 	
-	//testing out what the file lines will look like..
+// 	//testing out what the file lines will look like..
 
-	// printf("%s  :  ", hex_string(candidate.graph));
-	// printf("%s  :  ", expansion_type_spelling[candidate.expansion_type]);
-	// printf("%s  :  ", candidate.is_complete ? "complete" : "incomplete");
-	// printf("%s\n", lifetime_string(candidate.lifetime));
-	return candidate;
+// 	// printf("%s  :  ", hex_string(candidate.graph));
+// 	// printf("%s  :  ", expansion_type_spelling[candidate.expansion_type]);
+// 	// printf("%s  :  ", candidate.is_complete ? "complete" : "incomplete");
+// 	// display_state_compact(array, n);
+
+// 	return candidate;
+
+// }
+
+
+static inline void print_statistics(nat tried, nat counts[expansion_type_count][2]) {
+	printf("statistics:\n");
+
+	for (nat xp = 0; xp < expansion_type_count; xp++) { // for each possible expansion type, 
+		for (nat com = 0; com < 2; com++) { // for either complete or not,
+			printf("\t%s:%s = %llu (%2.2lf%%)   ",
+				expansion_type_spelling[xp], com ? "complete" : "incomplete", 
+				counts[xp][com], 
+				(double)counts[xp][com] / (double)tried * 100.0
+			);
+		}
+		puts("");
+	}
+	puts("");
 
 }
-
 static inline void search(byte* graph, byte start) {
 
 	nat tried = 0;
@@ -626,12 +680,18 @@ static inline void search(byte* graph, byte start) {
 
 	struct candidate* candidates = NULL;
 	nat candidate_count = 0;
+	nat candidate_capacity = 0;
 
 	const nat n = array_size - 1;
 	nat* array = calloc(array_size, sizeof(nat));
 
 	byte i = start;     // instruction pointer.
-	byte parent = 0;      // previous iteration's value of the instruction pointer. ("parent")		
+
+	// const nat history_count = 6;
+	// byte instruction_history[history_count] = {0};
+	// byte side_history[history_count] = {0};
+
+	byte parent = 0;      // previous iteration's value of the instruction pointer. ("parent")
 	bool parent_side = false;
 	
 	struct stack_frame* stack = calloc(max_stack_size, sizeof(struct stack_frame));
@@ -644,7 +704,7 @@ begin:
 		// printf("info: [instruction pointer = %hhX]\n", i);
 		if (i == 0) {
 			// printf("found hole at %hhX%c (parent=%hhX, parent_side=%d) generating a list of options to fill it...\n", parent, parent_side ? 't' : 'f', parent, parent_side);
-			struct options options = generate(/*graph, parent, parent_side*/);
+			struct options options = generate(graph, parent, parent_side);
 			// print_options(options, parent, parent_side); // debug.
 			struct stack_frame frame;
 			frame.try = 0; // start with the first option.
@@ -665,7 +725,7 @@ begin:
 			// printf("current graph is now: \n");
 			// print_as_adjacency_list(graph);
 			// printf("reverting instruction pointer to go back before we had executed the hole, %hhX...\n", parent);
-			i = parent;
+			i = options.options[0];
 			// printf("generate: continue? > "); 
 			// if (getchar() == 'q') return;
 		} else {
@@ -694,6 +754,7 @@ begin:
 				abort();
 
 			} else if (i == 0xD) {
+				abort();
 				i = graph[i * 2 + (array[0] < array[n])]; 
 				parent_side = (array[0] < array[n]);
 				// printf("[%c]\n", array[0] < array[n] ? 't' : 'f'); 
@@ -727,11 +788,18 @@ begin:
 	// printf("tried candidate graph: \n");
 	// print_as_adjacency_list(graph);
 	// puts("");
-	struct candidate new = evaluate(graph, array, n);
-
+	
+	struct candidate new = {determine_expansion_type(array, n), is_complete(graph), {0}, {0}};
+	memcpy(new.graph, graph, 32);
+	
 	if (new.is_complete and new.expansion_type == good_expansion) {
-		candidates = realloc(candidates, sizeof(struct candidate) * (candidate_count + 1));
+		if (candidate_count + 1 > candidate_capacity) {
+			candidates = realloc(candidates, sizeof(struct candidate) * 
+				(candidate_capacity = 4 * (candidate_capacity + candidate_count + 1)));
+			// printf("expanded array: %llu\n", candidate_capacity);
+		}
 		candidates[candidate_count++] = new;
+		
 	}
 	
 	tried++;
@@ -740,6 +808,18 @@ begin:
 	// 	printf("info: ending graph search early...\n");
 	// 	return;
 	// }
+
+
+	if (not (tried & 65535)) {
+		// printf("\rtried: %llu                 ", tried);
+	
+		clear_screen();
+		print_as_adjacency_list(graph);
+		printf("----> tried %llu control flow graphs.\n", tried);
+		print_statistics(tried, counts);
+		print_stack(stack, stack_count);
+		fflush(stdout);
+	}
 
 backtrack:
 
@@ -753,42 +833,42 @@ backtrack:
 	memcpy(array, stack[stack_count - 1].array_state, array_size * sizeof(nat));
 	// printf("reverted state of the array back to:\n");
 	// display_state(array, n);
-	struct stack_frame top = stack[stack_count - 1];
+	// struct stack_frame top = stack[stack_count - 1];
 
-	if (top.try < top.options.count - 1) {
+	if (stack[stack_count - 1].try < stack[stack_count - 1].options.count - 1) {
 		
 		stack[stack_count - 1].try++;
 		// printf("incremented stack[%llu].try to be %llu... instantiating..\n", stack_count - 1, stack[stack_count - 1].try);
-		graph[2 * top.source + top.side] = top.options.options[top.try];
+		// printf("before graph was: \n");
+		// print_as_adjacency_list(graph);	
+		graph[2 * stack[stack_count - 1].source + stack[stack_count - 1].side] 
+			= stack[stack_count - 1].options.options[stack[stack_count - 1].try];
+
 		// printf("current graph is now: \n");
 		// print_as_adjacency_list(graph);
-		// printf("trying this option now... starting from [i = %hhX]...\n", stack[stack_count - 1].source);
-		i = stack[stack_count - 1].source;
+		// printf("previous i value = %hhX...\n", i);
+		i = stack[stack_count - 1].options.options[stack[stack_count - 1].try];
+		// printf("trying this option starting from [i = %hhX]...\n", i);
 		// printf("reseting the executed count (which was %llu...\n", executed_count);
 		executed_count = 0;
 		goto begin;
 	} else {
-		graph[2 * top.source + top.side] = 0;
+		// printf("reverting last option...\n");
+		// printf("before graph was: \n");
+		// print_as_adjacency_list(graph);
+		graph[2 * stack[stack_count - 1].source + stack[stack_count - 1].side] = 0;
+		// printf("current graph is now: \n");
+		// print_as_adjacency_list(graph);
 		if (stack_count <= 1) goto done;
+		// printf("popping...\n");
 		stack_count--; 
 		goto backtrack;
 	}
 done:
+	printf("used the partial graph: %s starting from %hhX with limit = %llu\n", hex_string(graph), start, execution_limit);
 	printf("success: [exited search function successfully: exhausted all graph extension possibilities.]\n");
 	printf("----> tried %llu control flow graphs.\n", tried);
-	printf("statistics:\n");
-
-	for (nat xp = 0; xp < expansion_type_count; xp++) { // for each possible expansion type, 
-		for (nat com = 0; com < 2; com++) { // for either complete or not,
-			printf("\t%s:%s = %llu (%2.2lf%%)   ",
-				expansion_type_spelling[xp], com ? "complete" : "incomplete", 
-				counts[xp][com], 
-				(double)counts[xp][com] / (double)tried * 100.0
-			);
-		}
-		puts("");
-	}
-	puts("");
+	print_statistics(tried, counts);
 
 	const char* dest_filename = "good_complete_zs.txt";
 	printf("writing list of candidate z values to a file...\n");
@@ -798,8 +878,46 @@ done:
 
 
 
+static void test_br_reduc_finder() {
+
+	// fact: we want to find reduc edges which go on true (or false) for all inputs. --->   thats what it means to "reduce". 
+
+	// we need to look at single edges reducing, given several possible previously executed instructions. 
+
+
+	// these histories will never contain a cycle, i think..?? yikes...
+
+	
+
+		// so i just found out that    actually     we need to look at the +    the =    and the minus. 
+
+
+//			ie, we need to stress test the branches in every possible way, without looking at "particular" values. 
+
+
+						// ie, we need to make a system which can kind of fuzzily run the branches,  and see if they reduce.  note: this only applies to branches. not operations. 
+
+
+			// in order to prove that operations are not allowed,   i think we just need a blacklist.   so yeah. we need a combination of these two approaches. 
+
+
+					// this only works for branches. 
+
+
+
+			
+
+}
+
+
+
 
 int main() {
+
+
+	test_reduc_finder();
+	exit(0);
+
 
 	printf("this is a program to help with finding the XFG, in the UA theory.\ntype help for more info.\n");
 
@@ -808,9 +926,9 @@ int main() {
 
 	char buffer[4096] = {0};
 
-	// printf("pre-generating blacklist... ");
-	// generate_blacklist();	
-	// printf("using %llu blacklist edges.\n", blacklist_count);
+	printf("pre-generating blacklist... ");
+	generate_blacklist();	
+	printf("using %llu blacklist edges.\n", blacklist_count);
 
 	while (1) {
 		printf("::> ");
@@ -825,7 +943,7 @@ int main() {
 			printf( "available commands:\n"
 				"\t- quit : quit the XFG utility.\n"
 				"\t- help : this help menu.\n"
-				"\t- show : display the current graph as an adjacency list. (spaces are the value 0.) values for 0 and 8 are not displayed.\n"
+				"\t- show : display the current graph as an adjacency list. (spaces are the value 0.) values for 0, 4, 8, and C are not displayed.\n"
 				"\t- edit : add, remove or change an edge in the graph. format: {source}{false_destination}{true_destination}\n"
 				"\t- run : run the current graph, using the full UA ISA and DS.\n"
 				"\t- init : initialize the graph via a 32 digit hex string.\n"
@@ -835,7 +953,7 @@ int main() {
 				"\t- edit-origin : edit which instruction execute should start at.\n"
 				"\t- edit-limit : edit the execution limit, the number of instructions to try per option, before giving up.\n"
 				"\t- dump : dump the current graph as a hex string.\n"
-				"\t- mtrc : emit the partial graph's hex string corresponding to the MTRC, (the Mode Trichotomy Correspondence)\n"
+				//"\t- mtrc : emit the partial graph's hex string corresponding to the MTRC, (the Mode Trichotomy Correspondence)\n"
 				"\t- clear : clear the screen.\n"
 				"\t\n"
 			);
@@ -850,20 +968,20 @@ int main() {
 			fgets(buffer, sizeof buffer, stdin);
 			execution_limit = (nat) atoi(buffer);
 			printf("execution limit now is = %llu.\n", execution_limit);
-		} 
+		}
 
 		else if (not strcmp(buffer, "")) {} 
-		else if (not strcmp(buffer, "clear") or not strcmp(buffer, "l")) clear_screen();
+		else if (not strcmp(buffer, "clear") or not strcmp(buffer, "o")) clear_screen();
 		else if (not strcmp(buffer, "edit")) read_graph_edit(graph, buffer);
 		else if (not strcmp(buffer, "run")) run(2048, 4096, graph, origin);
 		else if (not strcmp(buffer, "show") or not strcmp(buffer, "ls")) print_as_adjacency_list(graph);
 		else if (not strcmp(buffer, "dump")) printf("graph: %s\n", hex_string(graph));
-		else if (not strcmp(buffer, "mtrc")) printf("\n\t000000F000D000000000000000003050\n\n");
+		// else if (not strcmp(buffer, "mtrc")) printf("\n\t000000F000D000000000000000003050\n\n");
 		else if (not strcmp(buffer, "show-origin")) printf("\n\torigin instruction = %hhX\n\n", origin);
 		else if (not strcmp(buffer, "show-blacklist")) { 
-			/*printf("using %llu blacklist edges.\n", blacklist_count); print_blacklist();*/ 
-			printf("UNIMPLEMENTED"); } 
-		else if (not strcmp(buffer, "edit-origin")) { 
+			printf("using %llu blacklist edges.\n", blacklist_count); 
+			print_blacklist(); 
+		} else if (not strcmp(buffer, "edit-origin")) { 
 			printf(":origin:> "); 
 			origin = (byte) read_hex(getchar()); 
 			if (origin < 0 or origin >= 16) { printf("error: origin out of bounds\n"); origin = 0; }
