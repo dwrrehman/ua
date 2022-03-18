@@ -1,19 +1,4 @@
 
-/*
-	ohhhh i found a bug 
-
-		its a big bug
-		its that 
-
-
-		when we are reverting the array, we aren;t taking into account the fact that our parent did something to the array, and we are doing that same thing again, 
-
-		because of the fact that our parent can be not a branch now. 
-
-
-
-
-*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +23,7 @@ typedef unsigned long long nat;
 typedef int8_t byte;
 
 
-static const nat array_display_limit = 20;
+static const nat array_display_limit = 15;
 // how many cells you print, when displaying the arrray. must be ≤ array size.
 
 static const nat array_size = 4096; 	
@@ -47,7 +32,7 @@ static const nat array_size = 4096;
 static const nat max_stack_size = 128; 			
 // how many stack frames at max. 
 
-static nat execution_limit = 800; 		
+static nat execution_limit = 800; 
 // how many ins to be exec'd before calling it quits for an option.
 
 
@@ -58,6 +43,7 @@ struct options {
 
 struct stack_frame {
 	struct options options;
+	nat pointer_state;
 	nat array_state[array_size];
 	nat try;
 	int padding2;
@@ -113,17 +99,16 @@ static struct edge* blacklist = NULL;
 
 static const char* blacklisted_edges[] = {
 
-	"5fA", "5fE", "6fF",    // nerdp reduc
+	"5fE", "6fF",          // nerdp reduc
 
 	"EtF", "FtE",          // trichotomy reducabilities
 
 	"1f5", "2f6",         // increment-reset reduc.
 
- 	"5f2", "5f3",               // other
-
-	
+	"3f5",
 
 
+	// "6f5", 
 
 0};
 
@@ -174,18 +159,27 @@ static const char* blacklisted_edges[] = {
 
 // 0};
 /*
-	A :   *n < *0
-
-	D :   *0 < *n
-
-	E :   *n < **0
-
-	F :   **0 < *n
 
 
-	5 :   *0 = 0           (note: implies **0 = 0.)
+	E :   *n < *i
+
+	F :   *i < *n
+
+	5 :   i = 0      
 
 	6 :   *n = 0
+
+
+
+
+
+
+
+x	A :   *n < *0
+
+x	D :   *0 < *n
+
+
 
 */
 
@@ -209,16 +203,13 @@ static inline char* hex_string(byte* graph) {
 	return string;
 }
 
-
-
-static inline void display_state(nat* array, nat n) {
-	printf("\n   *0:[ %2llu ] ", array[0]);
-	for (nat i = 1; i < array_display_limit; i++) { 
+static inline void display_state(nat* array, nat n, nat pointer) {
+	printf("\n");
+	for (nat i = 0; i < array_display_limit; i++) { 
 		printf(" [ %2llu ] ", array[i]);
 	} 
-	printf("   ...  *n:[ %2llu ]\n", array[n]);
-	printf("         ");
-	for (nat i = 0; i < array[0] and i < array_display_limit; i++) {
+	printf("   ...  *n:[ %2llu ]\n    ", array[n]);
+	for (nat i = 0; i < pointer and i < array_display_limit; i++) {
 		printf("        ");
 	}
 	printf("^\n. \n");
@@ -242,6 +233,25 @@ static inline void print_as_adjacency_list(byte* graph) {
 	printf("\n");
 }
 
+
+static inline void print_as_xfg_adjacency_list(byte* graph) {
+	printf("graph:\n\n");
+	
+	printf("\t1: %c, 2: %c, 3: %c, \n\n\t5: %c, 6: %c \n\n", 
+		nonzero_hex(graph[1 * 2 + 0]), 
+		nonzero_hex(graph[2 * 2 + 0]), 
+		nonzero_hex(graph[3 * 2 + 0]), 
+		nonzero_hex(graph[5 * 2 + 0]), 
+		nonzero_hex(graph[6 * 2 + 0])
+	);
+
+	printf("\tE: %c, %c  F: %c, %c\n",  
+		nonzero_hex(graph[0xE * 2 + 0]), nonzero_hex(graph[0xE * 2 + 1]),
+		nonzero_hex(graph[0xF * 2 + 0]), nonzero_hex(graph[0xF * 2 + 1])
+	);
+
+	printf("\n");
+}
 
 static inline void print_stack(struct stack_frame* stack, nat stack_count) {
 	printf("printing stack: [sf count=%llu]\n{\n", stack_count);
@@ -321,61 +331,50 @@ static inline void read_graph_edit(byte* graph, char* buffer) {  // [format: {so
 
 static inline void run(const nat m, const nat n, byte* graph, const byte start) {
 	
-	nat* array = calloc(n + 1, sizeof(nat));
+	nat* a = calloc(n + 1, sizeof(nat));
+	nat p = 0;
+
 	byte i = start;
 
-	display_state(array, n);
+	display_state(a, n, p);
 
 	while (i) {
 		
 		printf("[%c]", hex(i));
 		
 		if (i == 9) {
-			i = graph[i * 2 + (array[0] < n)];
-			printf("[%c]\n", array[0] < n ? 't' : 'f');
-
-		} else if (i == 0xA) {
-			i = graph[i * 2 + (array[n] < array[0])]; 
-			printf("[%c]\n", array[n] < array[0] ? 't' : 'f'); 
+			i = graph[i * 2 + (p < n)];
+			printf("[%c]\n", p < n ? 't' : 'f');
 
 		} else if (i == 0xB) {
-			i = graph[i * 2 + (array[array[0]] < m)]; 
-			printf("[%c]\n", array[array[0]] < m ? 't' : 'f');
-
-		} else if (i == 0xC) {
-			i = graph[i * 2 + 0]; 
-			printf("[%c]\n", 'f');
-		
-		} else if (i == 0xD) {
-			i = graph[i * 2 + (array[0] < array[n])]; 
-			printf("[%c]\n", array[0] < array[n] ? 't' : 'f'); 
+			i = graph[i * 2 + (a[p] < m)]; 
+			printf("[%c]\n", a[p] < m ? 't' : 'f');
 
 		} else if (i == 0xE) {
-			i = graph[i * 2 + (array[n] < array[array[0]])];
-			printf("[%c]\n", array[n] < array[array[0]] ? 't' : 'f');
+			i = graph[i * 2 + (a[n] < a[p])];
+			printf("[%c]\n", a[n] < a[p] ? 't' : 'f');
 
 		} else if (i == 0xF) {
-			i = graph[i * 2 + (array[array[0]] < array[n])];
-			printf("[%c]\n", array[array[0]] < array[n] ? 't' : 'f');
+			i = graph[i * 2 + (a[p] < a[n])];
+			printf("[%c]\n", a[p] < a[n] ? 't' : 'f');
 		}
 
-		else if (i == 1) { array[0]++; 			i = graph[i * 2];  printf("\n"); }
-		else if (i == 2) { array[n]++; 			i = graph[i * 2];  printf("\n"); }
-		else if (i == 3) { array[array[0]]++; 		i = graph[i * 2];  printf("\n"); }
-		else if (i == 4) { 		 		i = graph[i * 2];  printf("\n"); }
-		else if (i == 5) { array[0] = 0; 		i = graph[i * 2];  printf("\n"); }
-		else if (i == 6) { array[n] = 0; 		i = graph[i * 2];  printf("\n"); }
-		else if (i == 7) { array[array[0]] = 0; 	i = graph[i * 2];  printf("\n"); }
-		else if (i == 8) { 		 		i = graph[i * 2];  printf("\n"); }
+		else if (i == 1) { p++; 			i = graph[i * 2];  printf("\n"); }
+		else if (i == 2) { a[n]++; 			i = graph[i * 2];  printf("\n"); }
+		else if (i == 3) { a[p]++; 			i = graph[i * 2];  printf("\n"); }
+		else if (i == 5) { p = 0; 			i = graph[i * 2];  printf("\n"); }
+		else if (i == 6) { a[n] = 0; 			i = graph[i * 2];  printf("\n"); }
+		else if (i == 7) { a[p] = 0; 			i = graph[i * 2];  printf("\n"); }
+		else abort();
 
-		display_state(array, n);
+		display_state(a, n, p);
 		printf("> "); 
 		if (getchar() == 'q') break;
 	}
 
 	printf("[HALT]\n");
 
-	free(array);
+	free(a);
 }
 
 
@@ -544,20 +543,13 @@ static inline bool is_blacklisted(byte source, bool side, byte destination) {
 
 static inline struct options generate(byte* graph, byte source, bool side) {
 
-	byte* options = malloc(9); 
+	byte* options = malloc(7); 
 	nat count = 0;
 
-	// const byte destinations[] = {1, 2, 3, 5, 6, 0xA, 0xD, 0xE, 0xF};
-	const byte destinations[] = {1, 2, 3, 5, 6, 0xA, 0xE, 0xF};          // trying removing d from the ua isa, and seeing what it does. 
-
+	const byte destinations[] = {1, 2, 3, 5, 6, 0xE, 0xF};
 
 	for (int i = 0; i < (int) sizeof destinations; i++) {
 		if (destinations[i] == source) continue;
-
-		// if (source < 7) {
-		// 	if (destinations[i] < 7) continue;      // not assuming    "no op-op transistions"   anymore.
-		// }
-
 
 		if (not is_blacklisted(source, side, destinations[i])) options[count++] = destinations[i];
 	}
@@ -574,7 +566,7 @@ static inline nat determine_expansion_type(nat* lifetime, nat n) {
 	// ------------ no expansion test: -------------            eg        0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 
 	bool is_no_expansion = true;
-	for (nat i = 1; i < n; i++) {
+	for (nat i = 0; i < n; i++) {
 		if (lifetime[i]) { is_no_expansion = false; break; }
 	}
 	if (is_no_expansion) return no_expansion;
@@ -582,7 +574,7 @@ static inline nat determine_expansion_type(nat* lifetime, nat n) {
 
 	// --------------- hole expansion ----------------         eg         1 2 4 2 0 3 2 3 0 0 0 0 0 
 	//									    ^
-	nat first = 1, last = n;
+	nat first = 0, last = n;
 	for (;last--;) 
 		if (lifetime[last]) break;     // go from the last modnat, to the first, looking for where the first nonzero cell is.
 
@@ -599,7 +591,7 @@ static inline nat determine_expansion_type(nat* lifetime, nat n) {
 	// ------------------ constant expansion -------------------   eg   1 1 1 1 1 1 1 1 1 1 0 0 0 0 0
 
 	bool is_constant_expansion = true;
-	for (nat i = 1; i < last; i++) {
+	for (nat i = 0; i < last; i++) {
 		if (lifetime[i] != 1) { is_constant_expansion = false; break; }
 	}
 	
@@ -626,12 +618,6 @@ static inline bool is_complete(byte* graph) {
 
 	if (not graph[2 * 0x6]) return false;
 
-	if (not graph[2 * 0xA + 0]) return false;
-	if (not graph[2 * 0xA + 1]) return false;
-
-	// if (not graph[2 * 0xD + 0]) return false;
-	// if (not graph[2 * 0xD + 1]) return false;
-
 	if (not graph[2 * 0xE + 0]) return false;
 	if (not graph[2 * 0xE + 1]) return false;
 
@@ -640,21 +626,6 @@ static inline bool is_complete(byte* graph) {
 
 	return true;
 }
-
-// static inline struct candidate evaluate(byte* graph, nat* array, nat n) {
-
-	
-	
-// 	//testing out what the file lines will look like..
-
-// 	// printf("%s  :  ", hex_string(candidate.graph));
-// 	// printf("%s  :  ", expansion_type_spelling[candidate.expansion_type]);
-// 	// printf("%s  :  ", candidate.is_complete ? "complete" : "incomplete");
-// 	// display_state_compact(array, n);
-
-// 	return candidate;
-
-// }
 
 
 static inline void print_statistics(nat tried, nat counts[expansion_type_count][2]) {
@@ -684,6 +655,7 @@ static inline void search(byte* graph, byte start) {
 
 	const nat n = array_size - 1;
 	nat* array = calloc(array_size, sizeof(nat));
+	nat pointer = 0;
 
 	byte i = start;     // instruction pointer.
 
@@ -711,7 +683,10 @@ begin:
 			frame.source = parent;      // keep track of the origin/parent of the hole.
 			frame.side = parent_side; 
 			frame.options = options;
+
 			memcpy(frame.array_state, array, sizeof(nat) * array_size);
+			frame.pointer_state = pointer;
+
 			stack[stack_count++] = frame;
 			if (stack_count == max_stack_size) { printf("error: stack overflow\n"); abort(); }
 			// printf("pushed new stack frame [sf count=%llu]: {.try=%llu, .source=%d, .side=%d, .options.count=%llu}\n", 
@@ -735,48 +710,25 @@ begin:
 			parent_side = false; // overwritten by branch instructions, not overwritten by operations.
 			// execute instruction.
 			// printf("[%c]", hex(i));
-			if (i == 9) {
-				// i = graph[i * 2 + (array[0] < n)];
-				// printf("[%c]\n", array[0] < n ? 't' : 'f');
-				abort();
-
-			} else if (i == 0xA) {
-				i = graph[i * 2 + (array[n] < array[0])]; 
-				parent_side = (array[n] < array[0]);
-				// printf("[%c]\n", array[n] < array[0] ? 't' : 'f'); 
-
-			} else if (i == 0xB) { 
-				//i = graph[i * 2 + (array[array[0]] < m)]; 
-				//printf("[%c]\n", array[array[0]] < m ? 't' : 'f');
-				abort();
-			
-			} else if (i == 0xC) { 
-				abort();
-
-			} else if (i == 0xD) {
-				abort();
-				i = graph[i * 2 + (array[0] < array[n])]; 
-				parent_side = (array[0] < array[n]);
-				// printf("[%c]\n", array[0] < array[n] ? 't' : 'f'); 
-
-			} else if (i == 0xE) {
-				i = graph[i * 2 + (array[n] < array[array[0]])];
-				parent_side = (array[n] < array[array[0]]);
+		
+			if (i == 0xE) {
+				i = graph[i * 2 + (array[n] < array[pointer])];
+				parent_side = (array[n] < array[pointer]);
 				// printf("[%c]\n", array[n] < array[array[0]] ? 't' : 'f');
 
 			} else if (i == 0xF) {
-				i = graph[i * 2 + (array[array[0]] < array[n])];
-				parent_side = (array[array[0]] < array[n]);
+				i = graph[i * 2 + (array[pointer] < array[n])];
+				parent_side = (array[pointer] < array[n]);
 				// printf("[%c]\n", array[array[0]] < array[n] ? 't' : 'f');
-			}
-			else if (i == 1) { array[0]++; 			i = graph[i * 2];  }//printf("\n"); }
-			else if (i == 2) { array[n]++; 			i = graph[i * 2];  }//printf("\n"); }
-			else if (i == 3) { array[array[0]]++; 		i = graph[i * 2];  }//printf("\n"); }
-			else if (i == 4) abort(); 
-			else if (i == 5) { array[0] = 0; 		i = graph[i * 2];  }//printf("\n"); }
-			else if (i == 6) { array[n] = 0; 		i = graph[i * 2];  }//printf("\n"); }
-			else if (i == 7) abort(); 	// { array[array[0]] = 0; i = graph[i * 2];  printf("\n"); }
-			else if (i == 8) abort();
+			}	
+			else if (i == 1) { pointer++; 				i = graph[i * 2];  }//printf("\n"); }
+			else if (i == 2) { array[n]++; 				i = graph[i * 2];  }//printf("\n"); }
+			else if (i == 3) { array[pointer]++; 			i = graph[i * 2];  }//printf("\n"); }
+			else if (i == 5) { pointer = 0; 			i = graph[i * 2];  }//printf("\n"); }
+			else if (i == 6) { array[n] = 0; 			i = graph[i * 2];  }//printf("\n"); }
+			
+
+			else abort();
 			// printf("search: printing array state:\n");
 			// display_state(array, n);
 			// printf("execute: continue? > "); 
@@ -831,6 +783,9 @@ backtrack:
 	// printf("backtracking!...\n");
 	// print_stack(stack, stack_count);
 	memcpy(array, stack[stack_count - 1].array_state, array_size * sizeof(nat));
+
+	pointer = stack[stack_count - 1].pointer_state;
+
 	// printf("reverted state of the array back to:\n");
 	// display_state(array, n);
 	// struct stack_frame top = stack[stack_count - 1];
@@ -878,7 +833,7 @@ done:
 
 
 
-static void test_br_reduc_finder() {
+static void test_reduc_finder() {
 
 	// fact: we want to find reduc edges which go on true (or false) for all inputs. --->   thats what it means to "reduce". 
 
@@ -915,9 +870,8 @@ static void test_br_reduc_finder() {
 int main() {
 
 
-	test_reduc_finder();
-	exit(0);
-
+	// test_reduc_finder();
+	// exit(0);
 
 	printf("this is a program to help with finding the XFG, in the UA theory.\ntype help for more info.\n");
 
@@ -944,6 +898,7 @@ int main() {
 				"\t- quit : quit the XFG utility.\n"
 				"\t- help : this help menu.\n"
 				"\t- show : display the current graph as an adjacency list. (spaces are the value 0.) values for 0, 4, 8, and C are not displayed.\n"
+				"\t- show-xfg : display the current graph as an xfg specialized adjacency list. (only instructions 1, 2, 3, 5, 6, E, F.)\n"
 				"\t- edit : add, remove or change an edge in the graph. format: {source}{false_destination}{true_destination}\n"
 				"\t- run : run the current graph, using the full UA ISA and DS.\n"
 				"\t- init : initialize the graph via a 32 digit hex string.\n"
@@ -975,6 +930,7 @@ int main() {
 		else if (not strcmp(buffer, "edit")) read_graph_edit(graph, buffer);
 		else if (not strcmp(buffer, "run")) run(2048, 4096, graph, origin);
 		else if (not strcmp(buffer, "show") or not strcmp(buffer, "ls")) print_as_adjacency_list(graph);
+		else if (not strcmp(buffer, "show-xfg") or not strcmp(buffer, "lx")) print_as_xfg_adjacency_list(graph);
 		else if (not strcmp(buffer, "dump")) printf("graph: %s\n", hex_string(graph));
 		// else if (not strcmp(buffer, "mtrc")) printf("\n\t000000F000D000000000000000003050\n\n");
 		else if (not strcmp(buffer, "show-origin")) printf("\n\torigin instruction = %hhX\n\n", origin);
@@ -999,3 +955,27 @@ int main() {
 		} else printf("error: unknown command.\n");
 	}
 }
+
+
+
+
+
+
+
+/*
+	ohhhh i found a bug 
+
+		its a big bug
+		its that 
+
+
+		when we are reverting the array, we aren;t taking into account the fact that our parent did something to the array, and we are doing that same thing again, 
+
+		because of the fact that our parent can be not a branch now. 
+
+
+
+
+*/
+
+

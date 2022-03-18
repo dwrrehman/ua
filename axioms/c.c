@@ -138,7 +138,6 @@ repeat:
 
 	ax0.			x : N					 			 is true.
 
-	
 
 	ax1.			for all x : N,      x < x                                        is false.
 
@@ -156,11 +155,36 @@ repeat:
 
 
 
+
+
+
+
+
+
 more compactly said:
 
 	-x<x x<Sx -x<Zx Zx<Sy -Zx<Zy x<y->Sx<Sy
+	
+
+also
 
 
+
+
+
+
+
+			not 	x < x
+
+				x < S(x)
+
+			not	x < Z(x)
+
+				Z(x) < S(y)
+
+			not 	Z(x) < Z(y)
+
+				x < y --> S(x) < S(y)
 
 
 
