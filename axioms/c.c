@@ -217,6 +217,55 @@ static void print_ints(const char* message, int* elements, int count) {
 
 
 
+static inline int unreduce(int* in, int length, int radix) {
+	int s = 0;
+
+	return s;
+}
+
+
+static inline void reduce(int* out, int length, int radix, int s) {
+	for (int i = 0; ) out[i] = s % 10
+}
+
+
+
+
+
+
+
+typedef unsigned long long nat;
+
+
+
+
+static inline nat power(nat m, nat n) {
+	return pow(m, n);
+}
+
+static inline void do_this_thing() {
+	printf("DO: doing the thing!\n");
+
+	for (nat length = 0; length < 5; length++) {
+
+		const nat radix = length;
+		const nat Z = power(length, radix);
+
+		for (nat z = 0; z < Z; z++) {
+			print("[%llu/%llu] = ");
+			print(ints
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
 int main() {
 
 	srand((unsigned)time(0));
@@ -265,6 +314,10 @@ loop:;
 						reset, reset_count,
 						less, &less_count);
 		printf("result = %s\n", b ? "consistent" : "contradiction");
+
+
+	} else if (not strcmp(buffer, "bubbles") or not strcmp(buffer, "bubbles")) {
+		do_this_thing();
 	}
 	
 	else if (not strcmp(buffer, "add increment")) {
@@ -412,7 +465,7 @@ x:	ax7.  			for all x,y,z : N   if x < y and y < z,  then    x < z           is 
 
 ---------------------------------------------------------------------------------------------------
 
-now im experimenting with what possible realizations are valid for asht and neoi using some toy figurines lol.
+now im experimenting with what possible realizations are valid for asht and neoi using some toy figurines lol. 
 so far i have logically necc:
 
 
