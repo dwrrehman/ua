@@ -1,0 +1,7 @@
+#!/bin/zsh
+
+# debug mode:
+clang -g -O0 -Weverything -Wno-declaration-after-statement -fsanitize=address,undefined x.c -o run
+
+# release mode:
+# clang -Ofast x.c -o run
