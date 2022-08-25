@@ -21,13 +21,7 @@ static const nat unknown = 123456789;	// some bogus value, that represents a hol
 
 static const nat origin = 1; 		// start out execution at the instruction 3.
 
-static const nat execution_limit = 20;   // untested value, tweak this
-
-
-
-
-
-struct ins { nat op, l, g, e; };
+static const nat execution_limit = 100;   // untested value, tweak this
 
 
 
@@ -56,17 +50,20 @@ static void print_nats(nat* v, nat l) {
 	printf("]");
 }
 
-static void print_graph_as_adj(struct ins* graph, nat graph_count) {
+static void print_graph_as_adj(nat* graph) {
 	
-	puts("printing graph as adjacency list: ");
+	puts("graph adjacency list: ");
 	puts("{");
-	for (nat i = 0; i < graph_count; i++) {
-		struct ins e = graph[i];
+	for (nat i = 0; i < 20; i += 4) {
+		const nat op = graph[i + 0];
+		const nat l = graph[i + 1];
+		const nat g = graph[i + 2];
+		const nat e = graph[i + 3];
 
-		printf("\t#%llu: ins(.op = %llu, .lge = [", i, e.op);
-		if (e.l != unknown)	 printf("%2llu,", e.l); else printf("  ,");
-		if (e.g != unknown)	 printf("%2llu,", e.g); else printf("  ,");
-		if (e.e != unknown)	 printf("%2llu]", e.e); else printf("  ]");
+		printf("\t#%llu: ins(.op = %llu, .lge = [", i, op);
+		if (l != unknown)	 printf("%2llu,", l); else printf("  ,");
+		if (g != unknown)	 printf("%2llu,", g); else printf("  ,");
+		if (e != unknown)	 printf("%2llu]", e); else printf("  ]");
 
 		printf(")\n\n");
 	}
@@ -79,7 +76,6 @@ static void print_stack(struct stack_frame* stack, nat stack_count) {
 
 	printf("printing %llu stack frames:\n{\n", stack_count);
 	for (nat i = 0; i < stack_count; i++) {
-	
 
 		printf("FRAME #%llu:   {try=%llu, k=%llu, i=%llu, *n=%llu, ip=%llu, state=%c, ", 
 			i, 
@@ -102,48 +98,20 @@ static void print_stack(struct stack_frame* stack, nat stack_count) {
 
 
 
-
-
-
-
-
-
-static nat* generate_options(nat* option_count, nat me, nat ip, nat expected, nat comparator) {
-
-
-	printf("in generate options! generate(me=%llu, exp=%llu)\n", me, expected);
+static nat* generate_options(nat* option_count, nat ip, nat expected, nat comparator) {
 
 	nat* options = malloc(5 * sizeof(nat));
 	nat count = 0;
 
-	// option   is in units of      address space 
-	// me       is in op   space        allowed values :     1, 2, 3, 5, 6
-	// expected    also in op space       a v       1, 3, 5
-
-
-
-
 	for (nat option = 0; option < 5; option++) {
-		if (ip == option) {
-			printf("skipping over self: ip=%llu  (me=%llu)\n", ip, me);
-			continue;
+		if (ip == option) continue;
 		
-		} else if (option == 0 and expected == 1) { options[count++] = option; printf("A added %llu\n", option); }
-		else if (option == 1 and expected == 3) { options[count++] = option; printf("B added %llu\n", option); }
-		else if (option == 4 and expected == 5) { options[count++] = option; printf("C added %llu\n", option); }
-		else if (option == 2 or    option == 3) { 
+		if (	(option == 0 and expected == 1) or 
+			(option == 1 and expected == 3) or
+			(option == 4 and expected == 5) or
+			(option == 2 or comparator) 
 
-				if (not comparator and option == 3) {
-					// do nothing.
-				} else {
-					options[count++] = option; printf("D added %llu\n", option); 
-				}
-
-
-		} else {
-			printf("skipping over this option: %llu\n", option);
-			continue;
-		}
+		) options[count++] = option; 
 	}
 
 	*option_count = count;
@@ -157,60 +125,46 @@ static nat* generate_options(nat* option_count, nat me, nat ip, nat expected, na
 static void unexecute(nat* os, nat length) {
 	
 	
-	struct ins** candidates = calloc(100, sizeof(struct ins*));
+	nat** candidates = calloc(100, sizeof(nat*));
 	nat candidate_count = 0;
 	
-	for (nat i = 0; i < 100; i++) candidates[i] = calloc(32, sizeof(struct ins));
+	for (nat i = 0; i < 100; i++) candidates[i] = calloc(20, sizeof(nat));
 	
-
-
-	struct ins graph[32] = {0};
 	nat array[array_size] = {0};
-
+	const nat _ = unknown;
 	nat 
 		comparator = 0, 
 		pointer = 0, 
 		ip = origin
 	;
 
-	graph[0] = (struct ins) {
-		.op = 1, 
-		.l = 2,
-		.g = 1,
-		.e = unknown,
+	// ------------------------ 3->6  R ----------------------------
+
+	nat _graph[20] = {
+		1,  2, 1, _,
+		3,  _, 3, _,
+		2,  0, _, _,
+		6,  0, _, _,
+		5,  _, _, _,
 	};
 
-	graph[1] = (struct ins) { 
-		.op = 3, 
-		.l = unknown,
-		.g = 3,
-		.e = unknown,
+
+
+	// ------------------------ 6->3  R ----------------------------
+
+	nat graph[20] = {
+		1,  2, 3, _,
+		3,  0, _, _,
+		2,  0, _, _,
+		6,  1, _, _,
+		5,  _, _, _,
 	};
 
-	graph[2] = (struct ins) { 
-		.op = 2, 
-		.l = 0,
-		.g = unknown,
-		.e = unknown,
-	};
 
-	graph[3] = (struct ins) {
-		.op = 6, 
-		.l = 0,
-		.g = unknown,
-		.e = unknown,
-	};
+	
 
-	graph[4] = (struct ins) {
-		.op = 5, 
-		.l = unknown,
-		.g = unknown,
-		.e = unknown,
-	};
-
-	// only 5 instructions,  
-	// using a Combined Operation-Ternary-Branch model.
-	print_graph_as_adj(graph, 5);
+	print_nats(graph, 20);
+	print_graph_as_adj(graph);
 
 	struct stack_frame* stack = calloc(max_stack_size, sizeof(struct stack_frame));
 	nat stack_count = 0;
@@ -222,190 +176,76 @@ static void unexecute(nat* os, nat length) {
 begin:
 	while (k < length and executed_count < execution_limit) {
 
-		printf("(%llu)EXECUTING: %llu   ", executed_count, graph[ip].op);
+		printf("(%llu)EXECUTING: %llu   ", executed_count, graph[4 * ip]);
 		printf("expecting: %llu\n", os[k]);
 
-		if (graph[ip].op == 1) pointer++;
-		else if (graph[ip].op == 5) pointer = 0;
-		else if (graph[ip].op == 2) comparator++;
-		else if (graph[ip].op == 6) comparator = 0;
-		else if (graph[ip].op == 3) array[pointer]++;
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) pointer++;
+		else if (op == 5) pointer = 0;
+		else if (op == 2) comparator++;
+		else if (op == 6) comparator = 0;
+		else if (op == 3) array[pointer]++;
 
 		executed_count++;
 
-		puts("DEBUG: ");
-		printf("\t i = %llu\n", pointer);
-		printf("\t *n = %llu\n", comparator);
-		printf("\t *i = %llu\n", array[pointer]);
-		
-		char state = 'U';
-		if (comparator < array[pointer]) state = 'l';
-		if (comparator > array[pointer]) state = 'g';
-		if (comparator == array[pointer]) state = 'e';
+		nat state = 0;
+		if (comparator < array[pointer]) state = 1;
+		if (comparator > array[pointer]) state = 2;
+		if (comparator == array[pointer]) state = 3;
 
-		if (	graph[ip].op == 3 or 
-			graph[ip].op == 1 or 
-			graph[ip].op == 5
-		) {
-			if (graph[ip].op != os[k]) goto backtrack;
+		if (op == 3 or op == 1 or op == 5) {
+			if (op != os[k]) goto backtrack;
 			k++;
-
 			if (k >= length) goto done_graph;
 		}
 
+		if (graph[I + state] != unknown) goto set;
+
+		nat option_count = 0;
+		nat* options = generate_options(&option_count, ip, os[k], comparator);
 		
+		struct stack_frame frame = {
+			.try = 0,
+			.pointer = pointer, 
+			.comparator = comparator,
+			.options = options,
+			.option_count = option_count,
+			.k = k,
+			.ip = ip,
+			.state = state,
+		};
 
+		executed_count = 0;
 
-		if (state == 'l') {
-			printf("STATE:  [ *n < *i ]\n");
+		memcpy(frame.array_state, array, sizeof(nat) * array_size);
+		stack[stack_count++] = frame;
 
-			if (graph[ip].l != unknown) goto set_l;
-			
-			nat option_count = 0;
-			nat* options = generate_options(&option_count, graph[ip].op, ip, os[k], comparator);
-			
-			struct stack_frame frame = {
-				.try = 0,
-				.pointer = pointer, 
-				.comparator = comparator,
-				.options = options,
-				.option_count = option_count,
-				.k = k,
-				.ip = ip,
-				.state = (nat) state,
-			};
-			memcpy(frame.array_state, array, sizeof(nat) * array_size);
+		print_stack(stack, stack_count);
 
-			stack[stack_count++] = frame;
-			if (stack_count == max_stack_size) { printf("error: stack overflow\n"); abort(); }
-
-
-			print_stack(stack, stack_count);
-
-
-			graph[ip].l = options[0];
-		set_l: 	ip = graph[ip].l; 
-			continue; 
-		}
-
-
-		else if (state == 'g') {
-
-			printf("STATE:  [ *n > *i ]\n");
-
-			
-			if (graph[ip].g != unknown) goto set_g;
-			
-			nat option_count = 0;
-			nat* options = generate_options(&option_count, graph[ip].op, ip, os[k], comparator);
-			
-			struct stack_frame frame = {
-				.try = 0,
-				.pointer = pointer, 
-				.comparator = comparator,
-				.options = options,
-				.option_count = option_count,
-				.k = k,
-				.ip = ip,
-				.state = (nat) state,
-			};
-			memcpy(frame.array_state, array, sizeof(nat) * array_size);
-
-			stack[stack_count++] = frame;
-			if (stack_count == max_stack_size) { printf("error: stack overflow\n"); abort(); }
-
-
-
-			print_stack(stack, stack_count);
-
-
-			executed_count = 0;
-
-			graph[ip].g = options[0];
-		set_g: 	ip = graph[ip].g; 
-			continue; 
-		}
-
-		else if (state == 'e') {
-
-			printf("STATE:  [ *n == *i ]\n");
-
-
-			
-			if (graph[ip].e != unknown) goto set_e;
-			
-			nat option_count = 0;
-			nat* options = generate_options(&option_count, graph[ip].op, ip, os[k], comparator);
-			
-			struct stack_frame frame = {
-				.try = 0,
-				.pointer = pointer, 
-				.comparator = comparator,
-				.options = options,
-				.option_count = option_count,
-				.k = k,
-				.ip = ip,
-				.state = (nat) state,
-			};
-
-			memcpy(frame.array_state, array, sizeof(nat) * array_size);
-
-			stack[stack_count++] = frame;
-			if (stack_count == max_stack_size) { printf("error: stack overflow\n"); abort(); }
-
-			print_stack(stack, stack_count);
-
-
-			graph[ip].e = options[0];
-		set_e: 	ip = graph[ip].e; 
-			continue; 
-
-			
-
-
-		} else {
-			printf("ERROR STATE\n");
-			abort();
-		}
-
-
-	} // while(k < length)
+		graph[I + state] = options[0];
+	set: 	ip = graph[I + state];
+	} 
 
 done_graph:
-
-
-
-	// at this point, we have a "full"    (as full as it can be, given the MCAL, "os") specified graph.
-	// print it out for now,
-
-	print_graph_as_adj(graph, 5);
-
 	tried++;
 
-
+	print_graph_as_adj(graph);
 	printf("tried so far: %llu: ", tried);
 
-	// getchar();
-	
-
-
-	// note, at this point,    if the graph has no specified destinations, for 5,   
-	// ie,    .l, .g and .e   of graph[4]  are all "unknown",  then we know this graph is a dud. 
-	// we need to NOT save it. 
-
 	if (
-		graph[4].l == unknown and 
-		graph[4].g == unknown and 
-		graph[4].e == unknown
-	) {
-		// do nothing...
+		(graph[16 + 1] != unknown or 
+		graph[16 + 2] != unknown or 
+		graph[16 + 3] != unknown) 
+	
+			and
 
-	} else {
-		memcpy( candidates[candidate_count], graph, sizeof(struct ins) * 32);
+		k == length
+	) {
+		memcpy(candidates[candidate_count], graph, 20 * sizeof(nat));
 		candidate_count++;
 	}
-
-
 
 backtrack:
 
@@ -415,53 +255,31 @@ backtrack:
 	k = stack[stack_count - 1].k;
 
 	if (stack[stack_count - 1].try < stack[stack_count - 1].option_count - 1) {
-		
 		stack[stack_count - 1].try++;
-		
-		if (stack[stack_count - 1].state == 'l') 
-			graph[stack[stack_count - 1].ip].l = stack[stack_count - 1].options[stack[stack_count - 1].try];
-
-		if (stack[stack_count - 1].state == 'g') 
-			graph[stack[stack_count - 1].ip].g = stack[stack_count - 1].options[stack[stack_count - 1].try];
-
-		if (stack[stack_count - 1].state == 'e') 
-			graph[stack[stack_count - 1].ip].e = stack[stack_count - 1].options[stack[stack_count - 1].try];
-
-
-		ip = stack[stack_count - 1].options[stack[stack_count - 1].try];
-
+		const struct stack_frame T = stack[stack_count - 1];
+		graph[4 * T.ip + T.state] = T.options[T.try];
+		ip = T.options[T.try];
 		executed_count = 0;
 		goto begin;
 
-	} else {
-		
-		if (stack[stack_count - 1].state == 'l') 
-			graph[stack[stack_count - 1].ip].l = unknown;
-
-		if (stack[stack_count - 1].state == 'g') 
-			graph[stack[stack_count - 1].ip].g = unknown;
-
-		if (stack[stack_count - 1].state == 'e') 
-			graph[stack[stack_count - 1].ip].e = unknown;
-
-
-		if (stack_count <= 1) goto done;
+	} else {		
+		graph[4 * stack[stack_count - 1].ip + stack[stack_count - 1].state] = unknown;
+		if (stack_count == 0) abort();
 		stack_count--;
+		if (stack_count == 0) goto done;
 		goto backtrack;
 	}
 done:
 	
 	printf("tried = %llu\n", tried);
-	print_graph_as_adj(graph, 5);
-
-
+	print_graph_as_adj(graph);
 
 
 	printf("[Printing the graphs that we found]: \n");
 
 	for (nat i = 0; i < candidate_count; i++) {
 		printf("CANDIDATE #%llu: ", i);
-		print_graph_as_adj(candidates[i], 5);
+		print_graph_as_adj(candidates[i]);
 	}
 	printf("[end of candidates]\n");
 	
@@ -477,74 +295,198 @@ done:
 	}
 
 
+	printf("run all candidates? (return to confirm) ");
+	if (getchar() == '\n') {
 
-
-	for (nat c = 0; c < candidate_count; c++) {
-		
-		memcpy(graph, candidates[c], sizeof(struct ins) * 32);
-
-		memset(array, 0, sizeof array);
-		pointer = 0; comparator = 0;
-
-		ip = origin;
-
-		for (nat e = 0; e < 1000; e++) {
-
-
-
+		for (nat c = 0; c < candidate_count; c++) {
 			
+			memcpy(graph, candidates[c], sizeof(nat) * 20);
 
+			memset(array, 0, sizeof array);
+			pointer = 0; comparator = 0;
 
-			if (graph[ip].op == 1) pointer++;
+			ip = origin;
 
-			else if (graph[ip].op == 5) {   
+			for (nat e = 0; e < 2000; e++) {
 
-				pointer = 0;  
+				if (graph[4 * ip] == 1) pointer++;
 
-				for (nat i = 0; i < array_size; i++) {
-					if (array[i]) printf("%2llu ", array[i]);
-					else { printf("   "); break;}
+				else if (graph[4 * ip] == 5) {   
+
+					pointer = 0;  
+
+					for (nat i = 0; i < array_size; i++) {
+						if (array[i]) printf("%2llu ", array[i]);
+						else { printf("   "); break;}
+					}
+					puts("");
 				}
-				puts("");
+
+				else if (graph[4 * ip] == 2) comparator++;
+				else if (graph[4 * ip] == 6) comparator = 0;
+				else if (graph[4 * ip] == 3) array[pointer]++;
+
+
+				nat state = 0;
+				if (comparator < array[pointer]) state = 1;
+				if (comparator > array[pointer]) state = 2;
+				if (comparator == array[pointer]) state = 3;
+				ip = graph[4 * ip + state]; 
+
+				if (ip == unknown) {  puts("ENCOUNTERED HOLE, stopping"); break;  }
 			}
 
-			else if (graph[ip].op == 2) comparator++;
-			else if (graph[ip].op == 6) comparator = 0;
-			else if (graph[ip].op == 3) array[pointer]++;
+			puts("");
+			printf("[candidate #%llu/%llu]\n", c, candidate_count);
+			getchar();
 
 
-			if (comparator < array[pointer]) ip = graph[ip].l; 
-			if (comparator > array[pointer]) ip = graph[ip].g; 
-			if (comparator == array[pointer]) ip = graph[ip].e; 
-
-
-			if (ip == unknown) {  puts("ENCOUNTERED HOLE, stopping"); break;  }
 		}
-
-		puts("");
-		printf("[candidate #%llu/%llu]\n", c, candidate_count);
-		getchar();
-
 
 	}
 
+}
+
+
+
+static void run_modified_xfg_lifetime_cand1_2() {
+
+	nat array[array_size] = {0};
+
+	bool modes[array_size] = {0};
+
+
+	nat 
+		comparator = 0, 
+		pointer = 0, 
+		ip = origin
+	;
+const nat _ = unknown;
+
+/*
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0,  , 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 0])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 2])
+
+	#16: ins(.op = 5, .lge = [ 2,  , 3])
+	
+*/
 
 	
+	nat graph[20] = {
+		1,  2, 3, 2,
+		3,  0, 0, 4,
+		2,  0, 1, 0,
+		6,  1, _, 2,
+		5,  2, 2, 3,
+	};
+	
+	
+	// supplying 5 -> 2 (>)     we found the hole,   for 3 [.g]!!!!!   
+	// so lets find all possibilities for it!!
+
+	//     3 -> 1, 3 -> 2,   and 3 -> 6
+
+
+
+	/// 3 -> 1  is very good,  cant distinguish if its bad at all.... so yeah.
+
+	// 3 -> 2    has an infinite loop between    3 and 2. very bad. 
+
+
+	/// 3 -> 6        this one is awesome!    very good, cant distinguish whether or not its the xfg.   2208195.035523   roughly tried on that time
+
+
+
+
+
+	// so yeah, i think that means that 3 -> 
+
+
+	// memcpy(graph, candidates[c], sizeof(nat) * 20);
+
+	memset(array, 0, sizeof array);
+	pointer = 0; comparator = 0;
+
+	ip = origin;
+
+	for (nat e = 0; e < 2000000; e++) {
+
+		// printf("{{{%llu}}}\n", graph[4 * ip]);
+
+		if (graph[4 * ip] == 1) pointer++;
+
+		else if (graph[4 * ip] == 5) {   
+
+			if (pointer == 0) abort();
+			pointer = 0;  
+
+			for (nat i = 0; i < array_size; i++) {
+				if (modes[i]) printf("## ");
+				else { printf("   "); }
+				if (not array[i]) break;
+			}
+			puts("");
+
+			memset(modes, 0, sizeof modes);
+		}
+
+		else if (graph[4 * ip] == 2) comparator++;
+		else if (graph[4 * ip] == 6) {   if (comparator == 0) abort();   comparator = 0; }
+		else if (graph[4 * ip] == 3) { array[pointer]++; modes[pointer] = 1; }
+
+		nat state = 0;
+		if (comparator < array[pointer]) state = 1;
+		if (comparator > array[pointer]) state = 2;
+		if (comparator == array[pointer]) state = 3;
+		ip = graph[4 * ip + state]; 
+
+		if (ip == unknown) {  puts("ENCOUNTERED HOLE, stopping"); break;  }
+	}
+
+	puts(": ");
+	//printf("[candidate #%llu/%llu]\n", c, candidate_count);
+	getchar();
+
+
+
+
+
+		// wrote on 2208195.032113
+
+
 
 
 }
 
 
+
+
+
+
 int main() {
 	puts("this is a rewrite of the xfg search utility, that uses a backwards approach to searching for graphs.");
 
+/*
 
-	nat v[] = { 3, 1,  3, 5,  3, 1};
+	nat v[] = { 
+
+		3, 1, 3, 5,  
+
+		3, 1, 1, 3, 5, 
+
+		1, 3,
+
+
+	};
 	
 	unexecute(v, sizeof v / sizeof(nat));
-
-
-
+*/
+	run_modified_xfg_lifetime_cand1_2();
 }
 
 
@@ -557,6 +499,12 @@ int main() {
 
 /*
 
+
+	-------------------- assuming the       3 -> 6 R  ------------------------
+
+
+
+// using mcal:       31 35 31 
 
 CANDIDATE #2: printing graph as adjacency list: 
 {
@@ -571,6 +519,250 @@ CANDIDATE #2: printing graph as adjacency list:
 	#4: ins(.op = 5, .lge = [  ,  , 1])
 
 }
+	only candidate, i think 
+
+
+
+
+
+
+---------------------------- assuming      6 -> 3  R --------------------
+
+
+we got these two!!
+
+	using    mcal of    31 35 31 
+
+
+
+
+
+CANDIDATE #0: graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0,  , 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1,  ])
+
+	#12: ins(.op = 6, .lge = [ 1,  ,  ])
+
+	#16: ins(.op = 5, .lge = [  ,  , 1])
+
+}
+		this one is bad,  bad lifetime.
+
+
+
+
+
+CANDIDATE #1: graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0,  , 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1,  ])
+
+	#12: ins(.op = 6, .lge = [ 1,  ,  ])
+
+	#16: ins(.op = 5, .lge = [  ,  , 3])
+
+}
+
+
+		this one found a hole, 
+
+
+
+
+
+
+now,   supplying     31 35 31 1 35
+
+
+	gives us instead,     (using  63R of course)
+
+
+
+1 candidate:
+
+
+
+CANDIDATE #0: graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0,  , 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 0])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 2])
+
+	#16: ins(.op = 5, .lge = [  ,  , 3])
+
+}
+
+
+	this one has a good so far lifetime,   found a hole,  after w#2.
+
+
+
+
+
+
+
+if i now give what i think is the beginning of walk 3,  so 
+
+
+	mcal = 3, 1, 3, 5,  
+
+		3, 1, 1, 3, 5, 
+
+		1, 3,
+
+
+
+
+
+	
+then we get: 2 candidates
+
+CANDIDATE #0: graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0,  , 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 0])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 2])
+
+	#16: ins(.op = 5, .lge = [ 0,  , 3])
+
+}
+
+CANDIDATE #1: graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0,  , 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 0])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 2])
+
+	#16: ins(.op = 5, .lge = [ 2,  , 3])
+
+}
+
+
+
+	very interesting!!!
+
+
+
+oh wait 
+
+
+
+
+		oh my god
+
+
+		the first one
+
+
+				its actually very interesting 
+
+
+
+					it has the largest     good looking   lifetime ive ever seen
+
+
+
+									ever
+
+					basically 
+
+
+
+
+
+					its very good looking, even expands logarithimically 
+
+
+
+						has a couple holes, but never seems to say them... which is probably a bug
+ lol
+
+				like the     3 [.g]        that seems like a hole that shoulddddd be filled?.. kinda?
+
+
+
+		idk 
+
+
+
+	but the other one,    CANDIDATE #1/2    actually just immediately hit a hole sometime after walk number 4
+
+
+		
+
+
+				found both of them,     at     2208195.011730
+
+
+
+				
+
+
+
+
+
+
+
+	okay, so i am going to actually try supplying     5 -> 1    on greater than, 
+
+
+	because thats the hole it encounters!
+
+
+		and,   5 ->1 on >  seems like the obvious connection to make given the fact that its semanically the "Would-ER" case,   and thus, saying 1 is actually a good thing, to garentee 5 coi!
+
+
+			so yeah, im going code up that modified graph now,   and try running its lifetime 
+
+
+
+
+
+
+CANDIDATE #1: graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0,  , 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 0])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 2])
+
+	#16: ins(.op = 5, .lge = [ 2,  , 3])
+
+}
+heres the graph    ^^^
+
+on 2208195.030705
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1321,8 +1513,30 @@ enum operation {
 
 
 
+// only 5 instructions,  
+	// using a Combined Operation-Ternary-Branch model.
 
 
+// note, at this point,    if the graph has no specified destinations, for 5,   
+	// ie,    .l, .g and .e   of graph[4]  are all "unknown",  then we know this graph is a dud. 
+	// we need to NOT save it. 
+
+
+
+
+
+
+// at this point, we have a "full"    (as full as it can be, given the MCAL, "os") specified graph.
+	// print it out for now,
+
+
+
+
+
+//puts("DEBUG: ");
+		//printf("\t i = %llu\n", pointer);
+		//printf("\t *n = %llu\n", comparator);
+		//printf("\t *i = %llu\n", array[pointer]);
 
 -----------------------------------------------------------------------------------
 
@@ -1330,4 +1544,22 @@ enum operation {
 
 
 
+
+
+
+
+
+
+	// option   is in units of      address space 
+	// me       is in op   space        allowed values :     1, 2, 3, 5, 6
+	// expected    also in op space       a v       1, 3, 5
+
+
+
+
+
+// printf("in generate options! generate(me=%llu, exp=%llu)\n", me, expected);
+
+
+// printf("skipping over self: ip=%llu  (me=%llu)\n", ip, me);
 

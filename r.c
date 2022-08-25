@@ -54,19 +54,19 @@ int main() {
 
 	const nat count = 380;			// just the screen width, effectively. 
 
-	const nat modnat_range = 5000;		// effectively  M, the modulus.
+	const nat modnat_range = 10000000000000;		// effectively  M, the modulus.
 
 	const nat pointer = count - 10;		// this is where the pointer is.   just for visual effect. 
 
-	const nat bucket_count = 120;		// the number of bout length histogram buckets. 
+	const nat bucket_count = 105;		// the number of bout length histogram buckets. 
 	
-	const nat bucket_width = 2;		// the number of values considered as equivalent to count towards a single bucket. 
+	const nat bucket_width = 1600;		// the number of values considered as equivalent to count towards a single bucket. 
 
-	const nat hist_scaler = 20;		// a number to stretch out the bout histogram plot to make it more obvious whats happening. 
+	const nat hist_scaler = 9;		// a number to stretch out the bout histogram plot to make it more obvious whats happening. 
 
 	const nat delay = 0;			// the microseconds to delay after each iteration. 
 
-	const nat display_rate = 17;		// the log2 of the number of ticks to wait before printing another frame of display.
+	const nat display_rate = 19;		// the log2 of the number of ticks to wait before printing another frame of display.
 
 
 
@@ -80,15 +80,15 @@ int main() {
 	nat* array = malloc(count * sizeof(nat));
 
 	for (nat i = 0; i < count; i++) 
-		array[i] = (nat) rand() % modnat_range + 1; 			// non zero modnats only. 
+		array[i] = (((nat) rand()) | ((nat)rand() << 32)) % modnat_range + 1; 			// non zero modnats only. 
 	
 
 	nat total_count = 0;
 
 	nat Xet_count = 0;
 	nat Xef_count = 0;
-	nat Ret_count = 0;
-	nat Ref_count = 0;
+	//nat Ret_count = 0;
+	//nat Ref_count = 0;
 
 
 	nat tick = 0;
@@ -216,12 +216,12 @@ int main() {
 
 
 
-		printf("\n\t%lld: xt:%lld(%lf), xf:%lld(%lf), Rt:%lld(%lf), Rf:%lld(%lf)\n",  
+		printf("\n\t%lld: xt:%lld(%lf), xf:%lld(%lf)\n",        // Rt:%lld(%lf), Rf:%lld(%lf)\n",  
 			total_count, 
 			Xet_count, (double) Xet_count / (double) total_count,
-			Xef_count, (double) Xef_count / (double) total_count,
-			Ret_count, (double) Ret_count / (double) total_count,
-			Ref_count, (double) Ref_count / (double) total_count
+			Xef_count, (double) Xef_count / (double) total_count
+			//Ret_count, (double) Ret_count / (double) total_count,
+			//Ref_count, (double) Ref_count / (double) total_count
 		);
 
 		printf("\ngraph hist: \n");
@@ -242,7 +242,7 @@ int main() {
 		c = (nat) (f * (double) w);
 		for (nat i = 0; i < w; i++) printf("%c", i < c ? '#' : '`'); 
 		printf("\n");
-		
+/*
 		printf("Rt: ");
 		f = (double) Ret_count / (double) total_count;
 		c = (nat) (f * (double) w);
@@ -254,10 +254,13 @@ int main() {
 		c = (nat) (f * (double) w);
 		for (nat i = 0; i < w; i++) printf("%c", i < c ? '#' : '`'); 
 		printf("\n");
+
+
+*/
 }			
 
 		if (bout_count) {
-			printf("\nhistogram: (bw=%d,bc=%d,hs=%d) \n", bucket_width, bucket_count, hist_scaler);
+			printf("\nhistogram: (bw=%llu,bc=%llu,hs=%llu) \n", bucket_width, bucket_count, hist_scaler);
 			for (nat b = 0; b < bucket_count; b++) {
 				printf("\t%lld: ",b);    //" %lld / %lld (%lf)\n", b, buckets[b], bout_count, (double) buckets[b] / (double) bout_count);
 
