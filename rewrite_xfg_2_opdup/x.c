@@ -1,28 +1,52 @@
+//  original rewrite on dwrr, 2208173.222343
+//   copied, and revised, to allow for operation duplication!
+//   revised on 2209084.234537,  dwrr
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iso646.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 typedef unsigned long long nat;
-
-// dwrr, 2208173.222343
-
 
 
 // constants:
 
+static const nat max_stack_size = 128; 			// maximum number of holes we can fill in the partial graph simultaneously.
 
-static const nat array_size = 4096;   	// psudo inf
 
-static const nat max_stack_size = 15; 	// should never need more than 10, because there are only 10 unknowns in the R.
+static const nat array_size = 10000;   			// effectively infinity.  (xfg uses an infinite array)
 
-static const nat unknown = 123456789;	// some bogus value, that represents a hole. 
+static const nat execution_limit = 4000;   		// untested value, tweak this
+							// the number of instructions to execute while trying to fill in holes in the graph.
 
-static const nat origin = 1; 		// start out execution at the instruction 3.
+static const nat unknown = 123456789;			// some bogus value, that represents a hole. 
+static const nat deadstop = unknown;			// same as above. used to mark the unknown as impossible to specify.
 
-static const nat execution_limit = 100;   // untested value, tweak this
 
+static const nat required_er_count = 6;			// the required number of ER's that need to happen during exec, to be good.
+
+static const nat required_le_width = 5; 		// the required index of the Leading Edge in order to not classify the 
+							// expansion pattern as a short_expansion.
+
+
+static const nat display_rate = 14;			// inverse logarithmically related to how fast you print out the status info
+							// while searching.
+
+
+
+
+enum expansion_type  {
+	no_expansion,
+	firstone_expansion,
+	short_expansion,
+	hole_expansion,
+	good_expansion,
+
+	expansion_type_count,
+};
 
 
 struct stack_frame {
@@ -30,7 +54,6 @@ struct stack_frame {
 	nat* options;
 	nat option_count;
 
-	nat array_state[array_size];
 	nat comparator;
 	nat pointer;
 	nat k;
@@ -38,7 +61,16 @@ struct stack_frame {
 	nat ip;
 	nat state;
 
+	nat zero_reset_happened;
+	nat er_count;
+
+	nat array_state[array_size];
 };
+
+
+
+
+static inline void clear_screen() { printf("\033[2J\033[H"); }
 
 
 
@@ -50,11 +82,11 @@ static void print_nats(nat* v, nat l) {
 	printf("]");
 }
 
-static void print_graph_as_adj(nat* graph) {
+static void print_graph_as_adj(nat* graph, nat operation_count) {
 	
 	puts("graph adjacency list: ");
 	puts("{");
-	for (nat i = 0; i < 20; i += 4) {
+	for (nat i = 0; i < operation_count * 4; i += 4) {
 		const nat op = graph[i + 0];
 		const nat l = graph[i + 1];
 		const nat g = graph[i + 2];
@@ -69,6 +101,31 @@ static void print_graph_as_adj(nat* graph) {
 	}
 	printf("}\n\n");
 }
+
+
+
+static void print_graph_z_value(nat* graph, nat operation_count) {
+		
+	for (nat i = 0; i < operation_count * 4; i += 4) {
+		const nat op = graph[i + 0];
+		const nat l = graph[i + 1];
+		const nat g = graph[i + 2];
+		const nat e = graph[i + 3];
+
+		printf("%llu", op);
+		if (l != unknown) printf("%llu", l); else printf("_");
+		if (g != unknown) printf("%llu", g); else printf("_");
+		if (e != unknown) printf("%llu", e); else printf("_");
+	}
+
+	printf("\n");
+}
+
+
+
+
+
+
 
 
 
@@ -98,20 +155,35 @@ static void print_stack(struct stack_frame* stack, nat stack_count) {
 
 
 
-static nat* generate_options(nat* option_count, nat ip, nat expected, nat comparator) {
 
-	nat* options = malloc(5 * sizeof(nat));
+
+
+
+static nat* generate_options(
+	nat* option_count, 
+	nat ip, 
+	nat* os, 
+	nat k, 
+	nat os_length,
+	nat comparator, 
+	nat* graph, 
+	nat operation_count
+) {
+
+	nat* options = malloc(operation_count * sizeof(nat));
 	nat count = 0;
 
-	for (nat option = 0; option < 5; option++) {
+	for (nat option = 0; option < operation_count; option++) {
 		if (ip == option) continue;
 		
-		if (	(option == 0 and expected == 1) or 
-			(option == 1 and expected == 3) or
-			(option == 4 and expected == 5) or
-			(option == 2 or comparator) 
+		if (	
+			(graph[4 * option] == 6 and comparator) or        		//   dont allow 6 zero resets.
+			graph[4 * option] == 2 or                                       // allow for comparator incr, at anytime.
+			k >= os_length or                                               // if we ran outof mcal, do anything.
+			graph[4 * option] == os[k]                                      // dont allow wrong mcal coi.
 
 		) options[count++] = option; 
+		
 	}
 
 	*option_count = count;
@@ -119,12 +191,10 @@ static nat* generate_options(nat* option_count, nat ip, nat expected, nat compar
 }
 
 
+/*
 
 
-
-
-
-static bool run_xfg_lifetime(nat graph[20], const nat timesteps, bool visualize) {
+static bool run_xfg_lifetime(nat* graph, const nat timesteps, bool visualize) {
 
 	nat array[array_size] = {0};
 	bool modes[array_size] = {0};
@@ -136,14 +206,13 @@ static bool run_xfg_lifetime(nat graph[20], const nat timesteps, bool visualize)
 
 	// const nat _ = unknown;
 
-	/*
 	nat graph[20] = {
 		1,  2, 3, 2,
 		3,  0, 0, 4,
 		2,  0, 1, 0,
 		6,  1, _, 2,
 		5,  2, 2, 3,
-	};*/
+	};
 	
 	
 	memset(array, 0, sizeof array);
@@ -214,70 +283,137 @@ static bool run_xfg_lifetime(nat graph[20], const nat timesteps, bool visualize)
 	return 0;
 }
 
+*/
 
 
-static void unexecute(nat* os, nat length) {
+
+
+
+static inline bool is_complete(nat* graph, nat operation_count) {
+
+
+	for (nat i = 0; i < operation_count * 4; i += 4) {
+		if (graph[i + 0] == 6) {
+
+			if (graph[i + 1] == unknown) return false;
+			// <<deadstop>>
+			if (graph[i + 3] == unknown) return false;
+
+		} else {
+			if (graph[i + 1] == unknown) return false;
+			if (graph[i + 2] == unknown) return false;
+			if (graph[i + 3] == unknown) return false;
+		}
+	}
+
+	return true;
+}
+
+
+
+static inline bool uses_all_operations(nat* graph, nat operation_count) {
+	// tallys up how many times a given operation is used as a dest in the graph.
+
+	nat ops[7] = {0};
+
+
+/*
+ins:	  1    2     3      5      6
+	------------------------------
+occ	[ 0    1     0      5      0  ]
+*/
+
+
+
+	for (nat i = 0; i < operation_count * 4; i += 4) {
+
+		if (graph[i + 1] != unknown)
+			ops[graph[4 * graph[i + 1] + 0]]++;
+
+		if (graph[i + 2] != unknown)
+			ops[graph[4 * graph[i + 2] + 0]]++;
+
+		if (graph[i + 3] != unknown)
+			ops[graph[4 * graph[i + 3] + 0]]++;
+
+	}
+
+	if (	not ops[1] or 
+		not ops[2] or
+		not ops[3] or
+		not ops[5] or
+		not ops[6]
+
+	) return false; else return true;
+}
+
+
+
+
+static nat determine_expansion_type(nat* array, nat n) { 
+
+	if (array[0] == 1) return firstone_expansion;
+
+	nat first = 0, last = n;
+	for (;last--;)
+		if (array[last]) break; 
+	last++;
+	for (;first < last; first++)
+		if (not array[first]) break; 
+
+	if (last != first) return hole_expansion;
+		
+	if (last < required_le_width) return short_expansion;
+
+	return good_expansion;
+}
+
+
+
+static const nat _ = unknown;
+static const nat X = deadstop;
+
+
+
+
+static nat search(nat origin, nat* os, const nat os_length, nat* graph, nat graph_count, nat operation_count) {
 	
 	
-	nat** candidates = calloc(100, sizeof(nat*));
-	nat candidate_count = 0;
-	
-	for (nat i = 0; i < 100; i++) candidates[i] = calloc(20, sizeof(nat));
-	
-	nat array[array_size] = {0};
-	const nat _ = unknown;
+	nat candidate_count = 0, candidate_capacity = 0;
+	nat* candidates = NULL;
+
+	nat* array = calloc(array_size, sizeof(nat));
 	nat 
 		comparator = 0, 
 		pointer = 0, 
 		ip = origin
 	;
 
-	// ------------------------ 3->6  R ----------------------------
-
-	/*nat _graph[20] = {
-		1,  2, 1, _,
-		3,  _, 3, _,
-		2,  0, _, _,
-		6,  0, _, _,
-		5,  _, _, _,
-	};*/
-
-
-	// ------------------------ 6->3  R ----------------------------
-
-	nat graph[20] = {
-		1,  2, 3, _,
-		3,  0, _, _,
-		2,  0, _, _,
-		6,  1, _, _,
-		5,  _, _, _,
-	};
-
-
-
-	print_nats(graph, 20);
-	print_graph_as_adj(graph);
-
 	struct stack_frame* stack = calloc(max_stack_size, sizeof(struct stack_frame));
 	nat stack_count = 0;
 
 	nat k = 0;
+	nat zero_reset_happened = false;
+	nat er_count = 0;
+
 	nat tried = 0;
-	nat executed_count = 0;
+	nat executed_count = 0;	
 
 begin:
-	while (k < length and executed_count < execution_limit) {
-
-		printf("(%llu)EXECUTING: %llu   ", executed_count, graph[4 * ip]);
-		printf("expecting: %llu\n", os[k]);
+	while (executed_count < execution_limit) {
 
 		const nat I = ip * 4;
 		const nat op = graph[I];
 
 		if (op == 1) pointer++;
-		else if (op == 5) pointer = 0;
+		else if (op == 5) {
+			er_count++;
+			if (not pointer) zero_reset_happened = true; pointer = 0;
+		}
 		else if (op == 2) comparator++;
-		else if (op == 6) comparator = 0;
+		else if (op == 6) {  
+			if (not comparator) zero_reset_happened = true;  comparator = 0;   
+		}
 		else if (op == 3) array[pointer]++;
 
 		executed_count++;
@@ -288,55 +424,95 @@ begin:
 		if (comparator == array[pointer]) state = 3;
 
 		if (op == 3 or op == 1 or op == 5) {
-			if (op != os[k]) goto backtrack;
-			k++;
-			if (k >= length) goto done_graph;
+			if (k >= os_length) {
+				// do nothing.
+			} else {
+				if (op != os[k]) goto backtrack;	
+				k++;
+			}
 		}
 
-		if (graph[I + state] != unknown) goto set;
+		if (graph[I + state] != unknown) goto next_ins;
 
 		nat option_count = 0;
-		nat* options = generate_options(&option_count, ip, os[k], comparator);
+		nat* options = generate_options(&option_count, ip, os, k, os_length, comparator, graph, operation_count);
 		
 		struct stack_frame frame = {
 			.try = 0,
 			.pointer = pointer, 
 			.comparator = comparator,
+
 			.options = options,
 			.option_count = option_count,
+
 			.k = k,
+
 			.ip = ip,
 			.state = state,
+
+			.er_count = er_count,
+			.zero_reset_happened = zero_reset_happened,
 		};
+
 
 		executed_count = 0;
 
 		memcpy(frame.array_state, array, sizeof(nat) * array_size);
 		stack[stack_count++] = frame;
 
-		print_stack(stack, stack_count);
-
 		graph[I + state] = options[0];
-	set: 	ip = graph[I + state];
-	} 
 
-done_graph:
+
+	next_ins:   ip = graph[I + state];
+
+	}
+
 	tried++;
 
-	print_graph_as_adj(graph);
-	printf("tried so far: %llu: ", tried);
+	const nat type = determine_expansion_type(array, array_size - 1);
+	const bool complete = is_complete(graph, operation_count);
+	const bool all = uses_all_operations(graph, operation_count);
 
-	if (
-		(graph[16 + 1] != unknown or 
-		graph[16 + 2] != unknown or 
-		graph[16 + 3] != unknown) 
-	
-			and
 
-		k == length
+	if (	not zero_reset_happened and 
+		er_count >= required_er_count and
+		complete and all and
+		type == good_expansion and  
+		k == os_length
 	) {
-		memcpy(candidates[candidate_count], graph, 20 * sizeof(nat));
+
+		if (graph_count * (candidate_count + 1) > candidate_capacity) {
+			candidate_capacity = 4 * (candidate_capacity + graph_count);
+			candidates = realloc(candidates, sizeof(nat) * candidate_capacity);
+		}
+
+		memcpy(candidates + graph_count * candidate_count, graph, graph_count * sizeof(nat));
 		candidate_count++;
+	}
+
+
+	if (not (tried & ((1 << display_rate) - 1))) {
+		clear_screen();
+
+		printf("\n\t");
+		print_graph_z_value(graph, operation_count);
+		printf("\n");
+		printf("----> tried [c=%llu] / t=%llu control flow graphs.\n", candidate_count, tried);
+
+		printf("k == os_length? %s\n", 	k == os_length ? "true" : "false");
+		printf("good_expansion? %s\n", 	type == good_expansion ? "true" : "false" );
+		printf("complete? %s\n", 	complete ? "true" : "false");
+		printf("all? %s\n", 		all ? "true" : "false" );
+		printf("er >= req? %s\n", 	er_count >= required_er_count ? "true" : "false" );
+		printf("not zeroreset? %s\n", 	not zero_reset_happened ? "true" : "false" );
+		
+		print_graph_as_adj(graph, operation_count);
+		printf("searching: [origin = %llu, limit = %llu]\n", origin, execution_limit);
+		print_stack(stack, stack_count);
+
+		fflush(stdout);
+
+		// usleep(10000);
 	}
 
 backtrack:
@@ -345,6 +521,8 @@ backtrack:
 	pointer = stack[stack_count - 1].pointer;
 	comparator = stack[stack_count - 1].comparator;
 	k = stack[stack_count - 1].k;
+	zero_reset_happened = stack[stack_count - 1].zero_reset_happened;
+	er_count = stack[stack_count - 1].er_count;
 
 	if (stack[stack_count - 1].try < stack[stack_count - 1].option_count - 1) {
 		stack[stack_count - 1].try++;
@@ -362,46 +540,266 @@ backtrack:
 		goto backtrack;
 	}
 done:
+
+	for (nat c = 0; c < candidate_count; c++) {
+		print_graph_z_value(candidates + graph_count * c, operation_count);
+	}
+	print_nats(os, os_length); puts("");
 	
 	printf("tried = %llu\n", tried);
-	print_graph_as_adj(graph);
-
-
-	printf("[Printing the graphs that we found]: \n");
-
-	for (nat i = 0; i < candidate_count; i++) {
-		printf("CANDIDATE #%llu: ", i);
-		print_graph_as_adj(candidates[i]);
-	}
-	printf("[end of candidates]\n");
-	
+	print_graph_as_adj(graph, operation_count);
 	printf("\n\n[[ candidate_count = %llu ]] \n\n\n", candidate_count);
 
-	print_nats(os, length);
+/*
+	printf("run all candidates? (y to confirm) ");
+	int ch = getchar(); getchar();
+	if (ch != 'y' or true) return;
+*/
 
+
+	return candidate_count;
+	
+}
+
+
+int main() {
+	puts("this is a rewrite of the xfg search utility, "
+		"that uses a backwards approach to searching for graphs.");
+
+	const nat duplication_count = 3;
+
+	const nat operations[] = {6, 5, 1, 3, 2};
+
+	nat total = 0;
+
+	for (nat i1 = 0; i1 < 5; i1++) {
+		for (nat i2 = 0; i2 < 5; i2++) {
+			for (nat i3 = 0; i3 < 5; i3++) {
+
+				const nat op1 = operations[i1];
+				const nat op2 = operations[i2];
+				const nat op3 = operations[i3];
+
+
+				
+
+
+
+				nat mcal[] = { 3, 1,  3, 5,  3, 1};
+				const nat mcal_length =  sizeof mcal / sizeof(nat);
+
+
+			
+				const nat operation_count = 5 + duplication_count;
+				const nat graph_count = 4 * operation_count;
+
+				nat graph[graph_count] = { 
+					1,  2, 3, _,
+					3,  0, _, _,
+					2,  0, _, _,
+					6,  1, X, _,
+					5,  _, _, _,
+
+					op1,  _, _, _,
+					op2,  _, _, _,
+					op3,  _, _, _,
+				};
+
+				total += search(1, mcal, mcal_length, graph, graph_count, operation_count);
+			}
+	
+		}
+	}
+
+	printf("\n\n\t\ttotal candidates = %llu\n\n", total);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// printf("[Printing the graphs that we found]: \n");
+	// for (nat i = 0; i < candidate_count; i++) {
+		// printf("CANDIDATE #%llu: ", i);
+		// print_graph_as_adj(candidates[i], operation_count);
+	// }
+	// printf("[end of candidates]\n");
+
+
+
+
+/*
+	// memcpy(graph, , sizeof(nat) * operation_count * 4);
+	// printf("[candidate #%llu/%llu]\n", c, candidate_count);
+	printf("run xfg lifetime of graph? (y to confirm) ");
+	if (getchar() == 'y') run_xfg_lifetime(graph, 20000, 1);
+	getchar();
+	*/
+
+
+
+// ------------------------ 3->6  R ----------------------------
+
+	/*nat _graph[20] = {
+		1,  2, 1, _,
+		3,  _, 3, _,
+		2,  0, _, _,
+		6,  0, _, _,
+		5,  _, _, _,
+	};*/
+
+
+
+	
+
+	// ------------------------ 6->3  R ----------------------------
+
+	/*nat graph[20] = {
+		1,  2, 3, _,
+		3,  0, _, _,
+		2,  0, _, _,
+		6,  1, _, _,
+		5,  _, _, _,
+	};*/
+
+
+
+
+
+
+
+
+/*(graph[4 * 4 + 1] != unknown or 
+		graph[4 * 4 + 2] != unknown or 
+		graph[4 * 4 + 3] != unknown) */
+
+
+
+	/*
 	if (candidate_count == 0) {
 		printf("\n\n\t\t MCAL CONTRADICTION\n\n\n");
 	} else {
 		printf("\n\n\t\t MCAL satisfied\n\n\n");
 	}
+	*/
 
-	printf("run all candidates? (y to confirm) ");
-	if (getchar() != 'y') return;
-	getchar();
 
-	for (nat c = 0; c < candidate_count; c++) {
-		
-		memcpy(graph, candidates[c], sizeof(nat) * 20);
 
-		printf("[candidate #%llu/%llu]\n", c, candidate_count);
 
-		print_graph_as_adj(graph);
+/*
 
-		printf("run xfg lifetime of graph? (y to confirm) ");
-		if (getchar() == 'y') run_xfg_lifetime(graph, 20000, 1);
-		getchar();
-	}
-}
+static const nat operation_count = 5;
 
 
 static void find_extenstions_of_candidate() {
@@ -418,7 +816,7 @@ static void find_extenstions_of_candidate() {
 		6,  1, _, _,
 		5,  2, 2, 3,
 	};
-/*
+
 	2208291.102649     so i found two viable hole options for this graph, for the graph[15] hole (ie, 6(=).)
 
 			they are:           1       and        2          ie,   the instructions   3    and    2
@@ -487,11 +885,11 @@ x		[15] = 2   [6] = 4      zero reset
 
 
 	//holes: 6 15 
-*/	
+	
 	for (nat i = 1; i <= 2; i++) {
 		graph[15] = i;
 		run_xfg_lifetime(graph, 2000, 1);
-		print_graph_as_adj(graph);
+		print_graph_as_adj(graph, operation_count);
 		printf("trying %llu option for [15]: continue? (y) ", i);
 		if (getchar() != 'y') break;
 		getchar();
@@ -499,7 +897,7 @@ x		[15] = 2   [6] = 4      zero reset
 		for (nat j = 0; j < 5; j++) {
 			graph[6] = j;
 			run_xfg_lifetime(graph, 1000000, 1);
-			print_graph_as_adj(graph);
+			print_graph_as_adj(graph, operation_count);
 			printf("trying %llu option for [6]: continue? (y) ", j);
 			if (getchar() != 'y') break;
 			getchar();
@@ -551,7 +949,7 @@ static void find_ext_4_var() {
 
 					run_xfg_lifetime(graph, 10000, 1);
 
-					print_graph_as_adj(graph);
+					print_graph_as_adj(graph, operation_count);
 
 					printf("c=%llu,t=%llu: [15:%llu,6:%llu,17:%llu,18:%llu]: continue? (y) ", 
 							cand, total, i15,i6,i17,i18);
@@ -571,7 +969,6 @@ static void find_ext_4_var() {
 
 
 	printf("finally: total cand graphs: c=%llu : t=%llu\n", cand, total);
-
 }
 
 
@@ -599,11 +996,20 @@ static void display_hole6_options() {
 		puts("****************************");
 		graph[6] = i6;
 		run_xfg_lifetime(graph, 1000000, 1);
-		print_graph_as_adj(graph);
+		print_graph_as_adj(graph, operation_count);
 		printf("showing: [15:1,6:%llu,17:2,18:3]: continue? (y) ", i6);
 		if (getchar() != 'y') break;
 		getchar();		
 	}
+
+
+}
+
+
+
+*/
+
+
 
 
 	// 2208291.115729
@@ -618,26 +1024,6 @@ static void display_hole6_options() {
 
 			
 	*/
-}
-
-
-int main() {
-	puts("this is a rewrite of the xfg search utility, that uses a backwards approach to searching for graphs.");
-
-	// nat v[] = { 3, 1,  3, 5,  3, 1 };
-	// unexecute(v, sizeof v / sizeof(nat));
-
-
-	// find_ext_4_var();
-
-	display_hole6_options();
-}
-
-
-
-
-
-
 
 
 
@@ -1817,4 +2203,15 @@ enum operation {
 
 
 // printf("skipping over self: ip=%llu  (me=%llu)\n", ip, me);
+
+
+
+// mcal, zr, er, complete, used_all,
+	// const nat counts_size = 2 * 2 * 2 * 2 * 2 * expansion_type_count;
+	// nat counts[counts_size] = {0}
+
+
+
+
+// static const nat max_operation_count = 10;              // maximum size of the graph. (number of instructions: fused op with ternary_br)
 
