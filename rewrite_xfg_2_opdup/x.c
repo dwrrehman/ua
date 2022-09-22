@@ -170,6 +170,11 @@ static nat* generate_options(
 	nat operation_count
 ) {
 
+
+
+	// todo: make us not allocate inside generate options.
+
+
 	nat* options = malloc(operation_count * sizeof(nat));
 	nat count = 0;
 
@@ -435,8 +440,15 @@ begin:
 		if (graph[I + state] != unknown) goto next_ins;
 
 		nat option_count = 0;
+
+
+		// todo: make us not allocate inside generate options.
 		nat* options = generate_options(&option_count, ip, os, k, os_length, comparator, graph, operation_count);
 		
+
+
+		// todo: make us not make another frame like this.    be more efficient. 
+
 		struct stack_frame frame = {
 			.try = 0,
 			.pointer = pointer, 
@@ -562,52 +574,66 @@ done:
 }
 
 
+
+static bool is_reset_statement(nat op) {
+	return op == 5 or op == 6;
+}
+
+
+static bool have_tried(nat tried_count, nat* tried, nat op1, nat op2) {
+
+	for (nat i = 0; i < tried_count; i++) {
+		
+	}
+
+}
+
 int main() {
+
 	puts("this is a rewrite of the xfg search utility, "
 		"that uses a backwards approach to searching for graphs.");
 
-	const nat duplication_count = 3;
-
-	const nat operations[] = {6, 5, 1, 3, 2};
-
 	nat total = 0;
+	nat tried[25 * 2] = {0};
+	nat tried_count = 0;
+
+	const nat duplication_count = 2;
+	const nat operations[] = {6, 5, 1, 3, 2};	
 
 	for (nat i1 = 0; i1 < 5; i1++) {
 		for (nat i2 = 0; i2 < 5; i2++) {
-			for (nat i3 = 0; i3 < 5; i3++) {
-
-				const nat op1 = operations[i1];
-				const nat op2 = operations[i2];
-				const nat op3 = operations[i3];
-
-
-				
-
-
-
-				nat mcal[] = { 3, 1,  3, 5,  3, 1};
-				const nat mcal_length =  sizeof mcal / sizeof(nat);
-
 
 			
-				const nat operation_count = 5 + duplication_count;
-				const nat graph_count = 4 * operation_count;
+			const nat op1 = operations[i1];
+			const nat op2 = operations[i2];
 
-				nat graph[graph_count] = { 
-					1,  2, 3, _,
-					3,  0, _, _,
-					2,  0, _, _,
-					6,  1, X, _,
-					5,  _, _, _,
+			if (have_tried(tried_count, tried, op1, op2)) continue;
 
-					op1,  _, _, _,
-					op2,  _, _, _,
-					op3,  _, _, _,
-				};
 
-				total += search(1, mcal, mcal_length, graph, graph_count, operation_count);
-			}
-	
+			tried[2 * tried_count + 0] = op1;
+			tried[2 * tried_count + 1] = op2;
+			tried_count++;
+
+			if (is_reset_statement(op1) and is_reset_statement(op2)) continue;
+
+			nat mcal[] = { 3, 1,  3, 5,  3, 1};
+			const nat mcal_length =  sizeof mcal / sizeof(nat);
+
+			const nat operation_count = 5 + duplication_count;
+			const nat graph_count = 4 * operation_count;
+
+			nat graph[graph_count] = { 
+				1,  2, 3, _,
+				3,  0, _, _,
+				2,  0, _, _,
+				6,  1, X, _,
+				5,  _, _, _,
+
+				op1,  _, _, _,
+				op2,  _, _, _,
+			};
+
+			total += search(1, mcal, mcal_length, graph, graph_count, operation_count);
 		}
 	}
 
