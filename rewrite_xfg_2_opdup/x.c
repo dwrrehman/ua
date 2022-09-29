@@ -9,6 +9,28 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+
+
+
+// 2space = total candidates = 9536595
+
+
+// new pruning metrics:
+
+	//    NDI :    double modnat incrs      (ban!)
+
+
+	//     FEA constraints!!!!!   (make sure it works at the fea, if it segfaults, then discard it.  (finite array, but xfg graph!!)
+
+
+	//    i dont think we need to do empirical reducing to the R...?
+
+	//    look at the lifetimes of the candidates, and see what the candidates look like!    (most important!)
+
+	// 
+
+
+
 typedef unsigned long long nat;
 
 
@@ -16,26 +38,48 @@ typedef unsigned long long nat;
 
 static const nat max_stack_size = 128; 			// maximum number of holes we can fill in the partial graph simultaneously.
 
+static const nat array_size = 400;   			// effectively infinity.  (xfg uses an infinite array)
 
-static const nat array_size = 10000;   			// effectively infinity.  (xfg uses an infinite array)
 
-static const nat execution_limit = 4000;   		// untested value, tweak this
+static const nat FEA = 300;				// artificial the finite end of the array, used for testing 
+							// if a graph segfaults by accessing memory outside of the 
+							// this imposed bound on the "infinite" array (whos total 
+							// real memory size is given by array_size)
+							// note: this value must be less than array_size.
+							// note: this is the value of n, being simulated- but without the branch 9.
+							// also the location of *n, of course.
+
+static const nat execution_limit = 3000;   		// untested value, tweak this
 							// the number of instructions to execute while trying to fill in holes in the graph.
-
 static const nat unknown = 123456789;			// some bogus value, that represents a hole. 
 static const nat deadstop = unknown;			// same as above. used to mark the unknown as impossible to specify.
 
-
 static const nat required_er_count = 6;			// the required number of ER's that need to happen during exec, to be good.
 
-static const nat required_le_width = 5; 		// the required index of the Leading Edge in order to not classify the 
+static const nat required_le_width = 5; 		// the required index of the Leading Edge in order to not classify the XP as bad.
+							// (looking at what is the width of the expansion pattern of the graph)
+
+
 							// expansion pattern as a short_expansion.
 
-
-static const nat display_rate = 14;			// inverse logarithmically related to how fast you print out the status info
+static const nat display_rate = 13;			// inverse logarithmically related to how fast you print out the status info
 							// while searching.
 
 
+
+
+static const nat max_operation_count = 10;              // maximum number of instructions in the graph. 
+
+
+static const nat _ = unknown;
+static const nat X = deadstop;
+
+
+
+// used for partially specifying the mcal further, based on "subtractive" (negated) specification.
+// static const nat NOT_5 = 131313131;
+// static const nat NOT_1 = 353353535;
+// static const nat NOT_3 = 151515151;
 
 
 enum expansion_type  {
@@ -44,34 +88,28 @@ enum expansion_type  {
 	short_expansion,
 	hole_expansion,
 	good_expansion,
-
 	expansion_type_count,
 };
 
 
 struct stack_frame {
 	nat try;
-	nat* options;
 	nat option_count;
-
-	nat comparator;
 	nat pointer;
 	nat k;
-
 	nat ip;
 	nat state;
-
 	nat zero_reset_happened;
 	nat er_count;
+	nat ndi_happened;
+	nat last_mcal_op;
 
+	nat options[max_operation_count];
 	nat array_state[array_size];
 };
 
 
-
-
 static inline void clear_screen() { printf("\033[2J\033[H"); }
-
 
 
 static void print_nats(nat* v, nat l) {
@@ -122,24 +160,16 @@ static void print_graph_z_value(nat* graph, nat operation_count) {
 }
 
 
-
-
-
-
-
-
-
 static void print_stack(struct stack_frame* stack, nat stack_count) {
 
 	printf("printing %llu stack frames:\n{\n", stack_count);
 	for (nat i = 0; i < stack_count; i++) {
 
-		printf("FRAME #%llu:   {try=%llu, k=%llu, i=%llu, *n=%llu, ip=%llu, state=%c, ", 
+		printf("FRAME #%llu:   {try=%llu, k=%llu, i=%llu, ip=%llu, state=%c, ", 
 			i, 
 			stack[i].try,
 			stack[i].k,
 			stack[i].pointer,
-			stack[i].comparator,
 			stack[i].ip,
 			(char) stack[i].state
 		);
@@ -154,12 +184,8 @@ static void print_stack(struct stack_frame* stack, nat stack_count) {
 }
 
 
-
-
-
-
-
 static nat* generate_options(
+	nat* options,
 	nat* option_count, 
 	nat ip, 
 	nat* os, 
@@ -169,13 +195,6 @@ static nat* generate_options(
 	nat* graph, 
 	nat operation_count
 ) {
-
-
-
-	// todo: make us not allocate inside generate options.
-
-
-	nat* options = malloc(operation_count * sizeof(nat));
 	nat count = 0;
 
 	for (nat option = 0; option < operation_count; option++) {
@@ -292,8 +311,6 @@ static bool run_xfg_lifetime(nat* graph, const nat timesteps, bool visualize) {
 
 
 
-
-
 static inline bool is_complete(nat* graph, nat operation_count) {
 
 
@@ -321,14 +338,11 @@ static inline bool uses_all_operations(nat* graph, nat operation_count) {
 
 	nat ops[7] = {0};
 
-
 /*
 ins:	  1    2     3      5      6
 	------------------------------
 occ	[ 0    1     0      5      0  ]
 */
-
-
 
 	for (nat i = 0; i < operation_count * 4; i += 4) {
 
@@ -375,21 +389,23 @@ static nat determine_expansion_type(nat* array, nat n) {
 
 
 
-static const nat _ = unknown;
-static const nat X = deadstop;
+static void print_zs(nat graph_count, nat operation_count, nat candidate_count, nat* candidates) {
+	for (nat c = 0; c < candidate_count; c++) {
+		print_graph_z_value(candidates + graph_count * c, operation_count);
+	}
+}
+
 
 
 
 
 static nat search(nat origin, nat* os, const nat os_length, nat* graph, nat graph_count, nat operation_count) {
 	
-	
 	nat candidate_count = 0, candidate_capacity = 0;
 	nat* candidates = NULL;
 
 	nat* array = calloc(array_size, sizeof(nat));
 	nat 
-		comparator = 0, 
 		pointer = 0, 
 		ip = origin
 	;
@@ -398,9 +414,9 @@ static nat search(nat origin, nat* os, const nat os_length, nat* graph, nat grap
 	nat stack_count = 0;
 
 	nat k = 0;
-	nat zero_reset_happened = false;
-	nat er_count = 0;
 
+	nat last_mcal_op = 0;
+	nat er_count = 0;
 	nat tried = 0;
 	nat executed_count = 0;	
 
@@ -410,70 +426,68 @@ begin:
 		const nat I = ip * 4;
 		const nat op = graph[I];
 
-		if (op == 1) pointer++;
+		if (op == 1) {
+			pointer++;
+			if (pointer > FEA) goto backtrack;        // FEA
+		}
 		else if (op == 5) {
+			if (last_mcal_op != 3) goto backtrack;     // PCO
+			if (not pointer) goto backtrack;           // ZR-5
+			pointer = 0;
 			er_count++;
-			if (not pointer) zero_reset_happened = true; pointer = 0;
 		}
-		else if (op == 2) comparator++;
+
+		else if (op == 2) {
+			array[FEA]++;
+		}
+
 		else if (op == 6) {  
-			if (not comparator) zero_reset_happened = true;  comparator = 0;   
+			if (not array[FEA]) goto backtrack;       //  ZR-6
+			array[FEA] = 0;   
 		}
-		else if (op == 3) array[pointer]++;
+
+		else if (op == 3) {
+			if (last_mcal_op == 3) goto backtrack;    // NDI
+			array[pointer]++;
+		}
 
 		executed_count++;
 
 		nat state = 0;
-		if (comparator < array[pointer]) state = 1;
-		if (comparator > array[pointer]) state = 2;
-		if (comparator == array[pointer]) state = 3;
+		if (array[FEA] < array[pointer]) state = 1;
+		if (array[FEA] > array[pointer]) state = 2;
+		if (array[FEA] == array[pointer]) state = 3;
 
 		if (op == 3 or op == 1 or op == 5) {
-			if (k >= os_length) {
-				// do nothing.
-			} else {
-				if (op != os[k]) goto backtrack;	
+			if (k < os_length) {
+				if (op != os[k]) goto backtrack;
 				k++;
 			}
+			last_mcal_op = op;
 		}
 
 		if (graph[I + state] != unknown) goto next_ins;
 
-		nat option_count = 0;
-
-
-		// todo: make us not allocate inside generate options.
-		nat* options = generate_options(&option_count, ip, os, k, os_length, comparator, graph, operation_count);
+		nat option_count = 0; 
+		generate_options(stack[stack_count].options, &option_count, ip, os, k, os_length, array[FEA], graph, operation_count);
 		
+		stack[stack_count].try = 0;
+		stack[stack_count].option_count = option_count;
 
+		stack[stack_count].k = k;
+		stack[stack_count].ip = ip;
+		stack[stack_count].state = state;
 
-		// todo: make us not make another frame like this.    be more efficient. 
+		stack[stack_count].er_count = er_count;
+		stack[stack_count].last_mcal_op = last_mcal_op;
 
-		struct stack_frame frame = {
-			.try = 0,
-			.pointer = pointer, 
-			.comparator = comparator,
+		stack[stack_count].pointer = pointer;
+		memcpy(stack[stack_count].array_state, array, sizeof(nat) * array_size);
+		
+		stack_count++;
 
-			.options = options,
-			.option_count = option_count,
-
-			.k = k,
-
-			.ip = ip,
-			.state = state,
-
-			.er_count = er_count,
-			.zero_reset_happened = zero_reset_happened,
-		};
-
-
+		graph[I + state] = stack[stack_count - 1].options[0];
 		executed_count = 0;
-
-		memcpy(frame.array_state, array, sizeof(nat) * array_size);
-		stack[stack_count++] = frame;
-
-		graph[I + state] = options[0];
-
 
 	next_ins:   ip = graph[I + state];
 
@@ -485,9 +499,7 @@ begin:
 	const bool complete = is_complete(graph, operation_count);
 	const bool all = uses_all_operations(graph, operation_count);
 
-
-	if (	not zero_reset_happened and 
-		er_count >= required_er_count and
+	if (	er_count >= required_er_count and
 		complete and all and
 		type == good_expansion and  
 		k == os_length
@@ -516,7 +528,6 @@ begin:
 		printf("complete? %s\n", 	complete ? "true" : "false");
 		printf("all? %s\n", 		all ? "true" : "false" );
 		printf("er >= req? %s\n", 	er_count >= required_er_count ? "true" : "false" );
-		printf("not zeroreset? %s\n", 	not zero_reset_happened ? "true" : "false" );
 		
 		print_graph_as_adj(graph, operation_count);
 		printf("searching: [origin = %llu, limit = %llu]\n", origin, execution_limit);
@@ -531,10 +542,9 @@ backtrack:
 
 	memcpy(array, stack[stack_count - 1].array_state, array_size * sizeof(nat));
 	pointer = stack[stack_count - 1].pointer;
-	comparator = stack[stack_count - 1].comparator;
 	k = stack[stack_count - 1].k;
-	zero_reset_happened = stack[stack_count - 1].zero_reset_happened;
 	er_count = stack[stack_count - 1].er_count;
+	last_mcal_op = stack[stack_count - 1].last_mcal_op;
 
 	if (stack[stack_count - 1].try < stack[stack_count - 1].option_count - 1) {
 		stack[stack_count - 1].try++;
@@ -553,40 +563,51 @@ backtrack:
 	}
 done:
 
-	for (nat c = 0; c < candidate_count; c++) {
-		print_graph_z_value(candidates + graph_count * c, operation_count);
-	}
+	// print_zs(graph_count, operation_count, candidate_count, candidates);
 	print_nats(os, os_length); puts("");
 	
 	printf("tried = %llu\n", tried);
 	print_graph_as_adj(graph, operation_count);
 	printf("\n\n[[ candidate_count = %llu ]] \n\n\n", candidate_count);
 
-/*
-	printf("run all candidates? (y to confirm) ");
-	int ch = getchar(); getchar();
-	if (ch != 'y' or true) return;
-*/
-
-
+	free(array);
+	free(stack);
+	free(candidates);
 	return candidate_count;
-	
 }
 
 
 
-static bool is_reset_statement(nat op) {
-	return op == 5 or op == 6;
-}
 
+static bool is_reset_statement(nat op) { return op == 5 or op == 6; }
 
 static bool have_tried(nat tried_count, nat* tried, nat op1, nat op2) {
 
 	for (nat i = 0; i < tried_count; i++) {
-		
-	}
+		if (
+			tried[2 * i + 0] == op1 and tried[2 * i + 1] == op2    or 
 
+			tried[2 * i + 0] == op2 and tried[2 * i + 1] == op1
+
+		) {
+			return true;
+		}
+	}
+	return false;
 }
+
+
+
+
+// 2209294.100710   implementing:   fea, ndi, pco       constraints, now!
+
+/*
+
+
+*/
+
+
+
 
 int main() {
 
@@ -598,7 +619,7 @@ int main() {
 	nat tried_count = 0;
 
 	const nat duplication_count = 2;
-	const nat operations[] = {6, 5, 1, 3, 2};	
+	const nat operations[] = {6, 5, 3, 1, 2};	
 
 	for (nat i1 = 0; i1 < 5; i1++) {
 		for (nat i2 = 0; i2 < 5; i2++) {
@@ -614,7 +635,16 @@ int main() {
 			tried[2 * tried_count + 1] = op2;
 			tried_count++;
 
-			if (is_reset_statement(op1) and is_reset_statement(op2)) continue;
+
+
+			//  if (is_reset_statement(op1) /*and is_reset_statement(op2)*/) continue;
+
+			
+
+
+
+
+			
 
 			nat mcal[] = { 3, 1,  3, 5,  3, 1};
 			const nat mcal_length =  sizeof mcal / sizeof(nat);
@@ -634,6 +664,21 @@ int main() {
 			};
 
 			total += search(1, mcal, mcal_length, graph, graph_count, operation_count);
+
+			sleep(2);
+
+
+
+		/*
+			if (op1 == 3)  {
+
+				total += search(5, mcal, mcal_length, graph, graph_count, operation_count);    
+
+				sleep(2);
+
+			}
+
+			*/
 		}
 	}
 
@@ -652,6 +697,103 @@ int main() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+// for the mcal,     when we are past it, 
+			// we can keep track of the previous mcal operation that we said, and if 
+			// we see the sequence 15 in it at all, then we know its bad. even if we are OUTSIDE the mcal. 
+			//   ie, if you say 5, you better have nottttt said an mcal op =   1   prior, becaues thats not using your pointer very well.
+				// this is implementing the pointer coi opt constraint. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+	---------- 1-SPACE -------------
+
+		you cant duplicate a reset operation, because then 
+
+	
+
+			1 2 3 5 6    +    5/6
+			I I I R R          R
+
+
+				x3 I's      and x3 R's,     and    because  # R's >= # I's        then no candidates.
+
+
+
+
+	---------- 2-SPACE -------------
+
+		you cant duplicate  two operations     which are both reset operations.
+
+	
+
+			1 2 3 5 6    +    5/6    5/6
+			I I I R R          R      R
+
+
+				x3 I's      and x3 R's,     and    because  # R's >= # I's        then no candidates.
+
+
+
+
+
+
+
+	... i think.... i'm not exactly sure why this invariant/constraint holds... but it seems like empirically it has so far?
+
+			not sure what the exact equation/constraint really is though 
+
+
+						or why it is working that way 
+
+
+
+
+
+
+*/
 
 
 
