@@ -193,9 +193,9 @@ static nat* generate_options(
 	nat* options,
 	nat* option_count, 
 	nat ip, 
-	nat* os, 
-	nat k, 
-	nat os_length,
+	nat* mcal, 
+	nat mcal_index, 
+	nat mcal_length,
 	nat comparator, 
 	nat* graph, 
 	nat operation_count
@@ -208,8 +208,8 @@ static nat* generate_options(
 		if (	
 			(graph[4 * option] == 6 and comparator) or        		//   dont allow 6 zero resets.
 			graph[4 * option] == 2 or                                       // allow for comparator incr, at anytime.
-			k >= os_length or                                               // if we ran outof mcal, do anything.
-			graph[4 * option] == os[k]                                      // dont allow wrong mcal coi.
+			mcal_index >= mcal_length or                                               // if we ran outof mcal, do anything.
+			graph[4 * option] == mcal[mcal_index]                                      // dont allow wrong mcal coi.
 
 		) options[count++] = option; 
 		
@@ -380,13 +380,13 @@ static nat determine_expansion_type(nat* array, nat n, nat required_le_width) {
 
 	nat first = 0, last = n;
 	for (;last--;)
-		if (array[last]) break; 
+		if (array[last]) break;
 	last++;
 	for (;first < last; first++)
 		if (not array[first]) break; 
 
 	if (last != first) return hole_expansion;
-		
+	
 	if (last < required_le_width) return short_expansion;
 
 	return good_expansion;
@@ -491,7 +491,12 @@ begin:
 		stack[stack_count].last_mcal_op = last_mcal_op;
 
 		stack[stack_count].pointer = pointer;
-		memcpy(stack[stack_count].array_state, array, sizeof(nat) * (n + 1));
+		memcpy(stack[stack_count].array_state, array, sizeof(nat) * 
+
+					//(n + 1)
+
+					max_array_size
+				);
 		
 		stack_count++;
 
@@ -504,7 +509,39 @@ begin:
 
 	tried++;
 
-	const nat type = determine_expansion_type(array, n, p.required_le_width);
+	const nat type = 
+
+
+			determine_expansion_type(array, 
+
+
+
+
+
+			//	n, 
+
+				
+					/* ----- was exchanged with ------*/
+	
+
+				max_array_size,
+
+
+
+
+
+
+
+
+			p.required_le_width);
+
+
+
+
+
+
+
+
 	const bool complete = is_complete(graph, p.operation_count);
 	const bool all = uses_all_operations(graph, p.operation_count);
 
@@ -548,7 +585,15 @@ begin:
 
 backtrack:
 
-	memcpy(array, stack[stack_count - 1].array_state, n * sizeof(nat));
+	memcpy(array, stack[stack_count - 1].array_state, sizeof(nat)  * 
+
+					//(n + 1)
+
+					max_array_size
+				);
+
+
+
 	pointer = stack[stack_count - 1].pointer;
 	mcal_index = stack[stack_count - 1].mcal_index;
 	er_count = stack[stack_count - 1].er_count;
