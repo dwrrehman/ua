@@ -8,7 +8,6 @@
 #include <iso646.h>
 #include <stdbool.h>
 #include <unistd.h>
-
 #include <ctype.h>
 #include <time.h>
 #include <sys/time.h> 
@@ -17,13 +16,29 @@
 #include <errno.h>
 
 typedef unsigned long long nat;
+/*
 
+
+
+x	1. make the graphing utility for showing the relationship between   fea and execlimit and    candidatecount
+
+
+x	2. merge the 1space, 2space, and 0space functions, to all be the same function, parameterized on   .duplication_count  parameter
+
+
+	3. look at previous iternary
+
+
+
+
+
+*/
 
 // -------- constants: --------
 
 static const nat max_stack_size = 128; 			// maximum number of holes we can fill in the partial graph simultaneously.
 
-static const nat max_array_size = 1024;   			// effectively infinity.  (xfg uses an infinite array)
+static const nat max_array_size = 2048;   			// effectively infinity.  (xfg uses an infinite array)
 
 
 static const nat max_mcal_length = 16;                  // maximum mcal length you can supply.
@@ -51,7 +66,13 @@ struct parameters {
 	nat required_er_count;
 	nat required_le_width;
 
-	nat display_rate;	
+	nat window_width;
+	nat scale;
+	nat scratch;
+	nat step;
+
+	nat should_print;
+	nat display_rate;
 	nat combination_delay;
 	nat frame_delay;
 
@@ -98,6 +119,19 @@ static void debug_pause() {
 	fflush(stdout);
 	getchar();
 }
+
+
+
+
+static nat exponentiate(const nat a, const nat b) {
+	nat c = 1;
+	for (nat i = 0; i < b; i++) {
+		c *= a;
+	}
+	return c;
+}
+
+
 
 static bool is(const char* c[8], const char* _long, const char* _short) {
 	return c[0] and (not strcmp(c[0], _long) or not strcmp(c[0], _short));
@@ -385,7 +419,8 @@ static nat determine_expansion_type(nat* array, nat n, nat required_le_width) {
 	for (;first < last; first++)
 		if (not array[first]) break; 
 
-	if (last != first) return hole_expansion;
+	if (last != first) abort();                 // holes should be impossible now!  because of the no-skip-over-zero-modnat's principle.
+			//  return hole_expansion; 
 	
 	if (last < required_le_width) return short_expansion;
 
@@ -409,7 +444,8 @@ static nat search(struct parameters p, nat origin) {
 	nat candidate_count = 0, candidate_capacity = 0;
 	nat* candidates = NULL;
 
-	nat* array = calloc(max_array_size, sizeof(nat));
+	nat array[max_array_size] = {0};
+
 	nat 
 		pointer = 0, 
 		ip = origin
@@ -436,9 +472,11 @@ begin:
 		const nat op = graph[I];
 
 		if (op == 1) {
-			if (pointer >= n) goto backtrack;        // FEA
+			if (pointer == n) goto backtrack;        // FEA
+			if (not array[pointer]) goto backtrack;  // No-Skip-Over-Zero-Modnat
 			pointer++;
 		}
+
 		else if (op == 5) {
 			if (last_mcal_op != 3) goto backtrack;     // PCO
 			if (not pointer) goto backtrack;           // ZR-5
@@ -478,7 +516,11 @@ begin:
 		if (graph[I + state] != unknown) goto next_ins;
 
 		nat option_count = 0; 
-		generate_options(stack[stack_count].options, &option_count, ip, p.mcal, mcal_index, p.mcal_length, array[n], graph, p.operation_count);
+		generate_options(
+			stack[stack_count].options, &option_count, 
+			ip, p.mcal, mcal_index, p.mcal_length, array[n], 
+			graph, p.operation_count
+		);
 		
 		stack[stack_count].try = 0;
 		stack[stack_count].option_count = option_count;
@@ -491,12 +533,30 @@ begin:
 		stack[stack_count].last_mcal_op = last_mcal_op;
 
 		stack[stack_count].pointer = pointer;
+
+
+
+		// save:
 		memcpy(stack[stack_count].array_state, array, sizeof(nat) * 
 
-					//(n + 1)
 
-					max_array_size
+
+				//	(n + 1)            // CORRECT   and efficient  (? untested.)
+
+
+
+
+					max_array_size            // ALSO CORRECT   but wasteful/inefficient.
+
+
+
+
 				);
+
+
+
+
+
 		
 		stack_count++;
 
@@ -518,15 +578,13 @@ begin:
 
 
 
-			//	n, 
+				n,             // CORRECT
 
 				
 					/* ----- was exchanged with ------*/
 	
 
-				max_array_size,
-
-
+			//	max_array_size, // INCORRECT
 
 
 
@@ -561,7 +619,7 @@ begin:
 	}
 
 
-	if (not (tried & ((1 << p.display_rate) - 1))) {
+	if (not (tried & ((1 << p.display_rate) - 1))    and p.should_print) {
 		clear_screen();
 
 		printf("\n\t");
@@ -585,11 +643,38 @@ begin:
 
 backtrack:
 
-	memcpy(array, stack[stack_count - 1].array_state, sizeof(nat)  * 
 
-					//(n + 1)
+	if (not stack_count) {
+			// NOTE:  execution_limit must be zero!!!
 
-					max_array_size
+			goto done;    // just finish like normal.
+
+	}
+
+	// revert:
+	memcpy(
+
+		array, 
+
+
+			stack[
+
+			stack_count - 1
+
+
+			].
+
+				array_state, 
+
+
+			sizeof(nat)  * 
+
+				//	(n + 1)                // <---------- we should have this. (not n!!)
+								 // CORRECT   and efficient  (? untested.)
+
+					max_array_size           // but this one is a safe alternative.
+							         // ALSO CORRECT   but wasteful/inefficient.
+
 				);
 
 
@@ -618,10 +703,9 @@ done:
 
 	// print_zs(p.graph_count, p.operation_count, candidate_count, candidates);
 
-	printf("tried = %llu\n", tried);
-	printf("\n\n[[ candidate_count = %llu ]] \n\n\n", candidate_count);
+	if (p.should_print) printf("tried = %llu\n", tried);
+	if (p.should_print) printf("\n\n[[ candidate_count = %llu ]] \n\n\n", candidate_count);
 
-	free(array);
 	free(stack);
 	free(candidates);
 	free(graph);
@@ -630,50 +714,161 @@ done:
 }
 
 
+static bool is_unique(nat* stack_operations, const nat tried_count, nat* tried, const nat D) {
 
-
-
-
-
-
-
-static bool have_tried(nat tried_count, nat* tried, nat op1, nat op2) {
 	for (nat i = 0; i < tried_count; i++) {
-		if (
-			tried[2 * i + 0] == op1 and tried[2 * i + 1] == op2    or 
-			tried[2 * i + 0] == op2 and tried[2 * i + 1] == op1
-		) return true;
+
+		nat so_used_op[7] = {0}; 
+		nat t_used_op[7] = {0}; 
+
+		for (nat e = 0; e < D; e++) so_used_op[stack_operations[e]]++;
+		for (nat e = 0; e < D; e++) t_used_op[tried[D * i + e]]++;
+
+		for (nat o = 0; o < 7; o++) 
+			if (t_used_op[o] != so_used_op[o]) goto _continue;
+
+		return false;
+
+		_continue:;
+
 	}
-	return false;
+	return true;
 }
 
 
-static void print_combinations(nat* tried, nat tried_count) {
-	printf("printing all valid combinations we are trying: \n");
+//   6   5   3   1   2 
+//   T   F   T   F   T
+
+
+
+
+static void print_combinations(nat* tried, nat tried_count, const nat D) {
+
+	printf("printing all combinations we are trying: \n");
+
 	for (nat i = 0; i < tried_count; i++) {
-		printf("\t%llu: [%llu, %llu]\n", i, tried[2 * i + 0], tried[2 * i + 1]);
+		printf("\t%llu: ", i); 
+		print_nats(tried + D * i, D); puts("");
 	}
+
 	printf("[end of combinations]\n");
 }
 
 
 
 
-static void two_space_search(struct parameters p) {
+
+
+static nat any_space_search(struct parameters p) {
 	
+	const nat D = p.duplication_count;
+	const nat n = D - 1;
+	const nat U = exponentiate(unique_count, D);
+	const nat m = unique_count - 1;
+
+	nat total = 0;
+	nat tried_count = 0;
+	nat* tried = calloc(U * D, sizeof(nat));
+
+	nat entry = 0;
+
+
+	if (D == 0) goto execute;
+	
+	nat* indicies = calloc(D, sizeof(nat));
+	nat* stack_operations = calloc(D, sizeof(nat));
+
+loop:; 	nat pointer = 0;
+
+	for (nat op = 0; op < D; op++) stack_operations[op] = operations[indicies[op]];
+	
+
+	if (is_unique(stack_operations, tried_count, tried, D)) {
+		for (nat offset = 0; offset < D; offset++) 
+			tried[D * tried_count + offset] = stack_operations[offset];
+		tried_count++;
+	}
+
+backtrack: 
+	if (indicies[pointer] >= m) {
+		indicies[pointer] = 0;
+		if (pointer == n) goto done;
+		pointer++;
+		goto backtrack;
+	}
+	indicies[pointer]++;
+	goto loop;
+
+done:;
+
+	if (p.should_print) {
+		print_combinations(tried, tried_count, D);
+		debug_pause();
+	}
+	
+	for (; entry < tried_count; entry++) {
+
+		for (nat offset = 0; offset < D; offset++) {
+			p.graph[20 + 4 * offset] = tried[D * entry + offset];
+		}
+
+	execute:
+		for (nat origin = 0; origin < p.operation_count; origin++) {
+
+			if (p.graph[4 * origin] == 3) {
+
+				total += search(p, origin);
+
+				if (p.should_print) {
+					printf("[origin = %llu]\n", origin);
+					print_graph_as_adj(p.graph, p.operation_count);
+					print_nats(p.mcal, p.mcal_length); 
+					puts("\n");
+
+					if (p.combination_delay == 1) debug_pause();
+					if (p.combination_delay) usleep((unsigned) p.combination_delay);
+				}
+			}
+		}
+	}
+
+	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
+
+	free(tried);
+	free(indicies);
+	free(stack_operations);
+	return total;
+
+}
+
+static bool have_tried(nat tried_count, nat* tried, nat op1, nat op2, nat D) {      // legacy:   delete me
+
+	if (D != 2) abort();
+
+	for (nat i = 0; i < tried_count; i++) {
+
+		if (	tried[D * i + 0] == op1 and tried[D * i + 1] == op2    or 
+			tried[D * i + 0] == op2 and tried[D * i + 1] == op1
+		) return true;
+	}
+	return false;
+}
+
+
+static nat two_space_search(struct parameters p) {
+	
+	const nat D = p.duplication_count;
+
 	nat tried_count = 0;
 	nat* tried = calloc(unique_count * unique_count * p.duplication_count, sizeof(nat));
 
-	
 	for (nat i1 = 0; i1 < unique_count; i1++) {
 		for (nat i2 = 0; i2 < unique_count; i2++) {
 			
 			const nat op1 = operations[i1];
 			const nat op2 = operations[i2];
 
-			if (have_tried(tried_count, tried, op1, op2)) continue;
-
-			//  if (is_reset_statement(op1) and is_reset_statement(op2)) continue;
+			if (have_tried(tried_count, tried, op1, op2, D)) continue;
 
 			tried[2 * tried_count + 0] = op1;
 			tried[2 * tried_count + 1] = op2;
@@ -681,8 +876,10 @@ static void two_space_search(struct parameters p) {
 		}
 	}
 
-	print_combinations(tried, tried_count);
-	debug_pause();
+	if (p.should_print) {
+		print_combinations(tried, tried_count, p.duplication_count);
+		debug_pause();
+	}
 	
 	nat total = 0;
 	
@@ -697,44 +894,54 @@ static void two_space_search(struct parameters p) {
 
 				total += search(p, origin);
 
-				printf("[origin = %llu]\n", origin);
-				print_graph_as_adj(p.graph, p.operation_count);
-				print_nats(p.mcal, p.mcal_length); 
-				puts("\n");
 
-				if (p.combination_delay == 1) debug_pause();
-				if (p.combination_delay) usleep((unsigned) p.combination_delay); 
+				if (p.should_print) {
+					printf("[origin = %llu]\n", origin);
+					print_graph_as_adj(p.graph, p.operation_count);
+					print_nats(p.mcal, p.mcal_length); 
+					puts("\n");
+
+					if (p.combination_delay == 1) debug_pause();
+					if (p.combination_delay) usleep((unsigned) p.combination_delay);
+				}
+
 			}
 		}
 	}
-	printf("\n\t[total candidates = %llu]\n\n\n", total);
+
+	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
 
 	free(tried);
+	
+	return total;
 }
 
 
 
 
-static void one_space_search(struct parameters p) {
+static nat one_space_search(struct parameters p) {
 	
-	nat tried_count = 0;
-	nat* tried = calloc(unique_count * unique_count * p.duplication_count, sizeof(nat));
 
-	
+	const nat D = p.duplication_count;
+
+	nat tried_count = 0;
+	nat* tried = calloc(unique_count * unique_count * D, sizeof(nat));
+
 	for (nat i1 = 0; i1 < unique_count; i1++) {
-		tried[2 * tried_count + 0] = operations[i1];
-		tried[2 * tried_count + 1] = 9999;
+		tried[D * tried_count] = operations[i1];
 		tried_count++;
 	}
 
-	print_combinations(tried, tried_count);
-	debug_pause();
+	if (p.should_print)  {
+		print_combinations(tried, tried_count, D);
+		debug_pause();
+	}
 	
 	nat total = 0;
 	
 	for (nat i = 0; i < tried_count; i++) {
 
-		p.graph[20] = tried[2 * i + 0];
+		p.graph[20] = tried[D * i];
 
 		for (nat origin = 0; origin < p.operation_count; origin++) {
 
@@ -742,28 +949,37 @@ static void one_space_search(struct parameters p) {
 
 				total += search(p, origin);
 
-				printf("[origin = %llu]\n", origin);
-				print_graph_as_adj(p.graph, p.operation_count);
-				print_nats(p.mcal, p.mcal_length); 
-				puts("\n");
+				if (p.should_print) {
+					printf("[origin = %llu]\n", origin);
+					print_graph_as_adj(p.graph, p.operation_count);
+					print_nats(p.mcal, p.mcal_length); 
+					puts("\n");
 
-				if (p.combination_delay == 1) debug_pause();
-				if (p.combination_delay) usleep( (unsigned) p.combination_delay); 
+					if (p.combination_delay == 1) debug_pause();
+					if (p.combination_delay) usleep( (unsigned) p.combination_delay); 
+				}
 			}
 		}
 	}
-	printf("\n\t[total candidates = %llu]\n\n\n", total);
+
+	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
+
 	free(tried);
+	return total;
 }
 
 
 static void zero_space_search(struct parameters p) {
+
 	nat total = search(p, 1);
-	printf("[origin = %llu]\n", 1ULL);
-	print_graph_as_adj(p.graph, p.operation_count);
-	print_nats(p.mcal, p.mcal_length); 
-	puts("\n");
-	printf("\n\t[total candidates = %llu]\n\n\n", total);
+
+	if (p.should_print) {
+		printf("[origin = %llu]\n", 1ULL);
+		print_graph_as_adj(p.graph, p.operation_count);
+		print_nats(p.mcal, p.mcal_length); 
+		puts("\n");
+		printf("\n\t[total candidates = %llu]\n\n\n", total);
+	}
 }
 
 
@@ -781,8 +997,13 @@ printf("available commands:\n"
 	"\t- edit(e) : edit the parameters. \n"
 	"\t- print(p)  : print the parameters. \n"
 "\n"	
-	"\t- search2(s) : search over all possible extensions of the current partial graph in 2-space.\n"
-	"\t- search1(s) : search over all possible extensions of the current partial graph in 1-space.\n"
+	"\t- search2(2) : search over all possible extensions of the current partial graph in 2-space.\n"
+	"\t- search1(1) : search over all possible extensions of the current partial graph in 1-space.\n"
+	"\t- search0(0) : search over all possible extensions of the current partial graph in 0-space.\n"
+	"\t- searchA(A) : search over all possible extensions of the current partial graph in any (variable) duplication_count space.\n"
+
+	"\t- plot_el(pel) : plot the relationship between execution_limit, and candidate_count, with fea held constant.\n"
+	"\t- plot_fea(pfea) : plot the relationship between fea, and candidate_count, with execution_limit held constant.\n"
 "\n"
 	"\t- visualize(v) <file> <width> <height>: ....\n"
 	"\t- generate(g) <z_list_file> <dest_image_dir> <begin_cell> <end_cell> <begin_ts> <end_ts> <maximum_whitepoint>: ....\n"
@@ -822,6 +1043,12 @@ static void print_parameter(const char** command, struct parameters p) {
 			"required_er_count = %llu" "\n\t"
 			"required_le_width = %llu" "\n\t"
 		"\n\t"
+			"window_width = %llu" "\n\t"
+			"scale = %llu" "\n\t"
+			"scratch = %llu" "\n\t"
+			"step = %llu" "\n\t"
+		"\n\t"
+			"should_print = %llu" "\n\t"
 			"display_rate = %llu" "\n\t"
 			"combination_delay = %llu" "\n\t"
 			"frame_delay = %llu" "\n\t"
@@ -832,8 +1059,10 @@ static void print_parameter(const char** command, struct parameters p) {
 			"operation_count = %llu" "\n\t"
 			"graph_count = %llu" "\n\t"
 		"\n\t", 
-			p.FEA, p.execution_limit, p.required_er_count, p.required_le_width,
-			p.display_rate, p.combination_delay, p.frame_delay, p.mcal_length,
+			p.FEA, p.execution_limit, p.required_er_count, p.required_le_width, 
+			p.window_width, p.scale, p.scratch, p.step, 
+			p.should_print, p.display_rate, p.combination_delay, p.frame_delay, 
+			p.mcal_length,
 			p.duplication_count, p.operation_count, p.graph_count
 		);
 
@@ -857,18 +1086,108 @@ static void edit_parameter(const char** command, struct parameters* p) {
 	if (not strcmp(command[1], "FEA")) p->FEA = (nat) atoi(command[2]); 
 	else if (not strcmp(command[1], "execution_limit")) p->execution_limit = (nat) atoi(command[2]); 
 	else if (not strcmp(command[1], "required_er_count")) p->required_er_count = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "required_le_width")) p->required_le_width = (nat) atoi(command[2]); 
+	else if (not strcmp(command[1], "required_le_width")) p->required_le_width = (nat) atoi(command[2]); 	
+
+	else if (not strcmp(command[1], "window_width")) p->window_width = (nat) atoi(command[2]); 
+	else if (not strcmp(command[1], "scale")) p->scale = (nat) atoi(command[2]); 
+	else if (not strcmp(command[1], "scratch")) p->scratch = (nat) atoi(command[2]); 
+	else if (not strcmp(command[1], "step")) p->step = (nat) atoi(command[2]); 
+
+	else if (not strcmp(command[1], "should_print")) p->should_print = (nat) atoi(command[2]); 
 	else if (not strcmp(command[1], "display_rate")) p->display_rate = (nat) atoi(command[2]); 
 	else if (not strcmp(command[1], "combination_delay")) p->combination_delay = (nat) atoi(command[2]); 
 	else if (not strcmp(command[1], "frame_delay")) p->frame_delay = (nat) atoi(command[2]); 
+
 	else if (not strcmp(command[1], "mcal_length")) p->mcal_length = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "execution_limit")) p->execution_limit = (nat) atoi(command[2]); 
+
 	else if (not strcmp(command[1], "duplication_count")) {
 		p->duplication_count = (nat) atoi(command[2]); 
 		p->operation_count = 5 + p->duplication_count;
 		p->graph_count = 4 * (5 + p->duplication_count);
+
 	} else printf("error: unknown parameter: %s\n", command[1]);
 }
+
+
+
+
+
+
+
+
+
+
+
+//  set   p.scratch    to the minimum el,   set    p.execution_limit to  the maximum el,    
+//  and set p.step to the stride width/size, to go through el possibilities at.
+//  set p.window_width to the maximum number of characters to print per line, 
+// set  p.scale   to the  maximum total candidate_count   that you expect to see.
+
+// note: the plot/graph is printed downwards, and sideways. 
+
+static void plot_el(struct parameters p) {
+	
+	const nat max_el = p.execution_limit;
+
+	printf("plotting EL v.s. candcount : [maxl_el = %llu, fea = %llu]\n", max_el, p.FEA);
+
+	for (nat el = p.scratch; el < max_el; el += p.step) {
+
+		p.execution_limit = el;
+		p.should_print = false;
+
+		const nat total = one_space_search(p);
+		const double fraction =  ((double)total / (double) p.scale);
+		const nat space_count = (nat)(fraction * (double) p.window_width);
+		printf("%10llu : ", total);
+		printf("%10llu : ", el);
+		for (nat i = 0; i < space_count; i++) putchar(' '); puts("@");
+	}
+
+	puts("[done]");
+}
+
+
+
+
+
+
+
+//  set   p.scratch    to the minimum fea,   set    p.FEA to  the maximum fea,    
+//  and set p.step to the stride width/size, to go through fea possibilities at.
+//  set p.window_width to the maximum number of characters to print per line, 
+// set  p.scale   to the  maximum total candidate_count   that you expect to see.
+
+// note: the plot/graph is printed downwards, and sideways. 
+
+static void plot_fea(struct parameters p) {
+	
+	const nat max_fea = p.FEA;
+
+	printf("plotting FEA v.s. candcount : [max_fea = %llu, EL = %llu]\n", max_fea, p.execution_limit);
+
+	for (nat fea = p.scratch; fea < max_fea; fea += p.step) {
+
+		p.FEA = fea;
+		p.should_print = false;
+
+		const nat total = one_space_search(p);
+		const double fraction =  ((double)total / (double) p.scale);
+		const nat space_count = (nat)(fraction * (double) p.window_width);
+		printf("%10llu : ", total);
+		printf("%10llu : ", fea);
+		for (nat i = 0; i < space_count; i++) putchar(' '); puts("@");
+	}
+
+	puts("[done]");
+}
+
+
+
+
+
+
+
 
 int main() {
 
@@ -880,9 +1199,15 @@ int main() {
 		.required_er_count = 6, 
 		.required_le_width = 5,
 
-		.display_rate = 2,
+		.window_width = 100,
+		.scale = 7000,
+		.scratch = 0,
+		.step = 1,
+	
+		.should_print = 1,
+		.display_rate = 15,
 		.combination_delay = 1,
-		.frame_delay = 100,
+		.frame_delay = 0,
 
 		.mcal_length = 6,
 		.mcal = { 3, 1,  3, 5,  3, 1 },
@@ -898,6 +1223,9 @@ int main() {
 			6,  1, X, _,
 			5,  _, _, _,
 
+			0,  _, _, _,
+			0,  _, _, _,
+			0,  _, _, _,
 			0,  _, _, _,
 			0,  _, _, _,
 		},
@@ -936,6 +1264,11 @@ loop: 	printf(":: ");
 	else if (is(command, "search2", "2")) two_space_search(p);
 	else if (is(command, "search1", "1")) one_space_search(p);
 	else if (is(command, "search0", "0")) zero_space_search(p);
+	else if (is(command, "searchA", "A")) any_space_search(p);
+
+	else if (is(command, "plot_el", "pel")) plot_el(p);
+	else if (is(command, "plot_fea", "pfea")) plot_fea(p);
+
 	else printf("error: unknown command.\n");
 
 
@@ -1341,7 +1674,136 @@ static  nat display_rate = 13;			// inverse logarithmically related to how fast 
 /*
 
 
+
+
+
+:: p all 
+printing all parameters values:
+	
+	FEA = 300
+	execution_limit = 10000000
+	required_er_count = 6
+	required_le_width = 5
+	
+	window_width = 150
+	scale = 7000
+	scratch = 1000000
+	step = 1000000
+	
+	should_print = 0
+	display_rate = 2
+	combination_delay = 1
+	frame_delay = 100
+	
+	mcal_length = 6
+	
+	duplication_count = 1
+	operation_count = 6
+	graph_count = 24
+	
+	mcal = (6)[ 3 1 3 5 3 1 ]
+
+graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3,  ])
+
+	#4: ins(.op = 3, .lge = [ 0,  ,  ])
+
+	#8: ins(.op = 2, .lge = [ 0,  ,  ])
+
+	#12: ins(.op = 6, .lge = [ 1,  ,  ])
+
+	#16: ins(.op = 5, .lge = [  ,  ,  ])
+
+	#20: ins(.op = 0, .lge = [  ,  ,  ])
+
+}
+
+
+:: pel
+plotting EL v.s. candcount : [maxl_el = 10000000, fea = 300]
+      3009 :    1000000 :                                                                 @
+      2727 :    2000000 :                                                           @
+      2708 :    3000000 :                                                           @
+      2685 :    4000000 :                                                          @
+      2683 :    5000000 :                                                          @
+      2684 :    6000000 :                                                          @
+      2684 :    7000000 :                                                          @
+      2684 :    8000000 :                                                          @
+      2684 :    9000000 :                                                          @
+[done]
+:: 
+
+
+
+
+
+			2210086.141358
+ 
+						the size of   1space, according to this utility,  seems to be around   
+
+
+										the 2684 mark!!
+
+
+
+
+
+							very interesting!
+
+
+							now, to look at   making the   fea_plotter!
+
+
+					yay
+
+
+
+
+
+
+
 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+		if (
+				tried[2 * i + 0] == op1 and tried[2 * i + 1] == op2    or 
+
+			tried[2 * i + 0] == op2 and tried[2 * i + 1] == op1
+
+		) return false;
+	*/
 
 
 
