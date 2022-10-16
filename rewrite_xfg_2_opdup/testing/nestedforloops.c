@@ -24,7 +24,7 @@ static void print(nat* array, nat count) {
 
 
 
-static void stuff(const nat n, const nat m) {
+static void NF(const nat n, const nat m) {
 	nat* stack = calloc(n + 1, sizeof(nat));
 loop:; 	nat tos = 0;
 
@@ -41,6 +41,10 @@ label:	if (stack[tos] >= m) {
 	goto loop;
 done:;
 }
+
+
+
+
 
 
 
@@ -66,7 +70,7 @@ int main() {
 	printf("3^4 = %llu\n", exponentiate(3, 4));
 	printf("4^7 = %llu\n", exponentiate(4, 7));
 
-	// stuff(0, 5);
+	// NF(0, 5);
 }
 
 
@@ -197,6 +201,197 @@ int main() {
 	
 	return total;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+2210156.174119
+
+
+
+
+static void NF(const nat n, const nat m) {
+
+	nat pointer;
+	nat* array = calloc(n + 1, sizeof(nat));
+
+
+
+
+_0: 	pointer = 0;                                   // 5
+_1:	if (array[pointer] < m) goto _2;               // B
+	array[pointer] = 0;                            // 7
+	if (pointer == n) goto _3;                     // 9
+	pointer++; goto _1;                            // 1
+_2:	array[pointer]++; goto _0;                     // 3
+_3:	exit(0);                                       // 0
+
+
+
+
+
+
+
+
+			///   this list of instructions       is literally all possible instructions in the FUA 
+					
+					EXCEPT      the ones that involve (in any way)      the comparator.
+
+								so thats interesting.
+
+
+
+its missing:
+
+
+	array[n]++; goto __;                           			// 2
+
+	array[n] = 0; goto __;                         			// 6
+
+  	
+ 	if (array[n] < array[pointer]) goto __; else goto __; 		// E
+
+	if (array[n] > array[pointer]) goto __; else goto __; 		// F
+
+	if (array[n] != array[pointer]) goto __; else goto __;     	// C
+
+
+
+
+
+
+
+
+	
+				the graph edges that it is actually telling us are:
+
+
+					(SANSS   the comparator ins's!    very important.    its removing all of those ins that involve the comparaotor. and this is what we are left with, possibly)
+
+
+
+
+
+				5B              Bt3             Bf7             35                79             9t1
+
+
+				 9f0              1B
+
+
+
+	 
+
+
+
+
+			
+	
+
+
+
+
+
+
+
+
+what if n and m were infinite?
+
+
+
+
+_0: 	pointer = 0;                                   // 5
+_1:	if (array[pointer] < m) goto _2;               // B
+	array[pointer] = 0;                            // 7
+	pointer++; goto _1;                            // 1
+_2:	array[pointer]++; goto _0;                     // 3
+
+
+
+
+				this is the algorithm   ^ ^ ^ ^      if      n = inf   but m is finite 
+
+
+
+
+
+
+
+_0: 	pointer = 0;                                   // 5
+	array[pointer]++; goto _0;                     // 3
+
+
+
+								the algorithm for both n = m = inf 
+
+
+										very simple 
+
+
+
+
+
+		so, as we can see, there is definitely alot of zero reseting happening with the pointer, 
+
+		but,   it definitely isnt a c=2 xfg type of lifetime, at all...    its more of a c=1 xfg lifetime.
+
+
+
+							
+
+				with alot of zero reseting
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

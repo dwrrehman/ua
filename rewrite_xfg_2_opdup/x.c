@@ -15,9 +15,21 @@
 #include <math.h>
 #include <errno.h>
 
+
+#define red   "\x1B[31m"
+#define green   "\x1B[32m"
+// #define yellow   "\x1B[33m"
+// #define blue   "\x1B[34m"
+// #define magenta   "\x1B[35m"
+// #define cyan   "\x1B[36m"
+
+#define reset "\x1B[0m"
+
+
 typedef unsigned long long nat;
 /*
 
+---------------------------
 
 
 x	1. make the graphing utility for showing the relationship between   fea and execlimit and    candidatecount
@@ -27,6 +39,22 @@ x	2. merge the 1space, 2space, and 0space functions, to all be the same function
 
 
 	3. look at previous iternary
+
+
+-----------------------
+
+
+	1. viz 0 & 1
+
+
+	2. multi-fea pruning     --> ip
+
+
+	3. stuff() alg analysis
+
+
+
+	4. 
 
 
 
@@ -83,7 +111,17 @@ struct parameters {
 	nat operation_count;
 	nat graph_count;
 	nat graph[4 * max_operation_count];
+
 };
+
+
+struct search_data {
+	nat z_count;
+	nat* z_list;
+};
+
+
+// p.z_list, &p.z_count
 
 
 enum expansion_type  {
@@ -121,8 +159,6 @@ static void debug_pause() {
 }
 
 
-
-
 static nat exponentiate(const nat a, const nat b) {
 	nat c = 1;
 	for (nat i = 0; i < b; i++) {
@@ -132,9 +168,8 @@ static nat exponentiate(const nat a, const nat b) {
 }
 
 
-
-static bool is(const char* c[8], const char* _long, const char* _short) {
-	return c[0] and (not strcmp(c[0], _long) or not strcmp(c[0], _short));
+static bool is(const char* string, const char* _long, const char* _short) {
+	return string and (not strcmp(string, _long) or not strcmp(string, _short));
 }
 
 static void get_datetime(char datetime[16]) {
@@ -159,11 +194,11 @@ static void print_nats(nat* v, nat l) {
 	printf("]");
 }
 
-static void print_graph_as_adj(nat* graph, nat operation_count) {
+static void print_graph_as_adj(nat* graph, nat graph_count) {
 	
 	puts("graph adjacency list: ");
 	puts("{");
-	for (nat i = 0; i < operation_count * 4; i += 4) {
+	for (nat i = 0; i < graph_count; i += 4) {
 		const nat op = graph[i + 0];
 		const nat l = graph[i + 1];
 		const nat g = graph[i + 2];
@@ -181,9 +216,9 @@ static void print_graph_as_adj(nat* graph, nat operation_count) {
 
 
 
-static void print_graph_z_value(nat* graph, nat operation_count) {
+static void print_graph_as_z_value(nat* graph, nat graph_count) {
 		
-	for (nat i = 0; i < operation_count * 4; i += 4) {
+	for (nat i = 0; i < graph_count; i += 4) {
 		const nat op = graph[i + 0];
 		const nat l = graph[i + 1];
 		const nat g = graph[i + 2];
@@ -197,6 +232,21 @@ static void print_graph_z_value(nat* graph, nat operation_count) {
 
 	printf("\n");
 }
+
+static void print_z_list(nat z_count, nat* z_list, nat graph_count) {
+	for (nat z = 0; z < z_count; z++) {
+		print_graph_as_z_value(z_list + graph_count * z, graph_count);
+	}
+}
+
+
+static void init_graph_from_string(const char* string, nat* graph, nat graph_count) {
+	for (nat i = 0; i < graph_count; i++) {	
+		if (string[i] == '_') graph[i] = unknown;
+		else graph[i] = (nat) (string[i] - '0');
+	}
+}
+
 
 
 static void print_stack(struct stack_frame* stack, nat stack_count) {
@@ -254,99 +304,84 @@ static nat* generate_options(
 }
 
 
-/*
 
 
-static bool run_xfg_lifetime(nat* graph, const nat timesteps, bool visualize) {
 
-	nat array[array_size] = {0};
-	bool modes[array_size] = {0};
+static void print_lifetime(nat origin, struct parameters p, nat* graph, const nat instruction_count) {
+
+	const nat n = p.FEA;
+
+	nat array[max_array_size] = {0};
+	bool modes[max_array_size] = {0};
+
 	nat 
-		comparator = 0, 
 		pointer = 0, 
 		ip = origin
 	;
 
-	// const nat _ = unknown;
+	puts("[starting lifetime...]");
+	for (nat e = 0; e < instruction_count; e++) {
 
-	nat graph[20] = {
-		1,  2, 3, 2,
-		3,  0, 0, 4,
-		2,  0, 1, 0,
-		6,  1, _, 2,
-		5,  2, 2, 3,
-	};
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) {
+			pointer++;
+		}
+
+		else if (op == 5) {
+			
 	
-	
-	memset(array, 0, sizeof array);
-	pointer = 0; comparator = 0;
+			for (nat i = 0; i < max_array_size; i++) {
 
-	ip = origin;
+				if (i == pointer) printf(green);
+				if (modes[i]) printf("## ");    	// print IA's as a dot.
+				if (i == pointer) printf(reset);
 
-	for (nat e = 0; e < timesteps; e++) {
-
-		// printf("{{{%llu}}}\n", graph[4 * ip]);
-
-		if (graph[4 * ip] == 1) pointer++;
-
-		else if (graph[4 * ip] == 5) {
-
-			if (pointer == 0) { 
-				puts("ABORT: ZERO RESET!"); 
-				return 1;
+				else { printf("   "); }
+				if (not array[i]) break; 		// LE
 			}
-			pointer = 0;  
+			puts("");
 
-			for (nat i = 0; i < array_size; i++) {
-				if (visualize) {
-					if (modes[i]) printf("## ");
-					else { printf("   "); }
-				}
-				if (not array[i]) break;
-			}
-			if (visualize) puts("");
+			pointer = 0;
 
 			memset(modes, 0, sizeof modes);
 		}
 
-		else if (graph[4 * ip] == 2) comparator++;
-
-		else if (graph[4 * ip] == 6) {  
-			if (comparator == 0) { 
-				puts("ABORT: ZERO RESET!"); 
-				return 1;
-			}
-			comparator = 0; 
+		else if (op == 2) {
+			array[n]++;
 		}
-		else if (graph[4 * ip] == 3) { array[pointer]++; modes[pointer] = 1; }
+
+		else if (op == 6) {  
+			array[n] = 0;   
+		}
+
+		else if (op == 3) {
+			array[pointer]++;
+			modes[pointer] = 1;
+		}
 
 		nat state = 0;
-		if (comparator < array[pointer]) state = 1;
-		if (comparator > array[pointer]) state = 2;
-		if (comparator == array[pointer]) state = 3;
-		nat temp = graph[4 * ip + state]; 
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
 
-		if (temp == unknown) {  
-			printf("ENCOUNTERED HOLE: value=%llu: %llu(4*%llu+%llu), stopping\n", 
-				temp, 4 * ip + state, ip, state); 
-			return 1;
+
+		if (graph[I + state] == unknown) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu]\n" reset, I, state);
+			break;
 		}
-		
-		ip = temp;
+
+		ip = graph[I + state];
 	}
-
-
-	
-	nat i = 0;
-	for (; i < array_size; i++) {
-		if (not array[i]) break;
-	}
-	if (i < 4) return 1;
-
-	return 0;
+	puts("[end of lifetime]");
 }
 
-*/
+
+
+
+
+
 
 
 
@@ -428,18 +463,13 @@ static nat determine_expansion_type(nat* array, nat n, nat required_le_width) {
 }
 
 
-/*
-
-static void print_zs(nat graph_count, nat operation_count, nat candidate_count, nat* candidates) {
-	for (nat c = 0; c < candidate_count; c++) {
-		print_graph_z_value(candidates + graph_count * c, operation_count);
-	}
-}
-
-*/
 
 
-static nat search(struct parameters p, nat origin) {
+
+
+
+
+static nat search(const nat origin, struct parameters p, struct search_data* d) {
 
 	nat candidate_count = 0, candidate_capacity = 0;
 	nat* candidates = NULL;
@@ -595,10 +625,7 @@ begin:
 
 
 
-
-
-
-
+	bool is_candidate = false;
 
 	const bool complete = is_complete(graph, p.operation_count);
 	const bool all = uses_all_operations(graph, p.operation_count);
@@ -616,6 +643,7 @@ begin:
 
 		memcpy(candidates + p.graph_count * candidate_count, graph, p.graph_count * sizeof(nat));
 		candidate_count++;
+		is_candidate = true;
 	}
 
 
@@ -623,19 +651,24 @@ begin:
 		clear_screen();
 
 		printf("\n\t");
-		print_graph_z_value(graph, p.operation_count);
+		print_graph_as_z_value(graph, p.graph_count);
 		printf("\n");
 		printf("----> tried [c=%llu] / t=%llu control flow graphs.\n", candidate_count, tried);
 
+
+		printf("is_candidate? = %s\n", 			is_candidate ? "true" : "false");
+		puts("");
 		printf("mcal_index == mcal_length? %s\n", 	mcal_index == p.mcal_length ? "true" : "false");
 		printf("good_expansion? %s\n", 			type == good_expansion ? "true" : "false" );
 		printf("complete? %s\n", 			complete ? "true" : "false");
 		printf("all? %s\n", 				all ? "true" : "false" );
 		printf("er >= req? %s\n", 			er_count >= p.required_er_count ? "true" : "false" );
 		
-		print_graph_as_adj(graph, p.operation_count);
+		print_graph_as_adj(graph, p.graph_count);
 		printf("searching: [origin = %llu, limit = %llu, n = %llu]\n", origin, p.execution_limit, n);
 		print_stack(stack, stack_count);
+
+		print_lifetime(origin, p, graph, 100);
 
 		fflush(stdout);
 		if (p.frame_delay) usleep((unsigned) p.frame_delay);
@@ -701,7 +734,22 @@ backtrack:
 	}
 done:
 
-	// print_zs(p.graph_count, p.operation_count, candidate_count, candidates);
+
+/*
+	for (nat c = 0; c < candidate_count; c++) {
+		print_graph_as_z_value(candidates + p.graph_count * c, p.graph_count);
+		puts("");
+	}
+*/
+
+
+	d->z_list = realloc(d->z_list, sizeof(nat) * (d->z_count + candidate_count) * p.graph_count);
+
+	if (candidate_count * p.graph_count * sizeof(nat)) 
+		memcpy(d->z_list + d->z_count * p.graph_count, candidates, candidate_count * p.graph_count * sizeof(nat));
+
+	d->z_count += candidate_count;
+
 
 	if (p.should_print) printf("tried = %llu\n", tried);
 	if (p.should_print) printf("\n\n[[ candidate_count = %llu ]] \n\n\n", candidate_count);
@@ -709,6 +757,7 @@ done:
 	free(stack);
 	free(candidates);
 	free(graph);
+
 
 	return candidate_count;
 }
@@ -757,9 +806,7 @@ static void print_combinations(nat* tried, nat tried_count, const nat D) {
 
 
 
-
-
-static nat any_space_search(struct parameters p) {
+static nat any_search(struct parameters p, struct search_data* d) {
 	
 	const nat D = p.duplication_count;
 	const nat n = D - 1;
@@ -772,12 +819,13 @@ static nat any_space_search(struct parameters p) {
 
 	nat entry = 0;
 
-
-	if (D == 0) goto execute;
-	
 	nat* indicies = calloc(D, sizeof(nat));
 	nat* stack_operations = calloc(D, sizeof(nat));
 
+
+	if (D == 0) goto execute;
+	
+	
 loop:; 	nat pointer = 0;
 
 	for (nat op = 0; op < D; op++) stack_operations[op] = operations[indicies[op]];
@@ -817,11 +865,11 @@ done:;
 
 			if (p.graph[4 * origin] == 3) {
 
-				total += search(p, origin);
+				total += search(origin, p, d);
 
 				if (p.should_print) {
 					printf("[origin = %llu]\n", origin);
-					print_graph_as_adj(p.graph, p.operation_count);
+					print_graph_as_adj(p.graph, p.graph_count);
 					print_nats(p.mcal, p.mcal_length); 
 					puts("\n");
 
@@ -837,150 +885,12 @@ done:;
 	free(tried);
 	free(indicies);
 	free(stack_operations);
+
 	return total;
 
 }
 
-static bool have_tried(nat tried_count, nat* tried, nat op1, nat op2, nat D) {      // legacy:   delete me
 
-	if (D != 2) abort();
-
-	for (nat i = 0; i < tried_count; i++) {
-
-		if (	tried[D * i + 0] == op1 and tried[D * i + 1] == op2    or 
-			tried[D * i + 0] == op2 and tried[D * i + 1] == op1
-		) return true;
-	}
-	return false;
-}
-
-
-static nat two_space_search(struct parameters p) {
-	
-	const nat D = p.duplication_count;
-
-	nat tried_count = 0;
-	nat* tried = calloc(unique_count * unique_count * p.duplication_count, sizeof(nat));
-
-	for (nat i1 = 0; i1 < unique_count; i1++) {
-		for (nat i2 = 0; i2 < unique_count; i2++) {
-			
-			const nat op1 = operations[i1];
-			const nat op2 = operations[i2];
-
-			if (have_tried(tried_count, tried, op1, op2, D)) continue;
-
-			tried[2 * tried_count + 0] = op1;
-			tried[2 * tried_count + 1] = op2;
-			tried_count++;
-		}
-	}
-
-	if (p.should_print) {
-		print_combinations(tried, tried_count, p.duplication_count);
-		debug_pause();
-	}
-	
-	nat total = 0;
-	
-	for (nat i = 0; i < tried_count; i++) {
-
-		p.graph[20] = tried[2 * i + 0];
-		p.graph[24] = tried[2 * i + 1];
-
-		for (nat origin = 0; origin < p.operation_count; origin++) {
-
-			if (p.graph[4 * origin] == 3) {
-
-				total += search(p, origin);
-
-
-				if (p.should_print) {
-					printf("[origin = %llu]\n", origin);
-					print_graph_as_adj(p.graph, p.operation_count);
-					print_nats(p.mcal, p.mcal_length); 
-					puts("\n");
-
-					if (p.combination_delay == 1) debug_pause();
-					if (p.combination_delay) usleep((unsigned) p.combination_delay);
-				}
-
-			}
-		}
-	}
-
-	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
-
-	free(tried);
-	
-	return total;
-}
-
-
-
-
-static nat one_space_search(struct parameters p) {
-	
-
-	const nat D = p.duplication_count;
-
-	nat tried_count = 0;
-	nat* tried = calloc(unique_count * unique_count * D, sizeof(nat));
-
-	for (nat i1 = 0; i1 < unique_count; i1++) {
-		tried[D * tried_count] = operations[i1];
-		tried_count++;
-	}
-
-	if (p.should_print)  {
-		print_combinations(tried, tried_count, D);
-		debug_pause();
-	}
-	
-	nat total = 0;
-	
-	for (nat i = 0; i < tried_count; i++) {
-
-		p.graph[20] = tried[D * i];
-
-		for (nat origin = 0; origin < p.operation_count; origin++) {
-
-			if (p.graph[4 * origin] == 3) {
-
-				total += search(p, origin);
-
-				if (p.should_print) {
-					printf("[origin = %llu]\n", origin);
-					print_graph_as_adj(p.graph, p.operation_count);
-					print_nats(p.mcal, p.mcal_length); 
-					puts("\n");
-
-					if (p.combination_delay == 1) debug_pause();
-					if (p.combination_delay) usleep( (unsigned) p.combination_delay); 
-				}
-			}
-		}
-	}
-
-	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
-
-	free(tried);
-	return total;
-}
-
-
-static void zero_space_search(struct parameters p) {
-
-	nat total = search(p, 1);
-
-	if (p.should_print) {
-		printf("[origin = %llu]\n", 1ULL);
-		print_graph_as_adj(p.graph, p.operation_count);
-		print_nats(p.mcal, p.mcal_length); 
-		puts("\n");
-		printf("\n\t[total candidates = %llu]\n\n\n", total);
-	}
-}
 
 
 
@@ -994,8 +904,14 @@ printf("available commands:\n"
 	"\t- dump(d) : dump the current graph as a hex string.\n"
 	"\t- list(ls) : display the current partial graph as an adjacency list. \n"	
 "\n"
-	"\t- edit(e) : edit the parameters. \n"
-	"\t- print(p)  : print the parameters. \n"
+	"\t- edit(e) <parameter_name> : edit a parameter value. use print all to see the available parameters.\n"
+"\n"
+	"\t- print(p) all : print all parameters. \n"
+	"\t- print(p) graph : print the graph as a human readable adj. representation. \n"
+	"\t- print(p) lifetime <instruction_count> :  print the lifetime for the current graph, with a supplied ins count. \n"
+	"\t- print(p) list : print the current list of z values, one per line. \n"
+	"\t- print(p) z : print the current graph as a z value. \n"
+
 "\n"	
 	"\t- search2(2) : search over all possible extensions of the current partial graph in 2-space.\n"
 	"\t- search1(1) : search over all possible extensions of the current partial graph in 1-space.\n"
@@ -1030,9 +946,9 @@ static void parse_command(const char* arguments[8], char* buffer) {
 }
 
 
-static void print_parameter(const char** command, struct parameters p) {
+static void print(const char** command, struct parameters p, struct search_data d) {
 
-	if (not strcmp(command[1], "all")) {
+	if (is(command[1], "all", "")) {
 		
 		printf(
 
@@ -1070,42 +986,100 @@ static void print_parameter(const char** command, struct parameters p) {
 		print_nats(p.mcal, p.mcal_length); 
 		puts("\n");
 
-		print_graph_as_adj(p.graph, p.operation_count);
+		print_graph_as_z_value(p.graph, p.graph_count);
+		puts("");
+		print_graph_as_adj(p.graph, p.graph_count);
 		puts("");
 
+
+	} else if (is(command[1], "lifetime", "lt")) {
+
+		const nat count = (nat) atoi(command[2]);
+		if (not count) { 
+			printf("error: bad instruction count supplied.\n");
+			return;
+		}
+
+		printf("info: printing the lifetime for the current graph...\n");
+		print_lifetime(1, p, p.graph, count);
+
+
+	} else if (is(command[1], "z_lifetimes", "zl")) {
+
+		const nat instruction_count = (nat) atoi(command[2]);
+		if (not instruction_count) { 
+			printf("error: bad instruction count supplied.\n");
+			return;
+		}
+
+		printf("info: printing the lifetimes for the z values in the z_list...\n");
+
+
+		for (nat z = 0; z < d.z_count; z++) {
+
+			memcpy(p.graph, d.z_list + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+			for (nat origin = 0; origin < p.operation_count; origin++) {
+
+				if (p.graph[4 * origin] == 3) {
+					print_lifetime(origin, p, p.graph, instruction_count);
+					printf("[origin = %llu]\n", origin);
+					print_graph_as_adj(p.graph, p.graph_count);
+					printf("z=%llu / zcount=%llu   :   ", z, d.z_count);
+					print_graph_as_z_value(p.graph, p.graph_count);
+					debug_pause();
+				}
+			}
+		}
+	} 
+
+	else if (is(command[1], "graph", "g")) print_graph_as_adj(p.graph, p.graph_count);
+	else if (is(command[1], "z", "z")) print_graph_as_z_value(p.graph, p.graph_count);
+
+	else if (is(command[1], "list", "l")) print_z_list(d.z_count, d.z_list, p.graph_count);
+
+
+	else {
+		printf("unknown object to print: %s\n", command[1]);
+		return;
 	}
 
-
-	// ...
 	
 }
 
-static void edit_parameter(const char** command, struct parameters* p) {
+static void edit_parameter(const char** command, struct parameters* p, struct search_data* d) {
 	// format:    "edit <PARAMETER-NAME> <VALUE>"
 
-	if (not strcmp(command[1], "FEA")) p->FEA = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "execution_limit")) p->execution_limit = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "required_er_count")) p->required_er_count = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "required_le_width")) p->required_le_width = (nat) atoi(command[2]); 	
+	     if (is(command[1], "FEA", "fea")) 			p->FEA = (nat) atoi(command[2]); 
+	else if (is(command[1], "execution_limit", "el")) 	p->execution_limit = (nat) atoi(command[2]); 
+	else if (is(command[1], "required_er_count", "rec")) 	p->required_er_count = (nat) atoi(command[2]); 
+	else if (is(command[1], "required_le_width", "rlw")) 	p->required_le_width = (nat) atoi(command[2]); 	
 
-	else if (not strcmp(command[1], "window_width")) p->window_width = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "scale")) p->scale = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "scratch")) p->scratch = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "step")) p->step = (nat) atoi(command[2]); 
+	else if (is(command[1], "window_width", "ww")) 		p->window_width = (nat) atoi(command[2]); 
+	else if (is(command[1], "scale", "scale")) 		p->scale = (nat) atoi(command[2]); 
+	else if (is(command[1], "scratch", "scratch")) 		p->scratch = (nat) atoi(command[2]); 
+	else if (is(command[1], "step", "step")) 		p->step = (nat) atoi(command[2]); 
 
-	else if (not strcmp(command[1], "should_print")) p->should_print = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "display_rate")) p->display_rate = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "combination_delay")) p->combination_delay = (nat) atoi(command[2]); 
-	else if (not strcmp(command[1], "frame_delay")) p->frame_delay = (nat) atoi(command[2]); 
+	else if (is(command[1], "should_print", "sp")) 		p->should_print = (nat) atoi(command[2]); 
+	else if (is(command[1], "display_rate", "dr")) 		p->display_rate = (nat) atoi(command[2]); 
+	else if (is(command[1], "combination_delay", "cd")) 	p->combination_delay = (nat) atoi(command[2]); 
+	else if (is(command[1], "frame_delay", "fd")) 		p->frame_delay = (nat) atoi(command[2]); 
 
-	else if (not strcmp(command[1], "mcal_length")) p->mcal_length = (nat) atoi(command[2]); 
+	else if (is(command[1], "mcal_length", "ml")) 		p->mcal_length = (nat) atoi(command[2]); 
 
-	else if (not strcmp(command[1], "duplication_count")) {
+	else if (is(command[1], "duplication_count", "d")) {
 		p->duplication_count = (nat) atoi(command[2]); 
 		p->operation_count = 5 + p->duplication_count;
 		p->graph_count = 4 * (5 + p->duplication_count);
+	}
+	
+	else if (is(command[1], "list", "l")) {
+		free(d->z_list);
+		d->z_list = NULL;
+		d->z_count = 0;
+	}
 
-	} else printf("error: unknown parameter: %s\n", command[1]);
+	else printf("error: unknown parameter: %s\n", command[1]);
 }
 
 
@@ -1136,7 +1110,10 @@ static void plot_el(struct parameters p) {
 		p.execution_limit = el;
 		p.should_print = false;
 
-		const nat total = one_space_search(p);
+
+		struct search_data d = {0};
+		const nat total = any_search(p, &d);
+		
 		const double fraction =  ((double)total / (double) p.scale);
 		const nat space_count = (nat)(fraction * (double) p.window_width);
 		printf("%10llu : ", total);
@@ -1171,7 +1148,9 @@ static void plot_fea(struct parameters p) {
 		p.FEA = fea;
 		p.should_print = false;
 
-		const nat total = one_space_search(p);
+		struct search_data d = {0};
+		const nat total = any_search(p, &d);
+
 		const double fraction =  ((double)total / (double) p.scale);
 		const nat space_count = (nat)(fraction * (double) p.window_width);
 		printf("%10llu : ", total);
@@ -1190,6 +1169,11 @@ static void plot_fea(struct parameters p) {
 
 
 int main() {
+
+	static struct search_data d = {
+		.z_list = NULL,
+		.z_count = 0,
+	};
 
 	static struct parameters p = {
 
@@ -1242,32 +1226,33 @@ loop: 	printf(":: ");
 	const char* command[8] = {0};
 	parse_command(command, buffer);
 
-	if (is(command, "", "")) {}
-	else if (is(command, "quit", "q")) goto done;
+	if (is(*command, "", "")) {}
+	else if (is(*command, "quit", "q")) goto done;
 
-	else if (is(command, "debug_command", "dc")) {
+	else if (is(*command, "debug_command", "dc")) {
 		printf("\n{ \n\t");
 		for (nat a = 0; a < 8; a++) {
 			printf("[%llu]:\"%s\", ", a, command[a]);
 		}
 		printf("\n}\n\n");
 	}
-	else if (is(command, "help", "?")) print_help_menu();
-	else if (is(command, "clear", "o")) clear_screen();
-	else if (is(command, "datetime", "dt")) print_datetime();
-	else if (is(command, "dump", "d")) print_graph_z_value(p.graph, p.operation_count);
-	else if (is(command, "list", "ls"))  print_graph_as_adj(p.graph, p.operation_count);
+	else if (is(*command, "help", "?")) print_help_menu();
+	else if (is(*command, "clear", "o")) clear_screen();
+	else if (is(*command, "datetime", "dt")) print_datetime();
 
-	else if (is(command, "print", "p")) print_parameter(command, p);
-	else if (is(command, "edit", "e")) edit_parameter(command, &p);
+	else if (is(*command, "init", "i")) init_graph_from_string(command[1], p.graph, p.graph_count);
 
-	else if (is(command, "search2", "2")) two_space_search(p);
-	else if (is(command, "search1", "1")) one_space_search(p);
-	else if (is(command, "search0", "0")) zero_space_search(p);
-	else if (is(command, "searchA", "A")) any_space_search(p);
+	else if (is(*command, "print", "p")) print(command, p, d);
+	else if (is(*command, "edit", "e")) edit_parameter(command, &p, &d);
 
-	else if (is(command, "plot_el", "pel")) plot_el(p);
-	else if (is(command, "plot_fea", "pfea")) plot_fea(p);
+	// else if (is(*command, "search2", "2")) two_space_search(p);
+	// else if (is(*command, "search1", "1")) one_space_search(p);
+	// else if (is(*command, "search0", "0")) zero_space_search(p);
+
+	else if (is(*command, "search", "s")) any_search(p, &d);
+
+	else if (is(*command, "plot_el", "pel")) plot_el(p);
+	else if (is(*command, "plot_fea", "pfea")) plot_fea(p);
 
 	else printf("error: unknown command.\n");
 
@@ -1319,7 +1304,207 @@ loop: 	printf(":: ");
 
 
 
+/*
 
+	note: the total search space size for     1-space           (using our current pruning metrics, 2210156.160808)     is 
+
+
+		3318
+
+
+				so over 3000 candidates... 
+
+
+
+
+
+
+
+
+
+
+
+
+
+2210156.161221
+
+	so looking  through the current z list for the 3318   1space             i see a couple of dumb stuff that i want to eliminate:
+
+
+
+
+
+
+
+
+----------------------------- Generative Search (GS) :  ( Simple easily-checkable  Pruning Metrics (PM)) -----------------------------------
+
+
+			1.  graphs sometimes ER at the same spot everytime,   creating a perfect vertical line. 
+												we should be catching these.
+
+
+							
+				note: we also need to look at if it is oscilating betwween two ER spots over and over again.
+
+
+		
+	
+
+			2. graphs sometimes go all the way to *n    (the fea)    after only  4 or 5 CLT timesteps...     
+												we should be catching these too. 
+
+
+
+			3.   a  "constantly making expansion progress"-check.  graphs should never STOP expanding the LE.
+
+					we can test this, by seeing the XW (expansion width)   after only  1000 ins's
+
+						but then,  later, looking at el = 1000000000   ins,    and seeing what the XW is at that point, 
+
+									if its the same,   we know that the graph went into 
+												an infinite look with 2/6/3
+
+
+											so yeah, we want to prune all the graphs 
+												that get into such infinite loops.
+
+
+
+
+
+
+----------------------------- Iterative Pruning (IP) :   (more complicated Pruning Metrics (PM)) -----------------------------------------
+
+		
+
+					(of course we know already that we want to code up     the multi-FEA  PM   for IP!)
+
+
+
+
+
+		*	4. Horizontal line / horizontal pattern checking:    ....asht.asht.ahst.tha.tahs
+
+
+
+		***	5. Vertical line (with drift/precession accounting-for) checking:        ..th.ahst.hsat.hsat.hta.ahts
+
+
+
+	
+
+				(both of these need to be done at the 1000000-th instruction or after   ,  not eariler.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+	so like           alll the graphs that we find using generative search                should not segfault at all 
+
+
+			when we go out to instruction 100000000             they should be totally fine in terms of the FEA constraint 
+
+				
+
+
+		and so 
+
+
+
+					we literally NEED   to look over a large  FEA value,  supplied to    search()
+
+							
+
+							and an EL   of    100000000000           some large number 
+
+
+
+
+
+								
+
+
+
+					theres literally no subsitute 
+
+
+						
+
+
+
+								and then in IP-stage (iterative pruning)   we need to be doing the multi-fea pruning metric
+
+								so thaht we catch all the graphs which segfault due to the fea being different than what it was during GS-stage (generative search)
+
+
+
+
+			
+
+
+
+	so in full, we have:
+
+
+               ---------------- stages --------------------
+
+
+
+
+				0. determine parameters			
+
+
+				1. GS-stage   : generative search
+
+
+				2.  IP-stage   :  iterative pruning 
+
+
+				3.   Viz    :  lifetime visualization
+
+
+
+				thats it i think 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
 
 
 
@@ -1803,7 +1988,178 @@ plotting EL v.s. candcount : [maxl_el = 10000000, fea = 300]
 			tried[2 * i + 0] == op2 and tried[2 * i + 1] == op1
 
 		) return false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static nat two_space_search(struct parameters p) {
+	
+	const nat D = p.duplication_count;
+
+	nat tried_count = 0;
+	nat* tried = calloc(unique_count * unique_count * p.duplication_count, sizeof(nat));
+
+	for (nat i1 = 0; i1 < unique_count; i1++) {
+		for (nat i2 = 0; i2 < unique_count; i2++) {
+			
+			const nat op1 = operations[i1];
+			const nat op2 = operations[i2];
+
+			if (have_tried(tried_count, tried, op1, op2, D)) continue;
+
+			tried[2 * tried_count + 0] = op1;
+			tried[2 * tried_count + 1] = op2;
+			tried_count++;
+		}
+	}
+
+	if (p.should_print) {
+		print_combinations(tried, tried_count, p.duplication_count);
+		debug_pause();
+	}
+	
+	nat total = 0;
+	
+	for (nat i = 0; i < tried_count; i++) {
+
+		p.graph[20] = tried[2 * i + 0];
+		p.graph[24] = tried[2 * i + 1];
+
+		for (nat origin = 0; origin < p.operation_count; origin++) {
+
+			if (p.graph[4 * origin] == 3) {
+
+				total += search(p, origin);
+
+
+				if (p.should_print) {
+					printf("[origin = %llu]\n", origin);
+					print_graph_as_adj(p.graph, p.graph_count);
+					print_nats(p.mcal, p.mcal_length); 
+					puts("\n");
+
+					if (p.combination_delay == 1) debug_pause();
+					if (p.combination_delay) usleep((unsigned) p.combination_delay);
+				}
+
+			}
+		}
+	}
+
+	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
+
+	free(tried);
+	
+	return total;
+}
+
+
+
+
+static nat one_space_search(struct parameters p) {
+	
+
+	const nat D = p.duplication_count;
+
+	nat tried_count = 0;
+	nat* tried = calloc(unique_count * unique_count * D, sizeof(nat));
+
+	for (nat i1 = 0; i1 < unique_count; i1++) {
+		tried[D * tried_count] = operations[i1];
+		tried_count++;
+	}
+
+	if (p.should_print)  {
+		print_combinations(tried, tried_count, D);
+		debug_pause();
+	}
+	
+	nat total = 0;
+	
+	for (nat i = 0; i < tried_count; i++) {
+
+		p.graph[20] = tried[D * i];
+
+		for (nat origin = 0; origin < p.operation_count; origin++) {
+
+			if (p.graph[4 * origin] == 3) {
+
+				total += search(p, origin);
+
+				if (p.should_print) {
+					printf("[origin = %llu]\n", origin);
+					print_graph_as_adj(p.graph, p.graph_count);
+					print_nats(p.mcal, p.mcal_length); 
+					puts("\n");
+
+					if (p.combination_delay == 1) debug_pause();
+					if (p.combination_delay) usleep( (unsigned) p.combination_delay); 
+				}
+			}
+		}
+	}
+
+	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
+
+	free(tried);
+	return total;
+}
+
+
+static void zero_space_search(struct parameters p) {
+
+	nat total = search(p, 1);
+
+	if (p.should_print) {
+		printf("[origin = %llu]\n", 1ULL);
+		print_graph_as_adj(p.graph, p.graph_count);
+		print_nats(p.mcal, p.mcal_length); 
+		puts("\n");
+		printf("\n\t[total candidates = %llu]\n\n\n", total);
+	}
+}
+
+
+
+
+
+
+static bool have_tried(nat tried_count, nat* tried, nat op1, nat op2, nat D) {      // legacy:   delete me
+
+	if (D != 2) abort();
+
+	for (nat i = 0; i < tried_count; i++) {
+
+		if (	tried[D * i + 0] == op1 and tried[D * i + 1] == op2    or 
+			tried[D * i + 0] == op2 and tried[D * i + 1] == op1
+		) return true;
+	}
+	return false;
+}
+
+
+
+
+
+
 	*/
+
+
+
 
 
 
