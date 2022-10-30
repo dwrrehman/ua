@@ -220,24 +220,83 @@ int main() {
 
 static void NF(const nat n, const nat m) {
 
-	nat pointer;
+	nat pointer = 0;
 	nat* array = calloc(n + 1, sizeof(nat));
 
 
 
 
-_0: 	pointer = 0;                                   // 5
-_1:	if (array[pointer] < m) goto _2;               // B
-	array[pointer] = 0;                            // 7
-	if (pointer == n) goto _3;                     // 9
-	pointer++; goto _1;                            // 1
-_2:	array[pointer]++; goto _0;                     // 3
-_3:	exit(0);                                       // 0
+_B9:	if (array[pointer] < m) goto _3;                // B
+	if (pointer == n) exit(0);                      // 9
+	goto _7;
+
+
+
+_7:	array[pointer] = 0;                             // 7
+	pointer++; goto _B9;                            // 1
+
+
+
+_3:	array[pointer]++;                               // 3
+ 	pointer = 0; goto _B9;                          // 5
 
 
 
 
 
+
+
+
+
+
+
+
+
+2210241.021342
+
+
+		turns out you can actually switch the 9 and 7 instructions,    and you can get the nf algorithm to drastically simplify to simply be 
+
+					a rank 1 control graph, which looks similar to the R,   except its still finite, and it doesnt have the comparator,   and it puts 7 with 1, in a loop,       when   *i >= m,     and it puts   5 with 3,  (which is present still in the xfg!)
+
+										when  *i < m
+
+
+
+
+
+					very very very very very very very interesitng!!!
+
+
+							i really really like this graph. 
+
+								i will keep it in mind, strongly, when going forward with the xfg stuff 
+
+	
+										yay
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
 
 
 
@@ -384,6 +443,30 @@ _0: 	pointer = 0;                                   // 5
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+_B9:	if (array[pointer] < m) goto _3;                // B
+	if (pointer == n) exit(0);                      // 9
+	goto _7;
+
+
+
+_7:	array[pointer] = 0;                             // 7
+	pointer++; goto _B9;                            // 1
+
+
+
+_3:	array[pointer]++;                               // 3
+ 	pointer = 0; goto _B9;                          // 5
 
 
 

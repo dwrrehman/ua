@@ -16,14 +16,19 @@
 #include <errno.h>
 
 
+#define reset "\x1B[0m"
+
+#define white  yellow
+
 #define red   "\x1B[31m"
 #define green   "\x1B[32m"
-// #define yellow   "\x1B[33m"
-// #define blue   "\x1B[34m"
+#define blue   "\x1B[34m"
+#define yellow   "\x1B[33m"
+
 // #define magenta   "\x1B[35m"
 // #define cyan   "\x1B[36m"
 
-#define reset "\x1B[0m"
+
 
 
 typedef unsigned long long nat;
@@ -42,6 +47,36 @@ x	2. merge the 1space, 2space, and 0space functions, to all be the same function
 
 
 -----------------------
+
+
+2210241.004313: iter
+
+
+x		1. add more total counts 
+
+		2. fix viz
+
+		3. plot el and fea 
+
+		4. ip   serialization of z list 
+		
+		5. nf
+	
+
+	
+
+
+
+------------------------
+
+
+
+
+
+
+
+
+iter:       last uaj
 
 
 	1. viz 0 & 1
@@ -233,6 +268,25 @@ static void print_graph_as_z_value(nat* graph, nat graph_count) {
 	printf("\n");
 }
 
+
+
+static void print_graph_as_z_value_to_file(FILE* file, nat* graph, nat graph_count) {
+		
+	for (nat i = 0; i < graph_count; i += 4) {
+		const nat op = graph[i + 0];
+		const nat l = graph[i + 1];
+		const nat g = graph[i + 2];
+		const nat e = graph[i + 3];
+
+		fprintf(file, "%llu", op);
+		if (l != unknown) fprintf(file, "%llu", l); else fprintf(file, "_");
+		if (g != unknown) fprintf(file, "%llu", g); else fprintf(file, "_");
+		if (e != unknown) fprintf(file, "%llu", e); else fprintf(file, "_");
+	}
+	fprintf(file, "\n");
+}
+
+
 static void print_z_list(nat z_count, nat* z_list, nat graph_count) {
 	for (nat z = 0; z < z_count; z++) {
 		print_graph_as_z_value(z_list + graph_count * z, graph_count);
@@ -329,17 +383,36 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 			pointer++;
 		}
 
-		else if (op == 5) {
-			
+		else if (op == 5) {			
 	
 			for (nat i = 0; i < max_array_size; i++) {
 
-				if (i == pointer) printf(green);
-				if (modes[i]) printf("## ");    	// print IA's as a dot.
-				if (i == pointer) printf(reset);
 
-				else { printf("   "); }
+
 				if (not array[i]) break; 		// LE
+
+
+				if (modes[i]) 
+
+					{
+
+
+						printf("%s", (i == pointer ?  green : white));
+						printf("██" reset);
+
+
+							// (print IA's as a different-colored cell..?)
+
+
+
+					}
+
+
+
+				else printf(blue "██" reset);
+
+
+				
 			}
 			puts("");
 
@@ -492,24 +565,43 @@ static nat search(const nat origin, struct parameters p, struct search_data* d) 
 	nat mcal_index = 0;
 	nat last_mcal_op = 0;
 	nat er_count = 0;
+
 	nat tried = 0;
+	nat backtracked = 0;
+	nat total = 0;
+
+	nat BT_fea = 0;
+	nat BT_ns0 = 0;
+	nat BT_pco = 0;
+	nat BT_zr5 = 0;
+	nat BT_zr6 = 0;
+	nat BT_ndi = 0;
+	nat BT_mcal = 0;
+
+
 	nat executed_count = 0;	
 
+
+
+
+
 begin:
+	total++;
+
 	while (executed_count < p.execution_limit) {
 
 		const nat I = ip * 4;
 		const nat op = graph[I];
 
 		if (op == 1) {
-			if (pointer == n) goto backtrack;        // FEA
-			if (not array[pointer]) goto backtrack;  // No-Skip-Over-Zero-Modnat
+			if (pointer == n) { BT_fea++; goto backtrack; }        // FEA
+			if (not array[pointer]) { BT_ns0++; goto backtrack; }  // No-Skip-Over-Zero-Modnat           (NS0)
 			pointer++;
 		}
 
 		else if (op == 5) {
-			if (last_mcal_op != 3) goto backtrack;     // PCO
-			if (not pointer) goto backtrack;           // ZR-5
+			if (last_mcal_op != 3) { BT_pco++; goto backtrack; }     // PCO
+			if (not pointer) { BT_zr5++; goto backtrack; }          // ZR-5
 			pointer = 0;
 			er_count++;
 		}
@@ -519,12 +611,12 @@ begin:
 		}
 
 		else if (op == 6) {  
-			if (not array[n]) goto backtrack;       //  ZR-6
+			if (not array[n]) { BT_zr6++; goto backtrack; }      //  ZR-6
 			array[n] = 0;   
 		}
 
 		else if (op == 3) {
-			if (last_mcal_op == 3) goto backtrack;    // NDI
+			if (last_mcal_op == 3) { BT_ndi++; goto backtrack; }    // NDI
 			array[pointer]++;
 		}
 
@@ -537,7 +629,7 @@ begin:
 
 		if (op == 3 or op == 1 or op == 5) {
 			if (mcal_index < p.mcal_length) {
-				if (op != p.mcal[mcal_index]) goto backtrack;
+				if (op != p.mcal[mcal_index]) { BT_mcal++; goto backtrack; }
 				mcal_index++;
 			}
 			last_mcal_op = op;
@@ -676,6 +768,8 @@ begin:
 
 backtrack:
 
+	backtracked++;
+
 
 	if (not stack_count) {
 			// NOTE:  execution_limit must be zero!!!
@@ -751,13 +845,23 @@ done:
 	d->z_count += candidate_count;
 
 
+	if (p.should_print) printf("total = %llu\n", total);
+	if (p.should_print) printf("backtracked = %llu\n", backtracked);
 	if (p.should_print) printf("tried = %llu\n", tried);
 	if (p.should_print) printf("\n\n[[ candidate_count = %llu ]] \n\n\n", candidate_count);
+
+	if (p.should_print) 
+			printf(
+				" { \n"
+				"   ns0 = %llu, zr5 = %llu, zr6 = %llu \n"
+				"   pco = %llu, fea = %llu, ndi = %llu \n" 
+				"   mcal = %llu \n"
+				" }\n\n",  BT_ns0, BT_zr5, BT_zr6, BT_pco, BT_fea, BT_ndi, BT_mcal
+			);
 
 	free(stack);
 	free(candidates);
 	free(graph);
-
 
 	return candidate_count;
 }
@@ -905,13 +1009,13 @@ printf("available commands:\n"
 	"\t- list(ls) : display the current partial graph as an adjacency list. \n"	
 "\n"
 	"\t- edit(e) <parameter_name> : edit a parameter value. use print all to see the available parameters.\n"
+	"\t- write_z_list(w) <new_zlist_file_name> : write the current z list to a file. \n"
 "\n"
 	"\t- print(p) all : print all parameters. \n"
 	"\t- print(p) graph : print the graph as a human readable adj. representation. \n"
 	"\t- print(p) lifetime <instruction_count> :  print the lifetime for the current graph, with a supplied ins count. \n"
 	"\t- print(p) list : print the current list of z values, one per line. \n"
 	"\t- print(p) z : print the current graph as a z value. \n"
-
 "\n"	
 	"\t- search2(2) : search over all possible extensions of the current partial graph in 2-space.\n"
 	"\t- search1(1) : search over all possible extensions of the current partial graph in 1-space.\n"
@@ -1047,6 +1151,49 @@ static void print(const char** command, struct parameters p, struct search_data 
 	
 }
 
+
+
+
+
+
+static void initialize_z_list_from_file(nat** z_list, nat* z_count, const char* file_name, nat graph_count) {
+
+
+	char line[2048] = {0};
+
+	FILE* file = fopen(file_name, "r");
+
+	if (not file) { perror("fopen"); return; }
+
+	while (fgets(line, sizeof line, file)) {
+
+		// printf("reading %s...\n", line);
+
+
+		*z_list = realloc(*z_list, sizeof(nat) * (*z_count + 1) * graph_count);
+		init_graph_from_string(line, (*z_list) + (*z_count) * graph_count, graph_count);
+		++*z_count;
+	}
+
+	fclose(file);
+}
+
+
+
+
+
+static void print_z_list_to_file(nat* z_list, nat z_count, const char* file_name, nat graph_count) {
+
+	FILE* file = fopen(file_name, "w+");
+	if (not file) { perror("fopen"); return; }
+	for (nat i = 0; i < z_count; i++) 
+		print_graph_as_z_value_to_file(file, z_list + i * graph_count, graph_count);
+	fclose(file);
+}
+
+
+
+
 static void edit_parameter(const char** command, struct parameters* p, struct search_data* d) {
 	// format:    "edit <PARAMETER-NAME> <VALUE>"
 
@@ -1073,10 +1220,19 @@ static void edit_parameter(const char** command, struct parameters* p, struct se
 		p->graph_count = 4 * (5 + p->duplication_count);
 	}
 	
-	else if (is(command[1], "list", "l")) {
+	else if (is(command[1], "empty_list", "empty_list")) {
 		free(d->z_list);
 		d->z_list = NULL;
 		d->z_count = 0;
+	}
+
+
+	else if (is(command[1], "zlist", "zl")) {
+		free(d->z_list);
+		d->z_list = NULL;
+		d->z_count = 0;
+
+		initialize_z_list_from_file(&d->z_list, &d->z_count, command[2], p->graph_count);
 	}
 
 	else printf("error: unknown parameter: %s\n", command[1]);
@@ -1244,6 +1400,7 @@ loop: 	printf(":: ");
 
 	else if (is(*command, "print", "p")) print(command, p, d);
 	else if (is(*command, "edit", "e")) edit_parameter(command, &p, &d);
+	else if (is(*command, "write_z_list", "w")) print_z_list_to_file(d.z_list, d.z_count, command[1], p.graph_count);
 
 	// else if (is(*command, "search2", "2")) two_space_search(p);
 	// else if (is(*command, "search1", "1")) one_space_search(p);
@@ -1305,6 +1462,271 @@ loop: 	printf(":: ");
 
 
 /*
+
+
+
+
+
+
+2210241.010958
+
+
+	so looking at the output of   doing a quick zero space search:
+
+
+	
+	:: p 
+printing all parameters values:
+	
+	FEA = 1000
+	execution_limit = 10000000
+	required_er_count = 6
+	required_le_width = 5
+	
+	window_width = 100
+	scale = 7000
+	scratch = 0
+	step = 1
+	
+	should_print = 1
+	display_rate = 15
+	combination_delay = 1
+	frame_delay = 0
+	
+	mcal_length = 6
+	
+	duplication_count = 0
+	operation_count = 5
+	graph_count = 20
+	
+	mcal = (6)[ 3 1 3 5 3 1 ]
+
+123_30__20__61__5___
+
+graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3,  ])
+
+	#4: ins(.op = 3, .lge = [ 0,  ,  ])
+
+	#8: ins(.op = 2, .lge = [ 0,  ,  ])
+
+	#12: ins(.op = 6, .lge = [ 1,  ,  ])
+
+	#16: ins(.op = 5, .lge = [  ,  ,  ])
+
+}
+
+		
+:: s
+total = 101
+backtracked = 136
+tried = 37
+
+
+[[ candidate_count = 9 ]] 
+
+
+ { 
+   ns0 = 6, zr5 = 20, zr6 = 0 
+   pco = 7, fea = 7, ndi = 22 
+   mcal = 2 
+ }
+
+[origin = 1]
+graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3,  ])
+
+	#4: ins(.op = 3, .lge = [ 0,  ,  ])
+
+	#8: ins(.op = 2, .lge = [ 0,  ,  ])
+
+	#12: ins(.op = 6, .lge = [ 1,  ,  ])
+
+	#16: ins(.op = 5, .lge = [  ,  ,  ])
+
+}
+
+(6)[ 3 1 3 5 3 1 ]
+
+
+
+
+
+
+		so as you can see,   
+
+
+	:: s
+total = 101
+backtracked = 136
+tried = 37
+
+
+[[ candidate_count = 9 ]] 
+
+
+ { 
+   ns0 = 6, zr5 = 20, zr6 = 0 
+   pco = 7, fea = 7, ndi = 22 
+   mcal = 2 
+ }
+
+
+
+
+
+
+
+			theres only really 101 graphs total, in 0 space,     that can be found using execution.  
+
+
+				ignore the "backtracked" variable.
+
+				
+
+			the total, minus the tried amount,  should be equal the number of graphs that we backtraced on. we are keeping track now of all possible ways that we can backtrack on a graph, and how many times we actually utiltize that constraint for deleting stupid graphs. 
+
+
+
+
+
+				
+ 
+			(101 - 37) - 6 - 20 - 0 - 7  - 7 - 22 - 2               =     0         which means its working properly, lol.
+
+
+		
+
+			
+
+
+		beacuse i gave a EL (execution limit)     of like   10 million  or so 
+
+
+				and a decent FEA,       i think this is the official correct 0space   search result, 
+
+					and so, if we dont find anytihng in the 9 candidates, then we know its definitely not in 0space. 
+
+						(which it probably isnt. 0space is probably not enough to make the xfg.)
+
+
+
+	heres the z values:
+
+
+
+		12323004201061_15223
+		12323004201161_15023
+		12323004201161_15223
+		12323004201161_25023
+		12323004201161_25223
+		12323004201361_15023
+		12323004201361_25023
+		12323004201361_15223
+		12323004201361_25223
+
+
+
+
+
+
+
+
+
+
+
+
+found a couple  that might be cool,
+
+
+	12323004201361_15223
+
+
+and 
+
+
+	12323004201361_25223
+
+
+
+ill loook at more instructions for both of them 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	note: the total search space size for     1-space           (using our current pruning metrics, 2210156.160808)     is 
 
@@ -2157,6 +2579,8 @@ static bool have_tried(nat tried_count, nat* tried, nat op1, nat op2, nat D) {  
 
 
 	*/
+
+
 
 
 
