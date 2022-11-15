@@ -95,6 +95,46 @@ iter:       last uaj
 
 
 
+
+
+2211152.135947:   implementing a couple of things:
+
+	i have a couple of things that i want to implement in the utility real quick:
+
+		
+		x	1. i want to add a script system.    read a file, interpret the commands. yes. 
+
+
+			2. i want to make a function to perform a transfer between   z_list's.       .out  .in,    .port     are all z lists. 
+
+					ie, a struct 
+
+
+
+			3. i want to add a function to vizualize when the utility is seeing a horizontal line.   
+						i want it to be visual for debugging purposes. 
+
+
+			4. i also want to      make the utiltiy able to print      a far out sectiono f the z values lifetime:
+
+
+						1000005   to 1000010    timesteps     ie,   5 timesteps,   very far out in the lt. 
+
+				ie, make a timestep_begin   and timestep_end   param to print lifetime  function 
+
+					where the default is begin=0  and  end=timestep_count
+
+
+
+					
+
+
+
+
+
+
+
+
 */
 
 // -------- constants: --------
@@ -150,18 +190,16 @@ struct parameters {
 };
 
 
+struct list {
+	nat count;     
+	nat* z;
+	char* dt;
+};
+
 struct search_data {
-	nat z_count;     // the port   z list 
-	nat* z_list;
-	char* dt_list;
-
-	nat z_count_in;   // the pm-input    z list
-	nat* z_list_in;
-	char* dt_list_in;
-
-	nat z_count_out;   // the pm-output    z list
-	nat* z_list_out;
-	char* dt_list_out;
+	struct list port;
+	struct list in;
+	struct list out;
 };
 
 enum expansion_type  {
@@ -192,10 +230,57 @@ struct stack_frame {
 
 static inline void clear_screen(void) { printf("\033[2J\033[H"); }
 
+
+static const char* input_commands[] = {
+
+	"edit duplication_count 0"	
+"\n",
+	"edit execution_limit 100000"
+"\n",
+	"print all"
+"\n",
+	"generate"
+"\n",
+	"help"
+"\n",
+
+
+};
+
+static const nat input_count = sizeof input_commands / sizeof *input_commands;
+
+static nat input_index = 0;
+
+
+
+
+
+
+
 static void debug_pause() {
 	printf("continue? ");
 	fflush(stdout);
-	getchar();
+	if (input_index >= input_count) getchar();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+static void get_input_line(char* buffer, int size) {
+	if (input_index < input_count) {
+		strlcpy(buffer, input_commands[input_index], (size_t) size);
+		input_index++;
+		return;
+	} 
+	fgets(buffer, size, stdin);
 }
 
 static nat exponentiate(const nat a, const nat b) {
@@ -288,11 +373,11 @@ static void print_graph_as_z_value_to_file(FILE* file, nat* graph, nat graph_cou
 }
 
 
-static void print_z_list(nat z_count, nat* z_list, char* dt_list, nat graph_count) {
-	for (nat z = 0; z < z_count; z++) {
-		print_graph_as_z_value(z_list + graph_count * z, graph_count);
+static void print_z_list(struct list list, nat graph_count) {
+	for (nat z = 0; z < list.count; z++) {
+		print_graph_as_z_value(list.z + graph_count * z, graph_count);
 		printf("  :  ");
-		puts(dt_list + z * 16);
+		puts(list.dt + z * 16);
 	}
 }
 
@@ -554,15 +639,14 @@ static nat determine_expansion_type(nat* array, nat n, nat required_le_width) {
 }
 
 
-static void destroy_list(struct search_data* d) {
-	free(d->z_list);
-	free(d->dt_list);
-	d->z_list = NULL;
-	d->dt_list = NULL;
-	d->z_count = 0;
+
+static void destroy_list(struct list* list) {
+
+	free(list->z);  list->z = NULL;
+	free(list->dt); list->dt = NULL;
+
+	list->count = 0;
 }
-
-
 
 static nat search(const nat origin, struct parameters p, struct search_data* d) {
 
@@ -787,19 +871,18 @@ backtrack:
 	}
 done:
 
-	destroy_list(d);
+	destroy_list(&d->port);
 
-	d->z_list = realloc(d->z_list, sizeof(nat) * (d->z_count + candidate_count) * p.graph_count);
-
-	d->dt_list = realloc(d->dt_list, sizeof(char) * (d->z_count + candidate_count) * 16);
+	d->port.z = realloc(d->port.z, sizeof(nat) * (d->port.count + candidate_count) * p.graph_count);
+	d->port.dt = realloc(d->port.dt, sizeof(char) * (d->port.count + candidate_count) * 16);
 
 	if (candidate_count * p.graph_count * sizeof(nat)) 
-		memcpy(d->z_list + d->z_count * p.graph_count, candidates, candidate_count * p.graph_count * sizeof(nat));
+		memcpy(d->port.z + d->port.count * p.graph_count, candidates, candidate_count * p.graph_count * sizeof(nat));
 
 	if (candidate_count * 16 * sizeof(char)) 
-		memcpy(d->dt_list + d->z_count * 16, candidate_timestamps, candidate_count * 16 * sizeof(char));
+		memcpy(d->port.dt + d->port.count * 16, candidate_timestamps, candidate_count * 16 * sizeof(char));
 
-	d->z_count += candidate_count;
+	d->port.count += candidate_count;
 
 	if (p.should_print) printf("total = %llu\n", total);
 	if (p.should_print) printf("backtracked = %llu\n", backtracked);
@@ -1060,9 +1143,9 @@ static void print_command(const char** command, struct parameters p, struct sear
 
 		printf("info: printing the lifetimes for the z values in the z_list...\n");
 
-		for (nat z = 0; z < d.z_count; z++) {
+		for (nat z = 0; z < d.port.count; z++) {
 
-			memcpy(p.graph, d.z_list + p.graph_count * z, sizeof(nat) * p.graph_count);
+			memcpy(p.graph, d.port.z + p.graph_count * z, sizeof(nat) * p.graph_count);
 
 			for (nat origin = 0; origin < p.operation_count; origin++) {
 
@@ -1070,7 +1153,7 @@ static void print_command(const char** command, struct parameters p, struct sear
 					print_lifetime(origin, p, p.graph, instruction_count);
 					printf("[origin = %llu]\n", origin);
 					print_graph_as_adj(p.graph, p.graph_count);
-					printf("z=%llu / zcount=%llu   :   ", z, d.z_count);
+					printf("z=%llu / zcount=%llu   :   ", z, d.port.count);
 					print_graph_as_z_value(p.graph, p.graph_count);
 					puts("");
 					debug_pause();
@@ -1081,7 +1164,7 @@ static void print_command(const char** command, struct parameters p, struct sear
 
 	else if (is(command[1], "graph", "g")) print_graph_as_adj(p.graph, p.graph_count);
 	else if (is(command[1], "z", "z")) { print_graph_as_z_value(p.graph, p.graph_count); puts(""); }
-	else if (is(command[1], "z_list", "zl")) print_z_list(d.z_count, d.z_list, d.dt_list, p.graph_count);
+	else if (is(command[1], "z_list", "zl")) print_z_list(d.port, p.graph_count);
 
 
 	else {
@@ -1121,7 +1204,7 @@ static void edit_command(const char** command, struct parameters* p, struct sear
 	}
 	
 	else if (is(command[1], "empty_list", "empty_list")) {
-		destroy_list(d);
+		destroy_list(&d->port);
 	}
 
 	else if (is(command[1], "z_list", "zl")) {
@@ -1131,9 +1214,9 @@ static void edit_command(const char** command, struct parameters* p, struct sear
 			return;
 		}
 
-		destroy_list(d);
-		initialize_z_list_from_file(&d->z_list, &d->z_count, command[2], p->graph_count);
-		initialize_dt_list_from_file(&d->dt_list, command[3]);
+		destroy_list(&d->port);
+		initialize_z_list_from_file(&d->port.z, &d->port.count, command[2], p->graph_count);
+		initialize_dt_list_from_file(&d->port.dt, command[3]);
 	}
 
 	else if (is(command[1], "z", "z")) init_graph_from_string(command[2], p->graph, p->graph_count);
@@ -1151,8 +1234,8 @@ static void write_command(const char** command, struct parameters p, struct sear
 			return;
 		}
 
-		print_z_list_to_file(d.z_list, d.z_count, command[2], p.graph_count);
-		print_dt_list_to_file(d.dt_list, d.z_count, command[3]);
+		print_z_list_to_file(d.port.z, d.port.count, command[2], p.graph_count);
+		print_dt_list_to_file(d.port.dt, d.port.count, command[3]);
 	}
 
 	else printf("error: unknown argument: %s\n", command[1]);
@@ -1310,6 +1393,20 @@ static bool has_horizonal_line(const nat max_acceptable_run_length, nat origin, 
 }
 
 
+
+static void transfer_list(struct list* destination, struct list source, const nat graph_count) {
+
+	destination->z = realloc(destination->z, sizeof(nat) * source.count * graph_count);
+	destination->dt = realloc(destination->dt, source.count * 16);
+
+	memcpy(destination->z, source.z, sizeof(nat) * graph_count * source.count);
+	memcpy(destination->dt, source.dt, 16 * source.count);
+
+	destination->count = source.count;
+}
+
+
+
 static void prune_z_list(struct parameters p, struct search_data *d) {
 
 	
@@ -1321,7 +1418,7 @@ static void prune_z_list(struct parameters p, struct search_data *d) {
 	
 loop: 	printf(":IP: ");
 
-	fgets(buffer, sizeof buffer, stdin);
+	get_input_line(buffer, sizeof buffer);
 	const char* command[8] = {0};
 	parse_command(command, buffer);
 
@@ -1331,71 +1428,29 @@ loop: 	printf(":IP: ");
 	else if (is(*command, "help", "?")) 	print_pruning_metric_menu();
 	else if (is(*command, "clear", "o")) 	clear_screen();
 
+	else if (is(*command, "export", "ex")) 	transfer_list(&d->port, d->out, p.graph_count);
+	else if (is(*command, "import", "im")) 	transfer_list(&d->in, d->port, p.graph_count);
+	else if (is(*command, "pass", "pass")) 	transfer_list(&d->out, d->in, p.graph_count);
+	else if (is(*command, "next", "n")) { 	transfer_list(&d->in, d->out, p.graph_count); destroy_list(&d->out); } 
 
-	else if (is(*command, "export", "ex")) 	 { 
-		d->z_list = realloc(d->z_list, sizeof(nat) * d->z_count_out * p.graph_count);
-		d->dt_list = realloc(d->dt_list, d->z_count_out * 16);
-		memcpy(d->z_list, d->z_list_out, sizeof(nat) * p.graph_count * d->z_count_out);
-		memcpy(d->dt_list, d->dt_list_out, 16 * d->z_count_out);
-		d->z_count = d->z_count_out;
-	} 
-
-	else if (is(*command, "import", "im"))  {
-		d->z_list_in = realloc(d->z_list_in, sizeof(nat) * d->z_count * p.graph_count);
-		d->dt_list_in = realloc(d->dt_list_in, d->z_count * 16);
-		memcpy(d->z_list_in, d->z_list, sizeof(nat) * p.graph_count * d->z_count);
-		memcpy(d->dt_list_in, d->dt_list, 16 * d->z_count);
-		d->z_count_in = d->z_count;
+	else if (is(*command, "destroy", "d")) {
+		if (is(command[1], "port", "p")) 	destroy_list(&d->port);
+		if (is(command[1], "in", "i")) 		destroy_list(&d->in);
+		if (is(command[1], "out", "o")) 	destroy_list(&d->out);
 	}
 
-	else if (is(*command, "pass", "pass")) {
-		d->z_list_out = realloc(d->z_list_out, sizeof(nat) * d->z_count_in * p.graph_count);
-		d->dt_list_out = realloc(d->dt_list_out, d->z_count_in * 16);
-		memcpy(d->z_list_out, d->z_list_in, sizeof(nat) * p.graph_count * d->z_count_in);
-		memcpy(d->dt_list_out, d->dt_list_in, 16 * d->z_count_in);
-		d->z_count_out = d->z_count_in;
-
-		printf("--> passed through %llu z values.\n", d->z_count_out);
+	else if (is(*command, "count", "c")) {
+		if (is(command[1], "port", "p")) 	printf("port z list: %llu z values.\n", d->port.count);
+		if (is(command[1], "in", "i")) 		printf("in z list: %llu z values.\n", d->in.count);
+		if (is(command[1], "out", "o")) 	printf("out z list: %llu z values.\n", d->out.count);
 	}
 
-	else if (is(*command, "next", "n")) {
-		d->z_list_in = realloc(d->z_list_in, sizeof(nat) * d->z_count_out * p.graph_count);
-		d->dt_list_in = realloc(d->dt_list_in, d->z_count_out * 16);
-		memcpy(d->z_list_in, d->z_list_out, sizeof(nat) * p.graph_count * d->z_count_out);
-		memcpy(d->dt_list_in, d->dt_list_out, 16 * d->z_count_out);
-		d->z_count_in = d->z_count_out;
-
-		free(d->z_list_out);
-		free(d->dt_list_out);
-		d->z_list_out = NULL;
-		d->dt_list_out = NULL;
-		d->z_count_out = 0;
+	else if (is(*command, "list", "ls")) {
+		if (is(command[1], "port", "p")) 	print_z_list(d->port, p.graph_count);
+		if (is(command[1], "in", "i")) 		print_z_list(d->in, p.graph_count);
+		if (is(command[1], "out", "o")) 	print_z_list(d->out, p.graph_count);
 	}
 
-
-	else if (is(*command, "do", "do")) {
-		free(d->z_list_out);
-		free(d->dt_list_out);
-		d->z_list_out = NULL;
-		d->dt_list_out = NULL;
-		d->z_count_out = 0;
-	}
-
-	else if (is(*command, "di", "di")) {
-		free(d->z_list_in);
-		free(d->dt_list_in);
-		d->z_list_in = NULL;
-		d->dt_list_in = NULL;
-		d->z_count_in = 0;
-	}
-
-	else if (is(*command, "dp", "dp")) {
-		free(d->z_list);
-		free(d->dt_list);
-		d->z_list = NULL;
-		d->dt_list = NULL;
-		d->z_count = 0;
-	}
 
 	else if (is(*command, "visualize", "viz")) {
 
@@ -1405,9 +1460,9 @@ loop: 	printf(":IP: ");
 			goto stop_viz;
 		}
 
-		for (nat z = 0; z < d->z_count_in; z++) {
+		for (nat z = 0; z < d->in.count; z++) {
 
-			memcpy(p.graph, d->z_list_in + p.graph_count * z, sizeof(nat) * p.graph_count);
+			memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
 
 			for (nat origin = 0; origin < p.operation_count; origin++) {
 
@@ -1415,15 +1470,18 @@ loop: 	printf(":IP: ");
 					print_lifetime(origin, p, p.graph, instruction_count);
 					printf("[origin = %llu]\n", origin);
 					print_graph_as_adj(p.graph, p.graph_count);
-					printf("z=%llu / zcount=%llu   :   ", z, d->z_count_in);
+					printf("z=%llu / zcount=%llu   :   ", z, d->in.count);
 					print_graph_as_z_value(p.graph, p.graph_count);
 					puts("");
 					puts(d->dt_list_in + 16 * z);
 					puts("");
 					printf("continue? (q/ENTER) ");
 					fflush(stdout);
-					int c = getchar();
-					if (c == 'q') goto stop_viz;
+
+					if (input_index >= input_count) {
+						int c = getchar();
+						if (c == 'q') goto stop_viz;
+					}
 				}
 			}
 		}
@@ -1431,9 +1489,7 @@ loop: 	printf(":IP: ");
 		printf("finished visualization of z_list_in.");
 	}
 
-	else if (is(*command, "z_list_out", "zlo")) print_z_list(d->z_count_out, d->z_list_out, d->dt_list_out, p.graph_count);
-	else if (is(*command, "z_list_in", "zli")) print_z_list(d->z_count_in, d->z_list_in, d->dt_list_in, p.graph_count);
-	else if (is(*command, "z_list", "zl")) print_z_list(d->z_count, d->z_list, d->dt_list, p.graph_count);
+	
 
 
 
@@ -1452,31 +1508,44 @@ loop: 	printf(":IP: ");
 
 		for (nat z = 0; z < d->z_count_in; z++) {
 
-			memcpy(p.graph, d->z_list + p.graph_count * z, sizeof(nat) * p.graph_count);
+			memcpy(p.graph, 
+
+							d->in.z
+
+
+
+
+				 + p.graph_count * z, sizeof(nat) * p.graph_count);
 
 			for (nat origin = 0; origin < p.operation_count; origin++) {
 
 				if (p.graph[4 * origin] != 3) continue;
 
-				if (not has_horizonal_line(max_acceptable_run_length, 1, p, p.graph, p.execution_limit)) {
+				if (not has_horizonal_line(max_acceptable_run_length, 
 
-					d->z_list_out = realloc(d->z_list_out, sizeof(nat) * (d->z_count_out + 1) * p.graph_count);
-					d->dt_list_out = realloc(d->dt_list_out, (d->z_count_out + 1) * 16);
 
-					memcpy(d->z_list_out + d->z_count_out * p.graph_count, 
-						d->z_list_in + z * p.graph_count, 
+								origin, 
+
+
+				p, p.graph, p.execution_limit)) {
+
+					d->out.z = realloc(d->out.z, sizeof(nat) * (d->out.count + 1) * p.graph_count);
+					d->out.dt = realloc(d->out.dt, (d->out.count + 1) * 16);
+
+					memcpy(d->out.z + d->out.count * p.graph_count, 
+						d->in.z + z * p.graph_count, 
 						sizeof(nat) * p.graph_count);
 
-					memcpy(d->dt_list_out + d->z_count_out * 16, 
-						d->dt_list_in + z * 16, 
+					memcpy(d->out.dt + d->out.count * 16, 
+						d->in.dt + z * 16, 
 						16);
 
-					d->z_count_out++;
+					d->out.count++;
 				}			
 			}
 		}
 
-		stop_horiz: printf("--> found %llu graphs after horizonal pruning metric.\n", d->z_count_out);
+		stop_horiz: printf("--> found %llu graphs after horizonal pruning metric.\n", d->out.count);
 	}
 
 	else if (is(*command, "multifea", "mfea")) {}
@@ -1545,7 +1614,7 @@ int main() {
 	
 	
 loop: 	printf(":: ");
-	fgets(buffer, sizeof buffer, stdin);
+	get_input_line(buffer, sizeof buffer);
 	const char* command[8] = {0};
 	parse_command(command, buffer);
 
@@ -2848,5 +2917,39 @@ static bool have_tried(nat tried_count, nat* tried, nat op1, nat op2, nat D) {  
 
 //   "\t- generate(g) <z_list_file> <dest_image_dir> <begin_cell> <end_cell> <begin_ts> <end_ts> <maximum_whitepoint>: ....\n"
 //  "\t- visualize(v) <file> <width> <height>: ....\n"
+
+
+
+//d->port.z = realloc(d->port.z, sizeof(nat) * d->out.count * p.graph_count);
+		//d->port.dt = realloc(d->port.dt, d->out.count * 16);
+		//memcpy(d->port.z, d->out.z, sizeof(nat) * p.graph_count * d->out.count);
+		//memcpy(d->port.dt, d->out.dt, 16 * d->out.count);
+		//d->port.count = d->out.count;
+
+
+//d->z_list_in = realloc(d->z_list_in, sizeof(nat) * d->z_count * p.graph_count);
+		//d->dt_list_in = realloc(d->dt_list_in, d->z_count * 16);
+		//memcpy(d->z_list_in, d->z_list, sizeof(nat) * p.graph_count * d->z_count);
+		//memcpy(d->dt_list_in, d->dt_list, 16 * d->z_count);
+		//d->z_count_in = d->z_count;
+
+
+
+
+//d->z_list_out = realloc(d->z_list_out, sizeof(nat) * d->z_count_in * p.graph_count);
+		//d->dt_list_out = realloc(d->dt_list_out, d->z_count_in * 16);
+		//memcpy(d->z_list_out, d->z_list_in, sizeof(nat) * p.graph_count * d->z_count_in);
+		//memcpy(d->dt_list_out, d->dt_list_in, 16 * d->z_count_in);
+		//d->z_count_out = d->z_count_in;
+
+
+
+
+		//d->z_list_in = realloc(d->z_list_in, sizeof(nat) * d->z_count_out * p.graph_count);
+		//d->dt_list_in = realloc(d->dt_list_in, d->z_count_out * 16);
+		//memcpy(d->z_list_in, d->z_list_out, sizeof(nat) * p.graph_count * d->z_count_out);
+		//memcpy(d->dt_list_in, d->dt_list_out, 16 * d->z_count_out);
+		//d->z_count_in = d->z_count_out;
+
 
 
