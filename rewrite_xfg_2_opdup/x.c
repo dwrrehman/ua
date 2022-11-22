@@ -16,6 +16,12 @@
 #include <errno.h>
 
 
+
+
+// make a operation utilization gs  metric    to check if it executed all ops 
+
+
+
 #define reset "\x1B[0m"
 
 #define white  yellow
@@ -105,7 +111,7 @@ iter:       last uaj
 		x	1. i want to add a script system.    read a file, interpret the commands. yes. 
 
 
-			2. i want to make a function to perform a transfer between   z_list's.       .out  .in,    .port     are all z lists. 
+		x	2. i want to make a function to perform a transfer between   z_list's.       .out  .in,    .port     are all z lists. 
 
 					ie, a struct 
 
@@ -191,7 +197,7 @@ struct parameters {
 
 
 struct list {
-	nat count;     
+	nat count;
 	nat* z;
 	char* dt;
 };
@@ -200,6 +206,10 @@ struct search_data {
 	struct list port;
 	struct list in;
 	struct list out;
+
+	struct list scratch;
+
+	struct list bad;
 };
 
 enum expansion_type  {
@@ -233,19 +243,27 @@ static inline void clear_screen(void) { printf("\033[2J\033[H"); }
 
 static const char* input_commands[] = {
 
-	"edit duplication_count 0"	
+	"edit duplication_count 1"
 "\n",
-	"edit execution_limit 100000"
+	"edit execution_limit 500000"
 "\n",
-	"print all"
+	"edit zl d1_e100k_z.txt d1_e100k_dt.txt"            // load raw 1space z values from file.
 "\n",
-	"generate"
+	"prune"
 "\n",
-	"help"
+	"import"
 "\n",
-
+	"count port"
+"\n",
+	"fx 10 200 0"                                // testing out the fx pm. 
+"\n",
+	"count bad"
+"\n",
 
 };
+
+
+
 
 static const nat input_count = sizeof input_commands / sizeof *input_commands;
 
@@ -477,10 +495,10 @@ static nat* generate_options(
 		if (ip == option) continue;
 		
 		if (	
-			(graph[4 * option] == 6 and comparator) or        		//   dont allow 6 zero resets.
-			graph[4 * option] == 2 or                                       //   allow for comparator incr, at anytime.
-			mcal_index >= mcal_length or                                    //   if we ran outof mcal, do anything.
-			graph[4 * option] == mcal[mcal_index]                           //   dont allow wrong mcal coi.
+			(graph[4 * option] == 6 and comparator) or          //   dont allow 6 zero resets.
+			graph[4 * option] == 2 or                           //   allow for comparator incr, at anytime.
+			mcal_index >= mcal_length or                        //   if we ran outof mcal, do anything.
+			graph[4 * option] == mcal[mcal_index]               //   dont allow wrong mcal coi.
 
 		) options[count++] = option; 
 		
@@ -516,12 +534,12 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 			pointer++;
 		}
 
-		else if (op == 5) {			
+		else if (op == 5) {
 			for (nat i = 0; i < max_array_size; i++) {
 				if (not array[i]) break;   // LE
 				if (modes[i]) {
-						printf("%s", (i == pointer ?  green : white));
-						printf("██" reset); // (print IA's as a different-colored cell..?)
+					printf("%s", (i == pointer ?  green : white));
+					printf("██" reset); // (print IA's as a different-colored cell..?)
 
 				} else printf(blue "██" reset);
 			}
@@ -556,6 +574,17 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 
 		ip = graph[I + state];
 	}
+
+	for (nat i = 0; i < max_array_size; i++) {
+		if (not array[i]) break;   // LE
+		if (modes[i]) {
+				printf("%s", (i == pointer ?  green : white));
+				printf("██" reset); // (print IA's as a different-colored cell..?)
+
+		} else printf(blue "██" reset);
+	}
+	puts("");
+
 	puts("[end of lifetime]");
 }
 
@@ -871,7 +900,11 @@ backtrack:
 	}
 done:
 
-	destroy_list(&d->port);
+	// destroy_list(&d->port);
+
+
+
+
 
 	d->port.z = realloc(d->port.z, sizeof(nat) * (d->port.count + candidate_count) * p.graph_count);
 	d->port.dt = realloc(d->port.dt, sizeof(char) * (d->port.count + candidate_count) * 16);
@@ -1041,7 +1074,7 @@ printf("available commands:\n"
 	"\t- edit z <z_value> 		: initialize the current graph using the given digit string.\n"
 	"\t- edit empty_list  		: remove all z values and datetimes in the current z list.\n"
 "\n"
-	"\t- write z_list <new_zlist_file_name> 	: write the current z list to a file. \n"
+	"\t- write z_list <new_zlist_file_name> <new_dtlist_file_name> 	: write the current z list to a file. \n"
 "\n"
 	"\t- generate 	: the generative search stage. search over all possible extensions of the current partial "
 			"graph in any (variable) duplication_count space.\n"
@@ -1056,9 +1089,6 @@ printf("available commands:\n"
 	
 "\n");
 }
-
-
-
 
 
 static void parse_command(const char* arguments[8], char* buffer) {
@@ -1203,7 +1233,7 @@ static void edit_command(const char** command, struct parameters* p, struct sear
 		p->graph_count = 4 * (5 + p->duplication_count);
 	}
 	
-	else if (is(command[1], "empty_list", "empty_list")) {
+	else if (is(command[1], "empty_list", "empty_list")) {        // delete me:     this is redundant now.
 		destroy_list(&d->port);
 	}
 
@@ -1326,7 +1356,15 @@ static void print_pruning_metric_menu() {
 
 
 
-static bool has_horizonal_line(const nat max_acceptable_run_length, nat origin, struct parameters p, nat* graph, const nat instruction_count) {
+static bool has_horizonal_line(
+	const nat max_acceptable_run_length, 
+	nat origin, 
+	struct parameters p, 
+	nat* graph, 
+	const nat instruction_count,
+	const nat viz
+) {
+
 
 	const nat n = p.FEA;
 
@@ -1353,16 +1391,33 @@ static bool has_horizonal_line(const nat max_acceptable_run_length, nat origin, 
 
 			nat counter = 0;
 
-			for (nat i = 0; i < pointer; i++) {
+			for (nat i = 0; i < max_array_size; i++) {
+
+				if (not array[i]) break;   // LE
 
 				if (modes[i]) counter++;
 				else counter = 0;
 
+				
+			
+				if (viz) {					
+					if (modes[i]) {
+							printf("%s", (i == pointer ?  green : white));
+							printf("██" reset); // (print IA's as a different-colored cell..?)
+
+					} else printf(blue "██" reset);
+				}
+
+
 				if (counter > max_acceptable_run_length) {
 					// graph is not acceptable.   prune this one.     return has_horizon = true.
+					if (viz) printf("_\n");
 					return true;
 				}
 			}
+
+			if (viz) puts("");
+
 			pointer = 0;
 			memset(modes, 0, sizeof modes);
 		}
@@ -1393,14 +1448,120 @@ static bool has_horizonal_line(const nat max_acceptable_run_length, nat origin, 
 }
 
 
+static bool is_fast_expansion(
+	const nat timestep_count,           // eg    10 
+	const nat too_wide_threshold,       // eg    200
+	const nat origin, 
+	struct parameters p, 
+	nat* graph, 
+	const nat instruction_count,
+	const nat viz                      //   0   for now
+) {
+
+
+	const nat n = p.FEA;
+
+	nat array[max_array_size] = {0};
+	bool modes[max_array_size] = {0};
+
+	nat 
+		pointer = 0, 
+		ip = origin
+	;
+
+
+	nat timestep = 0;
+
+	for (nat e = 0; e < instruction_count; e++) {
+
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) {
+			pointer++;
+		}
+
+
+		
+		//
+		// 2 3 4 5 9 8 3 0 5 8 9 5 1 9 8 2 4 2 1 2 3 4 5 3 3 2 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 . ..00000 (*n)
+		//
+		//							       ^
+
+		else if (op == 5) {
+			
+			timestep++;
+			nat i = 0;
+
+			for (i = 0; i < n; i++) {
+
+				if (not array[i]) break;   // LE
+
+				if (viz) {					
+					if (modes[i]) {
+							printf("%s", (i == pointer ?  green : white));
+							printf("██" reset); // (print IA's as a different-colored cell..?)
+
+					} else printf(blue "██" reset);
+				}
+			}
+			if (viz) puts("");
+
+			if (timestep == timestep_count) {
+				if (i >= too_wide_threshold) {
+					return true; 
+				}
+				else return false;
+			}
+
+			
+			pointer = 0;
+			memset(modes, 0, sizeof modes);
+		}
+
+		else if (op == 2) {
+			array[n]++;
+		}
+
+		else if (op == 6) {  
+			array[n] = 0;   
+		}
+
+		else if (op == 3) {
+			array[pointer]++;
+			modes[pointer] = 1;
+		}
+
+		nat state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+
+		if (graph[I + state] == unknown) abort();
+
+		ip = graph[I + state];
+	}
+
+
+
+	
+
+	return false;
+}
+
+
+
+
+
+
 
 static void transfer_list(struct list* destination, struct list source, const nat graph_count) {
 
 	destination->z = realloc(destination->z, sizeof(nat) * source.count * graph_count);
 	destination->dt = realloc(destination->dt, source.count * 16);
 
-	memcpy(destination->z, source.z, sizeof(nat) * graph_count * source.count);
-	memcpy(destination->dt, source.dt, 16 * source.count);
+	memmove(destination->z, source.z, sizeof(nat) * graph_count * source.count);
+	memmove(destination->dt, source.dt, 16 * source.count);
 
 	destination->count = source.count;
 }
@@ -1437,32 +1598,84 @@ loop: 	printf(":IP: ");
 		if (is(command[1], "port", "p")) 	destroy_list(&d->port);
 		if (is(command[1], "in", "i")) 		destroy_list(&d->in);
 		if (is(command[1], "out", "o")) 	destroy_list(&d->out);
+		if (is(command[1], "bad", "b")) 	destroy_list(&d->bad);
+		if (is(command[1], "scratch", "s")) 	destroy_list(&d->scratch);
 	}
 
 	else if (is(*command, "count", "c")) {
 		if (is(command[1], "port", "p")) 	printf("port z list: %llu z values.\n", d->port.count);
 		if (is(command[1], "in", "i")) 		printf("in z list: %llu z values.\n", d->in.count);
 		if (is(command[1], "out", "o")) 	printf("out z list: %llu z values.\n", d->out.count);
+		if (is(command[1], "bad", "b")) 	printf("bad z list: %llu z values.\n", d->bad.count);
+		if (is(command[1], "scratch", "s")) 	printf("scratch z list: %llu z values.\n", d->scratch.count);
 	}
 
 	else if (is(*command, "list", "ls")) {
 		if (is(command[1], "port", "p")) 	print_z_list(d->port, p.graph_count);
 		if (is(command[1], "in", "i")) 		print_z_list(d->in, p.graph_count);
 		if (is(command[1], "out", "o")) 	print_z_list(d->out, p.graph_count);
+		if (is(command[1], "bad", "b")) 	print_z_list(d->bad, p.graph_count);
+		if (is(command[1], "scratch", "s")) 	print_z_list(d->scratch, p.graph_count);
 	}
 
 
-	else if (is(*command, "visualize", "viz")) {
+	else if (is(*command, "transfer", "tr")) {
 
-		const nat instruction_count = (nat) atoi(command[1]);
+		struct list source = {0}, * destination = NULL;
+
+		if (is(command[1], "port", "p")) 		destination = &d->port;
+		else if (is(command[1], "in", "i")) 		destination = &d->in;
+		else if (is(command[1], "out", "o")) 		destination = &d->out;
+		else if (is(command[1], "bad", "b")) 		destination = &d->bad;
+		else if (is(command[1], "scratch", "s")) 	destination = &d->scratch;
+		else {
+			printf("error: unknown list.\n");
+			goto stop_viz;
+		}
+
+		if (is(command[2], "port", "p")) 		source = d->port;
+		else if (is(command[2], "in", "i")) 		source = d->in;
+		else if (is(command[2], "out", "o")) 		source = d->out;
+		else if (is(command[2], "bad", "b")) 		source = d->bad;
+		else if (is(command[2], "scratch", "s")) 	source = d->scratch;
+		else {
+			printf("error: unknown list.\n");
+			goto stop_viz;
+		}
+
+		transfer_list(destination, source, p.graph_count);
+	}
+
+
+
+	else if (is(*command, "visualize", "viz")) {        // viz <list(port/in/out/bad/scratch)> <ins_count(nat)>
+
+
+
+		struct list A = {0};
+
+		if (is(command[1], "port", "p")) 		A = d->port;
+		else if (is(command[1], "in", "i")) 		A = d->in;
+		else if (is(command[1], "out", "o")) 		A = d->out;
+		else if (is(command[1], "bad", "b")) 		A = d->bad;
+		else if (is(command[1], "scratch", "s")) 	A = d->scratch;
+		else {
+			printf("error: unknown list.\n");
+			goto stop_viz;
+		}
+
+
+
+
+		const nat instruction_count = (nat) atoi(command[2]);
 		if (not instruction_count) { 
 			printf("error: bad instruction count supplied.\n");
 			goto stop_viz;
 		}
 
-		for (nat z = 0; z < d->in.count; z++) {
+		for (nat z = 0; z < A.count; z++) {
 
-			memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+			memcpy(p.graph, A.z + p.graph_count * z, sizeof(nat) * p.graph_count);
 
 			for (nat origin = 0; origin < p.operation_count; origin++) {
 
@@ -1470,10 +1683,10 @@ loop: 	printf(":IP: ");
 					print_lifetime(origin, p, p.graph, instruction_count);
 					printf("[origin = %llu]\n", origin);
 					print_graph_as_adj(p.graph, p.graph_count);
-					printf("z=%llu / zcount=%llu   :   ", z, d->in.count);
+					printf("z=%llu / zcount=%llu   :   ", z, A.count);
 					print_graph_as_z_value(p.graph, p.graph_count);
 					puts("");
-					puts(d->dt_list_in + 16 * z);
+					puts(A.dt + 16 * z);
 					puts("");
 					printf("continue? (q/ENTER) ");
 					fflush(stdout);
@@ -1498,7 +1711,8 @@ loop: 	printf(":IP: ");
 
 
 
-	else if (is(*command, "horizontal", "h")) {
+	else if (is(*command, "horizontal", "h")) {   // usage:    h <run_length(nat)> <should_viz(0/1)>
+
 
 		const nat max_acceptable_run_length = (nat) atoi(command[1]);
 		if (not max_acceptable_run_length) { 
@@ -1506,13 +1720,16 @@ loop: 	printf(":IP: ");
 			goto stop_horiz;
 		}
 
-		for (nat z = 0; z < d->z_count_in; z++) {
+		const nat viz = (nat) atoi(command[2]);
+
+
+
+
+		for (nat z = 0; z < d->in.count; z++) {
 
 			memcpy(p.graph, 
 
 							d->in.z
-
-
 
 
 				 + p.graph_count * z, sizeof(nat) * p.graph_count);
@@ -1527,7 +1744,7 @@ loop: 	printf(":IP: ");
 								origin, 
 
 
-				p, p.graph, p.execution_limit)) {
+				p, p.graph, p.execution_limit, viz)) {
 
 					d->out.z = realloc(d->out.z, sizeof(nat) * (d->out.count + 1) * p.graph_count);
 					d->out.dt = realloc(d->out.dt, (d->out.count + 1) * 16);
@@ -1541,18 +1758,124 @@ loop: 	printf(":IP: ");
 						16);
 
 					d->out.count++;
-				}			
+				} else {
+	
+					d->bad.z = realloc(d->bad.z, sizeof(nat) * (d->bad.count + 1) * p.graph_count);
+					d->bad.dt = realloc(d->bad.dt, (d->bad.count + 1) * 16);
+
+					memcpy(d->bad.z + d->bad.count * p.graph_count, 
+						d->in.z + z * p.graph_count, 
+						sizeof(nat) * p.graph_count);
+
+					memcpy(d->bad.dt + d->bad.count * 16, 
+						d->in.dt + z * 16, 
+						16);
+
+					d->bad.count++;
+				}
 			}
 		}
 
-		stop_horiz: printf("--> found %llu graphs after horizonal pruning metric.\n", d->out.count);
+		stop_horiz: printf("--> found %llu / pruned %llu  :  after horizonal pruning metric.\n", 
+
+					d->out.count,   d->bad.count
+
+				);
 	}
+
+
+
+
 
 	else if (is(*command, "multifea", "mfea")) {}
 
-	else if (is(*command, "expansion_progress_check", "xpc")) {}
-	else if (is(*command, "inf_xw", "ixw")) {}
+
 	else if (is(*command, "repetitive_er", "rer")) {}
+
+
+	else if (is(*command, "expansion_progress_check", "xpc")) {}
+
+	
+
+
+
+
+
+	else if (is(*command, "fast_expansion", "fx")) {       // fx <timestep_count(nat)> <too_wide_xw_thr(nat)> <viz(0/1)>
+		const nat timestep_count = (nat) atoi(command[1]);
+		if (not timestep_count) { 
+			printf("error: bad timestep_count supplied.\n");
+			goto stop_fx;
+		}
+
+		const nat too_wide_threshold = (nat) atoi(command[2]);
+		if (not too_wide_threshold) { 
+			printf("error: bad too_wide_threshold supplied.\n");
+			goto stop_fx;
+		}
+
+		const nat viz = (nat) atoi(command[3]);
+
+
+		for (nat z = 0; z < d->in.count; z++) {
+
+			memcpy(p.graph, d->in.z
+				 + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+			for (nat origin = 0; origin < p.operation_count; origin++) {
+
+				if (p.graph[4 * origin] != 3) continue;
+
+				if (not is_fast_expansion(timestep_count, too_wide_threshold,   origin, 
+						p, p.graph, p.execution_limit, viz)) {
+
+					d->out.z = realloc(d->out.z, sizeof(nat) * (d->out.count + 1) * p.graph_count);
+					d->out.dt = realloc(d->out.dt, (d->out.count + 1) * 16);
+
+					memcpy(d->out.z + d->out.count * p.graph_count, 
+						d->in.z + z * p.graph_count, 
+						sizeof(nat) * p.graph_count);
+
+					memcpy(d->out.dt + d->out.count * 16, 
+						d->in.dt + z * 16, 
+						16);
+
+					d->out.count++;
+
+
+				}  else {
+	
+					d->bad.z = realloc(d->bad.z, sizeof(nat) * (d->bad.count + 1) * p.graph_count);
+					d->bad.dt = realloc(d->bad.dt, (d->bad.count + 1) * 16);
+
+					memcpy(d->bad.z + d->bad.count * p.graph_count, 
+						d->in.z + z * p.graph_count, 
+						sizeof(nat) * p.graph_count);
+
+					memcpy(d->bad.dt + d->bad.count * 16, 
+						d->in.dt + z * 16, 
+						16);
+
+					d->bad.count++;
+				}
+			}
+		}
+
+		stop_fx: 	
+			printf("--> found %llu / pruned %llu  :  after fast expansion  pruning metric.\n", 
+
+				d->out.count,   d->bad.count
+
+				);		
+
+
+
+	}                          // checks if the grpah zooms towards star n    immediately.    ("fast expansion")
+
+
+
+
+	
 
 	else printf("error: unknown IP pruning metric / command\n");
 	goto loop; done:;
@@ -1562,10 +1885,7 @@ loop: 	printf(":IP: ");
 
 int main() {
 
-	static struct search_data d = {
-		.z_list = NULL,
-		.z_count = 0,
-	};
+	static struct search_data d = {0};
 
 	static struct parameters p = {
 
@@ -2950,6 +3270,5 @@ static bool have_tried(nat tried_count, nat* tried, nat op1, nat op2, nat D) {  
 		//memcpy(d->z_list_in, d->z_list_out, sizeof(nat) * p.graph_count * d->z_count_out);
 		//memcpy(d->dt_list_in, d->dt_list_out, 16 * d->z_count_out);
 		//d->z_count_in = d->z_count_out;
-
 
 
