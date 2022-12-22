@@ -175,7 +175,8 @@ static const char* input_commands[] = {
 		"edit execution_limit 500000"
 	"\n",
 
-		"edit zl d1_e500k_z.txt d1_e500k_dt.txt"            // load raw 1space z values from file.
+		"edit zl d1_e500k_h6_rer20_z.txt d1_e500k_h6_rer20_dt.txt"  
+				          // load the horizontal pruned  and repetivite er pruned    z values.
 	"\n",
 
 
@@ -187,14 +188,19 @@ static const char* input_commands[] = {
 	"\n",
 
 
-		"horizontal 6 0"
-	"\n",
-		"next"
-	"\n",
-		"repetitive_er 20 0"
-	"\n",
-		"next"
-	"\n",
+
+
+//		"horizontal 6 0"                    // already done. 
+//	"\n",
+//		"next"
+//	"\n",
+//		"repetitive_er 20 0"
+//	"\n",
+//		"next"
+//	"\n",
+
+
+
 		"mfea 6 300 0"
 	"\n",
 		"count"
@@ -215,6 +221,19 @@ static const char* input_commands[] = {
 
 
 
+	2212224.151255
+
+					we will always do the following pruning metrics in this order:
+
+
+
+						horizontal 6 0
+
+						repetitive_er 20 0
+
+						mfea 10 200 0
+
+						
 
 
 
@@ -2546,11 +2565,22 @@ ill loook at more instructions for both of them
 
 
 
+Generative Search (GS) ---------------
+
+
+	generating all graphs   with the constraints that    5coi, 6coi,  ndi   pco       ...and the other constraints
+
+				are met 
+
+
+			we only generate z values in our z list upholding those contraints. 
 
 
 
 
------------------------------ Generative Search (GS) :  ( Simple easily-checkable  Pruning Metrics (PM)) ------------------------------=
+
+
+---------- FIRST STAGE Iterative pruning (IP_1):  ( Simple easily-checkable  Pruning Metrics (PM))  ------------------
 
 
 	ip	RER	1.  graphs sometimes ER at the same spot everytime,   creating a perfect vertical line. 
@@ -2581,9 +2611,23 @@ x	ip	unimpl.	3.   a  "constantly making expansion progress"-check.  graphs shoul
 
 											so yeah, we want to prune all the graphs 
 												that get into such infinite loops.
+			[
+
+				2212224.150946
+
+
+				the reason we arent implementing number 3 is that
 
 
 
+					it seems that graphs only ever expand logarithmically (ie the xfg xp!) (in which they never stop expanding)
+
+							or they have an infinite loop which makes them er in the same spot always.  
+									i havent seen much AT ALL in between those two extremes. 
+
+
+									so yeah. 
+			]
 
 
 
