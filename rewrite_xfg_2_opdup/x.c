@@ -15,6 +15,21 @@
 #include <math.h>
 #include <errno.h>
 
+/*
+
+2212316.235956
+~: dt
+2212316.235959
+~: dt
+2301017.000000
+~: dt
+2301017.000007
+~: dt
+2301017.000232
+~: 
+*/
+
+
 
 
 
@@ -39,6 +54,42 @@
 
 typedef unsigned long long nat;
 /*
+
+	-------------- 2212316.225619 iter code up thingy -----------------
+
+
+
+
+	x	0-  figure out the bug with horizontal not working properly- its not pruning things it should be pruning. 
+
+	x	1- OER :     oscilating between two ER points.
+
+	x	2- r0i :     constantly incrementing *0 over and over again each CLT.
+
+	x	3- graph averager   : find the partial graph (with percentages) consistent with a given z_list.
+	
+
+
+
+
+
+
+		4- implement vertical line pruning metric!!
+
+
+
+	------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
 
 ---------------------------
 
@@ -173,19 +224,104 @@ static const char* input_commands[] = {
 		"edit duplication_count 1"
 	"\n",
 		"edit execution_limit 500000"
+	"\n",	
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
 	"\n",
-
-		"edit zl d1_e500k_h6_rer20_z.txt d1_e500k_h6_rer20_dt.txt"  
-				          // load the horizontal pruned  and repetivite er pruned    z values.
+		"prune"
 	"\n",
+		"count port"
+	"\n",
+		"quitip"
+	"\n",
+		"sg"
+	"\n",
+	
+};
 
 
+
+
+//		"edit zl d1_e500k_h6_rer20_z.txt d1_e500k_h6_rer20_dt.txt"  
+//	"\n",
+
+//		"viz in 2000"
+//	"\n",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+	this seq is what we used to create the     d1_e500k_h6f_rer20_mfea3    z list. 
+
+
+
+
+	"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 500000"
+	"\n",	
+		"edit zl d1_e500k_z.txt d1_e500k_dt.txt"
+	"\n",
 		"prune"
 	"\n",
 		"import"
 	"\n",
 		"count"
 	"\n",
+		"pause"
+	"\n",
+		"horizontal 6 0"
+	"\n",	
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"next"
+	"\n",
+		"rer 20 0"
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"next"
+	"\n",
+		"mfea 3 0 0"
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"next"
+	"\n",
+
+
+
+*/
+
+
+
+
+
+
 
 
 
@@ -201,10 +337,10 @@ static const char* input_commands[] = {
 
 
 
-		"mfea 6 300 0"
-	"\n",
-		"count"
-	"\n",
+//		"mfea 6 300 0"
+//	"\n",
+//		"count"
+//	"\n",
 
 
 
@@ -212,29 +348,27 @@ static const char* input_commands[] = {
 
 
 
-//		"fx 10 200 0"                                // testing out the fx pm. 
+//		"fx 10 200 0"      // unused.                          // testing out the fx pm. 
 //	"\n",
 //		"count bad"
 //	"\n",
 
-};
+/*
 
-
-
-	2212224.151255
+	2212224.151255:
 
 					we will always do the following pruning metrics in this order:
 
 
 
-						horizontal 6 0
+					1.	horizontal 6 0
 
-						repetitive_er 20 0
+					2.	repetitive_er 20 0
 
-						mfea 10 200 0
+					3. 	mfea 10 200 0
 
 						
-
+*/
 
 
 
@@ -276,8 +410,11 @@ struct search_data {
 	struct list port;
 	struct list in;
 	struct list out;
-	struct list scratch;
 	struct list bad;
+	struct list scratch;
+	struct list scratch1;
+	struct list scratch2;
+	struct list scratch3;
 };
 
 enum expansion_type  {
@@ -314,26 +451,12 @@ static const nat input_count = sizeof input_commands / sizeof *input_commands;
 static nat input_index = 0;
 
 
-
-
-
-
-
-static void debug_pause() {
+static int debug_pause() {
 	printf("continue? ");
 	fflush(stdout);
-	if (input_index >= input_count) getchar();
+	if (input_index >= input_count) return getchar();
+	return ' ';
 }
-
-
-
-
-
-
-
-
-
-
 
 
 static void get_input_line(char* buffer, int size) {
@@ -702,9 +825,9 @@ static nat determine_expansion_type(nat* array, nat n, nat required_le_width) {
 	for (;first < last; first++)
 		if (not array[first]) break; 
 
-	if (last != first) abort();                
+	if (last != first) abort();
 	 // holes should be impossible now!  because of the no-skip-over-zero-modnat's principle.
-			//  return hole_expansion; 
+			//  return hole_expansion;
 	
 	if (last < required_le_width) return short_expansion;
 
@@ -1406,7 +1529,7 @@ static bool has_horizonal_line(
 	struct parameters p, 
 	nat* graph, 
 	const nat instruction_count,
-	const nat viz
+	nat viz
 ) {
 
 	const nat n = p.FEA;
@@ -1419,55 +1542,40 @@ static bool has_horizonal_line(
 		ip = origin
 	;
 
+	viz = 0;
+	if (viz) viz++;
+
 	for (nat e = 0; e < instruction_count; e++) {
 
 		const nat I = ip * 4;
 		const nat op = graph[I];
 
+		// we neeed to be doing the horizontal line check     right here.    not in the 5 op exec  spot. 
+	
+		for (nat counter = 0, i = 0; i < max_array_size; i++) {
+			
+			if (modes[i]) counter++; else counter = 0;
+			if (counter > max_acceptable_run_length) {
+				printf(".\n");
+				return true;
+			}
+
+			if (not array[i]) break;
+		}
+
 		if (op == 1) {
 			pointer++;
 		}
-
 		else if (op == 5) {
-
-			nat counter = 0;
-
-			for (nat i = 0; i < max_array_size; i++) {
-
-				if (not array[i]) break;   // LE
-
-				if (modes[i]) counter++; else counter = 0;
-			
-				if (viz) {					
-					if (modes[i]) {
-							printf("%s", (i == pointer ?  green : white));
-							printf("██" reset); // (print IA's as a different-colored cell..?)
-
-					} else printf(blue "██" reset);
-				}
-
-
-				if (counter > max_acceptable_run_length) {
-					// graph is not acceptable.   prune this one.     return has_horizon = true.
-					printf(".\n");
-					return true;
-				}
-			}
-
-			if (viz) puts("");
-
 			pointer = 0;
 			memset(modes, 0, sizeof modes);
 		}
-
 		else if (op == 2) {
 			array[n]++;
 		}
-
 		else if (op == 6) {  
 			array[n] = 0;   
 		}
-
 		else if (op == 3) {
 			array[pointer]++;
 			modes[pointer] = 1;
@@ -1484,6 +1592,163 @@ static bool has_horizonal_line(
 	}
 	return false;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+static bool increments_star_zero_alot(
+	const nat max_acceptable_consecutive_incr,      // around 20 ish
+	nat origin, 
+	struct parameters p, 
+	nat* graph, 
+	const nat instruction_count,
+	nat viz
+) {
+
+	const nat n = p.FEA;
+
+	nat array[max_array_size] = {0};
+	bool modes[max_array_size] = {0};
+
+	nat 
+		pointer = 0, 
+		ip = origin
+	;
+
+	viz = 0; if (viz) viz++;
+
+	nat counter = 0;
+
+	for (nat e = 0; e < instruction_count; e++) {
+
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) {
+			pointer++;
+		}
+		else if (op == 5) {
+		
+			if (*modes) counter++; else counter = 0;
+
+			if (counter > max_acceptable_consecutive_incr) {
+				printf(".\n");
+				return true;
+			}
+
+			pointer = 0;
+			memset(modes, 0, sizeof modes);
+		}
+		else if (op == 2) {
+			array[n]++;
+		}
+		else if (op == 6) {  
+			array[n] = 0;   
+		}
+		else if (op == 3) {
+			array[pointer]++;
+			modes[pointer] = 1;
+		}
+
+		nat state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+
+		if (graph[I + state] == unknown) abort();
+
+		ip = graph[I + state];
+	}
+	return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+if (viz) puts("");
+
+
+
+
+
+
+// graph is not acceptable.   prune this one.     return has_horizon = true.
+
+
+
+
+
+
+				if (viz) {					
+					if (modes[i]) {
+							printf("%s", (i == pointer ?  green : white));
+							printf("██" reset); // (print IA's as a different-colored cell..?)
+
+					} else printf(blue "██" reset);
+				}
+
+
+
+
+
+				                                                      //    if (not array[i]) break;   // LE
+				
+
+							
+
+
+
+
+										///    deleting this because trying to diagnose a bug with the horizontal line pm. 
+
+
+*/
+
+
+
+
+
 
 
  // checks if the graph zooms towards star n    immediately.    ("fast expansion")
@@ -1664,6 +1929,118 @@ static bool ERs_in_same_spot(
 
 
 
+static bool ERs_in_two_spots_alternately(
+	const nat oer_count,           	// eg    50
+	const nat origin, 
+	struct parameters p, 
+	nat* graph, 
+	const nat instruction_count,
+	const nat viz                      //   0   for now
+) {
+
+	const nat n = p.FEA;
+
+	nat array[max_array_size] = {0};
+	bool modes[max_array_size] = {0};
+
+	nat 
+		pointer = 0, 
+		ip = origin
+	;
+
+	nat counter = 0, er_at = max_array_size;
+
+	for (nat e = 0; e < instruction_count; e++) {
+
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) {
+			pointer++;
+		}
+
+		else if (op == 5) {
+
+			if (	pointer == er_at or 
+				pointer == er_at + 1) counter++;
+			else { er_at = pointer; counter = 0; }
+
+			if (counter == oer_count) { printf(".\n"); return true; }
+
+			if (viz) {
+				for (nat i = 0; i < n; i++) {
+					if (not array[i]) break;  	
+					if (modes[i]) {
+						printf("%s", (i == pointer ?  green : white));
+						printf("██" reset); // (print IA's as a different-colored cell..?)
+					} else printf(blue "██" reset);
+				}
+				puts("");
+				memset(modes, 0, sizeof modes);
+			}
+			pointer = 0;
+		}
+
+		else if (op == 2) {
+			array[n]++;
+		}
+
+		else if (op == 6) {  
+			array[n] = 0;   
+		}
+
+		else if (op == 3) {
+			array[pointer]++;
+			modes[pointer] = 1;
+		}
+
+		nat state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+
+		if (graph[I + state] == unknown) abort();
+
+		ip = graph[I + state];
+	}
+
+	return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static bool single_fea(
 	const nat origin, 
 	struct parameters p, 
@@ -1734,35 +2111,6 @@ static bool single_fea(
 
 	return false;
 }
-
-
-
-
-
-static bool passes_multifea(
-	const nat startfea,        // 10
-	const nat endfea,        // 300
-	const nat origin, 
-	struct parameters p, 
-	nat* graph, 
-	const nat instruction_count,
-	const nat viz             //   0   for now
-) {
-	bool b = false;
-	nat save = p.FEA;
-	for (nat fea = startfea; fea < endfea; fea++) {
-		p.FEA = fea;
-		if (single_fea(origin, p, graph, instruction_count, viz)) {
-			b = true; goto done;
-		}
-	}
-	b = false;
-done:
-	p.FEA = save;
-	return b;
-}
-
-
 
 
 
@@ -1843,6 +2191,38 @@ static const char* get_list_pointer(struct list** list, const char* string, stru
 }
 
 
+
+
+
+
+
+
+static void execute_singlefea_pruning_metric(
+	struct parameters p, 
+	struct search_data * d, 
+	nat viz) { 			// prune over all graphs using single fea().
+
+	for (nat z = 0; z < d->in.count; z++) {
+
+		printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count);fflush(stdout);
+
+		memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+		for (nat origin = 0; origin < p.operation_count; origin++) {
+
+			if (p.graph[4 * origin] != 3) continue;
+
+			if (not single_fea(origin, p, p.graph, p.execution_limit, viz)) 
+				push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+			else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+		}
+	}
+	printf("--> found %llu / pruned %llu  :  after singlefea pruning metric.\n", d->out.count, d->bad.count);
+	
+}
+
+
+
 static void prune_z_list(struct parameters p, struct search_data *d) {
 
 	puts(	"this is the iterative pruning stage command line interface. \n"
@@ -1860,13 +2240,23 @@ loop: 	printf(":IP: ");
 	if (is(*command, "", "")) {}
 
 	else if (is(*command, "quitip", "qip")) 	goto done;
-	else if (is(*command, "help", "?")) 	print_pruning_metric_menu();
-	else if (is(*command, "clear", "o")) 	clear_screen();
+	else if (is(*command, "help", "?")) 		print_pruning_metric_menu();
+	else if (is(*command, "clear", "o")) 		clear_screen();
+	else if (is(*command, "pause", ",")) 		getchar();
 
 	else if (is(*command, "export", "ex")) 	transfer_list(&d->port, d->out, p.graph_count);
 	else if (is(*command, "import", "im")) 	transfer_list(&d->in, d->port, p.graph_count);
 	else if (is(*command, "pass", "pass")) 	transfer_list(&d->out, d->in, p.graph_count);
-	else if (is(*command, "next", "n")) { 	transfer_list(&d->in, d->out, p.graph_count); destroy_list(&d->out); } 
+	else if (is(*command, "next", "n")) { 
+		if (not d->out.count) {
+
+					printf("error: executing NEXT would delete/overwrite %llu z values."
+					" use \"transfer in out\" instead.\n", d->in.count);
+		} else {
+			transfer_list(&d->in, d->out, p.graph_count); 
+			destroy_list(&d->out); 
+		}
+	} 
 
 	else if (is(*command, "destroy", "d")) {
 		struct list* list = {0};
@@ -2043,22 +2433,17 @@ loop: 	printf(":IP: ");
 	} 
 
 
+	else if (is(*command, "oscillatory_er", "oer")) {            //      oer 40 0
 
+						// usage:          oer <oer_count(nat)> [<viz(0/1)>]
 
-	else if (is(*command, "multifea", "mfea")) {      // usage:          mfea <startfea(nat)> <endfea(nat)> <viz(0/1)>
-
-		const nat startfea = (nat) atoi(command[1]);
-		if (not startfea) { 
-			printf("error: bad startfea supplied.\n");
-			goto next;
-		}
-		const nat endfea = (nat) atoi(command[2]);
-		if (not endfea) { 
-			printf("error: bad endfea supplied.\n");
+		const nat oer_count = (nat) atoi(command[1]);
+		if (not oer_count) { 
+			printf("error: bad oer_count supplied.\n");
 			goto next;
 		}
 
-		const nat viz = (nat) atoi(command[3]);
+		const nat viz = (nat) atoi(command[2]);
 
 		for (nat z = 0; z < d->in.count; z++) {
 			printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count); fflush(stdout);
@@ -2067,39 +2452,276 @@ loop: 	printf(":IP: ");
 			for (nat origin = 0; origin < p.operation_count; origin++) {
 				if (p.graph[4 * origin] != 3) continue;
 
-				if (not passes_multifea(startfea, endfea, origin, p, p.graph, p.execution_limit, viz)) 
+				if (not ERs_in_two_spots_alternately(oer_count, origin, p, p.graph, p.execution_limit, viz)) 
 					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
 				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
 			}
 		}
-		printf("--> found %llu / pruned %llu  :  after  multi-fea  pruning metric.\n", d->out.count, d->bad.count);
+		printf("--> found %llu / pruned %llu  :  after  Oscillatory ER  pruning metric.\n", d->out.count, d->bad.count);
+	} 
 
+
+	else if (is(*command, "repetitive_*0_incr", "r0i")) {                 // r0i 50 0
+								 // usage:          r0i <max_acceptable_*0_increment_count(nat)> [<viz(0/1)>]
+
+		const nat max_acceptable_increment_count = (nat) atoi(command[1]);
+		if (not max_acceptable_increment_count) { 
+			printf("error: bad max_acceptable_increment_count supplied.\n");
+			goto next;
+		}
+
+		const nat viz = (nat) atoi(command[2]);
+
+		for (nat z = 0; z < d->in.count; z++) {
+			printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count); fflush(stdout);
+			memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+			for (nat origin = 0; origin < p.operation_count; origin++) {
+				if (p.graph[4 * origin] != 3) continue;
+
+				if (not increments_star_zero_alot(max_acceptable_increment_count, origin, p, p.graph, p.execution_limit, viz)) 
+					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+			}
+		}
+		printf("--> found %llu / pruned %llu  :  after  repetitive *0 incrementing  pruning metric.\n", d->out.count, d->bad.count);
+	} 
+
+
+	else if (is(*command, "multifea", "mfea")) {      // usage:          mfea <startfea(nat)> [<endfea(nat)>] [<viz(0/1)>]
+											/// eg       mfea 3 4 0 
+
+		const nat startfea = (nat) atoi(command[1]);
+		if (not startfea) { 
+			printf("error: bad startfea supplied.\n");
+			goto next;
+		}
+
+		const nat endfea = (nat) atoi(command[2]);
+		const nat viz = (nat) atoi(command[3]);
+
+		nat save = p.FEA;
+		for (nat fea = startfea; fea < endfea or not endfea; fea++) {
+
+			printf("----------------------------- testing FEA = %llu ---------------------\n", fea);
+
+			p.FEA = fea;
+
+			execute_singlefea_pruning_metric(p, d, viz);
+
+			if (not endfea) {
+				printf("test pruning of the next fea? (q to stop)");
+				const int c = debug_pause();
+				if (c == 'q' or c == ' ') {
+					break;
+				}
+			}
+
+			transfer_list(&d->in, d->out, p.graph_count); 
+			destroy_list(&d->out);
+		}
+
+		p.FEA = save;
+
+		printf("FINAL PRUNING RESULTS:\n\t--> found %llu / pruned %llu : after full multi-fea  pruning metric.\n", d->out.count, d->bad.count);
 	}
 
 
-
-
-
 	else if (is(*command, "vertical", "v")) {}
-
-
-
-
-
-
-	else if (is(*command, "expansion_progress_check", "xpc")) {}    
-	// not going to implement this one yet.. doesnt seem useful...?
-
-
-
-
-
-
 	else printf("error: unknown IP pruning metric / command\n");
+
 	
 next:	goto loop; 
 done:;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+	.op = { ###:per, ###:per, ...  }, .lge = {  .l = { ###:per, ###:per,  ... }    .g = { ###:per, ###:per,  ... }   }
+			1, 2, 3, 5, 6					6					6
+
+
+				printf("i = %llu\n", i);
+				printf("p.graph[i] = %llu\n", p.graph[i]);
+				printf("p.operation_count = %llu\n", p.operation_count);
+				fflush(stdout);
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+static void synthesize_graph(struct parameters p, struct search_data d) {
+
+	puts("this function generates a statistical partial graph that is consistent with the .port z list.\n");
+
+	nat* tallys1 = calloc(p.graph_count * p.operation_count, sizeof(nat));
+	nat* tallys2 = calloc(p.graph_count * p.operation_count, sizeof(nat));
+
+	for (nat z = 0; z < d.port.count; z++) {
+		memcpy(p.graph, d.port.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+		if (p.graph[20] == 1) {
+			for (nat i = 0; i < p.graph_count; i++) {
+				if (not (i % 4)) continue;
+				if (p.graph[i] == unknown) continue;
+				tallys1[i * p.operation_count + p.graph[i]]++;	
+			}
+		} else if (p.graph[20] == 2) {
+			for (nat i = 0; i < p.graph_count; i++) {
+				if (not (i % 4)) continue;
+				if (p.graph[i] == unknown) continue;
+				tallys2[i * p.operation_count + p.graph[i]]++;
+			}
+		} else {
+			printf("ERROR: found a graph which dupilicated something which is not 1 or 2, for 1-space. erroring..\n");
+			return;
+		}					
+	}
+
+	
+	printf("tallys1 : dupilcating 1 in 1-space:\n");
+
+	for (nat i = 0; i < p.graph_count; i += 4) {
+
+		printf("{ .op = %llu,   .lge={ ", p.graph[i]);
+
+		printf(".l={ ");
+		for (nat o = 0; o < p.operation_count; o++) {
+			const nat count = tallys1[(i + 1) * p.operation_count + o];
+			const double percentage = (double) count / 176.0;
+			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
+		}
+		printf(" },  ");
+
+		printf(".g={ ");
+		for (nat o = 0; o < p.operation_count; o++) {
+			const nat count = tallys1[(i + 2) * p.operation_count + o];
+			const double percentage = (double) count / 176.0;
+			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
+		}
+		printf(" },  ");
+
+		printf(".e={ ");
+		for (nat o = 0; o < p.operation_count; o++) {
+			const nat count = tallys1[(i + 3) * p.operation_count + o];
+			const double percentage = (double) count / 176.0;
+			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
+		}
+		printf(" },  ");
+
+		printf(" }   \n\n");
+	}
+
+
+
+	printf("\n\n\n\n\n tallys2 : dupilcating 2 in 1-space:\n");
+
+	for (nat i = 0; i < p.graph_count; i += 4) {
+
+		printf("{ .op = %llu,   .lge={ ", p.graph[i]);
+
+		printf(".l={ ");
+		for (nat o = 0; o < p.operation_count; o++) {
+			const nat count = tallys2[(i + 1) * p.operation_count + o];
+			const double percentage = (double) count / 510.0;
+			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
+		}
+		printf(" },  ");
+
+		printf(".g={ ");
+		for (nat o = 0; o < p.operation_count; o++) {
+			const nat count = tallys2[(i + 2) * p.operation_count + o];
+			const double percentage = (double) count / 510.0;
+			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
+		}
+		printf(" },  ");
+
+		printf(".e={ ");
+		for (nat o = 0; o < p.operation_count; o++) {
+			const nat count = tallys2[(i + 3) * p.operation_count + o];
+			const double percentage = (double) count / 510.0;
+			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
+		}
+		printf(" },  ");
+
+		printf(" }   \n\n");
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+// each (index pasta) destination in that graph { 
+// pasta < graph_count          
+// for each element in the adj list
+// r  // in the range 0..graph_count
+// graph[r]      // aka destination 
+// in the range of 0..duplcount
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 int main() {
@@ -2177,6 +2799,7 @@ loop: 	printf(":: ");
 	else if (is(*command, "write", "w")) 	 	write_command(command, p, d);
 	else if (is(*command, "generate", "g")) 	any_search(p, &d);
 	else if (is(*command, "prune", "ip")) 		prune_z_list(p, &d);
+	else if (is(*command, "synthesize_graph", "sg")) 	synthesize_graph(p, d);
 
 	else if (is(*command, "plot_el", "pel")) 	plot_el(p);
 	else if (is(*command, "plot_fea", "pfea"))	plot_fea(p);
@@ -2194,7 +2817,150 @@ loop: 	printf(":: ");
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/*
+
+
+
+dt
+
+2301017.021714
+
+
+rewrite_xfg_2_opdup: ./run
+this is a rewrite of the xfg search utility, that uses a backwards approach to searching for graphs.
+:: :: :: :: this is the iterative pruning stage command line interface. 
+type help for a list of PMs.
+:IP: counting  port : has 686 z values.
+:IP: :: this function generates a statistical partial graph that is consistent with the .port z list.
+
+
+
+tallys1 : dupilcating 1 in 1-space:
+{ .op = 1,   .lge={ .l={  ->2: 176(1.00),  },  .g={  ->3: 176(1.00),  },  .e={  ->2: 176(1.00),  },   }   
+
+{ .op = 3,   .lge={ .l={  ->0: 176(1.00),  },  .g={  ->0: 105(0.60),  ->4: 32(0.18),  ->5: 39(0.22),  },  .e={  ->4: 176(1.00),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 176(1.00),  },  .g={  ->1: 176(1.00),  },  .e={  ->3: 176(1.00),  },   }   
+
+{ .op = 6,   .lge={ .l={  ->1: 176(1.00),  },  .g={  },  .e={  ->1: 88(0.50),  ->2: 88(0.50),  },   }   
+
+{ .op = 5,   .lge={ .l={  ->0: 18(0.10),  ->2: 5(0.03),  ->5: 153(0.87),  },  .g={  ->0: 7(0.04),  ->2: 80(0.45),  ->3: 49(0.28),  ->5: 40(0.23),  },  .e={  ->3: 176(1.00),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 91(0.52),  ->2: 80(0.45),  ->3: 5(0.03),  },  .g={  ->0: 27(0.15),  ->1: 56(0.32),  ->2: 66(0.38),  ->3: 27(0.15),  },  .e={  ->0: 57(0.32),  ->1: 38(0.22),  ->2: 19(0.11),  ->3: 62(0.35),  },   }   
+
+
+
+
+
+
+
+tallys2 : dupilcating 2 in 1-space:
+{ .op = 1,   .lge={ .l={  ->2: 510(1.00),  },  .g={  ->3: 510(1.00),  },  .e={  ->2: 260(0.51),  ->5: 250(0.49),  },   }   
+
+{ .op = 3,   .lge={ .l={  ->0: 510(1.00),  },  .g={  ->0: 378(0.74),  ->2: 17(0.03),  ->4: 96(0.19),  ->5: 19(0.04),  },  .e={  ->0: 33(0.06),  ->2: 42(0.08),  ->4: 405(0.79),  ->5: 30(0.06),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 510(1.00),  },  .g={  ->0: 22(0.04),  ->1: 269(0.53),  ->3: 29(0.06),  ->4: 42(0.08),  ->5: 148(0.29),  },  .e={  ->0: 60(0.12),  ->3: 294(0.58),  ->5: 156(0.31),  },   }   
+
+{ .op = 6,   .lge={ .l={  ->1: 510(1.00),  },  .g={  },  .e={  ->1: 199(0.39),  ->2: 154(0.30),  ->5: 157(0.31),  },   }   
+
+{ .op = 5,   .lge={ .l={  ->5: 510(1.00),  },  .g={  ->0: 3(0.01),  ->1: 2(0.00),  ->2: 172(0.34),  ->3: 150(0.29),  ->5: 183(0.36),  },  .e={  ->0: 46(0.09),  ->1: 49(0.10),  ->2: 104(0.20),  ->3: 224(0.44),  ->5: 87(0.17),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 285(0.56),  ->2: 225(0.44),  },  .g={  ->0: 26(0.05),  ->1: 283(0.55),  ->2: 145(0.28),  ->3: 26(0.05),  ->4: 30(0.06),  },  .e={  ->0: 36(0.07),  ->1: 200(0.39),  ->2: 63(0.12),  ->3: 211(0.41),  },   }   
+
+:: 
+
+
+
+
+
+
+					just ran sg(synthesize_graph),    on the   686 current (nonofficial) candidate z list, 
+
+							to try to figure out what partial graph is most consistent with the current z list.
+
+									alot of interesting information in this!
+
+	
+
+		with tallys1   (ie,   graphs that dupilcate  1     in 1-space       )
+
+
+				it looks like       3  --(=)-> 5    is the only way to uphold the    PCO constraint!   which is the way that we were thinking would be the case! very cool that this popped out of the utility!
+
+
+					butttt its only for duplicating 1    for 1-space           not for 2..    which is interesting....
+
+
+
+
+
+
+
+
+
+
 
 	else if (is(command, "visualize", "v")) 
 		visualize_set(
@@ -3537,5 +4303,242 @@ if (is(command[1], "in", "i")) 		print_z_list(d->in, p.graph_count);
 		if (is(command[1], "bad", "b")) 	print_z_list(d->bad, p.graph_count);
 		if (is(command[1], "scratch", "s")) 	print_z_list(d->scratch, p.graph_count);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	else if (is(*command, "multifea", "mfea")) {      // usage:          mfea <startfea(nat)> <endfea(nat)> <viz(0/1)>
+
+		const nat startfea = (nat) atoi(command[1]);
+		if (not startfea) { 
+			printf("error: bad startfea supplied.\n");
+			goto next;
+		}
+		const nat endfea = (nat) atoi(command[2]);
+		if (not endfea) { 
+			printf("error: bad endfea supplied.\n");
+			goto next;
+		}
+
+		const nat viz = (nat) atoi(command[3]);
+
+		for (nat z = 0; z < d->in.count; z++) {
+			printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count); fflush(stdout);
+			memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+			for (nat origin = 0; origin < p.operation_count; origin++) {
+				if (p.graph[4 * origin] != 3) continue;
+
+				if (not passes_multifea(startfea, endfea, origin, p, p.graph, p.execution_limit, viz)) 
+					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+			}
+		}
+		printf("--> found %llu / pruned %llu  :  after  multi-fea  pruning metric.\n", d->out.count, d->bad.count);
+
+	}
+
+
+
+
+
+
+static bool passes_multifea(
+	const nat startfea,        // 10
+	const nat endfea,        // 300
+	const nat origin, 
+	struct parameters p, 
+	nat* graph, 
+	const nat instruction_count,
+	const nat viz             //   0   for now
+) {
+	bool b = false;
+	nat save = p.FEA;
+	for (nat fea = startfea; fea < endfea; fea++) {
+		p.FEA = fea;
+		if (single_fea(origin, p, graph, instruction_count, viz)) {
+			b = true; goto done;
+		}
+	}
+	b = false;
+done:
+	p.FEA = save;
+	return b;
+}
+
+
+
+
+
+
+
+
+static bool single_fea(
+	const nat origin, 
+	struct parameters p, 
+	nat* graph, 
+	const nat instruction_count,
+	const nat viz             //   0   for now
+) {
+
+	const nat n = p.FEA;
+
+	nat array[max_array_size] = {0};
+	bool modes[max_array_size] = {0};
+
+	nat 
+		pointer = 0, 
+		ip = origin
+	;
+
+	for (nat e = 0; e < instruction_count; e++) {
+
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) {
+			pointer++;
+
+			if (pointer > n) { printf(".\n"); return true; }
+		}
+
+		else if (op == 5) {
+			
+			if (viz) {
+				for (nat i = 0; i < n; i++) {
+					if (not array[i]) break;  	
+					if (modes[i]) {
+						printf("%s", (i == pointer ?  green : white));
+						printf("██" reset); // (print IA's as a different-colored cell..?)
+					} else printf(blue "██" reset);
+				}
+				puts("");
+				memset(modes, 0, sizeof modes);
+			}
+			pointer = 0;
+		}
+
+		else if (op == 2) {
+			array[n]++;
+		}
+
+		else if (op == 6) {  
+			array[n] = 0;   
+		}
+
+		else if (op == 3) {
+			array[pointer]++;
+			modes[pointer] = 1;
+		}
+
+		nat state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+
+		if (graph[I + state] == unknown) abort();
+
+		ip = graph[I + state];
+	}
+
+	return false;
+}
+
+
+
+
+
+	//for (nat z = 0; z < d->in.count; z++) {
+
+			//printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count); fflush(stdout);
+
+
+			//memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+			//for (nat origin = 0; origin < p.operation_count; origin++) {
+				//if (p.graph[4 * origin] != 3) continue;
+
+
+
+
+
+
+
+
+
+
+
+
+					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+
+
+
+
+
+
+	//const nat origin, 
+	//struct parameters p, 
+	//nat* graph, 
+	//const nat instruction_count,
+	//const nat viz             //   0   for now
+) {
+	bool b = false;
+	nat save = p.FEA;
+	for (nat fea = startfea; fea < endfea; fea++) {
+		p.FEA = fea;
+		if (single_fea(origin, p, graph, instruction_count, viz)) {
+			b = true; goto done;
+		}
+	}
+	b = false;
+done:
+	p.FEA = save;
+	return b;
+}
+
+
+
+
+
+
+
+
+
+
 */
 
+
+
+
+
+
+
+
+// else if (is(*command, "expansion_progress_check", "xpc")) {}    
+	// not going to implement this one yet.. doesnt seem useful...?
