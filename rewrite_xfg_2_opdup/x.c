@@ -32,6 +32,48 @@
 
 
 
+/*
+	things i want to implement:
+
+
+	speed:
+
+		1. find the speed of expansion of each z value
+	
+		2. find the speed of the vertical lines precession       (to eventually account for precession!)
+
+
+	viz:
+
+		3. display the histogram each timestep, to know how the hg changes overtime
+
+
+
+
+
+	***	4. increase the PRT to like 1000000000 ish 
+
+				find the relationship betwwen fea and el   for our z values. 
+
+
+	
+				
+
+	****	5.        plz run      GRAPH AVERAGERRRRRR
+
+
+
+
+			
+
+
+
+
+
+
+*/
+
+
 
 // make a operation utilization gs  metric    to check if it executed all ops 
 
@@ -75,6 +117,22 @@ typedef unsigned long long nat;
 
 
 		4- implement vertical line pruning metric!!
+
+
+
+			4.0  determine fea and el
+
+			4.1  run for 5 million ish ts
+
+			4.2  run for 10 and accumulate into buckets
+
+			4.3  blur buckets  using window averaging
+
+			4.4  compute histogram based on blury buckets. 
+
+			4.5. print out HG   check one of the high-bucket-value bars, threshold -> boolean   on it. 
+
+
 
 
 
@@ -219,24 +277,132 @@ static const nat unique_count = sizeof operations / sizeof(nat);
 
 
 
+/*
+
+2302164.152330:       ran graph averager (sg) on 44 z values after doing vertical line pm, note: theres no  1-dup graphs. ie, in 1space, graphs only dupilcated 2. not 1. 
+				given our weird hardcody way of doing the vl pm. 
+
+
+
+ tallys2 : dupilcating 2 in 1-space:
+{ .op = 1,   .lge={ .l={  ->2: 44(1.00),  },  .g={  ->3: 44(1.00),  },  .e={  ->2: 30(0.68),  ->5: 14(0.32),  },   }   
+
+{ .op = 3,   .lge={ .l={  ->0: 44(1.00),  },  .g={  ->0: 35(0.80),  ->4: 4(0.09),  ->5: 5(0.11),  },  .e={  ->2: 10(0.23),  ->4: 19(0.43),  ->5: 15(0.34),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 44(1.00),  },  .g={  ->1: 30(0.68),  ->4: 10(0.23),  ->5: 4(0.09),  },  .e={  ->3: 33(0.75),  ->5: 11(0.25),  },   }   
+
+{ .op = 6,   .lge={ .l={  ->1: 44(1.00),  },  .g={  },  .e={  ->1: 26(0.59),  ->2: 13(0.30),  ->5: 5(0.11),  },   }   
+
+{ .op = 5,   .lge={ .l={  ->5: 44(1.00),  },  .g={  ->2: 28(0.64),  ->3: 4(0.09),  ->5: 12(0.27),  },  .e={  ->0: 12(0.27),  ->1: 8(0.18),  ->3: 22(0.50),  ->5: 2(0.05),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 11(0.25),  ->2: 33(0.75),  },  .g={  ->0: 11(0.25),  ->1: 14(0.32),  ->2: 4(0.09),  ->4: 15(0.34),  },  .e={  ->0: 7(0.16),  ->1: 20(0.45),  ->2: 2(0.05),  ->3: 15(0.34),  },   }   
+
+
+
+
+note:  RRXFG partial graph     starting graph: 
+
+	.graph = { 
+			1,  2, 3, _,
+			3,  0, _, _,
+			2,  0, _, _,
+			6,  1, X, _,
+			5,  _, _, _,
+			0,  _, _, _,
+
+
+
+
+			0,  _, _, _,
+			0,  _, _, _,
+			0,  _, _, _,
+			0,  _, _, _,
+		},
+
+
+
+
+
+
+
+
+
+*/
+
+
+
 static const char* input_commands[] = {
+
+
 
 		"edit duplication_count 1"
 	"\n",
-		"edit execution_limit 500000"
+		"edit execution_limit 5000000"
 	"\n",	
+		"edit fea 1000"
+	"\n",	
+
+
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_v100000_20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_v100000_20_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"count"
+	"\n",
+		"quitip"
+	"\n",
+		"synthesize_graph"
+	"\n",
+	
+};
+
+
+/*
+		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 5000000"
+	"\n",	
+		"edit fea 1000"
+	"\n",	
+
+
 		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
 	"\n",
 		"prune"
 	"\n",
-		"count port"
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 100000 20 1 1"
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"export"
 	"\n",
 		"quitip"
 	"\n",
-		"sg"
+		"synthesize_graph"
 	"\n",
-	
-};
+
+		
+
+
+
+
+
+
+		"pause"
+	"\n",
+		"viz in 2000"
+	"\n",	
+		"count"
+	"\n",
+		"pause"
+	"\n",
+*/
 
 
 
@@ -252,6 +418,22 @@ static const char* input_commands[] = {
 
 
 
+
+
+
+/*		"prune"
+	"\n",
+		"count port"
+//	"\n",
+//		"quitip"
+//	"\n",
+//		"sg"
+//	"\n",
+	
+
+
+
+*/
 
 
 
@@ -641,7 +823,6 @@ static void print_stack(struct stack_frame* stack, nat stack_count) {
 	}
 
 	printf("}\n[end of stack]\n");
-
 }
 
 
@@ -677,9 +858,7 @@ static nat* generate_options(
 
 
 
-
-
-static void print_lifetime(nat origin, struct parameters p, nat* graph, const nat instruction_count) {
+static void print_lifetime(nat origin, struct parameters p, nat* graph, const nat print_count, const nat pre_run_count) {
 
 	const nat n = p.FEA;
 
@@ -692,7 +871,7 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 	;
 
 	puts("[starting lifetime...]");
-	for (nat e = 0; e < instruction_count; e++) {
+	for (nat e = 0; e < print_count + pre_run_count; e++) {
 
 		const nat I = ip * 4;
 		const nat op = graph[I];
@@ -702,15 +881,20 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 		}
 
 		else if (op == 5) {
-			for (nat i = 0; i < max_array_size; i++) {
-				if (not array[i]) break;   // LE
-				if (modes[i]) {
-					printf("%s", (i == pointer ?  green : white));
-					printf("██" reset); // (print IA's as a different-colored cell..?)
 
-				} else printf(blue "██" reset);
+			if (e >= pre_run_count) {
+		
+				for (nat i = 0; i < max_array_size; i++) {
+					if (not array[i]) break;   // LE
+					if (modes[i]) {
+						printf("%s", (i == pointer ?  green : white));
+						printf("██" reset); // (print IA's as a different-colored cell..?)
+					} else printf(blue "██" reset);
+				}
+				puts("");
 			}
-			puts("");
+
+
 			pointer = 0;
 			memset(modes, 0, sizeof modes);
 		}
@@ -1028,7 +1212,7 @@ begin:
 		printf("searching: [origin = %llu, limit = %llu, n = %llu]\n", origin, p.execution_limit, n);
 		print_stack(stack, stack_count);
 
-		print_lifetime(origin, p, graph, 100);
+		print_lifetime(origin, p, graph, 100, 0);
 
 		fflush(stdout);
 		if (p.frame_delay) usleep((unsigned) p.frame_delay);
@@ -1066,12 +1250,6 @@ backtrack:
 		goto backtrack;
 	}
 done:
-
-	// destroy_list(&d->port);
-
-
-
-
 
 	d->port.z = realloc(d->port.z, sizeof(nat) * (d->port.count + candidate_count) * p.graph_count);
 	d->port.dt = realloc(d->port.dt, sizeof(char) * (d->port.count + candidate_count) * 16);
@@ -1327,7 +1505,7 @@ static void print_command(const char** command, struct parameters p, struct sear
 		}
 
 		printf("info: printing the lifetime for the current graph...\n");
-		print_lifetime(1, p, p.graph, count);
+		print_lifetime(1, p, p.graph, count, 0);
 
 
 	} else if (is(command[1], "lifetimes", "ls")) {
@@ -1347,7 +1525,7 @@ static void print_command(const char** command, struct parameters p, struct sear
 			for (nat origin = 0; origin < p.operation_count; origin++) {
 
 				if (p.graph[4 * origin] == 3) {
-					print_lifetime(origin, p, p.graph, instruction_count);
+					print_lifetime(origin, p, p.graph, instruction_count, 0);
 					printf("[origin = %llu]\n", origin);
 					print_graph_as_adj(p.graph, p.graph_count);
 					printf("z=%llu / zcount=%llu   :   ", z, d.port.count);
@@ -1363,13 +1541,10 @@ static void print_command(const char** command, struct parameters p, struct sear
 	else if (is(command[1], "z", "z")) { print_graph_as_z_value(p.graph, p.graph_count); puts(""); }
 	else if (is(command[1], "z_list", "zl")) print_z_list(d.port, p.graph_count);
 
-
 	else {
 		printf("unknown argument: %s\n", command[1]);
 		return;
 	}
-
-	
 }
 
 
@@ -1474,10 +1649,6 @@ static void plot_el(struct parameters p) {
 
 
 
-
-
-
-
 //  set   p.scratch    to the minimum fea,   set    p.FEA to  the maximum fea,    
 //  and set p.step to the stride width/size, to go through fea possibilities at.
 //  set p.window_width to the maximum number of characters to print per line, 
@@ -1522,7 +1693,7 @@ static void print_pruning_metric_menu() {
 
 
 
-
+// h
 static bool has_horizonal_line(
 	const nat max_acceptable_run_length,    // eg     5, 6, 7, or 8   ish 
 	nat origin, 
@@ -1595,15 +1766,7 @@ static bool has_horizonal_line(
 
 
 
-
-
-
-
-
-
-
-
-
+// r0i
 static bool increments_star_zero_alot(
 	const nat max_acceptable_consecutive_incr,      // around 20 ish
 	nat origin, 
@@ -1672,88 +1835,9 @@ static bool increments_star_zero_alot(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-if (viz) puts("");
-
-
-
-
-
-
-// graph is not acceptable.   prune this one.     return has_horizon = true.
-
-
-
-
-
-
-				if (viz) {					
-					if (modes[i]) {
-							printf("%s", (i == pointer ?  green : white));
-							printf("██" reset); // (print IA's as a different-colored cell..?)
-
-					} else printf(blue "██" reset);
-				}
-
-
-
-
-
-				                                                      //    if (not array[i]) break;   // LE
-				
-
-							
-
-
-
-
-										///    deleting this because trying to diagnose a bug with the horizontal line pm. 
-
-
-*/
-
-
-
-
-
-
-
  // checks if the graph zooms towards star n    immediately.    ("fast expansion")
-
-static bool is_fast_expansion(
+// fx
+static bool is_fast_expansion(                                     // this function is not used ever, becuaes we never say "fast_expansion".
 	const nat timestep_count,           // eg    10 
 	const nat too_wide_threshold,       // eg    200
 	const nat origin, 
@@ -1849,8 +1933,8 @@ static bool is_fast_expansion(
 
 
 
-
-static bool ERs_in_same_spot(
+// rer
+static bool ERs_in_same_spot(                                            
 	const nat rer_count,           // eg    10 or 20
 	const nat origin, 
 	struct parameters p, 
@@ -1894,9 +1978,9 @@ static bool ERs_in_same_spot(
 					} else printf(blue "██" reset);
 				}
 				puts("");
-				memset(modes, 0, sizeof modes);
 			}
 			pointer = 0;
+			memset(modes, 0, sizeof modes);
 		}
 
 		else if (op == 2) {
@@ -1928,7 +2012,7 @@ static bool ERs_in_same_spot(
 
 
 
-
+// oer
 static bool ERs_in_two_spots_alternately(
 	const nat oer_count,           	// eg    50
 	const nat origin, 
@@ -1976,9 +2060,10 @@ static bool ERs_in_two_spots_alternately(
 					} else printf(blue "██" reset);
 				}
 				puts("");
-				memset(modes, 0, sizeof modes);
+				
 			}
 			pointer = 0;
+			memset(modes, 0, sizeof modes);
 		}
 
 		else if (op == 2) {
@@ -2008,40 +2093,8 @@ static bool ERs_in_two_spots_alternately(
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool single_fea(
+//sfea
+static bool goes_out_of_array_bounds(
 	const nat origin, 
 	struct parameters p, 
 	nat* graph, 
@@ -2081,9 +2134,10 @@ static bool single_fea(
 					} else printf(blue "██" reset);
 				}
 				puts("");
-				memset(modes, 0, sizeof modes);
+				
 			}
 			pointer = 0;
+			memset(modes, 0, sizeof modes);
 		}
 
 		else if (op == 2) {
@@ -2122,6 +2176,212 @@ static bool single_fea(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+static bool has_vertical_line(
+
+	const nat acc_ins,                    // 100000
+	const nat bucket_too_large_thr,       // 20
+	const nat _unused, 			// 1  unused
+	const nat _unused2,                    // 1  unused
+
+	const nat origin, 
+	struct parameters p, 
+	nat* graph, 
+	const nat instruction_count
+) {
+
+	const nat pre_run = instruction_count - acc_ins;
+	
+	const nat n = p.FEA;
+
+	nat buckets[max_array_size] = {0};
+
+	nat array[max_array_size] = {0};
+	bool modes[max_array_size] = {0};
+
+	nat 
+		pointer = 0, 
+		ip = origin
+	;
+
+	for (nat e = 0; e < instruction_count; e++) {
+
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) {
+			pointer++;
+		}
+
+		else if (op == 5) {
+			memset(modes, 0, sizeof modes);
+			pointer = 0;
+		}
+
+		else if (op == 2) {
+			array[n]++;
+		}
+
+		else if (op == 6) {  
+			array[n] = 0;   
+		}
+
+		else if (op == 3) {
+			array[pointer]++;
+
+			if (e >= pre_run) buckets[pointer]++;
+
+			modes[pointer] = 1;
+		}
+
+		nat state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+
+		if (graph[I + state] == unknown) abort();
+
+		ip = graph[I + state];
+	}
+
+	// at here, the buckets are filled with values
+
+
+
+	clear_screen();
+	printf("\n\t");
+	fflush(stdout);
+	if (p.frame_delay) usleep((unsigned) p.frame_delay);
+
+
+
+	print_nats(buckets, n); 	         // debug raw buckets
+	puts("\n");
+
+
+
+
+
+
+
+
+	// compute max_bucket_value:
+
+
+
+	nat max_bucket_value = 0;
+
+	for (nat i = 0; i < n; i++) {
+		if (buckets[i] > bucket_too_large_thr) return true;
+		if (buckets[i] > max_bucket_value) {
+			max_bucket_value = buckets[i];
+		}
+	}
+
+
+	max_bucket_value++;
+	
+
+	// compute the blurry buckets, using the window averaging 
+
+		// dont do this for now.
+
+
+
+
+
+// compute the hg  based off of that.
+
+
+	nat* counts = calloc(max_bucket_value, sizeof(nat));
+
+	for (nat i = 0; i < n; i++) {
+		counts[buckets[i]]++;
+	}
+
+	for (nat i = 0; i < max_bucket_value; i++) {
+		printf("%03llu : ", i);
+		for (nat c = 0; c < counts[i]; c++) printf("#");
+		puts("");
+	}
+	
+	puts("\n\n");
+
+	free(counts);
+
+
+	return false;         // tempoary, for testing
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*    hg of vl   graph
+
+##############################################     <----  0.00...9.99
+#################################                  <----  10.00...19.99
+##########################
+################
+###
+#
+##
+#
+#
+#
+##
+#
+#
+#
+#
+##
+#
+##
+#####
+##############
+###############################           <--------  110.00...119.99
+##################
+########
+##
+#
+#
+#
+
+*/
+
+
+
+
+
+
+
+
+
+
 static void transfer_list(struct list* destination, struct list source, const nat graph_count) {
 
 	//puts("TRANSFER:");
@@ -2133,14 +2393,11 @@ static void transfer_list(struct list* destination, struct list source, const na
 	//printf("source.z: %p\n", source.z);
 
 
-
 	nat* source_z = calloc(source.count * graph_count, sizeof(nat));      // perform a deep copy, just in case they are the same list.
 	nat* source_dt = calloc(source.count * 16, 1);
 
 	memcpy(source_z, source.z, source.count * graph_count * sizeof(nat));
 	memcpy(source_dt, source.dt, source.count * 16);
-
-
 
 
 	destination->z  = realloc(destination->z,  source.count * sizeof(nat) * graph_count);
@@ -2191,12 +2448,7 @@ static const char* get_list_pointer(struct list** list, const char* string, stru
 }
 
 
-
-
-
-
-
-
+//actual sfea
 static void execute_singlefea_pruning_metric(
 	struct parameters p, 
 	struct search_data * d, 
@@ -2212,7 +2464,7 @@ static void execute_singlefea_pruning_metric(
 
 			if (p.graph[4 * origin] != 3) continue;
 
-			if (not single_fea(origin, p, p.graph, p.execution_limit, viz)) 
+			if (not goes_out_of_array_bounds(origin, p, p.graph, p.execution_limit, viz)) 
 				push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
 			else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
 		}
@@ -2222,8 +2474,7 @@ static void execute_singlefea_pruning_metric(
 }
 
 
-
-static void prune_z_list(struct parameters p, struct search_data *d) {
+static void prune_z_list(struct parameters p, struct search_data *d) {  // ip
 
 	puts(	"this is the iterative pruning stage command line interface. \n"
 		"type help for a list of PMs."
@@ -2249,9 +2500,8 @@ loop: 	printf(":IP: ");
 	else if (is(*command, "pass", "pass")) 	transfer_list(&d->out, d->in, p.graph_count);
 	else if (is(*command, "next", "n")) { 
 		if (not d->out.count) {
-
-					printf("error: executing NEXT would delete/overwrite %llu z values."
-					" use \"transfer in out\" instead.\n", d->in.count);
+			printf("error: executing NEXT would delete/overwrite %llu z values."
+			" use \"transfer in out\" instead.\n", d->in.count);
 		} else {
 			transfer_list(&d->in, d->out, p.graph_count); 
 			destroy_list(&d->out); 
@@ -2308,18 +2558,20 @@ loop: 	printf(":IP: ");
 				source.count, source_name, destination_name, destination_count);
 	}
 
-	else if (is(*command, "visualize", "viz")) {        // viz <list(port/in/out/bad/scratch)> <ins_count(nat)>
+	else if (is(*command, "visualize", "viz")) {        // viz <list(port/in/out/bad/scratch)> <print_count(nat)> <pre_run_count>
 
 		struct list list = {0};
 		const char* name = get_list(&list, command[1], d);
 		if (not name) { printf("error: unknown viz list\n"); goto next; } 
 		
-		const nat instruction_count = (nat) atoi(command[2]);
-		if (not instruction_count) { 
-			printf("error: bad instruction count supplied.\n");
+		const nat print_count = (nat) atoi(command[2]);            // how much you want to see.
+		if (not print_count) { 
+			printf("error: bad print_count supplied.\n");
 			goto next;
 		}
 
+		const nat pre_run_count = (nat) atoi(command[3]);         // how much you want to skip over at the beginning.
+ 
 		nat z = 0; 
 
 		for (; z < list.count; z++) {
@@ -2329,7 +2581,7 @@ loop: 	printf(":IP: ");
 			for (nat origin = 0; origin < p.operation_count; origin++) {
 
 				if (p.graph[4 * origin] == 3) {
-					print_lifetime(origin, p, p.graph, instruction_count);
+					print_lifetime(origin, p, p.graph, print_count, pre_run_count);
 					printf("[origin = %llu]\n", origin);
 					print_graph_as_adj(p.graph, p.graph_count);
 					printf("z=%llu / zcount=%llu   :   ", z, list.count);
@@ -2527,7 +2779,131 @@ loop: 	printf(":IP: ");
 	}
 
 
-	else if (is(*command, "vertical", "v")) {}
+
+
+
+
+	else if (is(*command, "vertical", "v")) {
+
+		
+		const nat pre_run = (nat) atoi(command[1]);                // el   1,000,000      //   PRT  999,500         ( 1,000,000 - 500)
+
+		if (not pre_run) { 
+			printf("error: bad pre_run supplied.\n");
+			goto next;
+		}
+
+
+
+		const nat window_width = (nat) atoi(command[2]);
+
+		if (not window_width) { 
+			printf("error: bad window_width supplied.\n");
+			goto next;
+		}
+
+		const nat max_bucket_value = (nat) atoi(command[3]);
+		if (not max_bucket_value) { 
+			printf("error: bad max_bucket_value supplied.\n");
+			goto next;
+		}
+
+
+		const nat bar_width = (nat) atoi(command[4]);
+		if (not bar_width) { 
+			printf("error: bad bar_width supplied.\n");
+			goto next;
+		}
+
+
+
+		for (nat z = 0; z < d->in.count; z++) {
+			printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count); fflush(stdout);
+			memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+			for (nat origin = 0; origin < p.operation_count; origin++) {
+				if (p.graph[4 * origin] != 3) continue;
+
+				if (not has_vertical_line(pre_run, window_width, max_bucket_value, 
+							bar_width, origin, p, p.graph, p.execution_limit)) 
+					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+			}
+		}
+		printf("--> found %llu / pruned %llu  :  after  vertical line  pruning metric.\n", d->out.count, d->bad.count);
+
+		
+
+
+	}
+
+
+
+
+
+
+	else if (is(*command, "human", "human")) {        // human <print_count> <pre_run_count>             run z for a total of     ins_c + pr_c   ins.
+
+	
+		const nat print_count = (nat) atoi(command[1]);
+		if (not print_count) { 
+			printf("error: bad print_count supplied.\n");
+			goto next;
+		}
+
+		const nat pre_run_count = (nat) atoi(command[2]);
+
+		nat z = 0; 
+
+		for (; z < d->in.count; z++) {
+
+			bool bad = false;
+
+			memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+			for (nat origin = 0; origin < p.operation_count; origin++) {
+
+				if (p.graph[4 * origin] == 3) {
+					print_lifetime(origin, p, p.graph, print_count, pre_run_count);
+					printf("[origin = %llu]\n", origin);
+					print_graph_as_adj(p.graph, p.graph_count);
+					printf("z=%llu / zcount=%llu   :   ", z, d->in.count);
+					print_graph_as_z_value(p.graph, p.graph_count);
+					puts("");
+					puts(d->in.dt + 16 * z);
+					puts("");
+					printf("continue? (q/ENTER) ");
+					fflush(stdout);
+
+					if (input_index >= input_count) {
+
+						get_input:; int c = getchar();
+
+						if (c == 'q') goto stop_human_pruning;
+						else if (c == '1') { if (z) z--; z--; goto next_z_value; }
+						else if (c == ' ') bad = false; 
+						else if (c == 'b') bad = true; 
+						else {
+							printf("invalid viz-command input: %c\n", c);
+							goto get_input;
+						}
+					}
+
+					if (not bad) 
+						push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+					else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+				
+				}
+			}
+			next_z_value:;
+		}
+		stop_human_pruning: 
+
+		printf("finished human pruning visualization of z=%llu / %llu z values.\n", z, d->in.count);
+		printf("--> found %llu / pruned %llu  :  after  vertical line  pruning metric.\n", d->out.count, d->bad.count);
+	}
+
+
 	else printf("error: unknown IP pruning metric / command\n");
 
 	
@@ -2650,7 +3026,7 @@ static void synthesize_graph(struct parameters p, struct search_data d) {
 		printf(".l={ ");
 		for (nat o = 0; o < p.operation_count; o++) {
 			const nat count = tallys2[(i + 1) * p.operation_count + o];
-			const double percentage = (double) count / 510.0;
+			const double percentage = (double) count / 44.0;
 			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
 		}
 		printf(" },  ");
@@ -2658,7 +3034,7 @@ static void synthesize_graph(struct parameters p, struct search_data d) {
 		printf(".g={ ");
 		for (nat o = 0; o < p.operation_count; o++) {
 			const nat count = tallys2[(i + 2) * p.operation_count + o];
-			const double percentage = (double) count / 510.0;
+			const double percentage = (double) count / 44.0;
 			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
 		}
 		printf(" },  ");
@@ -2666,7 +3042,7 @@ static void synthesize_graph(struct parameters p, struct search_data d) {
 		printf(".e={ ");
 		for (nat o = 0; o < p.operation_count; o++) {
 			const nat count = tallys2[(i + 3) * p.operation_count + o];
-			const double percentage = (double) count / 510.0;
+			const double percentage = (double) count / 44.0;
 			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
 		}
 		printf(" },  ");
@@ -2790,22 +3166,21 @@ loop: 	printf(":: ");
 		printf("\n}\n\n");
 	}
 
-	else if (is(*command, "help", "?")) 		print_help_menu();
-	else if (is(*command, "clear", "o")) 		clear_screen();
-	else if (is(*command, "datetime", "dt")) 	print_datetime();
+	else if (is(*command, "help", "?")) 			print_help_menu();
+	else if (is(*command, "clear", "o")) 			clear_screen();
+	else if (is(*command, "datetime", "dt")) 		print_datetime();
 
-	else if (is(*command, "print", "p"))  		print_command(command, p, d);
-	else if (is(*command, "edit", "e"))    		edit_command(command, &p, &d);
-	else if (is(*command, "write", "w")) 	 	write_command(command, p, d);
-	else if (is(*command, "generate", "g")) 	any_search(p, &d);
-	else if (is(*command, "prune", "ip")) 		prune_z_list(p, &d);
+	else if (is(*command, "print", "p"))  			print_command(command, p, d);
+	else if (is(*command, "edit", "e"))    			edit_command(command, &p, &d);
+	else if (is(*command, "write", "w")) 	 		write_command(command, p, d);
+	else if (is(*command, "generate", "g")) 		any_search(p, &d);
+	else if (is(*command, "prune", "ip")) 			prune_z_list(p, &d);
 	else if (is(*command, "synthesize_graph", "sg")) 	synthesize_graph(p, d);
 
-	else if (is(*command, "plot_el", "pel")) 	plot_el(p);
-	else if (is(*command, "plot_fea", "pfea"))	plot_fea(p);
+	else if (is(*command, "plot_el", "pel")) 		plot_el(p);
+	else if (is(*command, "plot_fea", "pfea"))		plot_fea(p);
 
-	
-	
+
 	else printf("error: unknown command.\n");
 
 	goto loop; done:;
@@ -2814,6 +3189,26 @@ loop: 	printf(":: ");
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -4542,3 +4937,252 @@ done:
 
 // else if (is(*command, "expansion_progress_check", "xpc")) {}    
 	// not going to implement this one yet.. doesnt seem useful...?
+
+
+
+
+
+/*
+if (viz) puts("");
+
+
+
+
+
+
+// graph is not acceptable.   prune this one.     return has_horizon = true.
+
+
+
+
+
+
+				if (viz) {					
+					if (modes[i]) {
+							printf("%s", (i == pointer ?  green : white));
+							printf("██" reset); // (print IA's as a different-colored cell..?)
+
+					} else printf(blue "██" reset);
+				}
+
+
+
+
+
+				                                                      //    if (not array[i]) break;   // LE
+				
+
+							
+
+
+
+
+										///    deleting this because trying to diagnose a bug with the horizontal line pm. 
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+2302057.163205
+
+looking at the 44 v values, obtained by just thr the max cell value.
+
+
+
+
+
+ifetime]
+[origin = 1]
+graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0, 0, 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 5])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 2])
+
+	#16: ins(.op = 5, .lge = [ 5, 2, 3])
+
+	#20: ins(.op = 2, .lge = [ 2, 0, 3])
+
+}
+
+z=10 / zcount=44   :   12323004201561_255232203
+2211211.202214
+
+continue? (q/ENTER) 
+
+
+
+
+
+			this z value didnt look that bad, after a million insutrctions, and 1000 for fea.
+
+
+
+
+
+
+
+
+
+this one as well
+looks not that bad
+
+
+
+
+[end of lifetime]
+[origin = 1]
+graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0, 0, 5])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 3])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 2])
+
+	#16: ins(.op = 5, .lge = [ 5, 2, 0])
+
+	#20: ins(.op = 2, .lge = [ 0, 4, 0])
+
+}
+
+z=13 / zcount=44   :   12323005201361_255202040
+2211211.202232
+
+continue? (q/ENTER)  
+
+
+
+
+
+
+						so yeah..... not sure what to do..
+
+
+
+
+[end of lifetime]
+[origin = 1]
+graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0, 0, 5])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 3])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 2])
+
+	#16: ins(.op = 5, .lge = [ 5, 2, 1])
+
+	#20: ins(.op = 2, .lge = [ 0, 4, 0])
+
+}
+
+z=20 / zcount=44   :   12323005201361_255212040
+2211211.202233
+
+continue? (q/ENTER) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+12323004201561_155232001  :  2211211.202213
+12323054201561_155232001  :  2211211.202213
+12323004201561_155232201  :  2211211.202213
+12323054201561_155232201  :  2211211.202213
+12323004201561_155232003  :  2211211.202213
+12323054201561_155232003  :  2211211.202213
+12323004201561_155232203  :  2211211.202213
+12323054201561_155232203  :  2211211.202213
+12323004201561_255232201  :  2211211.202214
+12323054201561_255232201  :  2211211.202214
+12323004201561_255232203  :  2211211.202214
+12323004201361_155252020  :  2211211.202221
+12323004201361_155552220  :  2211211.202222
+12323005201361_255202040  :  2211211.202232
+12323005201361_255202240  :  2211211.202232
+12323005201361_155202041  :  2211211.202232
+12323005201361_155202241  :  2211211.202232
+12323005201361_255202241  :  2211211.202232
+12323005201361_155202043  :  2211211.202232
+12323005201361_155202243  :  2211211.202232
+12323005201361_255212040  :  2211211.202233
+12323005201361_155212243  :  2211211.202233
+12323005201361_255212240  :  2211211.202233
+12323005201361_255212241  :  2211211.202233
+12323005201361_255232240  :  2211211.202234
+12323005201361_155232241  :  2211211.202234
+12323005201361_255232241  :  2211211.202234
+12323005201361_155232243  :  2211211.202234
+12323044205361_555312213  :  2211211.202252
+12323044205361_555332211  :  2211211.202253
+12353002204361_155502011  :  2211211.202302
+12353002204361_155502211  :  2211211.202302
+12353002204361_555502211  :  2211211.202302
+12353002204361_155502013  :  2211211.202303
+12353002204361_155502213  :  2211211.202303
+12353002204361_155512213  :  2211211.202304
+12353002204361_555512211  :  2211211.202304
+12353002204361_155532211  :  2211211.202305
+12353002204361_555532211  :  2211211.202305
+12353002204361_155532213  :  2211211.202305
+12353004205361_155232212  :  2211211.202332
+12353004205361_155532212  :  2211211.202332
+12353044201361_255312223  :  2211211.202345
+12353044201361_255332221  :  2211211.202347
+
+
+
+
+
+*/
+
