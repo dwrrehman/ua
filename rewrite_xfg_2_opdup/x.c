@@ -33,6 +33,178 @@
 
 
 /*
+
+
+
+
+
+
+
+
+2303046.193658
+
+heres the partial graph consistent with the 9 good z values from 1-space, after running nsvlpm and sg:
+
+
+ tallys2 : dupilcating 2 in 1-space:
+{ .op = 1,   .lge={ .l={  ->2: 9(1.00),  },  .g={  ->3: 9(1.00),  },  .e={  ->2: 8(0.89),  ->5: 1(0.11),  },   }   
+
+{ .op = 3,   .lge={ .l={  ->0: 9(1.00),  },  .g={  ->0: 6(0.67),  ->5: 3(0.33),  },  .e={  ->2: 1(0.11),  ->4: 7(0.78),  ->5: 1(0.11),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 9(1.00),  },  .g={  ->1: 8(0.89),  ->4: 1(0.11),  },  .e={  ->3: 2(0.22),  ->5: 7(0.78),  },   }   
+
+{ .op = 6,   .lge={ .l={  ->1: 9(1.00),  },  .g={  },  .e={  ->1: 6(0.67),  ->2: 3(0.33),  },   }   
+
+{ .op = 5,   .lge={ .l={  ->5: 9(1.00),  },  .g={  ->2: 8(0.89),  ->5: 1(0.11),  },  .e={  ->1: 2(0.22),  ->3: 7(0.78),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 2(0.22),  ->2: 7(0.78),  },  .g={  ->0: 7(0.78),  ->1: 1(0.11),  ->4: 1(0.11),  },  .e={  ->1: 6(0.67),  ->3: 3(0.33),  },   }   
+
+:: 
+
+
+
+
+
+ RRXFG partial graph     starting graph: 
+
+	.graph = { 
+			1,  2, 3, _,
+			3,  0, _, _,
+			2,  0, _, _,
+			6,  1, X, _,
+			5,  _, _, _,
+			0,  _, _, _,
+
+
+
+
+			0,  _, _, _,
+			0,  _, _, _,
+			0,  _, _, _,
+			0,  _, _, _,
+		},
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[end of lifetime]
+[origin = 1]
+graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0, 0, 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 5])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 1])
+
+	#16: ins(.op = 5, .lge = [ 5, 2, 3])
+
+	#20: ins(.op = 2, .lge = [ 2, 0, 1])
+
+}
+
+z=2 / zcount=9   :   12323004201561_155232201
+2211211.202213
+
+continue? (q/ENTER) 
+
+
+						this is oneof the nine following z values, that were good enough to not obviouslyyyyy have vl's,   so nsvlpm did not catch them, given our parameters we supplied. 
+
+
+
+
+
+heres the output of nsvlpm     (14 z values, total)    but    after we human pruned 5 of them, to get rid of 5 ones that had a ER infinite loop.
+
+
+
+
+12323004201561_155232001  :  2211211.202213
+12323054201561_155232001  :  2211211.202213
+12323004201561_155232201  :  2211211.202213
+12323054201561_155232201  :  2211211.202213
+12323004201561_255232201  :  2211211.202214
+12323054201561_255232201  :  2211211.202214
+12323004201561_255232203  :  2211211.202214
+12323005201361_155212243  :  2211211.202233
+12353002204361_155512213  :  2211211.202304
+
+listed out with 9 values.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	2303046.145308
+		iter:
+
+
+			1. code up NSVLPM 
+
+			2. do the official 1-sp search! using all pm's and plot_fea and plot_el  utils.	
+
+
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	things i want to implement:
 
 
@@ -40,7 +212,7 @@
 
 		1. find the speed of expansion of each z value
 	
-		2. find the speed of the vertical lines precession       (to eventually account for precession!)
+--->		2. find the speed of the vertical lines precession       (to eventually account for precession!)
 
 
 	viz:
@@ -51,7 +223,7 @@
 
 
 
-	***	4. increase the PRT to like 1000000000 ish 
+x	***	4. increase the PRT to like 1000000000 ish 
 
 				find the relationship betwwen fea and el   for our z values. 
 
@@ -59,21 +231,12 @@
 	
 				
 
-	****	5.        plz run      GRAPH AVERAGERRRRRR
+x	****	5.        plz run      GRAPH AVERAGERRRRRR
 
 
 
 
 						done!
-
-
-
-
-
-			
-
-
-
 
 
 
@@ -258,11 +421,14 @@ iter:       last uaj
 
 */
 
+
+
+
 // -------- constants: --------
 
 static const nat max_stack_size = 128; 			// maximum number of holes we can fill in the partial graph simultaneously.
 
-static const nat max_array_size = 2048;   			// effectively infinity.  (xfg uses an infinite array)
+static const nat max_array_size = 4096;   		// effectively infinity.  (xfg uses an infinite array)
 
 
 static const nat max_mcal_length = 16;                  // maximum mcal length you can supply.
@@ -283,73 +449,17 @@ static const nat unique_count = sizeof operations / sizeof(nat);
 
 
 
-/*
-
-2302164.152330:       ran graph averager (sg) on 44 z values after doing vertical line pm, note: theres no  1-dup graphs. ie, in 1space, graphs only dupilcated 2. not 1. 
-				given our weird hardcody way of doing the vl pm. 
-
-
-
- tallys2 : dupilcating 2 in 1-space:
-{ .op = 1,   .lge={ .l={  ->2: 44(1.00),  },  .g={  ->3: 44(1.00),  },  .e={  ->2: 30(0.68),  ->5: 14(0.32),  },   }   
-
-{ .op = 3,   .lge={ .l={  ->0: 44(1.00),  },  .g={  ->0: 35(0.80),  ->4: 4(0.09),  ->5: 5(0.11),  },  .e={  ->2: 10(0.23),  ->4: 19(0.43),  ->5: 15(0.34),  },   }   
-
-{ .op = 2,   .lge={ .l={  ->0: 44(1.00),  },  .g={  ->1: 30(0.68),  ->4: 10(0.23),  ->5: 4(0.09),  },  .e={  ->3: 33(0.75),  ->5: 11(0.25),  },   }   
-
-{ .op = 6,   .lge={ .l={  ->1: 44(1.00),  },  .g={  },  .e={  ->1: 26(0.59),  ->2: 13(0.30),  ->5: 5(0.11),  },   }   
-
-{ .op = 5,   .lge={ .l={  ->5: 44(1.00),  },  .g={  ->2: 28(0.64),  ->3: 4(0.09),  ->5: 12(0.27),  },  .e={  ->0: 12(0.27),  ->1: 8(0.18),  ->3: 22(0.50),  ->5: 2(0.05),  },   }   
-
-{ .op = 2,   .lge={ .l={  ->0: 11(0.25),  ->2: 33(0.75),  },  .g={  ->0: 11(0.25),  ->1: 14(0.32),  ->2: 4(0.09),  ->4: 15(0.34),  },  .e={  ->0: 7(0.16),  ->1: 20(0.45),  ->2: 2(0.05),  ->3: 15(0.34),  },   }   
-
-
-
-
-note:  RRXFG partial graph     starting graph: 
-
-	.graph = { 
-			1,  2, 3, _,
-			3,  0, _, _,
-			2,  0, _, _,
-			6,  1, X, _,
-			5,  _, _, _,
-			0,  _, _, _,
-
-
-
-
-			0,  _, _, _,
-			0,  _, _, _,
-			0,  _, _, _,
-			0,  _, _, _,
-		},
-
-
-
-
-
-
-
-
-
-*/
-
 
 
 static const char* input_commands[] = {
 
-
-
 		"edit duplication_count 1"
 	"\n",
-		"edit execution_limit 5000000"
+		"edit execution_limit 10000000"
 	"\n",	
-		"edit fea 1000"
+		"edit fea 1500"
 	"\n",	
-
-
-		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_v100000_20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_v100000_20_dt.txt"
+		"edit zl nine_good_1sp_z.txt nine_good_1sp_dt.txt"
 	"\n",
 		"prune"
 	"\n",
@@ -359,19 +469,25 @@ static const char* input_commands[] = {
 	"\n",
 		"synthesize_graph"
 	"\n",
-	
+
 };
 
 
+
+
+
+
+
 /*
+
+
+
 		"edit duplication_count 1"
 	"\n",
-		"edit execution_limit 5000000"
+		"edit execution_limit 10000000"
 	"\n",	
-		"edit fea 1000"
+		"edit fea 1500"
 	"\n",	
-
-
 		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
 	"\n",
 		"prune"
@@ -380,168 +496,18 @@ static const char* input_commands[] = {
 	"\n",
 		"count"
 	"\n",
-		"vertical 100000 20 1 1"
+		"vertical 100000 60 5 7 20 0 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
 	"\n",
 		"count"
 	"\n",
-		"pause"
-	"\n",
-		"export"
-	"\n",
-		"quitip"
-	"\n",
-		"synthesize_graph"
-	"\n",
 
-		
 
 
 
 
 
 
-		"pause"
-	"\n",
-		"viz in 2000"
-	"\n",	
-		"count"
-	"\n",
-		"pause"
-	"\n",
-*/
 
-
-
-
-//		"edit zl d1_e500k_h6_rer20_z.txt d1_e500k_h6_rer20_dt.txt"  
-//	"\n",
-
-//		"viz in 2000"
-//	"\n",
-
-
-
-
-
-
-
-
-
-/*		"prune"
-	"\n",
-		"count port"
-//	"\n",
-//		"quitip"
-//	"\n",
-//		"sg"
-//	"\n",
-	
-
-
-
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-	this seq is what we used to create the     d1_e500k_h6f_rer20_mfea3    z list. 
-
-
-
-
-	"edit duplication_count 1"
-	"\n",
-		"edit execution_limit 500000"
-	"\n",	
-		"edit zl d1_e500k_z.txt d1_e500k_dt.txt"
-	"\n",
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-		"pause"
-	"\n",
-		"horizontal 6 0"
-	"\n",	
-		"count"
-	"\n",
-		"pause"
-	"\n",
-		"next"
-	"\n",
-		"rer 20 0"
-	"\n",
-		"count"
-	"\n",
-		"pause"
-	"\n",
-		"next"
-	"\n",
-		"mfea 3 0 0"
-	"\n",
-		"count"
-	"\n",
-		"pause"
-	"\n",
-		"next"
-	"\n",
-
-
-
-*/
-
-
-
-
-
-
-
-
-
-
-//		"horizontal 6 0"                    // already done. 
-//	"\n",
-//		"next"
-//	"\n",
-//		"repetitive_er 20 0"
-//	"\n",
-//		"next"
-//	"\n",
-
-
-
-//		"mfea 6 300 0"
-//	"\n",
-//		"count"
-//	"\n",
-
-
-
-
-
-
-
-//		"fx 10 200 0"      // unused.                          // testing out the fx pm. 
-//	"\n",
-//		"count bad"
-//	"\n",
-
-/*
 
 	2212224.151255:
 
@@ -2191,26 +2157,122 @@ static bool goes_out_of_array_bounds(
 
 
 
+struct bucket {
+	nat index;
+	nat data;
+	nat counter;
+	nat uid;
+};
+
+
+
+
+
+
+static nat compute_xw(nat* array, const nat n) {
+	nat i = 0;
+	for (; i < n; i++) 
+		if (not array[i]) break; 
+	return i;
+}
+
+static nat gather_buckets_at(
+
+	struct bucket* buckets, 
+	struct bucket* output, 
+
+	const nat desired_index, 
+	const nat radius, 
+	const nat bucket_count
+) {
+	nat out_count = 0;
+	
+	for (nat b = 0; b < bucket_count; b++) {
+		if (	buckets[b].index <= desired_index + radius and 
+			buckets[b].index >= desired_index - radius
+		) {
+			output[out_count] = buckets[b]; 
+			output[out_count++].uid = b;
+		}
+	}
+	return out_count;
+}
+
+static nat get_max_bucket_uid(struct bucket* scratch, const nat scratch_count) {
+	nat max_bucket_data = 0;
+	struct bucket max_bucket = {0};
+	
+	for (nat s = 0; s < scratch_count; s++) {
+		if (scratch[s].data >= max_bucket_data) {
+			max_bucket_data = scratch[s].data;
+			max_bucket = scratch[s];
+		}
+	}
+
+	return max_bucket.uid;
+}
+
+static void print_buckets(struct bucket* buckets, const nat bucket_count) {
+	for (nat b = 0; b < bucket_count; b++) {
+		if (buckets[b].data) {
+			printf("\nBUCKET uid#%llu = { .index = %llu, .data = %llu, .counter = %llu, .uid = %llu } \n\n",
+				b,
+				buckets[b].index,
+				buckets[b].data,
+				buckets[b].counter,
+				buckets[b].uid
+			);
+		} else 
+			printf("@ ");
+	}
+}
+
+
+
+
+
 
 
 static bool has_vertical_line(
 
-	const nat acc_ins,                    // 100000
-	const nat bucket_too_large_thr,       // 20
-	const nat _unused, 			// 1  unused
-	const nat _unused2,                    // 1  unused
+	const nat mpp,   //middle portion percentage       //  60            ie    60 percent
+
+	const nat acc_ins,                      // 100,000
+	
+	const nat counter_thr,                  // 3ish
+	const nat blackout_radius, 		// 7ish
+
+	const nat thr_1,                    	// 20
+	const nat thr_2,                    	// 0
 
 	const nat origin, 
 	struct parameters p, 
 	nat* graph, 
-	const nat instruction_count
+	const nat instruction_count,       			  //  the sum of PRT + accumulation_count_ts           el = 10,000,000
+	const nat viz                                 //   0   for now
 ) {
+
+	puts("\n\n");
+
+
+	const double mpp_ratio = (double) mpp / 100.0;
+	const double discard_window = (1.0 - mpp_ratio) / 2.0;
 
 	const nat pre_run = instruction_count - acc_ins;
 	
 	const nat n = p.FEA;
 
-	nat buckets[max_array_size] = {0};
+
+	struct bucket* scratch = calloc(max_array_size, sizeof(struct bucket));
+	struct bucket* buckets = calloc(max_array_size, sizeof(struct bucket));
+
+	nat bucket_count = n, scratch_count = 0;
+
+	for (nat b = 0; b < bucket_count; b++) {
+		buckets[b].index = b;
+		buckets[b].uid = b;
+	}
+
 
 	nat array[max_array_size] = {0};
 	bool modes[max_array_size] = {0};
@@ -2219,6 +2281,7 @@ static bool has_vertical_line(
 		pointer = 0, 
 		ip = origin
 	;
+
 
 	for (nat e = 0; e < instruction_count; e++) {
 
@@ -2230,8 +2293,39 @@ static bool has_vertical_line(
 		}
 
 		else if (op == 5) {
+
+			if (viz and e >= pre_run) {
+				for (nat i = 0; i < n; i++) {
+
+
+				/*
+					printf("info: performed IA:\n");
+
+				const nat xw = compute_xw(array, n);
+				const nat dw_count = (nat) ((double) xw * (double) discard_window);
+
+				printf("info: xw = %llu, dw_count = %llu\n", xw, dw_count);
+				
+				if (pointer < dw_count or pointer > xw - dw_count)  goto dont_accumulate;
+				*/
+
+
+
+					if (not array[i]) break;  	
+					if (modes[i]) {
+						printf("%s", (i == pointer ?  green : white));
+						printf("██" reset); // (print IA's as a different-colored cell..?)
+					} else printf(blue "██" reset);
+
+
+
+				}
+				puts("");
+				
+			}
+
 			memset(modes, 0, sizeof modes);
-			pointer = 0;
+			pointer = 0;	
 		}
 
 		else if (op == 2) {
@@ -2243,11 +2337,133 @@ static bool has_vertical_line(
 		}
 
 		else if (op == 3) {
+
 			array[pointer]++;
-
-			if (e >= pre_run) buckets[pointer]++;
-
 			modes[pointer] = 1;
+
+
+			if (e >= pre_run) {
+
+				printf("info: performed IA:\n");
+
+				const nat xw = compute_xw(array, n);
+				const nat dw_count = (nat) ((double) xw * (double) discard_window);
+
+				printf("info: xw = %llu, dw_count = %llu\n", xw, dw_count);
+				
+				if (pointer < dw_count or pointer > xw - dw_count)  goto dont_accumulate;
+
+
+				const nat desired_index = pointer;
+				printf("info: gathering all buckets at .index = %llu...\n", desired_index);
+
+				scratch_count = gather_buckets_at(buckets, scratch, desired_index, 0, bucket_count);
+				printf("info: gathered %llu candidate-IA buckets.\n", scratch_count);
+
+				if (not scratch_count) goto dont_accumulate;
+
+
+				const nat uid = get_max_bucket_uid(scratch, scratch_count);
+				printf("info: max bucket (.data=%llu) has uid = %llu.\n", buckets[uid].data, uid);
+
+				if (not uid) abort();
+
+
+				buckets[uid].data++;
+				buckets[uid].counter++;
+
+				printf("info: incremented bucket! (uid = %llu) .counter = %llu, .data = %llu \n", 
+					uid, buckets[uid].counter, buckets[uid].data
+				);
+
+				scratch_count = gather_buckets_at(buckets, scratch, desired_index, blackout_radius, bucket_count);
+				printf("info: gathered %llu blackout buckets.\n", scratch_count);
+
+				if (not scratch_count) abort();
+	
+				printf("info: performing blackout with radius %llu\n", blackout_radius);
+				for (nat s = 0; s < scratch_count; s++) 
+					if (scratch[s].uid != uid) buckets[scratch[s].uid].counter = 0;
+				
+				printf("info: checking if IA bucket.counter (which is %llu) is greater than %llu...\n", 
+						buckets[uid].counter, counter_thr);
+
+				if (buckets[uid].counter == counter_thr) {
+
+					buckets[uid].counter = 0;    // reset the trigger bucket's counter. don't make it benign.
+
+					const nat neighbor_position = buckets[uid].index - 1;
+					printf("info: bucket.counter reached thr! finding neighbor at %llu...\n", neighbor_position);
+
+					scratch_count = gather_buckets_at(buckets, scratch, neighbor_position, 0, bucket_count);
+					printf("info: gathered %llu candidate-neighbor buckets.\n", scratch_count);
+
+				
+					// print_buckets(buckets, bucket_count);
+
+
+					if (not scratch_count) abort();
+
+					const nat neighbor_uid = get_max_bucket_uid(scratch, scratch_count);
+					printf("info: max neighbor (.data=%llu) has uid = %llu.\n", buckets[uid].data, uid);
+					if (not neighbor_uid) abort();
+			
+
+
+					// do the move:
+
+					if (buckets[neighbor_uid].data) {
+
+						
+						buckets[neighbor_uid].index++;
+						printf("info: incremented neighbor.index to be %llu\n", buckets[neighbor_uid].index);
+
+
+						buckets[neighbor_uid].counter = counter_thr + 1;        // make the i:moving bucket's; counter benign.
+
+
+						/// bucket regeneration step:
+
+						const nat hole_position = buckets[neighbor_uid].index - 1;
+
+						printf("info: bucket.index incremented(nei.index=%llu)! looking for hole to regen at %llu...\n", 
+							buckets[neighbor_uid].index, hole_position
+						);
+							
+
+						scratch_count = gather_buckets_at(buckets, scratch, hole_position, 0, bucket_count);
+
+						printf("info: gathered %llu candidate-neighbor buckets.\n", scratch_count);
+
+
+						if (not scratch_count) {
+
+							// generate a new bucket there!
+
+							buckets[bucket_count] = (struct bucket) {
+								.index = hole_position, 
+								.data = 0, 
+								.counter = 0, 
+								.uid = bucket_count
+							};
+
+
+							printf("info: generating NEW bucket!!! {.i=%llu, .d=0, .c=0, .uid=%llu}\n", hole_position, bucket_count);
+				
+							bucket_count++;
+
+							printf("---->  there are now %llu buckets total!\n", bucket_count);
+							
+						}
+
+
+					} else {
+						printf("info: found that the max neighbor (uid=%llu) had zero data. did not move.\n", neighbor_uid);
+					}
+
+				} 
+				dont_accumulate: ;
+			}
 		}
 
 		nat state = 0;
@@ -2259,20 +2475,34 @@ static bool has_vertical_line(
 
 		ip = graph[I + state];
 	}
+	// at here, the buckets are filled with values    and we are finished with accumulation!
 
-	// at here, the buckets are filled with values
+	
+	print_buckets(buckets, bucket_count);
+	
+
+	nat group1_count = 0;
+	nat group2_count = 0;
+
+	for (nat b = 0; b < bucket_count; b++) {
+		if (buckets[b].data >= thr_1) group1_count++; else group2_count++;
+	}
+
+	free(buckets);
+	free(scratch);
+
+	printf("FINAL GROUP COUNTS: \n\n\t\tgroup1: %llu,  group2: %llu\n\n", group1_count, group2_count);
+	printf("group1_count > thr_2 ? ==> %d\n", group1_count > thr_2);
+
+	puts("\n\n");
+
+	return group1_count > thr_2;
+
+	// return false;         // tempoary, for testing
+}
 
 
 
-	clear_screen();
-	printf("\n\t");
-	fflush(stdout);
-	if (p.frame_delay) usleep((unsigned) p.frame_delay);
-
-
-
-	print_nats(buckets, n); 	         // debug raw buckets
-	puts("\n");
 
 
 
@@ -2280,6 +2510,30 @@ static bool has_vertical_line(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+// clear_screen();
+	//printf("\n\t");
+
+
+
+
+
+
+
+
+
+
+/*
 
 	// compute max_bucket_value:
 
@@ -2288,7 +2542,13 @@ static bool has_vertical_line(
 	nat max_bucket_value = 0;
 
 	for (nat i = 0; i < n; i++) {
-		if (buckets[i] > bucket_too_large_thr) return true;
+
+
+
+		// if (buckets[i] > bucket_too_large_thr) return true;
+
+
+
 		if (buckets[i] > max_bucket_value) {
 			max_bucket_value = buckets[i];
 		}
@@ -2306,7 +2566,7 @@ static bool has_vertical_line(
 
 
 
-// compute the hg  based off of that.
+	// compute the hg  based off of that.
 
 
 	nat* counts = calloc(max_bucket_value, sizeof(nat));
@@ -2323,15 +2583,11 @@ static bool has_vertical_line(
 	
 	puts("\n\n");
 
+	fflush(stdout);
+
+	// if (p.frame_delay) usleep((unsigned) p.frame_delay);
 	free(counts);
-
-
-	return false;         // tempoary, for testing
-}
-
-
-
-
+*/
 
 
 
@@ -2545,7 +2801,7 @@ loop: 	printf(":IP: ");
 		printf("listed %s with %llu values.\n", name, list.count);
 	}
 
-	else if (is(*command, "transfer", "tr")) {
+	else if (is(*command, "transfer", "tr")) {    // eg        transfer scratch out              moves out to scratch.
 		struct list 
 			source = {0}, 
 		      * destination = NULL;
@@ -2785,42 +3041,42 @@ loop: 	printf(":IP: ");
 	}
 
 
+	else if (is(*command, "vertical", "v")) {     // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
 
 
+		const nat acc_ins = (nat) atoi(command[1]); 
+		if (not acc_ins) { 
+			printf("error: bad acc_ins supplied.\n");
+			goto next;
+		}
 
+		const nat mpp = (nat) atoi(command[2]);
+		if (not mpp) { 
+			printf("error: bad mpp supplied.\n");
+			goto next;
+		}
 
-	else if (is(*command, "vertical", "v")) {
+		const nat counter_thr = (nat) atoi(command[3]);
+		if (not counter_thr) { 
+			printf("error: bad counter_thr supplied.\n");
+			goto next;
+		}
 
+		const nat blackout_radius = (nat) atoi(command[4]);
+		if (not blackout_radius) { 
+			printf("error: bad blackout_radius supplied.\n");
+			goto next;
+		}
 		
-		const nat pre_run = (nat) atoi(command[1]);                // el   1,000,000      //   PRT  999,500         ( 1,000,000 - 500)
-
-		if (not pre_run) { 
-			printf("error: bad pre_run supplied.\n");
+		const nat thr_1 = (nat) atoi(command[5]);
+		if (not thr_1) { 
+			printf("error: bad thr_1 supplied.\n");
 			goto next;
 		}
 
+		const nat thr_2 = (nat) atoi(command[6]);
 
-
-		const nat window_width = (nat) atoi(command[2]);
-
-		if (not window_width) { 
-			printf("error: bad window_width supplied.\n");
-			goto next;
-		}
-
-		const nat max_bucket_value = (nat) atoi(command[3]);
-		if (not max_bucket_value) { 
-			printf("error: bad max_bucket_value supplied.\n");
-			goto next;
-		}
-
-
-		const nat bar_width = (nat) atoi(command[4]);
-		if (not bar_width) { 
-			printf("error: bad bar_width supplied.\n");
-			goto next;
-		}
-
+		const nat viz = (nat) atoi(command[7]);
 
 
 		for (nat z = 0; z < d->in.count; z++) {
@@ -2830,16 +3086,21 @@ loop: 	printf(":IP: ");
 			for (nat origin = 0; origin < p.operation_count; origin++) {
 				if (p.graph[4 * origin] != 3) continue;
 
-				if (not has_vertical_line(pre_run, window_width, max_bucket_value, 
-							bar_width, origin, p, p.graph, p.execution_limit)) 
+				if (not has_vertical_line(
+				
+						mpp, acc_ins, 
+						counter_thr, blackout_radius, 
+						thr_1, thr_2, 
+
+					origin, p, p.graph, p.execution_limit, viz)
+				) 
+
 					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+
 				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
 			}
 		}
-		printf("--> found %llu / pruned %llu  :  after  vertical line  pruning metric.\n", d->out.count, d->bad.count);
-
-		
-
+		printf("--> found %llu / pruned %llu  :  after non-simplified  vertical line  pruning metric.\n", d->out.count, d->bad.count);
 
 	}
 
@@ -2886,7 +3147,7 @@ loop: 	printf(":IP: ");
 						get_input:; int c = getchar();
 
 						if (c == 'q') goto stop_human_pruning;
-						else if (c == '1') { if (z) z--; z--; goto next_z_value; }
+						// else if (c == '1') { if (z) z--; z--; goto next_z_value; }
 						else if (c == ' ') bad = false; 
 						else if (c == 'b') bad = true; 
 						else {
@@ -2901,7 +3162,7 @@ loop: 	printf(":IP: ");
 				
 				}
 			}
-			next_z_value:;
+			// next_z_value:;
 		}
 		stop_human_pruning: 
 
@@ -2949,6 +3210,10 @@ done:;
 
 
 */
+
+
+
+  // el   1,000,000      //   PRT  999,500         ( 1,000,000 - 500)
 
 
 
@@ -3032,7 +3297,7 @@ static void synthesize_graph(struct parameters p, struct search_data d) {
 		printf(".l={ ");
 		for (nat o = 0; o < p.operation_count; o++) {
 			const nat count = tallys2[(i + 1) * p.operation_count + o];
-			const double percentage = (double) count / 44.0;
+			const double percentage = (double) count / d.port.count;
 			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
 		}
 		printf(" },  ");
@@ -3040,7 +3305,7 @@ static void synthesize_graph(struct parameters p, struct search_data d) {
 		printf(".g={ ");
 		for (nat o = 0; o < p.operation_count; o++) {
 			const nat count = tallys2[(i + 2) * p.operation_count + o];
-			const double percentage = (double) count / 44.0;
+			const double percentage = (double) count / d.port.count;
 			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
 		}
 		printf(" },  ");
@@ -3048,7 +3313,7 @@ static void synthesize_graph(struct parameters p, struct search_data d) {
 		printf(".e={ ");
 		for (nat o = 0; o < p.operation_count; o++) {
 			const nat count = tallys2[(i + 3) * p.operation_count + o];
-			const double percentage = (double) count / 44.0;
+			const double percentage = (double) count / d.port.count;
 			if (count) printf(" ->%llu: %llu(%.2lf), ", o, count, percentage); 
 		}
 		printf(" },  ");
@@ -3236,9 +3501,335 @@ loop: 	printf(":: ");
 
 
 
+/*
+
+2302164.152330:       ran graph averager (sg) on 44 z values after doing vertical line pm, note: theres no  1-dup graphs. ie, in 1space, graphs only dupilcated 2. not 1. 
+				given our weird hardcody way of doing the vl pm. 
 
 
 
+ tallys2 : dupilcating 2 in 1-space:
+{ .op = 1,   .lge={ .l={  ->2: 44(1.00),  },  .g={  ->3: 44(1.00),  },  .e={  ->2: 30(0.68),  ->5: 14(0.32),  },   }   
+
+{ .op = 3,   .lge={ .l={  ->0: 44(1.00),  },  .g={  ->0: 35(0.80),  ->4: 4(0.09),  ->5: 5(0.11),  },  .e={  ->2: 10(0.23),  ->4: 19(0.43),  ->5: 15(0.34),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 44(1.00),  },  .g={  ->1: 30(0.68),  ->4: 10(0.23),  ->5: 4(0.09),  },  .e={  ->3: 33(0.75),  ->5: 11(0.25),  },   }   
+
+{ .op = 6,   .lge={ .l={  ->1: 44(1.00),  },  .g={  },  .e={  ->1: 26(0.59),  ->2: 13(0.30),  ->5: 5(0.11),  },   }   
+
+{ .op = 5,   .lge={ .l={  ->5: 44(1.00),  },  .g={  ->2: 28(0.64),  ->3: 4(0.09),  ->5: 12(0.27),  },  .e={  ->0: 12(0.27),  ->1: 8(0.18),  ->3: 22(0.50),  ->5: 2(0.05),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 11(0.25),  ->2: 33(0.75),  },  .g={  ->0: 11(0.25),  ->1: 14(0.32),  ->2: 4(0.09),  ->4: 15(0.34),  },  .e={  ->0: 7(0.16),  ->1: 20(0.45),  ->2: 2(0.05),  ->3: 15(0.34),  },   }   
+
+
+
+
+note:  RRXFG partial graph     starting graph: 
+
+	.graph = { 
+			1,  2, 3, _,
+			3,  0, _, _,
+			2,  0, _, _,
+			6,  1, X, _,
+			5,  _, _, _,
+			0,  _, _, _,
+
+
+
+
+			0,  _, _, _,
+			0,  _, _, _,
+			0,  _, _, _,
+			0,  _, _, _,
+		},
+
+
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 5000000"
+	"\n",	
+		"edit fea 1000"
+	"\n",	
+
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 100000 20 1 1"
+	"\n",
+		"count"
+	"\n",
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+
+
+
+
+
+
+
+		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 5000000"
+	"\n",	
+		"edit fea 1000"
+	"\n",	
+
+
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_v100000_20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_v100000_20_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"count"
+	"\n",
+		"quitip"
+	"\n",
+		"synthesize_graph"
+	"\n",
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 5000000"
+	"\n",	
+		"edit fea 1000"
+	"\n",	
+
+
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 100000 20 1 1"
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"export"
+	"\n",
+		"quitip"
+	"\n",
+		"synthesize_graph"
+	"\n",
+
+		
+
+
+
+
+
+
+		"pause"
+	"\n",
+		"viz in 2000"
+	"\n",	
+		"count"
+	"\n",
+		"pause"
+	"\n",
+*/
+
+
+
+
+//		"edit zl d1_e500k_h6_rer20_z.txt d1_e500k_h6_rer20_dt.txt"  
+//	"\n",
+
+//		"viz in 2000"
+//	"\n",
+
+
+
+
+
+
+
+
+
+/*		"prune"
+	"\n",
+		"count port"
+//	"\n",
+//		"quitip"
+//	"\n",
+//		"sg"
+//	"\n",
+	
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+	this seq is what we used to create the     d1_e500k_h6f_rer20_mfea3    z list. 
+
+
+
+
+	"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 500000"
+	"\n",	
+		"edit zl d1_e500k_z.txt d1_e500k_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"horizontal 6 0"
+	"\n",	
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"next"
+	"\n",
+		"rer 20 0"
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"next"
+	"\n",
+		"mfea 3 0 0"
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"next"
+	"\n",
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+//		"horizontal 6 0"                    // already done. 
+//	"\n",
+//		"next"
+//	"\n",
+//		"repetitive_er 20 0"
+//	"\n",
+//		"next"
+//	"\n",
+
+
+
+//		"mfea 6 300 0"
+//	"\n",
+//		"count"
+//	"\n",
+
+
+
+
+
+
+
+//		"fx 10 200 0"      // unused.                          // testing out the fx pm. 
+//	"\n",
+//		"count bad"
+//	"\n",
 
 
 
