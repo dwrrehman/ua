@@ -257,8 +257,8 @@ x	****	5.        plz run      GRAPH AVERAGERRRRRR
 #define blue   "\x1B[34m"
 #define yellow   "\x1B[33m"
 
-// #define magenta   "\x1B[35m"
-// #define cyan   "\x1B[36m"
+#define magenta  "\x1B[35m"
+#define cyan     "\x1B[36m"
 
 
 
@@ -453,7 +453,134 @@ static const nat unique_count = sizeof operations / sizeof(nat);
 
 static const char* input_commands[] = {
 
+
 		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 50000000"
+	"\n",	
+		"edit fea 3000"
+	"\n",	
+		"edit zl three_z.txt three_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 1000000 60 5 7 30 2 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
+	"\n",
+		"count"
+	"\n",
+
+};
+
+
+
+
+
+
+
+
+
+/*
+
+
+		used for generating the    list of 3 z values, which nsvlpm was unable to catch,  with an el of only 10 million instructions.    we will try 50 mil next.
+
+
+
+"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 10000000"
+	"\n",	
+		"edit fea 3000"
+	"\n",	
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 1000000 60 5 7 30 2 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
+	"\n",
+		"count"
+	"\n",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+used for re running     rer       to use a larger    el   and fea    to prune 5 bad graphs:
+
+
+
+	"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 10000000"
+	"\n",	
+		"edit fea 3000"
+	"\n",	
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"rer 20"  
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"export"
+	"\n",
+		"quitip"
+	"\n",
+		"write z_list d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
+	"\n",
+		"quit"
+	"\n",
+
+
+*/
+
+
+
+
+
+/*
+
+
+
+
+
+	"edit duplication_count 1"
 	"\n",
 		"edit execution_limit 10000000"
 	"\n",	
@@ -470,7 +597,6 @@ static const char* input_commands[] = {
 		"synthesize_graph"
 	"\n",
 
-};
 
 
 
@@ -478,7 +604,9 @@ static const char* input_commands[] = {
 
 
 
-/*
+
+
+
 
 
 
@@ -2212,6 +2340,24 @@ static nat get_max_bucket_uid(struct bucket* scratch, const nat scratch_count) {
 	return max_bucket.uid;
 }
 
+
+static nat get_max_moving_bucket_uid(struct bucket* scratch, const nat scratch_count, const nat counter_thr) {
+	nat max_bucket_data = 0;
+	struct bucket max_bucket = {0};
+	
+	for (nat s = 0; s < scratch_count; s++) {
+
+		if (scratch[s].counter > counter_thr) return scratch[s].uid;
+
+		if (scratch[s].data >= max_bucket_data) {
+			max_bucket_data = scratch[s].data;
+			max_bucket = scratch[s];
+		}
+	}
+
+	return max_bucket.uid;
+}
+
 static void print_buckets(struct bucket* buckets, const nat bucket_count) {
 	for (nat b = 0; b < bucket_count; b++) {
 		if (buckets[b].data) {
@@ -2249,10 +2395,16 @@ static bool has_vertical_line(
 	struct parameters p, 
 	nat* graph, 
 	const nat instruction_count,       			  //  the sum of PRT + accumulation_count_ts           el = 10,000,000
-	const nat viz                                 //   0   for now
+	nat viz                                 //   0   for now
 ) {
 
-	puts("\n\n");
+
+	viz = false; // debug
+
+	bool debug_prints = false;
+
+
+	if(debug_prints) puts("\n\n");
 
 
 	const double mpp_ratio = (double) mpp / 100.0;
@@ -2266,7 +2418,8 @@ static bool has_vertical_line(
 	struct bucket* scratch = calloc(max_array_size, sizeof(struct bucket));
 	struct bucket* buckets = calloc(max_array_size, sizeof(struct bucket));
 
-	nat bucket_count = n, scratch_count = 0;
+	const nat bucket_count = n; // no regenerating the buckets!
+	nat scratch_count = 0;
 
 	for (nat b = 0; b < bucket_count; b++) {
 		buckets[b].index = b;
@@ -2294,38 +2447,52 @@ static bool has_vertical_line(
 
 		else if (op == 5) {
 
+
 			if (viz and e >= pre_run) {
-				for (nat i = 0; i < n; i++) {
 
-
-				/*
-					printf("info: performed IA:\n");
 
 				const nat xw = compute_xw(array, n);
 				const nat dw_count = (nat) ((double) xw * (double) discard_window);
 
-				printf("info: xw = %llu, dw_count = %llu\n", xw, dw_count);
+
+				for (nat i = 0; i < n; i++) {	
+					if (not array[i]) break;
+
+					if (i < dw_count or i > xw - dw_count)  {
+						printf(red "█" reset);    // outside the mpp! color it red.
+						continue;
+					}
+
+					scratch_count = gather_buckets_at(buckets, scratch, i, 0, bucket_count);
+					
+					if (not scratch_count) { // no buckets here!
+						printf(magenta "█" reset);
+						continue;
+					}
+
+					if (scratch_count == 1) {
+
+						if (modes[i]) {
+							printf("%s", (i == pointer ?  green : yellow));
+							printf("█" reset); 
+
+						} else printf(blue "█" reset);
 				
-				if (pointer < dw_count or pointer > xw - dw_count)  goto dont_accumulate;
-				*/
+						continue;
+					}
 
-
-
-					if (not array[i]) break;  	
-					if (modes[i]) {
-						printf("%s", (i == pointer ?  green : white));
-						printf("██" reset); // (print IA's as a different-colored cell..?)
-					} else printf(blue "██" reset);
-
-
-
+					//const nat uid = get_max_bucket_uid(scratch, scratch_count);
+					//if (not uid) abort();
+					
+					printf(cyan "█" reset);    // there were mulitple buckets here!
+					
 				}
 				puts("");
 				
 			}
 
 			memset(modes, 0, sizeof modes);
-			pointer = 0;	
+			pointer = 0;
 		}
 
 		else if (op == 2) {
@@ -2341,130 +2508,140 @@ static bool has_vertical_line(
 			array[pointer]++;
 			modes[pointer] = 1;
 
-
 			if (e >= pre_run) {
 
-				printf("info: performed IA:\n");
+				if (debug_prints) printf("info: performed IA:\n");
 
 				const nat xw = compute_xw(array, n);
 				const nat dw_count = (nat) ((double) xw * (double) discard_window);
 
-				printf("info: xw = %llu, dw_count = %llu\n", xw, dw_count);
+				if (debug_prints) printf("info: xw = %llu, dw_count = %llu\n", xw, dw_count);
 				
 				if (pointer < dw_count or pointer > xw - dw_count)  goto dont_accumulate;
 
 
+
+
+
+
 				const nat desired_index = pointer;
-				printf("info: gathering all buckets at .index = %llu...\n", desired_index);
+				if (debug_prints) printf("info: gathering all buckets at .index = %llu...\n", desired_index);
 
 				scratch_count = gather_buckets_at(buckets, scratch, desired_index, 0, bucket_count);
-				printf("info: gathered %llu candidate-IA buckets.\n", scratch_count);
+				if (debug_prints) printf("info: gathered %llu candidate-IA buckets.\n", scratch_count);
 
 				if (not scratch_count) goto dont_accumulate;
 
+				const nat trigger_uid = get_max_moving_bucket_uid(scratch, scratch_count, counter_thr);
+				if (debug_prints) printf("info: max bucket (.data=%llu) has trigger_uid = %llu.\n", buckets[trigger_uid].data, trigger_uid);
 
-				const nat uid = get_max_bucket_uid(scratch, scratch_count);
-				printf("info: max bucket (.data=%llu) has uid = %llu.\n", buckets[uid].data, uid);
-
-				if (not uid) abort();
+				if (not trigger_uid) { printf(red "█" reset); abort(); }
 
 
-				buckets[uid].data++;
-				buckets[uid].counter++;
 
-				printf("info: incremented bucket! (uid = %llu) .counter = %llu, .data = %llu \n", 
-					uid, buckets[uid].counter, buckets[uid].data
+
+				buckets[trigger_uid].data++;
+				buckets[trigger_uid].counter++;
+
+				if (debug_prints) printf("info: incremented bucket! (trigger_uid = %llu) .counter = %llu, .data = %llu \n", 
+					trigger_uid, buckets[trigger_uid].counter, buckets[trigger_uid].data
 				);
 
+
+
+
+
 				scratch_count = gather_buckets_at(buckets, scratch, desired_index, blackout_radius, bucket_count);
-				printf("info: gathered %llu blackout buckets.\n", scratch_count);
+				if (debug_prints) printf("info: gathered %llu blackout buckets.\n", scratch_count);
 
-				if (not scratch_count) abort();
+				if (not scratch_count) { printf(cyan "█" reset); abort(); }
 	
-				printf("info: performing blackout with radius %llu\n", blackout_radius);
-				for (nat s = 0; s < scratch_count; s++) 
-					if (scratch[s].uid != uid) buckets[scratch[s].uid].counter = 0;
-				
-				printf("info: checking if IA bucket.counter (which is %llu) is greater than %llu...\n", 
-						buckets[uid].counter, counter_thr);
+				if (debug_prints) printf("info: checking if IA bucket.counter (which is %llu) is greater than %llu...\n", 
+						buckets[trigger_uid].counter, counter_thr);
 
-				if (buckets[uid].counter == counter_thr) {
 
-					buckets[uid].counter = 0;    // reset the trigger bucket's counter. don't make it benign.
 
-					const nat neighbor_position = buckets[uid].index - 1;
-					printf("info: bucket.counter reached thr! finding neighbor at %llu...\n", neighbor_position);
+
+
+
+
+				nat moving_uid = 0;
+
+
+
+				if (buckets[trigger_uid].counter == counter_thr) {
+
+
+
+					// buckets[trigger_uid].counter = 0;    // reset the trigger bucket's counter. don't make it benign.
+
+					//ALSO make this (now retired) trigger bucket's counter benign.
+
+
+					buckets[trigger_uid].counter = counter_thr + 1;
+
+
+
+
+					const nat neighbor_position = buckets[trigger_uid].index - 1;
+					if (debug_prints) printf("info: bucket.counter reached thr! finding neighbor at %llu...\n", neighbor_position);
 
 					scratch_count = gather_buckets_at(buckets, scratch, neighbor_position, 0, bucket_count);
-					printf("info: gathered %llu candidate-neighbor buckets.\n", scratch_count);
+					if (debug_prints) printf("info: gathered %llu candidate-neighbor buckets.\n", scratch_count);
 
-				
-					// print_buckets(buckets, bucket_count);
-
-
-					if (not scratch_count) abort();
-
-					const nat neighbor_uid = get_max_bucket_uid(scratch, scratch_count);
-					printf("info: max neighbor (.data=%llu) has uid = %llu.\n", buckets[uid].data, uid);
-					if (not neighbor_uid) abort();
-			
-
-
-					// do the move:
-
-					if (buckets[neighbor_uid].data) {
-
-						
-						buckets[neighbor_uid].index++;
-						printf("info: incremented neighbor.index to be %llu\n", buckets[neighbor_uid].index);
-
-
-						buckets[neighbor_uid].counter = counter_thr + 1;        // make the i:moving bucket's; counter benign.
-
-
-						/// bucket regeneration step:
-
-						const nat hole_position = buckets[neighbor_uid].index - 1;
-
-						printf("info: bucket.index incremented(nei.index=%llu)! looking for hole to regen at %llu...\n", 
-							buckets[neighbor_uid].index, hole_position
-						);
-							
-
-						scratch_count = gather_buckets_at(buckets, scratch, hole_position, 0, bucket_count);
-
-						printf("info: gathered %llu candidate-neighbor buckets.\n", scratch_count);
-
-
-						if (not scratch_count) {
-
-							// generate a new bucket there!
-
-							buckets[bucket_count] = (struct bucket) {
-								.index = hole_position, 
-								.data = 0, 
-								.counter = 0, 
-								.uid = bucket_count
-							};
-
-
-							printf("info: generating NEW bucket!!! {.i=%llu, .d=0, .c=0, .uid=%llu}\n", hole_position, bucket_count);
-				
-							bucket_count++;
-
-							printf("---->  there are now %llu buckets total!\n", bucket_count);
-							
-						}
-
-
-					} else {
-						printf("info: found that the max neighbor (uid=%llu) had zero data. did not move.\n", neighbor_uid);
+					if (not scratch_count) {
+						if (debug_prints) print_buckets(buckets, bucket_count);
+						printf(blue "█" reset);
+						abort(); // goto dont_accumulate;      // <-----   DEBUG TARGET HERE
 					}
 
-				} 
+					moving_uid = get_max_bucket_uid(scratch, scratch_count);
+					if (debug_prints) printf("info: max neighbor (.data=%llu) has trigger_uid = %llu.\n", buckets[trigger_uid].data, trigger_uid);
+
+
+
+
+					if (not moving_uid) {printf(yellow "█" reset); abort(); }
+
+					if (buckets[moving_uid].data) { 
+						buckets[moving_uid].index++;
+						if (debug_prints) printf("info: incremented neighbor.index to be %llu\n", buckets[moving_uid].index);
+
+						buckets[moving_uid].counter = counter_thr + 1;        // make the i:moving bucket's; counter benign.
+					} 
+
+				}
+
+
+				if (debug_prints) printf("info: performing blackout with radius %llu\n", blackout_radius);
+
+				for (nat s = 0; s < scratch_count; s++) {
+
+					if (scratch[s].uid == trigger_uid) continue;     // dont blackout the trigger bucket, or the ia bucket in general. 
+					if (scratch[s].counter > counter_thr) continue;    // dont blackout a moving bucket ever. 
+	
+					if (scratch[s].uid == moving_uid) continue;    // dont blackout the recently moved bucket ever. 
+
+					if (buckets[scratch[s].uid].counter) { 
+
+
+						if (debug_prints) printf("info: reseting bucket.counter=%llu with uid = %llu... (BLACKOUT)\n", 
+								 	buckets[scratch[s].uid].counter, scratch[s].uid); 
+					}
+
+
+
+					buckets[scratch[s].uid].counter = 0;
+				}
+
 				dont_accumulate: ;
 			}
 		}
+
+
+
+
+
 
 		nat state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -2477,10 +2654,8 @@ static bool has_vertical_line(
 	}
 	// at here, the buckets are filled with values    and we are finished with accumulation!
 
+	if (debug_prints) print_buckets(buckets, bucket_count);
 	
-	print_buckets(buckets, bucket_count);
-	
-
 	nat group1_count = 0;
 	nat group2_count = 0;
 
@@ -2491,14 +2666,13 @@ static bool has_vertical_line(
 	free(buckets);
 	free(scratch);
 
-	printf("FINAL GROUP COUNTS: \n\n\t\tgroup1: %llu,  group2: %llu\n\n", group1_count, group2_count);
-	printf("group1_count > thr_2 ? ==> %d\n", group1_count > thr_2);
+	if (debug_prints) printf("FINAL GROUP COUNTS: \n\n\t\tgroup1: %llu,  group2: %llu\n\n", group1_count, group2_count);
+	if (debug_prints) printf("group1_count > thr_2 ? ==> %d\n", group1_count > thr_2);
 
-	puts("\n\n");
+	if(debug_prints) puts("\n\n");
 
-	return group1_count > thr_2;
-
-	// return false;         // tempoary, for testing
+	if (group1_count > thr_2)  { return true; }
+	else   { printf(".\n"); return false; }
 }
 
 
@@ -2515,6 +2689,106 @@ static bool has_vertical_line(
 
 
 
+
+
+
+
+
+
+
+
+
+/////// trash /////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+else {
+						if (debug_prints) printf("info: found that the max neighbor (uid=%llu) had zero data. did not move.\n", neighbor_uid);
+					}
+
+*/
+
+//scratch_count = gather_buckets_at(buckets, scratch, hole_position, 0, bucket_count);
+
+						//if (debug_prints) printf("info: gathered %llu candidate-neighbor buckets.\n", scratch_count);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/// bucket regeneration step:
+
+						// const nat hole_position = buckets[moving_uid].index - 1;
+
+						//if (debug_prints) printf("info: bucket.index incremented(nei.index=%llu)! looking for hole to regen at %llu...\n", 
+							//buckets[moving_uid].index, hole_position
+						//);
+
+
+
+
+/*if (not scratch_count) {
+
+							// generate a new bucket there!
+
+							buckets[bucket_count] = (struct bucket) {
+								.index = hole_position, 
+								.data = 0, 
+								.counter = 0, 
+								.uid = bucket_count
+							};
+
+
+							if (debug_prints) printf("info: generating NEW bucket!!! {.i=%llu, .d=0, .c=0, .uid=%llu}\n", hole_position, bucket_count);
+				
+							bucket_count++;
+
+							if (debug_prints) printf("---->  there are now %llu buckets total!\n", bucket_count);
+							
+						}*/
+
+
+
+
+
+
+
+
+	/*
+					printf("info: performed IA:\n");
+
+				const nat xw = compute_xw(array, n);
+				const nat dw_count = (nat) ((double) xw * (double) discard_window);
+
+				printf("info: xw = %llu, dw_count = %llu\n", xw, dw_count);
+				
+				if (pointer < dw_count or pointer > xw - dw_count)  goto dont_accumulate;
+				*/
 
 
 
