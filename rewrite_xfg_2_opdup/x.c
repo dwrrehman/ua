@@ -461,13 +461,34 @@ static const nat unique_count = sizeof operations / sizeof(nat);
 
 static const char* input_commands[] = {
 
+	
+
+		"edit duplication_count 1"
 	"\n",
-		"edit execution_limit 1000000"
+		"edit execution_limit 50000000"
 	"\n",	
 		"edit fea 3000"
 	"\n",	
 
+/*
 
+		
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 7000000 60 5 7 80 2 0 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz> <debug_prints>
+	"\n",
+		"count"
+	"\n",
+
+	"\n",
+
+*/
 
 };
 
@@ -555,7 +576,7 @@ static const char* input_commands[] = {
 
 
 
-"edit duplication_count 1"
+		"edit duplication_count 1"
 	"\n",
 		"edit execution_limit 10000000"
 	"\n",	
@@ -1614,11 +1635,11 @@ printf("available commands:\n"
 }
 
 
-static void parse_command(const char* arguments[8], char* buffer) {
+static void parse_command(const char* arguments[16], char* buffer) {
 	nat length = strlen(buffer) - 1;
 	buffer[length] = 0;
 
-	for (nat i = 0, a = 0; a < 8; a++) {
+	for (nat i = 0, a = 0; a < 16; a++) {
 		while (buffer[i] == ' ' and i < length) i++;
 		arguments[a] = buffer + i;
 		while (buffer[i] != ' ' and i < length) i++; 
@@ -1874,6 +1895,7 @@ static void print_pruning_metric_menu() {
 // h
 static bool has_horizontal_line(
 	const nat max_acceptable_run_length,    // eg     5, 6, 7, or 8   ish 
+	const nat version,
 	nat origin, 
 	struct parameters p, 
 	nat* graph, 
@@ -1894,6 +1916,8 @@ static bool has_horizontal_line(
 	viz = 0;
 	if (viz) viz++;
 
+	nat counter = 0;
+
 	for (nat e = 0; e < instruction_count; e++) {
 
 		const nat I = ip * 4;
@@ -1901,15 +1925,17 @@ static bool has_horizontal_line(
 
 		// we neeed to be doing the horizontal line check     right here.    not in the 5 op exec  spot. 
 	
-		for (nat counter = 0, i = 0; i < max_array_size; i++) {
+		if (version == 1) {
+			for (nat counter = 0, i = 0; i < max_array_size; i++) {
 			
-			if (modes[i]) counter++; else counter = 0;
-			if (counter > max_acceptable_run_length) {
-				printf(".\n");
-				return true;
-			}
+				if (modes[i]) counter++; else counter = 0;
+				if (counter > max_acceptable_run_length) {
+					printf(".\n");
+					return true;
+				}
 
-			if (not array[i]) break;
+				if (not array[i]) break;
+			}
 		}
 
 		if (op == 1) {
@@ -1926,6 +1952,12 @@ static bool has_horizontal_line(
 			array[n] = 0;   
 		}
 		else if (op == 3) {
+
+			if (version == 0) {
+				if (pointer and modes[pointer - 1]) counter++; else counter = 0;
+				if (counter > max_acceptable_run_length) { printf(".\n"); return true; } 
+			}
+
 			array[pointer]++;
 			modes[pointer] = 1;
 		}
@@ -1941,7 +1973,31 @@ static bool has_horizontal_line(
 	}
 	return false;
 }
+/*
 
+
+
+
+			good         h 6 
+
+                                                 I [I I I I I I I]
+		
+
+				2468
+
+
+
+			bad          h 6 
+
+
+						[I I I  I I I I]
+
+                              2464
+
+
+
+
+*/
 
 
 // r0i
@@ -2438,6 +2494,10 @@ static void print_buckets(struct bucket* buckets, const nat bucket_count) {
 
 
 
+// eg, 200       for acc_ins = 2 million.   those are related!!!
+
+
+
 static bool has_vertical_line(
 
 	const nat mpp,   //middle portion percentage       	//  60            ie    60 percent
@@ -2447,7 +2507,7 @@ static bool has_vertical_line(
 	const nat counter_thr,                  // 5ish
 	const nat blackout_radius, 		// 7ish
 
-	const nat bucket_data_thr,                		// eg, 200       for acc_ins = 2 million.   those are related!!!
+	const nat safety_factor,                		 //   eg      90      ie   90 percent. 
 
 	const nat vertical_line_count_thr,                    	// 2
 
@@ -2455,13 +2515,9 @@ static bool has_vertical_line(
 	struct parameters p, 
 	nat* graph, 
 	const nat instruction_count,       			  //  the sum of PRT + accumulation_count_ts           el = 10,000,000
-	nat viz                                
+	nat viz,
+	nat debug_prints
 ) {
-	const bool debug_prints = false;
-
-
-
-
 
 	if (viz or debug_prints) puts("\n\n");
 
@@ -2506,7 +2562,7 @@ static bool has_vertical_line(
 
 		else if (op == 5) {
 
-			timestep_count++;
+			if (e >= pre_run) timestep_count++;
 
 			if (viz and e >= pre_run) {
 
@@ -2599,7 +2655,7 @@ static bool has_vertical_line(
 				const nat trigger_uid = get_max_moving_bucket_uid(scratch, scratch_count);
 				if (debug_prints) printf("info: max bucket (.data=%llu) has trigger_uid = %llu.\n", buckets[trigger_uid].data, trigger_uid);
 
-				if (not trigger_uid) { printf(red "█" reset); abort(); }
+				if (not trigger_uid) { printf(red "█ max trigger bucket zero uid" reset); abort(); }
 
 
 
@@ -2612,13 +2668,14 @@ static bool has_vertical_line(
 				);
 
 
-
-
-
 				scratch_count = gather_buckets_at(buckets, scratch, desired_index, blackout_radius, bucket_count);
 				if (debug_prints) printf("info: gathered %llu blackout buckets.\n", scratch_count);
 
-				if (not scratch_count) { printf(cyan "█" reset); abort(); }
+				if (not scratch_count) { 
+					printf(cyan "█ NSVLPM ERROR: empty blackout bucket array" reset); 
+					puts(", considering the z value as good");
+					return false;
+				}
 	
 				if (debug_prints) printf("info: checking if IA bucket.counter (which is %llu) is greater than %llu...\n", 
 						buckets[trigger_uid].counter, counter_thr);
@@ -2648,7 +2705,7 @@ static bool has_vertical_line(
 
 					if (not scratch_count) {
 						if (debug_prints) print_buckets(buckets, bucket_count);
-						printf(blue "█" reset);
+						printf(blue "█ empty moving bucket array" reset);
 						abort(); // goto dont_accumulate;      // <-----   DEBUG TARGET HERE
 					}
 
@@ -2656,7 +2713,7 @@ static bool has_vertical_line(
 					if (debug_prints) printf("info: max neighbor (.data=%llu) has trigger_uid = %llu.\n", buckets[trigger_uid].data, trigger_uid);
 
 
-					if (not moving_uid) {printf(yellow "█" reset); abort(); }
+					if (not moving_uid) {printf(yellow "█ max moving bucket zero uid" reset); abort(); }
 
 					if (buckets[moving_uid].data) { 
 						buckets[moving_uid].index++;
@@ -2715,16 +2772,16 @@ static bool has_vertical_line(
 	nat vertical_line_count = 0;
 	nat good_count = 0;
 
-	//const double factor = (double) safety_factor / (double) 100.0;      // 0.90
-	// nat required_data_size = (nat) ((double) factor * (double) timestep_count);
+	const double factor = (double) safety_factor / (double) 100.0;  
+	nat required_data_size = (nat) ((double) factor * (double) timestep_count);
 
-	if (debug_prints) printf("threshold info: \n\n\t\ttimestep_count: %llu,  bucket_data_thr: %llu\n\n", 
-				timestep_count, bucket_data_thr);
+	if (debug_prints) printf("threshold info: \n\n\t\ttimestep_count: %llu,  required_data_size: %llu\n\n", 
+				timestep_count, required_data_size);
 
 	nat stats[2][2][2] = {0};
 
 	for (nat b = 0; b < bucket_count; b++) {
-		if (	buckets[b].data >= bucket_data_thr and 
+		if (	buckets[b].data >= required_data_size and 
 			buckets[b].counter > counter_thr and 
 			buckets[b].is_moving
 		) 
@@ -2733,7 +2790,7 @@ static bool has_vertical_line(
 			good_count++;
 
 
-		stats[buckets[b].data >= bucket_data_thr][buckets[b].counter > counter_thr][buckets[b].is_moving]++;
+		stats[buckets[b].data >= required_data_size][buckets[b].counter > counter_thr][buckets[b].is_moving]++;
 	}
 
 	free(buckets);
@@ -2756,7 +2813,7 @@ static bool has_vertical_line(
 				//   (in relation to the acc_ins they gave), and we need to alert them about it!!
 		puts("");
 		printf( red 
-			"ERROR: bad bucket_data_thr parameter! "
+			"NSVLPM ERROR: bad bucket_data_thr parameter! "
 			"found %llu buckets which where .data >= bucket_data_thr, "
 			"but is_moving=false... soft aborting..." 
 			reset, 
@@ -3121,7 +3178,7 @@ static void prune_z_list(struct parameters p, struct search_data *d) {  // ip
 loop: 	printf(":IP: ");
 
 	get_input_line(buffer, sizeof buffer);
-	const char* command[8] = {0};
+	const char* command[16] = {0};
 	parse_command(command, buffer);
 
 	if (is(*command, "", "")) {}
@@ -3246,7 +3303,9 @@ loop: 	printf(":IP: ");
 			goto next;
 		}
 
-		const nat viz = (nat) atoi(command[2]);
+		const nat version = (nat) atoi(command[2]);
+
+		const nat viz = (nat) atoi(command[3]);
 
 		for (nat z = 0; z < d->in.count; z++) {
 
@@ -3256,7 +3315,7 @@ loop: 	printf(":IP: ");
 			for (nat origin = 0; origin < p.operation_count; origin++) {
 				if (p.graph[4 * origin] != 3) continue;
 
-				if (not has_horizontal_line(max_acceptable_run_length, origin, p, p.graph, p.execution_limit, viz)) 
+				if (not has_horizontal_line(max_acceptable_run_length, version, origin, p, p.graph, p.execution_limit, viz)) 
 					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
 				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
 			}
@@ -3452,6 +3511,8 @@ loop: 	printf(":IP: ");
 
 		const nat viz = (nat) atoi(command[7]);
 
+		const nat debug_prints = (nat) atoi(command[8]);
+
 
 		for (nat z = 0; z < d->in.count; z++) {
 			printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count); fflush(stdout);
@@ -3466,7 +3527,7 @@ loop: 	printf(":IP: ");
 						counter_thr, blackout_radius, 
 						thr_1, thr_2, 
 
-					origin, p, p.graph, p.execution_limit, viz)
+					origin, p, p.graph, p.execution_limit, viz, debug_prints)
 				) 
 
 					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
@@ -3969,7 +4030,17 @@ begin:
 		printf("good_expansion? %s\n", 			type == good_expansion ? "true" : "false" );
 		printf("complete? %s\n", 			complete ? "true" : "false");
 		printf("all? %s\n", 				all ? "true" : "false" );
-		printf("er >= req? %s\n", 			er_count >= p.required_er_count ? "true" : "false" );
+		printf("er >= req? %s\n\n", 			er_count >= p.required_er_count ? "true" : "false" );
+
+		printf(
+			" { \n"
+			"   ns0 = %llu, zr5 = %llu, zr6 = %llu \n"
+			"   pco = %llu, fea = %llu, ndi = %llu \n" 
+			"   mcal = %llu rer = %llu, oer = %llu \n"
+			"   r0i = %llu, h = %llu,   \n"
+			" }\n\n",  BT_ns0, BT_zr5, BT_zr6, BT_pco, BT_fea, 
+				BT_ndi, BT_mcal, BT_rer, BT_oer, BT_r0i, BT_h 
+		);
 		
 		print_graph_as_adj(graph, p.graph_count);
 		printf("searching: [origin = %llu, limit = %llu, n = %llu]\n", origin, p.execution_limit, n);
@@ -4098,8 +4169,13 @@ static nat thingy_stuff(struct parameters p, struct search_data* d) {
 
 	nat entry = 0;
 
+	nat totals_count = 0;
+	nat* totals = NULL;
+
 	nat* indicies = calloc(D, sizeof(nat));
 	nat* stack_operations = calloc(D, sizeof(nat));
+
+	
 
 	if (D == 0) goto execute;
 	
@@ -4125,6 +4201,9 @@ backtrack:
 
 done:;
 
+	totals_count = 0;
+	totals = calloc(tried_count, sizeof(nat));
+
 	if (p.should_print) {
 		print_combinations(tried, tried_count, D);
 		debug_pause();
@@ -4136,13 +4215,18 @@ done:;
 			p.graph[20 + 4 * offset] = tried[D * entry + offset];
 		}
 
-		execute:
+
+		execute:;
+
+		nat per_combination_total = 0;
+
 		for (nat origin = 0; origin < p.operation_count; origin++) {
 
 			if (p.graph[4 * origin] == 3) {
 
-				total += thingy_stuff_search(origin, p, d);
-
+				nat t = thingy_stuff_search(origin, p, d);
+				per_combination_total += t;
+				
 				if (p.should_print) {
 					printf("[origin = %llu]\n", origin);
 					print_graph_as_adj(p.graph, p.graph_count);
@@ -4154,13 +4238,31 @@ done:;
 				}
 			}
 		}
+
+
+		if (D) totals[totals_count++] = per_combination_total;
+		total += per_combination_total;
 	}
 
-	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
+	if (p.should_print) {
+		printf("\n\t[total candidates = %llu]\n\n\n", total);
+		printf("\n\ttotals (%llu):\n", totals_count);
+
+		printf("for each combination \n");
+
+		for (nat i = 0; i < tried_count; i++) {
+			printf("\t%llu: ", i); 
+			print_nats(tried + D * i, D); 
+			printf("--->  %llu z values", totals[i]);
+			puts("");
+		}
+		printf("[end of totals]\n");
+	}
 
 	free(tried);
 	free(indicies);
 	free(stack_operations);
+	free(totals);
 
 	return total;
 
@@ -4213,8 +4315,8 @@ int main() {
 		.step = 1,
 	
 		.should_print = 1,
-		.display_rate = 15,
-		.combination_delay = 1,
+		.display_rate = 11,
+		.combination_delay = 0,
 		.frame_delay = 0,
 
 		.mcal_length = 6,
@@ -4252,7 +4354,7 @@ int main() {
 	
 loop: 	printf(":: ");
 	get_input_line(buffer, sizeof buffer);
-	const char* command[8] = {0};
+	const char* command[16] = {0};
 	parse_command(command, buffer);
 
 	if (is(*command, "", "")) {}
@@ -4260,7 +4362,7 @@ loop: 	printf(":: ");
 
 	else if (is(*command, "debug_command", "dc")) {
 		printf("\n{ \n\t");
-		for (nat a = 0; a < 8; a++) {
+		for (nat a = 0; a < 16; a++) {
 			printf("[%llu]:\"%s\", ", a, command[a]);
 		}
 		printf("\n}\n\n");
