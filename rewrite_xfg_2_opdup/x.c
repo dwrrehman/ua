@@ -461,18 +461,105 @@ static const nat unique_count = sizeof operations / sizeof(nat);
 
 static const char* input_commands[] = {
 
-	
-
 		"edit duplication_count 1"
 	"\n",
-		"edit execution_limit 50000000"
+		"edit execution_limit 1000000"
 	"\n",	
 		"edit fea 3000"
 	"\n",	
+		"print all"
+	"\n",
+		"generate_pruned"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"mfea 3 4 0"
+	"\n",
+		"count"
+	"\n",
+		"next"
+	"\n",
+		"vertical 10000000 2000000 60 5 7 40 2 10"          // usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> 
+	"\n",
+		"count"
+	"\n",
+		"next"
+	"\n",
+		"vertical 100000000 10000000 60 5 7 25 2 10"
+	"\n",
+		"count"
+	"\n",
+		"next"
+	"\n",
+		"vertical 600000000 25000000 60 5 7 15 2 10"
+	"\n",
+		"count"
+	"\n",
+};
 
-/*
 
+
+
+
+
+
+
+
+
+
+
+	/*
+
+		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 1000000"
+	"\n",	
+
+		"edit fea 3000"
+	"\n",	
+		"print all"
 		
+		""
+
+
+		"thingy_stuff"
+	"\n",
+
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+
+		"mfea 3 4 0"
+	"\n",
+		
+		"thingy_stuff"
+	"\n",
+
+
+
+
+
+
+
+		"edit zl d2_e1M_z.txt d2_e1M_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+
+
 		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
 	"\n",
 		"prune"
@@ -489,14 +576,6 @@ static const char* input_commands[] = {
 	"\n",
 
 */
-
-};
-
-
-
-
-
-
 
 
 
@@ -748,8 +827,8 @@ struct parameters {
 
 	nat window_width;
 	nat scale;
-	nat scratch;
-	nat step;
+	nat initial_value;
+	nat step_incr;
 
 	nat should_print;
 	nat display_rate;
@@ -1227,7 +1306,7 @@ static void destroy_list(struct list* list) {
 	list->count = 0;
 }
 
-static nat search(const nat origin, struct parameters p, struct search_data* d) {
+static nat generate_raw_D_subspace(const nat origin, struct parameters p, struct search_data* d) {
 
 	nat candidate_count = 0, candidate_capacity = 0;
 	nat candidate_timestamp_capacity = 0;
@@ -1513,7 +1592,7 @@ static void print_combinations(nat* tried, nat tried_count, const nat D) {
 }
 
 
-static nat any_search(struct parameters p, struct search_data* d) {
+static nat generate_raw_D_space(struct parameters p, struct search_data* d) {
 	
 	const nat D = p.duplication_count;
 	const nat n = D - 1;
@@ -1569,7 +1648,7 @@ done:;
 
 			if (p.graph[4 * origin] == 3) {
 
-				total += search(origin, p, d);
+				total += generate_raw_D_subspace(origin, p, d);
 
 				if (p.should_print) {
 					printf("[origin = %llu]\n", origin);
@@ -1595,44 +1674,6 @@ done:;
 }
 
 
-static void print_help_menu() {
-
-printf("available commands:\n"
-
-"\n"
-	"\t- quit 	: quit the XFG utility.\n"
-	"\t- help 	: this help menu.\n"
-	"\t- clear 	: clear the screen.\n"
-	"\t- datetime 	: print the current time and date.\n"
-"\n"
-	"\t- print all 		: print all parameters. \n"
-	"\t- print graph 	: print the graph as a human readable adj. representation. \n"
-	"\t- print z 		: print the current graph as a z value. \n"
-	"\t- print z_list 	: print the current list of z values, one per line, with their datetime stamps. \n"
-	"\t- print lifetime <instruction_count> 	:  print the lifetime for the current graph, with a supplied ins count. \n"
-	"\t- print lifetimes <instruction_count> 	:  print a series of lifetimes using the z list, with a supplied ins count. \n"
-	
-"\n"
-	"\t- edit <parameter_name> 	: edit a parameter value. use print all to see the available parameters.\n"
-	"\t- edit z_list <z_file> <dt_file>	: read in a list of z values with their datetime stamps from two give files.\n"
-	"\t- edit z <z_value> 		: initialize the current graph using the given digit string.\n"
-	"\t- edit empty_list  		: remove all z values and datetimes in the current z list.\n"
-"\n"
-	"\t- write z_list <new_zlist_file_name> <new_dtlist_file_name> 	: write the current z list to a file. \n"
-"\n"
-	"\t- generate 	: the generative search stage. search over all possible extensions of the current partial "
-			"graph in any (variable) duplication_count space.\n"
-
-	"\t- prune 	: the iterative pruning stage. perform more complicated/computationally-intensive pruning "
-			"metrics on the current z list, and write them to the secondary z list.\n"
-
-"\n"
-	"\t- plot_el 	: plot the relationship between execution_limit, and candidate_count, with fea held constant.\n"
-	"\t- plot_fea 	: plot the relationship between fea, and candidate_count, with execution_limit held constant.\n"
-"\n"
-	
-"\n");
-}
 
 
 static void parse_command(const char* arguments[16], char* buffer) {
@@ -1646,7 +1687,6 @@ static void parse_command(const char* arguments[16], char* buffer) {
 		buffer[i++] = 0;
 	}
 }
-
 
 static void print_command(const char** command, struct parameters p, struct search_data d) {
 
@@ -1663,8 +1703,8 @@ static void print_command(const char** command, struct parameters p, struct sear
 		"\n\t"
 			"window_width = %llu" "\n\t"
 			"scale = %llu" "\n\t"
-			"scratch = %llu" "\n\t"
-			"step = %llu" "\n\t"
+			"initial_value = %llu" "\n\t"
+			"step_incr = %llu" "\n\t"
 		"\n\t"
 			"should_print = %llu" "\n\t"
 			"display_rate = %llu" "\n\t"
@@ -1673,14 +1713,25 @@ static void print_command(const char** command, struct parameters p, struct sear
 		"\n\t"
 			"mcal_length = %llu" "\n\t"
 		"\n\t"
+			"rer_count = %llu" "\n\t"
+			"oer_count = %llu" "\n\t"
+			"max_acceptable_consecutive_incr = %llu" "\n\t"
+			"max_acceptable_run_length = %llu" "\n\t"
+		"\n\t"
 			"duplication_count = %llu" "\n\t"
 			"operation_count = %llu" "\n\t"
 			"graph_count = %llu" "\n\t"
 		"\n\t", 
 			p.FEA, p.execution_limit, p.required_er_count, p.required_le_width, 
-			p.window_width, p.scale, p.scratch, p.step, 
+
+			p.window_width, p.scale, p.initial_value, p.step_incr, 
+
 			p.should_print, p.display_rate, p.combination_delay, p.frame_delay, 
+
 			p.mcal_length,
+
+			p.rer_count, p.oer_count, p.max_acceptable_consecutive_incr, p.max_acceptable_run_length, 
+
 			p.duplication_count, p.operation_count, p.graph_count
 		);
 
@@ -1747,8 +1798,7 @@ static void print_command(const char** command, struct parameters p, struct sear
 }
 
 
-
-static void edit_command(const char** command, struct parameters* p, struct search_data* d) {
+static void edit_command(const char** command, struct parameters* p) {
 	// format:    "edit <PARAMETER-NAME> <VALUE>"
 
 	     if (is(command[1], "FEA", "fea")) 			p->FEA = (nat) atoi(command[2]); 
@@ -1758,8 +1808,8 @@ static void edit_command(const char** command, struct parameters* p, struct sear
 
 	else if (is(command[1], "window_width", "ww")) 		p->window_width = (nat) atoi(command[2]); 
 	else if (is(command[1], "scale", "scale")) 		p->scale = (nat) atoi(command[2]); 
-	else if (is(command[1], "scratch", "scratch")) 		p->scratch = (nat) atoi(command[2]); 
-	else if (is(command[1], "step", "step")) 		p->step = (nat) atoi(command[2]); 
+	else if (is(command[1], "initial_value", "iv")) 	p->initial_value = (nat) atoi(command[2]); 
+	else if (is(command[1], "step_incr", "si")) 		p->step_incr = (nat) atoi(command[2]); 
 
 	else if (is(command[1], "should_print", "sp")) 		p->should_print = (nat) atoi(command[2]); 
 	else if (is(command[1], "display_rate", "dr")) 		p->display_rate = (nat) atoi(command[2]); 
@@ -1768,26 +1818,16 @@ static void edit_command(const char** command, struct parameters* p, struct sear
 
 	else if (is(command[1], "mcal_length", "ml")) 		p->mcal_length = (nat) atoi(command[2]); 
 
+	else if (is(command[1], "rer_count", "rerc")) 				p->rer_count = (nat) atoi(command[2]); 
+	else if (is(command[1], "oer_count", "oerc")) 				p->oer_count = (nat) atoi(command[2]); 
+	else if (is(command[1], "max_acceptable_consecutive_incr", "r0ic")) 	p->max_acceptable_consecutive_incr = (nat) atoi(command[2]); 
+	else if (is(command[1], "max_acceptable_run_length", "hc")) 		p->max_acceptable_run_length = (nat) atoi(command[2]); 
+
+
 	else if (is(command[1], "duplication_count", "d")) {
 		p->duplication_count = (nat) atoi(command[2]); 
 		p->operation_count = 5 + p->duplication_count;
 		p->graph_count = 4 * (5 + p->duplication_count);
-	}
-	
-	else if (is(command[1], "empty_list", "empty_list")) {        // delete me:     this is redundant now.
-		destroy_list(&d->port);
-	}
-
-	else if (is(command[1], "z_list", "zl")) {
-
-		if (is(command[2], "", "") or is(command[3], "", "")) { 
-			printf("error: bad input filenames supplied.\n");
-			return;
-		}
-
-		destroy_list(&d->port);
-		initialize_z_list_from_file(&d->port.z, &d->port.count, command[2], p->graph_count);
-		initialize_dt_list_from_file(&d->port.dt, command[3]);
 	}
 
 	else if (is(command[1], "z", "z")) init_graph_from_string(command[2], p->graph, p->graph_count);
@@ -1812,84 +1852,32 @@ static void write_command(const char** command, struct parameters p, struct sear
 	else printf("error: unknown sub-command: %s\n", command[1]);
 }
 
+static void read_command(const char** command, struct parameters* p, struct search_data* d) {
 
+	if (is(command[1], "z_list", "zl")) {
 
-//  set   p.scratch    to the minimum el,   set    p.execution_limit to  the maximum el,    
-//  and set p.step to the stride width/size, to go through el possibilities at.
-//  set p.window_width to the maximum number of characters to print per line, 
-// set  p.scale   to the  maximum total candidate_count   that you expect to see.
+		if (is(command[2], "", "") or is(command[3], "", "")) { 
+			printf("error: bad input filenames supplied.\n");
+			return;
+		}
 
-// note: the plot/graph is printed downwards, and sideways. 
-
-static void plot_el(struct parameters p) {
-	
-	const nat max_el = p.execution_limit;
-
-	printf("plotting EL v.s. candcount : [maxl_el = %llu, fea = %llu]\n", max_el, p.FEA);
-
-	for (nat el = p.scratch; el < max_el; el += p.step) {
-
-		p.execution_limit = el;
-		p.should_print = false;
-
-
-		struct search_data d = {0};
-		const nat total = any_search(p, &d);
-		
-		const double fraction =  ((double)total / (double) p.scale);
-		const nat space_count = (nat)(fraction * (double) p.window_width);
-		printf("%10llu : ", total);
-		printf("%10llu : ", el);
-		for (nat i = 0; i < space_count; i++) putchar(' '); puts("@");
+		destroy_list(&d->port);
+		initialize_z_list_from_file(&d->port.z, &d->port.count, command[2], p->graph_count);
+		initialize_dt_list_from_file(&d->port.dt, command[3]);
 	}
 
-	puts("[done]");
+	else printf("error: unknown sub-command: %s\n", command[1]);
 }
 
-
-
-//  set   p.scratch    to the minimum fea,   set    p.FEA to  the maximum fea,    
-//  and set p.step to the stride width/size, to go through fea possibilities at.
-//  set p.window_width to the maximum number of characters to print per line, 
-// set  p.scale   to the  maximum total candidate_count   that you expect to see.
-
-// note: the plot/graph is printed downwards, and sideways. 
-
-static void plot_fea(struct parameters p) {
-	
-	const nat max_fea = p.FEA;
-
-	printf("plotting FEA v.s. candcount : [max_fea = %llu, EL = %llu]\n", max_fea, p.execution_limit);
-
-	for (nat fea = p.scratch; fea < max_fea; fea += p.step) {
-
-		p.FEA = fea;
-		p.should_print = false;
-
-		struct search_data d = {0};
-		const nat total = any_search(p, &d);
-
-		const double fraction =  ((double)total / (double) p.scale);
-		const nat space_count = (nat)(fraction * (double) p.window_width);
-		printf("%10llu : ", total);
-		printf("%10llu : ", fea);
-		for (nat i = 0; i < space_count; i++) putchar(' '); puts("@");
-	}
-
-	puts("[done]");
-}
 
 
 
 
 static void print_pruning_metric_menu() {
 
-
 	printf("unimplemented. look at the source code. lol\n");
 
 }
-
-
 
 
 // h
@@ -1922,18 +1910,14 @@ static bool has_horizontal_line(
 
 		const nat I = ip * 4;
 		const nat op = graph[I];
-
-		// we neeed to be doing the horizontal line check     right here.    not in the 5 op exec  spot. 
 	
 		if (version == 1) {
-			for (nat counter = 0, i = 0; i < max_array_size; i++) {
-			
-				if (modes[i]) counter++; else counter = 0;
-				if (counter > max_acceptable_run_length) {
+			for (nat c = 0, i = 0; i < max_array_size; i++) {
+				if (modes[i]) c++; else c = 0;
+				if (c > max_acceptable_run_length) {
 					printf(".\n");
 					return true;
 				}
-
 				if (not array[i]) break;
 			}
 		}
@@ -2353,7 +2337,6 @@ static bool goes_out_of_array_bounds(
 
 		if (op == 1) {
 			pointer++;
-
 			if (pointer > n) { printf(".\n"); return true; }
 		}
 
@@ -2498,36 +2481,46 @@ static void print_buckets(struct bucket* buckets, const nat bucket_count) {
 
 
 
+static const nat debug_prints = 0;
+
+
+
 static bool has_vertical_line(
+	const nat pre_run,       			//   el = 10,000,000   ish 
+	const nat acc_ins,                      	// accumulation count = 1,000,000
 
-	const nat mpp,   //middle portion percentage       	//  60            ie    60 percent
+	const nat mpp,  				//middle portion percentage       	//  60            ie    60 percent	
+	const nat counter_thr,                  	// 5ish
+	const nat blackout_radius, 			// 7ish
 
-	const nat acc_ins,                      // 100,000
-	
-	const nat counter_thr,                  // 5ish
-	const nat blackout_radius, 		// 7ish
+	const nat safety_factor,               		//   eg      90      ie   90 percent. 
+	const nat vertical_line_count_thr,              // eg 2
 
-	const nat safety_factor,                		 //   eg      90      ie   90 percent. 
-
-	const nat vertical_line_count_thr,                    	// 2
+	const nat required_ia_count,                    //  eg like   10 or so 
 
 	const nat origin, 
 	struct parameters p, 
 	nat* graph, 
-	const nat instruction_count,       			  //  the sum of PRT + accumulation_count_ts           el = 10,000,000
-	nat viz,
-	nat debug_prints
+	const nat viz,
+
+	nat* array,
+	bool* modes,
+	struct bucket* buckets,
+	struct bucket* scratch
 ) {
+
+
+	memset(array, 0, max_array_size * sizeof(nat));
+	memset(modes, 0, max_array_size * sizeof(bool));
+	memset(buckets, 0, max_array_size * sizeof(struct bucket));
+	memset(scratch, 0, max_array_size * sizeof(struct bucket));
 
 	if (viz or debug_prints) puts("\n\n");
 
 	const double mpp_ratio = (double) mpp / 100.0;
 	const double discard_window = (1.0 - mpp_ratio) / 2.0;
-	const nat pre_run = instruction_count - acc_ins;
+	const nat instruction_count = pre_run + acc_ins;
 	const nat n = p.FEA;
-
-	struct bucket* scratch = calloc(max_array_size, sizeof(struct bucket));
-	struct bucket* buckets = calloc(max_array_size, sizeof(struct bucket));
 
 	const nat bucket_count = n;
 	nat scratch_count = 0;
@@ -2538,18 +2531,9 @@ static bool has_vertical_line(
 		buckets[b].is_moving = false;
 	}
 
-
-	nat array[max_array_size] = {0};
-	bool modes[max_array_size] = {0};
-
-	nat 
-		pointer = 0, 
-		ip = origin
-	;
-
-
+	nat pointer = 0, ip = origin;
 	nat timestep_count = 0;
-
+	nat ia_count = 0;
 
 	for (nat e = 0; e < instruction_count; e++) {
 
@@ -2558,6 +2542,7 @@ static bool has_vertical_line(
 
 		if (op == 1) {
 			pointer++;
+			if (pointer > n) return true;      // we are doing sfea(FEA) inside of nsvlpm. because we cant do it prior, if nsvl is in gp.
 		}
 
 		else if (op == 5) {
@@ -2613,7 +2598,7 @@ static bool has_vertical_line(
 				puts("");
 			}
 
-			memset(modes, 0, sizeof modes);
+			memset(modes, 0, max_array_size * sizeof(bool));
 			pointer = 0;
 		}
 
@@ -2630,7 +2615,6 @@ static bool has_vertical_line(
 			array[pointer]++;
 			modes[pointer] = 1;
 
-
 			if (e >= pre_run) {
 
 				if (debug_prints) printf("info: performed IA:\n");
@@ -2642,6 +2626,8 @@ static bool has_vertical_line(
 				
 				if (pointer < dw_count or pointer > xw - dw_count)  goto dont_accumulate;
 
+
+				ia_count++;
 
 
 				const nat desired_index = pointer;
@@ -2655,7 +2641,11 @@ static bool has_vertical_line(
 				const nat trigger_uid = get_max_moving_bucket_uid(scratch, scratch_count);
 				if (debug_prints) printf("info: max bucket (.data=%llu) has trigger_uid = %llu.\n", buckets[trigger_uid].data, trigger_uid);
 
-				if (not trigger_uid) { printf(red "█ max trigger bucket zero uid" reset); abort(); }
+				if (not trigger_uid) { 
+					printf(red "█ max trigger bucket zero uid" reset); 
+					puts("");
+					abort(); 
+				}
 
 
 
@@ -2751,10 +2741,6 @@ static bool has_vertical_line(
 		}
 
 
-
-
-
-
 		nat state = 0;
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
@@ -2764,6 +2750,8 @@ static bool has_vertical_line(
 
 		ip = graph[I + state];
 	}
+
+	if (ia_count < required_ia_count) return true;
 
 	// at here, the buckets are filled with values    and we are finished with accumulation!
 
@@ -2793,9 +2781,6 @@ static bool has_vertical_line(
 		stats[buckets[b].data >= required_data_size][buckets[b].counter > counter_thr][buckets[b].is_moving]++;
 	}
 
-	free(buckets);
-	free(scratch);
-
 	if (debug_prints) printf("FINAL GROUP COUNTS: \n\n\t\tvl_count: %llu,  good_count: %llu\n\n", vertical_line_count, good_count);
 
 	if (debug_prints){	
@@ -2809,12 +2794,12 @@ static bool has_vertical_line(
 		puts("");
 	}
 
-	if (stats[1][0][0]) {  //  if this is nonzero,  the user supplied a bad  bucket_data_thr   parameter, 
+	if (stats[1][0][0]) {  //  if this is nonzero,  the user supplied a   too low  safety_factor   parameter, 
 				//   (in relation to the acc_ins they gave), and we need to alert them about it!!
 		puts("");
 		printf( red 
-			"NSVLPM ERROR: bad bucket_data_thr parameter! "
-			"found %llu buckets which where .data >= bucket_data_thr, "
+			"NSVLPM ERROR: too low safety_factor parameter! "
+			"found %llu buckets which where .data >= required_data_size, "
 			"but is_moving=false... soft aborting..." 
 			reset, 
 			stats[1][0][0]
@@ -2828,8 +2813,8 @@ static bool has_vertical_line(
 
 	if (viz or debug_prints) puts("\n\n");
 
-	if (vertical_line_count > vertical_line_count_thr)  { return true; }
-	else   { printf(".\n"); return false; }
+	if (vertical_line_count > vertical_line_count_thr) return true; 
+	else { printf(".\n"); return false; }
 }
 
 
@@ -3448,13 +3433,16 @@ loop: 	printf(":IP: ");
 		const nat viz = (nat) atoi(command[3]);
 
 		nat save = p.FEA;
-		for (nat fea = startfea; fea < endfea or not endfea; fea++) {
+		for (nat fea = startfea; fea < endfea or not endfea; ) {
 
 			printf("----------------------------- testing FEA = %llu ---------------------\n", fea);
 
 			p.FEA = fea;
 
 			execute_singlefea_pruning_metric(p, d, viz);
+
+			fea++;
+			if (fea >= endfea) break;
 
 			if (not endfea) {
 				printf("test pruning of the next fea? (q to stop)");
@@ -3474,44 +3462,55 @@ loop: 	printf(":IP: ");
 	}
 
 
-	else if (is(*command, "vertical", "v")) {     // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
+	else if (is(*command, "vertical", "v")) {     // usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> <debug_prints>
 
 
-		const nat acc_ins = (nat) atoi(command[1]); 
+
+		const nat pre_run = (nat) atoi(command[1]); 
+		if (not pre_run) { 
+			printf("error: bad pre_run supplied.\n");
+			goto next;
+		}
+
+		const nat acc_ins = (nat) atoi(command[2]); 
 		if (not acc_ins) { 
 			printf("error: bad acc_ins supplied.\n");
 			goto next;
 		}
 
-		const nat mpp = (nat) atoi(command[2]);
+		const nat mpp = (nat) atoi(command[3]);
 		if (not mpp) { 
 			printf("error: bad mpp supplied.\n");
 			goto next;
 		}
 
-		const nat counter_thr = (nat) atoi(command[3]);
+		const nat counter_thr = (nat) atoi(command[4]);
 		if (not counter_thr) { 
 			printf("error: bad counter_thr supplied.\n");
 			goto next;
 		}
 
-		const nat blackout_radius = (nat) atoi(command[4]);
+		const nat blackout_radius = (nat) atoi(command[5]);
 		if (not blackout_radius) { 
 			printf("error: bad blackout_radius supplied.\n");
 			goto next;
 		}
 		
-		const nat thr_1 = (nat) atoi(command[5]);
-		if (not thr_1) { 
-			printf("error: bad thr_1 supplied.\n");
+		const nat safety_factor = (nat) atoi(command[6]);
+		if (not safety_factor) { 
+			printf("error: bad safety_factor supplied.\n");
 			goto next;
 		}
 
-		const nat thr_2 = (nat) atoi(command[6]);
+		const nat vl_count = (nat) atoi(command[7]);
+		const nat required_ia_count = (nat) atoi(command[8]);
+		const nat viz = (nat) atoi(command[9]);
 
-		const nat viz = (nat) atoi(command[7]);
 
-		const nat debug_prints = (nat) atoi(command[8]);
+		nat* array 		= calloc(max_array_size, sizeof(nat));
+		bool* modes 		= calloc(max_array_size, sizeof(bool));
+		struct bucket* scratch 	= calloc(max_array_size, sizeof(struct bucket));
+		struct bucket* buckets 	= calloc(max_array_size, sizeof(struct bucket));
 
 
 		for (nat z = 0; z < d->in.count; z++) {
@@ -3522,21 +3521,24 @@ loop: 	printf(":IP: ");
 				if (p.graph[4 * origin] != 3) continue;
 
 				if (not has_vertical_line(
-				
-						mpp, acc_ins, 
-						counter_thr, blackout_radius, 
-						thr_1, thr_2, 
-
-					origin, p, p.graph, p.execution_limit, viz, debug_prints)
+						pre_run, acc_ins, 
+						mpp, counter_thr, blackout_radius, 
+						safety_factor, vl_count, required_ia_count,
+						origin, p, p.graph, viz,
+						array, modes, buckets, scratch
+					)
 				) 
 
 					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
-
 				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
 			}
 		}
 		printf("--> found %llu / pruned %llu  :  after non-simplified  vertical line  pruning metric.\n", d->out.count, d->bad.count);
 
+		free(scratch);
+		free(buckets);
+		free(modes);
+		free(array);
 	}
 
 
@@ -3800,7 +3802,7 @@ static void synthesize_graph(struct parameters p, struct search_data d) {
 
 
 
-static nat thingy_stuff_search(const nat origin, struct parameters p, struct search_data* d) {
+static nat generate_pruned_D_subspace(const nat origin, struct parameters p, struct search_data* d) {
 
 	nat candidate_count = 0, candidate_capacity = 0;
 	nat candidate_timestamp_capacity = 0;
@@ -4156,7 +4158,7 @@ done:
 
 
 
-static nat thingy_stuff(struct parameters p, struct search_data* d) {
+static nat generate_pruned_D_space(struct parameters p, struct search_data* d) {
 	
 	const nat D = p.duplication_count;
 	const nat n = D - 1;
@@ -4224,7 +4226,7 @@ done:;
 
 			if (p.graph[4 * origin] == 3) {
 
-				nat t = thingy_stuff_search(origin, p, d);
+				nat t = generate_pruned_D_subspace(origin, p, d);
 				per_combination_total += t;
 				
 				if (p.should_print) {
@@ -4287,11 +4289,123 @@ done:;
 
 
 
+//  set   p.scratch    to the minimum el,   set    p.execution_limit to  the maximum el,    
+//  and set p.step to the stride width/size, to go through el possibilities at.
+//  set p.window_width to the maximum number of characters to print per line, 
+// set  p.scale   to the  maximum total candidate_count   that you expect to see.
+
+// note: the plot/graph is printed downwards, and sideways. 
+
+static void plot_el(struct parameters p) {
+	
+	const nat max_el = p.execution_limit;
+
+	printf("plotting EL v.s. candcount : [maxl_el = %llu, fea = %llu]\n", max_el, p.FEA);
+
+	for (nat el = p.initial_value; el < max_el; el += p.step_incr) {
+
+		p.execution_limit = el;
+		p.should_print = false;
+
+
+		struct search_data d = {0};
+		const nat total = generate_pruned_D_space(p, &d);
+		
+		const double fraction =  ((double)total / (double) p.scale);
+		const nat space_count = (nat)(fraction * (double) p.window_width);
+		printf("%10llu : ", total);
+		printf("%10llu : ", el);
+		for (nat i = 0; i < space_count; i++) putchar(' '); puts("@");
+	}
+
+	puts("[done]");
+}
+
+
+
+//  set   p.scratch    to the minimum fea,   set    p.FEA to  the maximum fea,    
+//  and set p.step to the stride width/size, to go through fea possibilities at.
+//  set p.window_width to the maximum number of characters to print per line, 
+// set  p.scale   to the  maximum total candidate_count   that you expect to see.
+
+// note: the plot/graph is printed downwards, and sideways. 
+
+static void plot_fea(struct parameters p) {
+	
+	const nat max_fea = p.FEA;
+
+	printf("plotting FEA v.s. candcount : [max_fea = %llu, EL = %llu]\n", max_fea, p.execution_limit);
+
+	for (nat fea = p.initial_value; fea < max_fea; fea += p.step_incr) {
+
+		p.FEA = fea;
+		p.should_print = false;
+
+		struct search_data d = {0};
+		const nat total = generate_pruned_D_space(p, &d);
+
+		const double fraction =  ((double)total / (double) p.scale);
+		const nat space_count = (nat)(fraction * (double) p.window_width);
+		printf("%10llu : ", total);
+		printf("%10llu : ", fea);
+		for (nat i = 0; i < space_count; i++) putchar(' '); puts("@");
+	}
+
+	puts("[done]");
+}
 
 
 
 
 
+
+
+
+
+
+
+
+
+static void print_help_menu() {
+
+printf("available commands:\n"
+
+"\n"
+	"\t- quit 	: quit the XFG utility.\n"
+	"\t- help 	: this help menu.\n"
+	"\t- clear 	: clear the screen.\n"
+	"\t- datetime 	: print the current time and date.\n"
+"\n"
+	"\t- print all 		: print all parameters. \n"
+	"\t- print graph 	: print the graph as a human readable adj. representation. \n"
+	"\t- print z 		: print the current graph as a z value. \n"
+	"\t- print z_list 	: print the current list of z values, one per line, with their datetime stamps. \n"
+	"\t- print lifetime <instruction_count> 	:  print the lifetime for the current graph, with a supplied ins count. \n"
+	"\t- print lifetimes <instruction_count> 	:  print a series of lifetimes using the z list, with a supplied ins count. \n"
+"\n"
+	"\t- edit <parameter_name> 	: edit a parameter value. use print all to see the available parameters.\n"
+	"\t- edit z <z_value> 		: initialize the current graph using the given digit string.\n"
+"\n"
+	"\t- write z_list <new_zlist_file_name> <new_dtlist_file_name> 	: write the current z list to a file. \n"
+"\n"
+	"\t- read z_list <existing_z_file> <existing_dt_file>	: read in a list of z values with their datetime stamps from two give files.\n"
+"\n"
+	"\t- generate 	: the generative search stage. search over all possible extensions of the current partial "
+			"graph in any (variable) duplication_count space.\n"
+
+	"\t- generate_pruned 	: the generative search stage. search over all possible extensions of the current partial "
+			"graph in any (variable) duplication_count space, and run h, rer, oer, and r0i pruning metrics over "
+			"the resultant search space. \n"
+
+	"\t- prune 	: the iterative pruning stage. perform more complicated/computationally-intensive pruning "
+			"metrics on the current z list, and write them to the secondary z list.\n"
+"\n"
+	"\t- plot_el 	: plot the relationship between execution_limit, and candidate_count, with fea held constant.\n"
+	"\t- plot_fea 	: plot the relationship between fea, and candidate_count, with execution_limit held constant.\n"
+"\n"
+	
+"\n");
+}
 
 
 
@@ -4303,16 +4417,16 @@ int main() {
 
 	static struct parameters p = {
 
-		.FEA = 300, 
-		.execution_limit = 3000, 
+		.FEA = 3000, 
+		.execution_limit = 100000, 
 
 		.required_er_count = 6, 
 		.required_le_width = 5,
 
 		.window_width = 100,
 		.scale = 7000,
-		.scratch = 0,
-		.step = 1,
+		.initial_value = 0,
+		.step_incr = 1,
 	
 		.should_print = 1,
 		.display_rate = 11,
@@ -4322,10 +4436,10 @@ int main() {
 		.mcal_length = 6,
 		.mcal = { 3, 1,  3, 5,  3, 1 },
 
-		.rer_count = 40,
-		.oer_count = 80,
-		.max_acceptable_consecutive_incr = 50,
-		.max_acceptable_run_length = 7,
+		.rer_count = 40,                        // rer
+		.oer_count = 80,                        // oer
+		.max_acceptable_consecutive_incr = 50,  // r0i 
+		.max_acceptable_run_length = 7,         // h
 
 		.duplication_count = 1,
 		.operation_count = 5 + 1,
@@ -4373,13 +4487,12 @@ loop: 	printf(":: ");
 	else if (is(*command, "datetime", "dt")) 		print_datetime();
 
 	else if (is(*command, "print", "p"))  			print_command(command, p, d);
-	else if (is(*command, "edit", "e"))    			edit_command(command, &p, &d);
+	else if (is(*command, "edit", "e"))    			edit_command(command, &p);
 	else if (is(*command, "write", "w")) 	 		write_command(command, p, d);
-	else if (is(*command, "generate", "g")) 		any_search(p, &d);
+	else if (is(*command, "read", "r"))    			read_command(command, &p, &d);
 
-
-	else if (is(*command, "thingy_stuff", "t")) 		thingy_stuff(p, &d);
-
+	else if (is(*command, "generate", "g")) 		generate_raw_D_space(p, &d);
+	else if (is(*command, "generate_pruned", "gp")) 	generate_pruned_D_space(p, &d);
 
 	else if (is(*command, "prune", "ip")) 			prune_z_list(p, &d);
 	else if (is(*command, "synthesize_graph", "sg")) 	synthesize_graph(p, d);
