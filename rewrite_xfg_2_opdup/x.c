@@ -15,6 +15,19 @@
 #include <math.h>
 #include <errno.h>
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <stdatomic.h>
+#include <iso646.h>
+#include <stdbool.h>
+
+
+
+
 /*
 
 2212316.235956
@@ -461,6 +474,59 @@ static const nat unique_count = sizeof operations / sizeof(nat);
 
 static const char* input_commands[] = {
 
+		"edit duplication_count 2"
+	"\n",
+		"edit execution_limit 1000000"
+	"\n",	
+		"edit fea 3000"
+	"\n",	
+		"print all"
+	"\n",
+		"read z_list d2_e1M_z.txt d2_e1M_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////		official 1-space search         ////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 		"edit duplication_count 1"
 	"\n",
 		"edit execution_limit 1000000"
@@ -499,20 +565,14 @@ static const char* input_commands[] = {
 	"\n",
 		"count"
 	"\n",
-};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
 
 
-
-
-
-
-
-
-	/*
 
 		"edit duplication_count 1"
 	"\n",
@@ -2402,6 +2462,10 @@ static bool goes_out_of_array_bounds(
 
 
 
+
+
+
+
 struct bucket {
 	nat index;
 	nat data;
@@ -3050,6 +3114,111 @@ else {
 #
 
 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// parellel sfea:
+
+static void execute_parallel_singlefea_pruning_metric(
+	struct parameters p, 
+	struct search_data * d, 
+	nat viz) { 			// prune over all graphs using single fea().
+
+
+
+
+
+
+
+	for (nat z = 0; z < d->in.count; z++) {
+
+		printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count);  fflush(stdout);
+
+
+		// lock the input_mutex
+
+		memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+		// unlock the input_mutex
+
+
+
+
+
+		////   all ofthis is done inside the worker_thread  code itself. 
+		///// -----------------------------------    
+
+		for (nat origin = 0; origin < p.operation_count; origin++) {
+
+			if (p.graph[4 * origin] != 3) continue;
+
+
+			if (not goes_out_of_array_bounds(origin, p, p.graph, p.execution_limit, viz)) 
+
+				// lock the out_mutex
+				push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count); 
+				// this would be the push to output.
+				// unlock the out_mutex
+
+
+
+			else    
+				// lock the bad_mutex
+				push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+				// unlock the bad_mutex
+
+		}
+
+		//// -----------------------------------
+
+
+
+
+
+	}
+	printf("--> found %llu / pruned %llu  :  after singlefea pruning metric.\n", d->out.count, d->bad.count);
+	
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
