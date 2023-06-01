@@ -14,438 +14,19 @@
 #include <termios.h>
 #include <math.h>
 #include <errno.h>
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <stdatomic.h>
-#include <iso646.h>
-#include <stdbool.h>
-
-
-
-
-/*
-
-2212316.235956
-~: dt
-2212316.235959
-~: dt
-2301017.000000
-~: dt
-2301017.000007
-~: dt
-2301017.000232
-~: 
-*/
-
-
-
-
-/*
-
-
-
-
-
-
-
-
-2303046.193658
-
-heres the partial graph consistent with the 9 good z values from 1-space, after running nsvlpm and sg:
-
-
- tallys2 : dupilcating 2 in 1-space:
-{ .op = 1,   .lge={ .l={  ->2: 9(1.00),  },  .g={  ->3: 9(1.00),  },  .e={  ->2: 8(0.89),  ->5: 1(0.11),  },   }   
-
-{ .op = 3,   .lge={ .l={  ->0: 9(1.00),  },  .g={  ->0: 6(0.67),  ->5: 3(0.33),  },  .e={  ->2: 1(0.11),  ->4: 7(0.78),  ->5: 1(0.11),  },   }   
-
-{ .op = 2,   .lge={ .l={  ->0: 9(1.00),  },  .g={  ->1: 8(0.89),  ->4: 1(0.11),  },  .e={  ->3: 2(0.22),  ->5: 7(0.78),  },   }   
-
-{ .op = 6,   .lge={ .l={  ->1: 9(1.00),  },  .g={  },  .e={  ->1: 6(0.67),  ->2: 3(0.33),  },   }   
-
-{ .op = 5,   .lge={ .l={  ->5: 9(1.00),  },  .g={  ->2: 8(0.89),  ->5: 1(0.11),  },  .e={  ->1: 2(0.22),  ->3: 7(0.78),  },   }   
-
-{ .op = 2,   .lge={ .l={  ->0: 2(0.22),  ->2: 7(0.78),  },  .g={  ->0: 7(0.78),  ->1: 1(0.11),  ->4: 1(0.11),  },  .e={  ->1: 6(0.67),  ->3: 3(0.33),  },   }   
-
-:: 
-
-
-
-
-
- RRXFG partial graph     starting graph: 
-
-	.graph = { 
-			1,  2, 3, _,
-			3,  0, _, _,
-			2,  0, _, _,
-			6,  1, X, _,
-			5,  _, _, _,
-			0,  _, _, _,
-
-
-
-
-			0,  _, _, _,
-			0,  _, _, _,
-			0,  _, _, _,
-			0,  _, _, _,
-		},
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-[end of lifetime]
-[origin = 1]
-graph adjacency list: 
-{
-	#0: ins(.op = 1, .lge = [ 2, 3, 2])
-
-	#4: ins(.op = 3, .lge = [ 0, 0, 4])
-
-	#8: ins(.op = 2, .lge = [ 0, 1, 5])
-
-	#12: ins(.op = 6, .lge = [ 1,  , 1])
-
-	#16: ins(.op = 5, .lge = [ 5, 2, 3])
-
-	#20: ins(.op = 2, .lge = [ 2, 0, 1])
-
-}
-
-z=2 / zcount=9   :   12323004201561_155232201
-2211211.202213
-
-continue? (q/ENTER) 
-
-
-						this is oneof the nine following z values, that were good enough to not obviouslyyyyy have vl's,   so nsvlpm did not catch them, given our parameters we supplied. 
-
-
-
-
-
-heres the output of nsvlpm     (14 z values, total)    but    after we human pruned 5 of them, to get rid of 5 ones that had a ER infinite loop.
-
-
-
-
-12323004201561_155232001  :  2211211.202213
-12323054201561_155232001  :  2211211.202213
-12323004201561_155232201  :  2211211.202213
-12323054201561_155232201  :  2211211.202213
-12323004201561_255232201  :  2211211.202214
-12323054201561_255232201  :  2211211.202214
-12323004201561_255232203  :  2211211.202214
-12323005201361_155212243  :  2211211.202233
-12353002204361_155512213  :  2211211.202304
-
-listed out with 9 values.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	2303046.145308
-		iter:
-
-
-			1. code up NSVLPM 
-
-			2. do the official 1-sp search! using all pm's and plot_fea and plot_el  utils.	
-
-
-
-
-
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	things i want to implement:
-
-
-	speed:
-
-		1. find the speed of expansion of each z value
-	
---->		2. find the speed of the vertical lines precession       (to eventually account for precession!)
-
-
-	viz:
-
-		3. display the histogram each timestep, to know how the hg changes overtime
-
-
-
-
-
-x	***	4. increase the PRT to like 1000000000 ish 
-
-				find the relationship betwwen fea and el   for our z values. 
-
-
-	
-				
-
-x	****	5.        plz run      GRAPH AVERAGERRRRRR
-
-
-
-
-						done!
-
-
-
-*/
-
-
-
-// make a operation utilization gs  metric    to check if it executed all ops 
-
-
-
-
+//#include <pthread.h>
+//#include <stdatomic.h>
 
 #define reset "\x1B[0m"
-
 #define white  yellow
-
 #define red   "\x1B[31m"
 #define green   "\x1B[32m"
 #define blue   "\x1B[34m"
 #define yellow   "\x1B[33m"
-
 #define magenta  "\x1B[35m"
 #define cyan     "\x1B[36m"
 
-
-
-
 typedef unsigned long long nat;
-
-
-
-
-
-
-
-
-/*
-
-	-------------- 2212316.225619 iter code up thingy -----------------
-
-
-
-
-	x	0-  figure out the bug with horizontal not working properly- its not pruning things it should be pruning. 
-
-	x	1- OER :     oscilating between two ER points.
-
-	x	2- r0i :     constantly incrementing *0 over and over again each CLT.
-
-	x	3- graph averager   : find the partial graph (with percentages) consistent with a given z_list.
-	
-
-
-
-
-
-
-		4- implement vertical line pruning metric!!
-
-
-
-			4.0  determine fea and el
-
-			4.1  run for 5 million ish ts
-
-			4.2  run for 10 and accumulate into buckets
-
-			4.3  blur buckets  using window averaging
-
-			4.4  compute histogram based on blury buckets. 
-
-			4.5. print out HG   check one of the high-bucket-value bars, threshold -> boolean   on it. 
-
-
-
-
-
-	------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
----------------------------
-
-
-x	1. make the graphing utility for showing the relationship between   fea and execlimit and    candidatecount
-
-
-x	2. merge the 1space, 2space, and 0space functions, to all be the same function, parameterized on   .duplication_count  parameter
-
-
-	3. look at previous iternary
-
-
------------------------
-
-
-2210241.004313: iter
-
-
-x		1. add more total counts 
-
-		2. fix viz
-
-		3. plot el and fea 
-
-		4. ip   serialization of z list 
-		
-		5. nf
-	
-
-	
-
-
-
-------------------------
-
-
-
-
-
-
-
-
-iter:       last uaj
-
-
-	1. viz 0 & 1
-
-
-	2. multi-fea pruning     --> ip
-
-
-	3. stuff() alg analysis
-
-
-
-	4. 
-
-
-
-
-
-
-
-2211152.135947:   implementing a couple of things:
-
-	i have a couple of things that i want to implement in the utility real quick:
-
-		
-		x	1. i want to add a script system.    read a file, interpret the commands. yes. 
-
-
-		x	2. i want to make a function to perform a transfer between   z_list's.       .out  .in,    .port     are all z lists. 
-
-					ie, a struct 
-
-
-
-			3. i want to add a function to vizualize when the utility is seeing a horizontal line.   
-						i want it to be visual for debugging purposes. 
-
-
-			4. i also want to      make the utiltiy able to print      a far out sectiono f the z values lifetime:
-
-
-						1000005   to 1000010    timesteps     ie,   5 timesteps,   very far out in the lt. 
-
-				ie, make a timestep_begin   and timestep_end   param to print lifetime  function 
-
-					where the default is begin=0  and  end=timestep_count
-
-
-
-					
-
-
-
-
-
-
-
-
-*/
-
-
-
 
 // -------- constants: --------
 
@@ -453,9 +34,7 @@ static const nat max_stack_size = 128; 			// maximum number of holes we can fill
 
 static const nat max_array_size = 4096;   		// effectively infinity.  (xfg uses an infinite array)
 
-
 static const nat max_mcal_length = 16;                  // maximum mcal length you can supply.
-
 
 static const nat unknown = 123456789;			// some bogus value, that represents a hole. 
 static const nat deadstop = unknown;			// same as above. used to mark the unknown as impossible to specify.
@@ -465,15 +44,150 @@ static const nat X = deadstop;
 
 static const nat max_operation_count = 16;              // maximum number of instructions in the graph. 
 
-
 static const nat operations[] = {6, 5, 3, 1, 2};
 static const nat unique_count = sizeof operations / sizeof(nat);
 
-
-
-
 static const char* input_commands[] = {
 
+
+         	"edit duplication_count 1"
+        "\n",
+                "edit execution_limit 1000000"
+        "\n",   
+                "edit fea 3000"
+        "\n",   
+                "print all"
+        "\n",
+                "generate_pruned"
+        "\n",
+                "prune"
+        "\n",
+                "import"
+        "\n",
+                "count"
+        "\n",
+                "mfea 3 4 0"
+        "\n",
+                "count"
+        "\n",
+                "next"
+        "\n",
+
+
+
+
+
+
+
+
+
+/*
+
+		    v 10000000 2900000 60 5 7 40 1 10                         // usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> 
+
+
+		v_opt 12900000 200000 100000 1500000 60 5 7 40 1 10            // usage:   v_opt <ic> <base> <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> <debug_prints>
+			ic      base    prt    acc
+
+	*/
+
+
+
+
+
+
+
+
+
+
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 1000000"
+	"\n",	
+		"edit fea 3000"
+	"\n",	
+		"print all"
+	"\n",
+		"read z_list vl_testing_z.txt vl_testing_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+
+		
+
+
+
+
+		    v 10000000 2500000 60 5 7 40 1 10
+
+		v_opt 10000000 2500000 60 5 7 40 1 10
+
+	
+
+
+
+
+
+
+
+                "vertical 10000000 2000000 60 5 7 40 2 10"       
+        "\n",
+                "count"
+        "\n",
+                "next"
+        "\n",
+                "vertical 100000000 10000000 60 5 7 25 2 10"
+        "\n",
+                "count"
+        "\n",
+                "next"
+        "\n",
+                "vertical 600000000 25000000 60 5 7 15 2 10"
+        "\n",
+                "count"
+        "\n",
+
+*/
+
+
+
+/*
 		"edit duplication_count 2"
 	"\n",
 		"edit execution_limit 1000000"
@@ -492,390 +206,41 @@ static const char* input_commands[] = {
 	"\n",
 
 
-};
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////		official 1-space search         ////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-		"edit duplication_count 1"
-	"\n",
-		"edit execution_limit 1000000"
-	"\n",	
-		"edit fea 3000"
-	"\n",	
-		"print all"
-	"\n",
-		"generate_pruned"
-	"\n",
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-		"mfea 3 4 0"
-	"\n",
-		"count"
-	"\n",
-		"next"
-	"\n",
-		"vertical 10000000 2000000 60 5 7 40 2 10"          // usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> 
-	"\n",
-		"count"
-	"\n",
-		"next"
-	"\n",
-		"vertical 100000000 10000000 60 5 7 25 2 10"
-	"\n",
-		"count"
-	"\n",
-		"next"
-	"\n",
-		"vertical 600000000 25000000 60 5 7 15 2 10"
-	"\n",
-		"count"
-	"\n",
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-		"edit duplication_count 1"
-	"\n",
-		"edit execution_limit 1000000"
-	"\n",	
-
-		"edit fea 3000"
-	"\n",	
-		"print all"
-		
-		""
-
-
-		"thingy_stuff"
-	"\n",
-
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-		"pause"
-	"\n",
-
-		"mfea 3 4 0"
-	"\n",
-		
-		"thingy_stuff"
-	"\n",
-
-
-
-
-
-
-
-		"edit zl d2_e1M_z.txt d2_e1M_dt.txt"
-	"\n",
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-
-
-		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
-	"\n",
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-		"vertical 7000000 60 5 7 80 2 0 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz> <debug_prints>
-	"\n",
-		"count"
-	"\n",
-
-	"\n",
+         "edit duplication_count 1"
+        "\n",
+                "edit execution_limit 1000000"
+        "\n",   
+                "edit fea 3000"
+        "\n",   
+                "print all"
+        "\n",
+                "generate_pruned"
+        "\n",
+                "prune"
+        "\n",
+                "import"
+        "\n",
+                "count"
+        "\n",
+                "mfea 3 4 0"
+        "\n",
+                "count"
+        "\n",
+                "next"
+        "\n",
 
 */
 
 
 
-/*
 
 
-//		"edit zl z18_z.txt z18_dt.txt"
-//	"\n",
-//		"prune"
-//	"\n",
-//		"count"
-//	"\n",
 
 
-
-
-
-	"\n",
-		"edit execution_limit 10000000"
-	"\n",	
-		"edit fea 3000"
-	"\n",	
-		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
-	"\n",
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-		"vertical 1000000 60 5 7 200 1 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
-	"\n",
-		"count"
-	"\n",
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		"edit duplication_count 1"
-	"\n",
-		"edit execution_limit 50000000"
-	"\n",	
-		"edit fea 3000"
-	"\n",	
-		"edit zl three_z.txt three_dt.txt"
-	"\n",
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-		"vertical 1000000 60 5 7 30 2 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
-	"\n",
-		"count"
-	"\n",
-
-
-
-
-
-
-		used for generating the    list of 3 z values, which nsvlpm was unable to catch,  with an el of only 10 million instructions.    we will try 50 mil next.
-
-
-
-		"edit duplication_count 1"
-	"\n",
-		"edit execution_limit 10000000"
-	"\n",	
-		"edit fea 3000"
-	"\n",	
-		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
-	"\n",
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-		"vertical 1000000 60 5 7 30 2 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
-	"\n",
-		"count"
-	"\n",
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-used for re running     rer       to use a larger    el   and fea    to prune 5 bad graphs:
-
-
-
-	"edit duplication_count 1"
-	"\n",
-		"edit execution_limit 10000000"
-	"\n",	
-		"edit fea 3000"
-	"\n",	
-		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
-	"\n",
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-		"rer 20"  
-	"\n",
-		"count"
-	"\n",
-		"pause"
-	"\n",
-		"export"
-	"\n",
-		"quitip"
-	"\n",
-		"write z_list d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
-	"\n",
-		"quit"
-	"\n",
-
-
-*/
-
-
-
-
-
-/*
-
-
-
-
-
-	"edit duplication_count 1"
-	"\n",
-		"edit execution_limit 10000000"
-	"\n",	
-		"edit fea 1500"
-	"\n",	
-		"edit zl nine_good_1sp_z.txt nine_good_1sp_dt.txt"
-	"\n",
-		"prune"
-	"\n",
-		"count"
-	"\n",
-		"quitip"
-	"\n",
-		"synthesize_graph"
-	"\n",
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		"edit duplication_count 1"
-	"\n",
-		"edit execution_limit 10000000"
-	"\n",	
-		"edit fea 1500"
-	"\n",	
-		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
-	"\n",
-		"prune"
-	"\n",
-		"import"
-	"\n",
-		"count"
-	"\n",
-		"vertical 100000 60 5 7 20 0 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
-	"\n",
-		"count"
-	"\n",
-
-
-
-
-
-
-
-
-
-	2212224.151255:
-
-					we will always do the following pruning metrics in this order:
-
-
-
-					1.	horizontal 6 0
-
-					2.	repetitive_er 20 0
-
-					3. 	mfea 10 200 0
-
-						
-*/
 
 
 
@@ -939,6 +304,8 @@ enum expansion_type  {
 struct stack_frame {
 	nat try;
 	nat option_count;
+	nat executed_instruction_count;
+	nat completed_on;
 	nat pointer;
 	nat mcal_index;
 	nat ip;
@@ -948,12 +315,9 @@ struct stack_frame {
 
 	nat RER_counter;
 	nat RER_er_at;
-
 	nat OER_counter;
 	nat OER_er_at;
-
 	nat R0I_counter;
-
 	nat H_counter;
 
 	nat options[max_operation_count];
@@ -961,15 +325,18 @@ struct stack_frame {
 	nat modes_state[max_array_size];
 };
 
-// static bool is_reset_statement(nat op) { return op == 5 or op == 6; }
+struct bucket {
+	nat index;
+	nat data;
+	nat counter;
+	nat uid;
+	nat is_moving;
+};
 
 static inline void clear_screen(void) { printf("\033[2J\033[H"); }
 
-
 static const nat input_count = sizeof input_commands / sizeof *input_commands;
-
 static nat input_index = 0;
-
 
 static int debug_pause() {
 	printf("continue? ");
@@ -977,7 +344,6 @@ static int debug_pause() {
 	if (input_index >= input_count) return getchar();
 	return ' ';
 }
-
 
 static void get_input_line(char* buffer, int size) {
 	if (input_index < input_count) {
@@ -996,7 +362,6 @@ static nat exponentiate(const nat a, const nat b) {
 	return c;
 }
 
-
 static bool is(const char* string, const char* _long, const char* _short) {
 	return string and (not strcmp(string, _long) or not strcmp(string, _short));
 }
@@ -1008,12 +373,17 @@ static void get_datetime(char datetime[16]) {
 	strftime(datetime, 15, "%y%m%d%u.%H%M%S", tm_info);
 }
 
+
+
+/// print functions: 
+
+
+
 static void print_datetime() {
 	char dt[16] = {0};
 	get_datetime(dt);
 	printf("%s\n", dt);
 }
-
 
 static void print_nats(nat* v, nat l) {
 	printf("(%llu)[ ", l);
@@ -1042,8 +412,6 @@ static void print_graph_as_adj(nat* graph, nat graph_count) {
 	}
 	printf("}\n\n");
 }
-
-
 
 static void print_graph_as_z_value(nat* graph, nat graph_count) {
 		
@@ -1077,7 +445,6 @@ static void print_graph_as_z_value_to_file(FILE* file, nat* graph, nat graph_cou
 	fprintf(file, "\n");
 }
 
-
 static void print_z_list(struct list list, nat graph_count) {
 	for (nat z = 0; z < list.count; z++) {
 		print_graph_as_z_value(list.z + graph_count * z, graph_count);
@@ -1101,6 +468,34 @@ static void print_dt_list_to_file(char* dt_list, nat z_count, const char* file_n
 	for (nat z = 0; z < z_count; z++) 
 		fprintf(file, "%s\n", dt_list + z * 16);
 	fclose(file);
+}
+
+static void print_combinations(nat* tried, nat tried_count, const nat D) {
+
+	printf("printing all combinations we are trying: \n");
+
+	for (nat i = 0; i < tried_count; i++) {
+		printf("\t%llu: ", i); 
+		print_nats(tried + D * i, D); puts("");
+	}
+
+	printf("[end of combinations]\n");
+}
+
+static void print_buckets(struct bucket* buckets, const nat bucket_count) {
+	for (nat b = 0; b < bucket_count; b++) {
+		if (buckets[b].data) {
+			printf("\nBUCKET uid#%llu = { .index = %llu, .data = %llu, .counter = %llu, .uid = %llu,  %c  } \n\n",
+				b,
+				buckets[b].index,
+				buckets[b].data,
+				buckets[b].counter,
+				buckets[b].uid,
+				buckets[b].is_moving ? '#' : ' ' 
+			);
+		} else 
+			printf("@ ");
+	}
 }
 
 static void init_graph_from_string(const char* string, nat* graph, nat graph_count) {
@@ -1159,10 +554,8 @@ static void print_stack(struct stack_frame* stack, nat stack_count) {
 
 		puts("}");
 	}
-
 	printf("}\n[end of stack]\n");
 }
-
 
 static nat* generate_options(
 	nat* options,
@@ -1180,21 +573,16 @@ static nat* generate_options(
 	for (nat option = 0; option < operation_count; option++) {
 		if (ip == option) continue;
 		
-		if (	
-			(graph[4 * option] == 6 and comparator) or          //   dont allow 6 zero resets.
-			graph[4 * option] == 2 or                           //   allow for comparator incr, at anytime.
-			mcal_index >= mcal_length or                        //   if we ran outof mcal, do anything.
-			graph[4 * option] == mcal[mcal_index]               //   dont allow wrong mcal coi.
+		if (	(graph[4 * option] == 6 and comparator) or 
+			graph[4 * option] == 2 or
 
-		) options[count++] = option; 
-		
+			mcal_index >= mcal_length or graph[4 * option] == mcal[mcal_index]
+
+		) options[count++] = option;
 	}
-
 	*option_count = count;
 	return options;
 }
-
-
 
 static void print_lifetime(nat origin, struct parameters p, nat* graph, const nat print_count, const nat pre_run_count) {
 
@@ -1219,7 +607,6 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 		}
 
 		else if (op == 5) {
-
 			if (e >= pre_run_count) {
 		
 				for (nat i = 0; i < max_array_size; i++) {
@@ -1231,8 +618,6 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 				}
 				puts("");
 			}
-
-
 			pointer = 0;
 			memset(modes, 0, sizeof modes);
 		}
@@ -1255,7 +640,6 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 
-
 		if (graph[I + state] == unknown) {
 			printf(red "ERROR: found hole:  graph[%llu + %llu]\n" reset, I, state);
 			break;
@@ -1265,19 +649,16 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 	}
 
 	for (nat i = 0; i < max_array_size; i++) {
-		if (not array[i]) break;   // LE
+		if (not array[i]) break; 
 		if (modes[i]) {
-				printf("%s", (i == pointer ?  green : white));
-				printf("█" reset); // (print IA's as a different-colored cell..?)
-
+			printf("%s", (i == pointer ?  green : white));
+			printf("█" reset); // (print IA's as a different-colored cell..?)
 		} else printf(blue "█" reset);
 	}
 	puts("");
 
 	puts("[end of lifetime]");
 }
-
-
 
 static inline bool is_complete(nat* graph, nat operation_count) {
 
@@ -1298,21 +679,10 @@ static inline bool is_complete(nat* graph, nat operation_count) {
 	return true;
 }
 
-
-
 static inline bool uses_all_operations(nat* graph, nat operation_count) {
-	// tallys up how many times a given operation is used as a dest in the graph.
-
 	nat ops[7] = {0};
 
-/*
-ins:	  1    2     3      5      6
-	------------------------------
-occ	[ 0    1     0      5      0  ]
-*/
-
 	for (nat i = 0; i < operation_count * 4; i += 4) {
-
 		if (graph[i + 1] != unknown)
 			ops[graph[4 * graph[i + 1] + 0]]++;
 
@@ -1323,418 +693,44 @@ occ	[ 0    1     0      5      0  ]
 			ops[graph[4 * graph[i + 3] + 0]]++;
 
 	}
-
-	if (	not ops[1] or 
-		not ops[2] or
-		not ops[3] or
-		not ops[5] or
-		not ops[6]
-
-	) return false; else return true;
+	if (ops[1] and ops[2] and ops[3] and ops[5] and ops[6]) return true; 
+	return false;
 }
-
-
-
 
 static nat determine_expansion_type(nat* array, nat n, nat required_le_width) { 
 
 	if (array[0] == 1) return firstone_expansion;
 
 	nat first = 0, last = n;
-	for (;last--;)
-		if (array[last]) break;
+	for (;last--;) if (array[last]) break;
 	last++;
-	for (;first < last; first++)
-		if (not array[first]) break; 
+	for (;first < last; first++) if (not array[first]) break; 
+	if (last != first) abort(); // holes should be impossible now!  because of the no-skip-over-zero-modnat's principle.
 
-	if (last != first) abort();
-	 // holes should be impossible now!  because of the no-skip-over-zero-modnat's principle.
-			//  return hole_expansion;
-	
 	if (last < required_le_width) return short_expansion;
-
 	return good_expansion;
 }
 
-
-
 static void destroy_list(struct list* list) {
-
 	free(list->z);  list->z = NULL;
 	free(list->dt); list->dt = NULL;
-
 	list->count = 0;
-}
-
-static nat generate_raw_D_subspace(const nat origin, struct parameters p, struct search_data* d) {
-
-	nat candidate_count = 0, candidate_capacity = 0;
-	nat candidate_timestamp_capacity = 0;
-	nat* candidates = NULL;
-	char* candidate_timestamps = NULL;
-
-	nat array[max_array_size] = {0};
-
-	nat 
-		pointer = 0, 
-		ip = origin
-	;
-	
-	nat* graph = calloc(p.graph_count, sizeof(nat));
-	memcpy(graph, p.graph, p.graph_count * sizeof(nat));
-
-	const nat n = p.FEA;
-
-	struct stack_frame* stack = calloc(max_stack_size, sizeof(struct stack_frame));
-	nat stack_count = 0;
-
-	nat mcal_index = 0;
-	nat last_mcal_op = 0;
-	nat er_count = 0;
-
-	nat tried = 0;
-	nat backtracked = 0;
-	nat total = 0;
-
-	nat BT_fea = 0;
-	nat BT_ns0 = 0;
-	nat BT_pco = 0;
-	nat BT_zr5 = 0;
-	nat BT_zr6 = 0;
-	nat BT_ndi = 0;
-	nat BT_mcal = 0;
-
-	nat executed_count = 0;	
-
-begin:
-	total++;
-
-	while (executed_count < p.execution_limit) {
-
-		const nat I = ip * 4;
-		const nat op = graph[I];
-
-		if (op == 1) {
-			if (pointer == n) { BT_fea++; goto backtrack; }        // FEA
-			if (not array[pointer]) { BT_ns0++; goto backtrack; }  // No-Skip-Over-Zero-Modnat           (NS0)
-			pointer++;
-		}
-
-		else if (op == 5) {
-			if (last_mcal_op != 3) { BT_pco++; goto backtrack; }     // PCO
-			if (not pointer) { BT_zr5++; goto backtrack; }          // ZR-5
-			pointer = 0;
-			er_count++;
-		}
-
-		else if (op == 2) {
-			array[n]++;
-		}
-
-		else if (op == 6) {  
-			if (not array[n]) { BT_zr6++; goto backtrack; }      //  ZR-6
-			array[n] = 0;   
-		}
-
-		else if (op == 3) {
-			if (last_mcal_op == 3) { BT_ndi++; goto backtrack; }    // NDI
-			array[pointer]++;
-		}
-
-		executed_count++;
-
-		nat state = 0;
-		if (array[n] < array[pointer]) state = 1;
-		if (array[n] > array[pointer]) state = 2;
-		if (array[n] == array[pointer]) state = 3;
-
-		if (op == 3 or op == 1 or op == 5) {
-			if (mcal_index < p.mcal_length) {
-				if (op != p.mcal[mcal_index]) { BT_mcal++; goto backtrack; }
-				mcal_index++;
-			}
-			last_mcal_op = op;
-		}
-
-		if (graph[I + state] != unknown) goto next_ins;
-
-		nat option_count = 0; 
-		generate_options(
-			stack[stack_count].options, &option_count, 
-			ip, p.mcal, mcal_index, p.mcal_length, array[n], 
-			graph, p.operation_count
-		);
-		
-		stack[stack_count].try = 0;
-		stack[stack_count].option_count = option_count;
-
-		stack[stack_count].mcal_index = mcal_index;
-		stack[stack_count].ip = ip;
-		stack[stack_count].state = state;
-
-		stack[stack_count].er_count = er_count;
-		stack[stack_count].last_mcal_op = last_mcal_op;
-
-		stack[stack_count].pointer = pointer;
-
-		// save:
-		memcpy(stack[stack_count].array_state, array, sizeof(nat) * max_array_size);
-
-				//	(n + 1)            // CORRECT   and efficient  (? untested.)
-				//	max_array_size            // ALSO CORRECT   but wasteful/inefficient.
-				// );
-		
-		stack_count++;
-
-		graph[I + state] = stack[stack_count - 1].options[0];
-		executed_count = 0;
-
-	next_ins:   ip = graph[I + state];
-
-	}
-
-	tried++;
-
-	const nat type = determine_expansion_type(array, n, p.required_le_width);
-
-	bool is_candidate = false;
-	const bool complete = is_complete(graph, p.operation_count);
-	const bool all = uses_all_operations(graph, p.operation_count);
-
-	if (	er_count >= p.required_er_count and
-		complete and all and
-		type == good_expansion and  
-		mcal_index == p.mcal_length
-	) {
-
-		char dt[16] = {0};
-		get_datetime(dt);
-
-		if (p.graph_count * (candidate_count + 1) > candidate_capacity) {
-			candidate_capacity = 4 * (candidate_capacity + p.graph_count);
-			candidates = realloc(candidates, sizeof(nat) * candidate_capacity);
-		}
-
-		memcpy(candidates + p.graph_count * candidate_count, graph, p.graph_count * sizeof(nat));
-		
-		if (16 * (candidate_count + 1) > candidate_timestamp_capacity) {
-			candidate_timestamp_capacity = 4 * (candidate_timestamp_capacity + 16);
-			candidate_timestamps = realloc(candidate_timestamps, sizeof(char) * candidate_timestamp_capacity);
-		}
-
-		memcpy(candidate_timestamps + 16 * candidate_count, dt, 16);
-
-		candidate_count++;
-		is_candidate = true;
-	}
-
-
-	if (not (tried & ((1 << p.display_rate) - 1))    and p.should_print) {
-		clear_screen();
-
-		printf("\n\t");
-		print_graph_as_z_value(graph, p.graph_count);
-		printf("\n");
-		printf("\n");
-		printf("----> tried [c=%llu] / t=%llu control flow graphs.\n", candidate_count, tried);
-
-		printf("is_candidate? = %s\n", 			is_candidate ? "true" : "false");
-		puts("");
-		printf("mcal_index == mcal_length? %s\n", 	mcal_index == p.mcal_length ? "true" : "false");
-		printf("good_expansion? %s\n", 			type == good_expansion ? "true" : "false" );
-		printf("complete? %s\n", 			complete ? "true" : "false");
-		printf("all? %s\n", 				all ? "true" : "false" );
-		printf("er >= req? %s\n", 			er_count >= p.required_er_count ? "true" : "false" );
-		
-		print_graph_as_adj(graph, p.graph_count);
-		printf("searching: [origin = %llu, limit = %llu, n = %llu]\n", origin, p.execution_limit, n);
-		print_stack(stack, stack_count);
-
-		print_lifetime(origin, p, graph, 100, 0);
-
-		fflush(stdout);
-		if (p.frame_delay) usleep((unsigned) p.frame_delay);
-	}
-
-backtrack:
-	backtracked++;
-
-	if (not stack_count) {
-		// NOTE:  execution_limit must be zero!!!
-		goto done;    // just finish like normal.
-	}
-
-	// revert:
-	memcpy(array, stack[stack_count - 1].array_state, sizeof(nat) * max_array_size);
-
-	pointer = stack[stack_count - 1].pointer;
-	mcal_index = stack[stack_count - 1].mcal_index;
-	er_count = stack[stack_count - 1].er_count;
-	last_mcal_op = stack[stack_count - 1].last_mcal_op;
-
-	if (stack[stack_count - 1].try < stack[stack_count - 1].option_count - 1) {
-		stack[stack_count - 1].try++;
-		const struct stack_frame T = stack[stack_count - 1];
-		graph[4 * T.ip + T.state] = T.options[T.try];
-		ip = T.options[T.try];
-		executed_count = 0;
-		goto begin;
-
-	} else {		
-		graph[4 * stack[stack_count - 1].ip + stack[stack_count - 1].state] = unknown;
-		if (stack_count == 0) abort();
-		stack_count--;
-		if (stack_count == 0) goto done;
-		goto backtrack;
-	}
-done:
-
-	d->port.z = realloc(d->port.z, sizeof(nat) * (d->port.count + candidate_count) * p.graph_count);
-	d->port.dt = realloc(d->port.dt, sizeof(char) * (d->port.count + candidate_count) * 16);
-
-	if (candidate_count * p.graph_count * sizeof(nat)) 
-		memcpy(d->port.z + d->port.count * p.graph_count, candidates, candidate_count * p.graph_count * sizeof(nat));
-
-	if (candidate_count * 16 * sizeof(char)) 
-		memcpy(d->port.dt + d->port.count * 16, candidate_timestamps, candidate_count * 16 * sizeof(char));
-
-	d->port.count += candidate_count;
-
-	if (p.should_print) printf("total = %llu\n", total);
-	if (p.should_print) printf("backtracked = %llu\n", backtracked);
-	if (p.should_print) printf("tried = %llu\n", tried);
-	if (p.should_print) printf("\n\n[[ candidate_count = %llu ]] \n\n\n", candidate_count);
-	if (p.should_print) 
-		printf(
-			" { \n"
-			"   ns0 = %llu, zr5 = %llu, zr6 = %llu \n"
-			"   pco = %llu, fea = %llu, ndi = %llu \n" 
-			"   mcal = %llu \n"
-			" }\n\n",  BT_ns0, BT_zr5, BT_zr6, BT_pco, BT_fea, BT_ndi, BT_mcal
-		);
-
-	free(stack);
-	free(candidates);
-	free(graph);
-
-	return candidate_count;
 }
 
 static bool is_unique(nat* stack_operations, const nat tried_count, nat* tried, const nat D) {
 
 	for (nat i = 0; i < tried_count; i++) {
-
-		nat so_used_op[7] = {0}; 
-		nat t_used_op[7] = {0}; 
+		nat so_used_op[7] = {0}, t_used_op[7] = {0}; 
 
 		for (nat e = 0; e < D; e++) so_used_op[stack_operations[e]]++;
 		for (nat e = 0; e < D; e++) t_used_op[tried[D * i + e]]++;
-
-		for (nat o = 0; o < 7; o++) 
-			if (t_used_op[o] != so_used_op[o]) goto _continue;
+		for (nat o = 0; o < 7; o++) if (t_used_op[o] != so_used_op[o]) goto _continue;
 
 		return false;
 		_continue:;
 	}
 	return true;
 }
-
-static void print_combinations(nat* tried, nat tried_count, const nat D) {
-
-	printf("printing all combinations we are trying: \n");
-
-	for (nat i = 0; i < tried_count; i++) {
-		printf("\t%llu: ", i); 
-		print_nats(tried + D * i, D); puts("");
-	}
-
-	printf("[end of combinations]\n");
-}
-
-
-static nat generate_raw_D_space(struct parameters p, struct search_data* d) {
-	
-	const nat D = p.duplication_count;
-	const nat n = D - 1;
-	const nat U = exponentiate(unique_count, D);
-	const nat m = unique_count - 1;
-
-	nat total = 0;
-	nat tried_count = 0;
-	nat* tried = calloc(U * D, sizeof(nat));
-
-	nat entry = 0;
-
-	nat* indicies = calloc(D, sizeof(nat));
-	nat* stack_operations = calloc(D, sizeof(nat));
-
-	if (D == 0) goto execute;
-	
-loop:; 	nat pointer = 0;
-
-	for (nat op = 0; op < D; op++) stack_operations[op] = operations[indicies[op]];
-
-	if (is_unique(stack_operations, tried_count, tried, D)) {
-		for (nat offset = 0; offset < D; offset++) 
-			tried[D * tried_count + offset] = stack_operations[offset];
-		tried_count++;
-	}
-
-backtrack: 
-	if (indicies[pointer] >= m) {
-		indicies[pointer] = 0;
-		if (pointer == n) goto done;
-		pointer++;
-		goto backtrack;
-	}
-	indicies[pointer]++;
-	goto loop;
-
-done:;
-
-	if (p.should_print) {
-		print_combinations(tried, tried_count, D);
-		debug_pause();
-	}
-	
-	for (; entry < tried_count; entry++) {
-
-		for (nat offset = 0; offset < D; offset++) {
-			p.graph[20 + 4 * offset] = tried[D * entry + offset];
-		}
-
-		execute:
-		for (nat origin = 0; origin < p.operation_count; origin++) {
-
-			if (p.graph[4 * origin] == 3) {
-
-				total += generate_raw_D_subspace(origin, p, d);
-
-				if (p.should_print) {
-					printf("[origin = %llu]\n", origin);
-					print_graph_as_adj(p.graph, p.graph_count);
-					print_nats(p.mcal, p.mcal_length); 
-					puts("\n");
-
-					if (p.combination_delay == 1) debug_pause();
-					if (p.combination_delay) usleep((unsigned) p.combination_delay);
-				}
-			}
-		}
-	}
-
-	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
-
-	free(tried);
-	free(indicies);
-	free(stack_operations);
-
-	return total;
-
-}
-
-
-
 
 static void parse_command(const char* arguments[16], char* buffer) {
 	nat length = strlen(buffer) - 1;
@@ -1794,7 +790,6 @@ static void print_command(const char** command, struct parameters p, struct sear
 
 			p.duplication_count, p.operation_count, p.graph_count
 		);
-
 		printf("mcal = ");
 		print_nats(p.mcal, p.mcal_length); 
 		puts("\n");
@@ -1807,7 +802,6 @@ static void print_command(const char** command, struct parameters p, struct sear
 
 
 	} else if (is(command[1], "lifetime", "l")) {
-
 		const nat count = (nat) atoi(command[2]);
 		if (not count) { 
 			printf("error: bad instruction count supplied.\n");
@@ -1816,7 +810,6 @@ static void print_command(const char** command, struct parameters p, struct sear
 
 		printf("info: printing the lifetime for the current graph...\n");
 		print_lifetime(1, p, p.graph, count, 0);
-
 
 	} else if (is(command[1], "lifetimes", "ls")) {
 
@@ -1846,17 +839,14 @@ static void print_command(const char** command, struct parameters p, struct sear
 			}
 		}
 	} 
-
 	else if (is(command[1], "graph", "g")) print_graph_as_adj(p.graph, p.graph_count);
 	else if (is(command[1], "z", "z")) { print_graph_as_z_value(p.graph, p.graph_count); puts(""); }
 	else if (is(command[1], "z_list", "zl")) print_z_list(d.port, p.graph_count);
-
 	else {
 		printf("unknown argument: %s\n", command[1]);
 		return;
 	}
 }
-
 
 static void edit_command(const char** command, struct parameters* p) {
 	// format:    "edit <PARAMETER-NAME> <VALUE>"
@@ -1883,7 +873,6 @@ static void edit_command(const char** command, struct parameters* p) {
 	else if (is(command[1], "max_acceptable_consecutive_incr", "r0ic")) 	p->max_acceptable_consecutive_incr = (nat) atoi(command[2]); 
 	else if (is(command[1], "max_acceptable_run_length", "hc")) 		p->max_acceptable_run_length = (nat) atoi(command[2]); 
 
-
 	else if (is(command[1], "duplication_count", "d")) {
 		p->duplication_count = (nat) atoi(command[2]); 
 		p->operation_count = 5 + p->duplication_count;
@@ -1895,16 +884,13 @@ static void edit_command(const char** command, struct parameters* p) {
 	else printf("error: unknown argument: %s\n", command[1]);
 }
 
-
 static void write_command(const char** command, struct parameters p, struct search_data d) {
 
 	if (is(command[1], "z_list", "zl")) {
-
 		if (is(command[2], "", "") or is(command[3], "", "")) { 
 			printf("error: bad output filenames supplied.\n");
 			return;
 		}
-
 		print_z_list_to_file(d.port.z, d.port.count, command[2], p.graph_count);
 		print_dt_list_to_file(d.port.dt, d.port.count, command[3]);
 	}
@@ -1915,12 +901,10 @@ static void write_command(const char** command, struct parameters p, struct sear
 static void read_command(const char** command, struct parameters* p, struct search_data* d) {
 
 	if (is(command[1], "z_list", "zl")) {
-
 		if (is(command[2], "", "") or is(command[3], "", "")) { 
 			printf("error: bad input filenames supplied.\n");
 			return;
 		}
-
 		destroy_list(&d->port);
 		initialize_z_list_from_file(&d->port.z, &d->port.count, command[2], p->graph_count);
 		initialize_dt_list_from_file(&d->port.dt, command[3]);
@@ -1929,16 +913,9 @@ static void read_command(const char** command, struct parameters* p, struct sear
 	else printf("error: unknown sub-command: %s\n", command[1]);
 }
 
-
-
-
-
 static void print_pruning_metric_menu() {
-
 	printf("unimplemented. look at the source code. lol\n");
-
 }
-
 
 // h
 static bool has_horizontal_line(
@@ -1950,24 +927,12 @@ static bool has_horizontal_line(
 	const nat instruction_count,
 	nat viz
 ) {
-
 	const nat n = p.FEA;
-
 	nat array[max_array_size] = {0};
 	bool modes[max_array_size] = {0};
-
-	nat 
-		pointer = 0, 
-		ip = origin
-	;
-
-	viz = 0;
-	if (viz) viz++;
-
-	nat counter = 0;
+	nat pointer = 0, ip = origin, counter = 0;
 
 	for (nat e = 0; e < instruction_count; e++) {
-
 		const nat I = ip * 4;
 		const nat op = graph[I];
 	
@@ -1996,12 +961,10 @@ static bool has_horizontal_line(
 			array[n] = 0;   
 		}
 		else if (op == 3) {
-
-			if (version == 0) {
+			if (not version) {
 				if (pointer and modes[pointer - 1]) counter++; else counter = 0;
 				if (counter > max_acceptable_run_length) { printf(".\n"); return true; } 
 			}
-
 			array[pointer]++;
 			modes[pointer] = 1;
 		}
@@ -2017,32 +980,6 @@ static bool has_horizontal_line(
 	}
 	return false;
 }
-/*
-
-
-
-
-			good         h 6 
-
-                                                 I [I I I I I I I]
-		
-
-				2468
-
-
-
-			bad          h 6 
-
-
-						[I I I  I I I I]
-
-                              2464
-
-
-
-
-*/
-
 
 // r0i
 static bool increments_star_zero_alot(
@@ -2053,20 +990,10 @@ static bool increments_star_zero_alot(
 	const nat instruction_count,
 	nat viz
 ) {
-
 	const nat n = p.FEA;
-
 	nat array[max_array_size] = {0};
 	bool modes[max_array_size] = {0};
-
-	nat 
-		pointer = 0, 
-		ip = origin
-	;
-
-	viz = 0; if (viz) viz++;
-
-	nat counter = 0;
+	nat pointer = 0, ip = origin, counter = 0;
 
 	for (nat e = 0; e < instruction_count; e++) {
 
@@ -2098,7 +1025,6 @@ static bool increments_star_zero_alot(
 			array[pointer]++;
 			modes[pointer] = 1;
 		}
-
 		nat state = 0;
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
@@ -2110,106 +1036,6 @@ static bool increments_star_zero_alot(
 	}
 	return false;
 }
-
-
-
- // checks if the graph zooms towards star n    immediately.    ("fast expansion")
-// fx
-static bool is_fast_expansion(                                     // this function is not used ever, becuaes we never say "fast_expansion". h catches this.
-	const nat timestep_count,           // eg    10 
-	const nat too_wide_threshold,       // eg    200
-	const nat origin, 
-	struct parameters p, 
-	nat* graph, 
-	const nat instruction_count,
-	const nat viz                      //   0   for now
-) {
-
-	const nat n = p.FEA;
-
-	nat array[max_array_size] = {0};
-	bool modes[max_array_size] = {0};
-
-	nat 
-		pointer = 0, 
-		ip = origin
-	;
-
-
-	nat timestep = 0;
-
-	for (nat e = 0; e < instruction_count; e++) {
-
-		const nat I = ip * 4;
-		const nat op = graph[I];
-
-		if (op == 1) {
-			pointer++;
-		}
-
-		//
-		// 2 3 4 5 9 8 3 0 5 8 9 5 1 9 8 2 4 2 1 2 3 4 5 3 3 2 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 . ..00000 (*n)
-		//
-		//							       ^
-
-		else if (op == 5) {
-			
-			timestep++;
-			nat i = 0;
-
-			for (i = 0; i < n; i++) {
-
-				if (not array[i]) break;   // LE
-
-				if (viz) {					
-					if (modes[i]) {
-							printf("%s", (i == pointer ?  green : white));
-							printf("█" reset); // (print IA's as a different-colored cell..?)
-
-					} else printf(blue "█" reset);
-				}
-			}
-			if (viz) puts("");
-
-			if (timestep == timestep_count) {
-				if (i >= too_wide_threshold) {
-					printf(".\n");
-					return true; 
-				}
-				else return false;
-			}
-
-			pointer = 0;
-			memset(modes, 0, sizeof modes);
-		}
-
-		else if (op == 2) {
-			array[n]++;
-		}
-
-		else if (op == 6) {  
-			array[n] = 0;   
-		}
-
-		else if (op == 3) {
-			array[pointer]++;
-			modes[pointer] = 1;
-		}
-
-		nat state = 0;
-		if (array[n] < array[pointer]) state = 1;
-		if (array[n] > array[pointer]) state = 2;
-		if (array[n] == array[pointer]) state = 3;
-
-		if (graph[I + state] == unknown) abort();
-
-		ip = graph[I + state];
-	}
-
-	return false;
-}
-
-
 
 // rer
 static bool ERs_in_same_spot(                                            
@@ -2218,19 +1044,12 @@ static bool ERs_in_same_spot(
 	struct parameters p, 
 	nat* graph, 
 	const nat instruction_count,
-	const nat viz                      //   0   for now
+	const nat viz 
 ) {
-
 	const nat n = p.FEA;
-
 	nat array[max_array_size] = {0};
 	bool modes[max_array_size] = {0};
-
-	nat 
-		pointer = 0, 
-		ip = origin
-	;
-
+	nat pointer = 0, ip = origin;
 	nat counter = 0, er_at = max_array_size;
 
 	for (nat e = 0; e < instruction_count; e++) {
@@ -2287,9 +1106,6 @@ static bool ERs_in_same_spot(
 	return false;
 }
 
-
-
-
 // oer
 static bool ERs_in_two_spots_alternately(
 	const nat oer_count,           	// eg    50
@@ -2297,19 +1113,12 @@ static bool ERs_in_two_spots_alternately(
 	struct parameters p, 
 	nat* graph, 
 	const nat instruction_count,
-	const nat viz                      //   0   for now
+	const nat viz
 ) {
-
 	const nat n = p.FEA;
-
 	nat array[max_array_size] = {0};
 	bool modes[max_array_size] = {0};
-
-	nat 
-		pointer = 0, 
-		ip = origin
-	;
-
+	nat pointer = 0, ip = origin;
 	nat counter = 0, er_at = max_array_size;
 
 	for (nat e = 0; e < instruction_count; e++) {
@@ -2370,25 +1179,18 @@ static bool ERs_in_two_spots_alternately(
 	return false;
 }
 
-
 //sfea
 static bool goes_out_of_array_bounds(
 	const nat origin, 
 	struct parameters p, 
 	nat* graph, 
 	const nat instruction_count,
-	const nat viz             //   0   for now
+	const nat viz 
 ) {
-
 	const nat n = p.FEA;
-
 	nat array[max_array_size] = {0};
 	bool modes[max_array_size] = {0};
-
-	nat 
-		pointer = 0, 
-		ip = origin
-	;
+	nat pointer = 0, ip = origin;
 
 	for (nat e = 0; e < instruction_count; e++) {
 
@@ -2436,45 +1238,11 @@ static bool goes_out_of_array_bounds(
 		if (array[n] == array[pointer]) state = 3;
 
 		if (graph[I + state] == unknown) abort();
-
 		ip = graph[I + state];
 	}
 
 	return false;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct bucket {
-	nat index;
-	nat data;
-	nat counter;
-	nat uid;
-	nat is_moving;
-};
-
-
 
 static nat compute_xw(nat* array, const nat n) {
 	nat i = 0;
@@ -2522,58 +1290,25 @@ static nat get_max_moving_bucket_uid(struct bucket* scratch, const nat scratch_c
 	return max_bucket.uid;
 }
 
-static void print_buckets(struct bucket* buckets, const nat bucket_count) {
-	for (nat b = 0; b < bucket_count; b++) {
-		if (buckets[b].data) {
-			printf("\nBUCKET uid#%llu = { .index = %llu, .data = %llu, .counter = %llu, .uid = %llu,  %c  } \n\n",
-				b,
-				buckets[b].index,
-				buckets[b].data,
-				buckets[b].counter,
-				buckets[b].uid,
-				buckets[b].is_moving ? '#' : ' ' 
-			);
-		} else 
-			printf("@ ");
-	}
-}
-
-
-
-
-// eg, 200       for acc_ins = 2 million.   those are related!!!
-
-
-
 static const nat debug_prints = 0;
-
-
 
 static bool has_vertical_line(
 	const nat pre_run,       			//   el = 10,000,000   ish 
 	const nat acc_ins,                      	// accumulation count = 1,000,000
-
 	const nat mpp,  				//middle portion percentage       	//  60            ie    60 percent	
 	const nat counter_thr,                  	// 5ish
 	const nat blackout_radius, 			// 7ish
-
 	const nat safety_factor,               		//   eg      90      ie   90 percent. 
 	const nat vertical_line_count_thr,              // eg 2
-
 	const nat required_ia_count,                    //  eg like   10 or so 
-
 	const nat origin, 
 	struct parameters p, 
 	nat* graph, 
 	const nat viz,
-
 	nat* array,
 	bool* modes,
-	struct bucket* buckets,
-	struct bucket* scratch
+	struct bucket* buckets, struct bucket* scratch
 ) {
-
-
 	memset(array, 0, max_array_size * sizeof(nat));
 	memset(modes, 0, max_array_size * sizeof(bool));
 	memset(buckets, 0, max_array_size * sizeof(struct bucket));
@@ -2585,19 +1320,16 @@ static bool has_vertical_line(
 	const double discard_window = (1.0 - mpp_ratio) / 2.0;
 	const nat instruction_count = pre_run + acc_ins;
 	const nat n = p.FEA;
-
 	const nat bucket_count = n;
+
 	nat scratch_count = 0;
 
 	for (nat b = 0; b < bucket_count; b++) {
 		buckets[b].index = b;
 		buckets[b].uid = b;
-		buckets[b].is_moving = false;
 	}
 
-	nat pointer = 0, ip = origin;
-	nat timestep_count = 0;
-	nat ia_count = 0;
+	nat pointer = 0, ip = origin, timestep_count = 0, ia_count = 0;
 
 	for (nat e = 0; e < instruction_count; e++) {
 
@@ -2640,7 +1372,6 @@ static bool has_vertical_line(
 							printf("█" reset); 
 
 						} else printf(blue "█" reset);
-				
 						continue;
 					}
 
@@ -2675,12 +1406,10 @@ static bool has_vertical_line(
 		}
 
 		else if (op == 3) {
-
 			array[pointer]++;
 			modes[pointer] = 1;
 
 			if (e >= pre_run) {
-
 				if (debug_prints) printf("info: performed IA:\n");
 
 				const nat xw = compute_xw(array, n);
@@ -2690,9 +1419,7 @@ static bool has_vertical_line(
 				
 				if (pointer < dw_count or pointer > xw - dw_count)  goto dont_accumulate;
 
-
 				ia_count++;
-
 
 				const nat desired_index = pointer;
 				if (debug_prints) printf("info: gathering all buckets at .index = %llu...\n", desired_index);
@@ -2706,13 +1433,10 @@ static bool has_vertical_line(
 				if (debug_prints) printf("info: max bucket (.data=%llu) has trigger_uid = %llu.\n", buckets[trigger_uid].data, trigger_uid);
 
 				if (not trigger_uid) { 
-					printf(red "█ max trigger bucket zero uid" reset); 
+					printf(red " max trigger bucket zero uid" reset); 
 					puts("");
 					abort(); 
 				}
-
-
-
 
 				buckets[trigger_uid].data++;
 				buckets[trigger_uid].counter++;
@@ -2721,12 +1445,11 @@ static bool has_vertical_line(
 					trigger_uid, buckets[trigger_uid].counter, buckets[trigger_uid].data
 				);
 
-
 				scratch_count = gather_buckets_at(buckets, scratch, desired_index, blackout_radius, bucket_count);
 				if (debug_prints) printf("info: gathered %llu blackout buckets.\n", scratch_count);
 
 				if (not scratch_count) { 
-					printf(cyan "█ NSVLPM ERROR: empty blackout bucket array" reset); 
+					printf(cyan " NSVLPM ERROR: empty blackout bucket array" reset); 
 					puts(", considering the z value as good");
 					return false;
 				}
@@ -2734,22 +1457,12 @@ static bool has_vertical_line(
 				if (debug_prints) printf("info: checking if IA bucket.counter (which is %llu) is greater than %llu...\n", 
 						buckets[trigger_uid].counter, counter_thr);
 
-
 				nat moving_uid = 0;
-
-
 
 				if (buckets[trigger_uid].counter == counter_thr) {
 
-					// buckets[trigger_uid].counter = 0;    // reset the trigger bucket's counter. don't make it benign.
-
-					//ALSO make this (now retired) trigger bucket's counter benign.
-
 					buckets[trigger_uid].counter = counter_thr + 1;
-
 					buckets[trigger_uid].is_moving = false;
-
-
 
 					const nat neighbor_position = buckets[trigger_uid].index - 1;
 					if (debug_prints) printf("info: bucket.counter reached thr! finding neighbor at %llu...\n", neighbor_position);
@@ -2759,15 +1472,14 @@ static bool has_vertical_line(
 
 					if (not scratch_count) {
 						if (debug_prints) print_buckets(buckets, bucket_count);
-						printf(blue "█ empty moving bucket array" reset);
+						printf(blue " empty moving bucket array" reset);
 						abort(); // goto dont_accumulate;      // <-----   DEBUG TARGET HERE
 					}
 
 					moving_uid = get_max_moving_bucket_uid(scratch, scratch_count);
 					if (debug_prints) printf("info: max neighbor (.data=%llu) has trigger_uid = %llu.\n", buckets[trigger_uid].data, trigger_uid);
 
-
-					if (not moving_uid) {printf(yellow "█ max moving bucket zero uid" reset); abort(); }
+					if (not moving_uid) {printf(yellow " max moving bucket zero uid" reset); abort(); }
 
 					if (buckets[moving_uid].data) { 
 						buckets[moving_uid].index++;
@@ -2782,28 +1494,19 @@ static bool has_vertical_line(
 				if (debug_prints) printf("info: performing blackout with radius %llu\n", blackout_radius);
 
 				for (nat s = 0; s < scratch_count; s++) {
-
-					if (scratch[s].uid == trigger_uid) continue;     // dont blackout the trigger bucket, or the ia bucket in general. 
-					if (scratch[s].counter > counter_thr) continue;    // dont blackout a moving bucket ever. 
-	
-					if (scratch[s].uid == moving_uid) continue;    // dont blackout the recently moved bucket ever. 
+					if (scratch[s].uid == trigger_uid) continue;     	// dont blackout the trigger bucket, or the ia bucket in general. 
+					if (scratch[s].counter > counter_thr) continue;    	// dont blackout a moving bucket ever. 
+					if (scratch[s].uid == moving_uid) continue;    		// dont blackout the recently moved bucket ever. 
 
 					if (buckets[scratch[s].uid].counter) { 
-
-
 						if (debug_prints) printf("info: reseting bucket.counter=%llu with uid = %llu... (BLACKOUT)\n", 
 								 	buckets[scratch[s].uid].counter, scratch[s].uid); 
 					}
-
-
-
 					buckets[scratch[s].uid].counter = 0;
 				}
-
-				dont_accumulate: ;
+				dont_accumulate:;
 			}
 		}
-
 
 		nat state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -2811,42 +1514,30 @@ static bool has_vertical_line(
 		if (array[n] == array[pointer]) state = 3;
 
 		if (graph[I + state] == unknown) abort();
-
 		ip = graph[I + state];
 	}
 
 	if (ia_count < required_ia_count) return true;
 
-	// at here, the buckets are filled with values    and we are finished with accumulation!
+	const double factor = (double) safety_factor / (double) 100.0;  
+	const nat required_data_size = (nat) ((double) factor * (double) timestep_count);
 
 	if (debug_prints) print_buckets(buckets, bucket_count);
+	if (debug_prints) printf("threshold info: \n\n\t\ttimestep_count: %llu,  required_data_size: %llu\n\n", timestep_count, required_data_size);
 	
-	nat vertical_line_count = 0;
-	nat good_count = 0;
-
-	const double factor = (double) safety_factor / (double) 100.0;  
-	nat required_data_size = (nat) ((double) factor * (double) timestep_count);
-
-	if (debug_prints) printf("threshold info: \n\n\t\ttimestep_count: %llu,  required_data_size: %llu\n\n", 
-				timestep_count, required_data_size);
-
 	nat stats[2][2][2] = {0};
+	nat vertical_line_count = 0, good_count = 0;
 
 	for (nat b = 0; b < bucket_count; b++) {
 		if (	buckets[b].data >= required_data_size and 
 			buckets[b].counter > counter_thr and 
 			buckets[b].is_moving
-		) 
-			vertical_line_count++;
-		else
-			good_count++;
-
+		) vertical_line_count++; else good_count++;
 
 		stats[buckets[b].data >= required_data_size][buckets[b].counter > counter_thr][buckets[b].is_moving]++;
 	}
 
 	if (debug_prints) printf("FINAL GROUP COUNTS: \n\n\t\tvl_count: %llu,  good_count: %llu\n\n", vertical_line_count, good_count);
-
 	if (debug_prints){	
 		printf("BUCKET STATISTICS:\n\t\t[buckets[b].data >= bucket_data_thr][buckets[b].counter > counter_thr][buckets[b].is_moving]\n"); 
 		puts("");
@@ -2858,15 +1549,10 @@ static bool has_vertical_line(
 		puts("");
 	}
 
-	if (stats[1][0][0]) {  //  if this is nonzero,  the user supplied a   too low  safety_factor   parameter, 
-				//   (in relation to the acc_ins they gave), and we need to alert them about it!!
+	if (stats[1][0][0]) { 
 		puts("");
-		printf( red 
-			"NSVLPM ERROR: too low safety_factor parameter! "
-			"found %llu buckets which where .data >= required_data_size, "
-			"but is_moving=false... soft aborting..." 
-			reset, 
-			stats[1][0][0]
+		printf( red "NSVLPM ERROR: too low safety_factor parameter! found %llu buckets which where .data >= required_data_size, "
+			"but is_moving=false... soft aborting..." reset, stats[1][0][0]
 		);
 		puts("");
 		fflush(stdout);
@@ -2874,349 +1560,320 @@ static bool has_vertical_line(
 	}
 
 	if (debug_prints) printf("vertical_line_count > vl_count_thr ? ==> %d\n", vertical_line_count > vertical_line_count_thr);
-
 	if (viz or debug_prints) puts("\n\n");
+
 
 	if (vertical_line_count > vertical_line_count_thr) return true; 
 	else { printf(".\n"); return false; }
+
+
+
+
+
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/////// trash /////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-else {
-						if (debug_prints) printf("info: found that the max neighbor (uid=%llu) had zero data. did not move.\n", neighbor_uid);
-					}
-
-*/
-
-//scratch_count = gather_buckets_at(buckets, scratch, hole_position, 0, bucket_count);
-
-						//if (debug_prints) printf("info: gathered %llu candidate-neighbor buckets.\n", scratch_count);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/// bucket regeneration step:
-
-						// const nat hole_position = buckets[moving_uid].index - 1;
-
-						//if (debug_prints) printf("info: bucket.index incremented(nei.index=%llu)! looking for hole to regen at %llu...\n", 
-							//buckets[moving_uid].index, hole_position
-						//);
-
-
-
-
-/*if (not scratch_count) {
-
-							// generate a new bucket there!
-
-							buckets[bucket_count] = (struct bucket) {
-								.index = hole_position, 
-								.data = 0, 
-								.counter = 0, 
-								.uid = bucket_count
-							};
-
-
-							if (debug_prints) printf("info: generating NEW bucket!!! {.i=%llu, .d=0, .c=0, .uid=%llu}\n", hole_position, bucket_count);
-				
-							bucket_count++;
-
-							if (debug_prints) printf("---->  there are now %llu buckets total!\n", bucket_count);
-							
-						}*/
-
-
-
-
-
-
-
-
-	/*
-					printf("info: performed IA:\n");
+static bool has_vertical_line__batch_opt(
+
+	const nat starting_base,			// 200000 eg
+	const nat pre_run, 				// 100000 eg
+	const nat acc_ins, 				// 1500000 eg
+
+	const nat mpp,  				// middle portion percentage       	//  60            ie    60 percent	
+	const nat counter_thr,                  	// 5ish
+	const nat blackout_radius, 			// 7ish
+	const nat safety_factor,               		//   eg      90      ie   90 percent. 
+	const nat vertical_line_count_thr,              // eg 2
+	const nat required_ia_count,                    //  eg like   10 or so 
+	const nat origin, 
+	struct parameters p, 
+	nat* graph, 
+	const nat viz,
+	nat* array,
+	bool* modes,
+	struct bucket* buckets, 
+	struct bucket* scratch,
+
+	const nat instruction_count
+) {
+	memset(array, 0, max_array_size * sizeof(nat));
+	memset(modes, 0, max_array_size * sizeof(bool));
+	memset(buckets, 0, max_array_size * sizeof(struct bucket));
+	memset(scratch, 0, max_array_size * sizeof(struct bucket));
+
+	if (viz or debug_prints) puts("\n\n");
+
+	const double mpp_ratio = (double) mpp / 100.0;
+	const double discard_window = (1.0 - mpp_ratio) / 2.0;
+	const nat n = p.FEA;
+	const nat bucket_count = n;
+	
+	for (nat b = 0; b < bucket_count; b++) {
+		buckets[b].index = b;
+		buckets[b].uid = b;
+	}
+
+	nat base = starting_base;
+
+	nat pointer = 0, ip = origin, timestep_count = 0, ia_count = 0, batch_count = 0, scratch_count = 0;
+
+	for (nat e = 0; e < instruction_count; e++) {
+
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) {
+			pointer++;
+			if (pointer > n) {
+				printf("SFEA   batch count:   %llu batches,     [e = %llu]\n", batch_count, e);
+				return true;      // we are doing sfea(FEA) inside of nsvlpm. because we cant do it prior, if nsvl is in gp.
+			}
+		}
+
+		else if (op == 5) {
+
+			if (e >= base + pre_run) timestep_count++;
+
+			if (viz and e >= base + pre_run) {
 
 				const nat xw = compute_xw(array, n);
 				const nat dw_count = (nat) ((double) xw * (double) discard_window);
 
-				printf("info: xw = %llu, dw_count = %llu\n", xw, dw_count);
+				for (nat i = 0; i < n; i++) {	
+					if (not array[i]) break;
+
+					if (i < dw_count or i > xw - dw_count)  {
+						//printf(red "█" reset);    // outside the mpp! color it red.
+						continue;
+					}
+
+					scratch_count = gather_buckets_at(buckets, scratch, i, 0, bucket_count);
+					
+					if (not scratch_count) { // no buckets here!
+						printf(magenta "█" reset);
+						continue;
+					}
+
+					if (scratch_count == 1) {
+
+						if (modes[i]) {
+							printf("%s", (i == pointer ?  green : yellow));
+							printf("█" reset); 
+
+						} else printf(blue "█" reset);
+						continue;
+					}
+
+					if (scratch_count == 2) {
+					
+						if (scratch[0].is_moving) {
+							printf(cyan "█" reset);	        // try to find the moving bucket. if one is here, then print it as cyan.
+							continue;
+
+						} else if (scratch[1].is_moving) {
+							printf(cyan "█" reset);
+							continue;
+						}
+					}
+
+					printf(red "█" reset);         // if there are >= 3 buckets here, or none of them are is_moving,   then print "error"
+													//                            ...ie     as red.
+				}
+				puts("");
+			}
+
+			memset(modes, 0, max_array_size * sizeof(bool));
+			pointer = 0;
+		}
+
+		else if (op == 2) {
+			array[n]++;
+		}
+
+		else if (op == 6) {  
+			array[n] = 0;   
+		}
+
+		else if (op == 3) {
+			array[pointer]++;
+			modes[pointer] = 1;
+
+			if (e >= base + pre_run) {
+				if (debug_prints) printf("info: performed IA:\n");
+
+				const nat xw = compute_xw(array, n);
+				const nat dw_count = (nat) ((double) xw * (double) discard_window);
+
+				if (debug_prints) printf("info: xw = %llu, dw_count = %llu\n", xw, dw_count);
 				
 				if (pointer < dw_count or pointer > xw - dw_count)  goto dont_accumulate;
-				*/
 
+				ia_count++;
 
+				const nat desired_index = pointer;
+				if (debug_prints) printf("info: gathering all buckets at .index = %llu...\n", desired_index);
 
+				scratch_count = gather_buckets_at(buckets, scratch, desired_index, 0, bucket_count);
+				if (debug_prints) printf("info: gathered %llu candidate-IA buckets.\n", scratch_count);
 
+				if (not scratch_count) goto dont_accumulate;
 
+				const nat trigger_uid = get_max_moving_bucket_uid(scratch, scratch_count);
+				if (debug_prints) printf("info: max bucket (.data=%llu) has trigger_uid = %llu.\n", buckets[trigger_uid].data, trigger_uid);
 
-// clear_screen();
-	//printf("\n\t");
+				if (not trigger_uid) { 
+					printf(red " max trigger bucket zero uid" reset); 
+					puts("");
+					abort(); 
+				}
 
+				buckets[trigger_uid].data++;
+				buckets[trigger_uid].counter++;
 
+				if (debug_prints) printf("info: incremented bucket! (trigger_uid = %llu) .counter = %llu, .data = %llu \n", 
+					trigger_uid, buckets[trigger_uid].counter, buckets[trigger_uid].data
+				);
 
+				scratch_count = gather_buckets_at(buckets, scratch, desired_index, blackout_radius, bucket_count);
+				if (debug_prints) printf("info: gathered %llu blackout buckets.\n", scratch_count);
 
-
-
-
-
-
-
-/*
-
-	// compute max_bucket_value:
-
-
-
-	nat max_bucket_value = 0;
-
-	for (nat i = 0; i < n; i++) {
-
-
-
-		// if (buckets[i] > bucket_too_large_thr) return true;
-
-
-
-		if (buckets[i] > max_bucket_value) {
-			max_bucket_value = buckets[i];
-		}
-	}
-
-
-	max_bucket_value++;
+				if (not scratch_count) { 
+					printf(cyan " NSVLPM ERROR: empty blackout bucket array" reset); 
+					puts(", considering the z value as good");
+					return false;
+				}
 	
+				if (debug_prints) printf("info: checking if IA bucket.counter (which is %llu) is greater than %llu...\n", 
+						buckets[trigger_uid].counter, counter_thr);
 
-	// compute the blurry buckets, using the window averaging 
+				nat moving_uid = 0;
 
-		// dont do this for now.
+				if (buckets[trigger_uid].counter == counter_thr) {
 
+					buckets[trigger_uid].counter = counter_thr + 1;
+					buckets[trigger_uid].is_moving = false;
 
+					const nat neighbor_position = buckets[trigger_uid].index - 1;
+					if (debug_prints) printf("info: bucket.counter reached thr! finding neighbor at %llu...\n", neighbor_position);
 
+					scratch_count = gather_buckets_at(buckets, scratch, neighbor_position, 0, bucket_count);
+					if (debug_prints) printf("info: gathered %llu candidate-neighbor buckets.\n", scratch_count);
 
+					if (not scratch_count) {
+						if (debug_prints) print_buckets(buckets, bucket_count);
+						printf(blue " empty moving bucket array" reset);
+						abort(); // goto dont_accumulate;      // <-----   DEBUG TARGET HERE
+					}
 
-	// compute the hg  based off of that.
+					moving_uid = get_max_moving_bucket_uid(scratch, scratch_count);
+					if (debug_prints) printf("info: max neighbor (.data=%llu) has trigger_uid = %llu.\n", buckets[trigger_uid].data, trigger_uid);
 
+					if (not moving_uid) {printf(yellow " max moving bucket zero uid" reset); abort(); }
 
-	nat* counts = calloc(max_bucket_value, sizeof(nat));
+					if (buckets[moving_uid].data) { 
+						buckets[moving_uid].index++;
+						if (debug_prints) printf("info: incremented neighbor.index to be %llu\n", buckets[moving_uid].index);
 
-	for (nat i = 0; i < n; i++) {
-		counts[buckets[i]]++;
-	}
+						buckets[moving_uid].counter = counter_thr + 1;        // make the i:moving bucket's; counter benign.
 
-	for (nat i = 0; i < max_bucket_value; i++) {
-		printf("%03llu : ", i);
-		for (nat c = 0; c < counts[i]; c++) printf("#");
-		puts("");
-	}
-	
-	puts("\n\n");
+						buckets[moving_uid].is_moving = true;
+					}
+				}
 
-	fflush(stdout);
+				if (debug_prints) printf("info: performing blackout with radius %llu\n", blackout_radius);
 
-	// if (p.frame_delay) usleep((unsigned) p.frame_delay);
-	free(counts);
-*/
+				for (nat s = 0; s < scratch_count; s++) {
+					if (scratch[s].uid == trigger_uid) continue;     	// dont blackout the trigger bucket, or the ia bucket in general. 
+					if (scratch[s].counter > counter_thr) continue;    	// dont blackout a moving bucket ever. 
+					if (scratch[s].uid == moving_uid) continue;    		// dont blackout the recently moved bucket ever. 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*    hg of vl   graph
-
-##############################################     <----  0.00...9.99
-#################################                  <----  10.00...19.99
-##########################
-################
-###
-#
-##
-#
-#
-#
-##
-#
-#
-#
-#
-##
-#
-##
-#####
-##############
-###############################           <--------  110.00...119.99
-##################
-########
-##
-#
-#
-#
-
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// parellel sfea:
-
-static void execute_parallel_singlefea_pruning_metric(
-	struct parameters p, 
-	struct search_data * d, 
-	nat viz) { 			// prune over all graphs using single fea().
-
-
-
-
-
-
-
-	for (nat z = 0; z < d->in.count; z++) {
-
-		printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count);  fflush(stdout);
-
-
-		// lock the input_mutex
-
-		memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
-
-		// unlock the input_mutex
-
-
-
-
-
-		////   all ofthis is done inside the worker_thread  code itself. 
-		///// -----------------------------------    
-
-		for (nat origin = 0; origin < p.operation_count; origin++) {
-
-			if (p.graph[4 * origin] != 3) continue;
-
-
-			if (not goes_out_of_array_bounds(origin, p, p.graph, p.execution_limit, viz)) 
-
-				// lock the out_mutex
-				push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count); 
-				// this would be the push to output.
-				// unlock the out_mutex
-
-
-
-			else    
-				// lock the bad_mutex
-				push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
-				// unlock the bad_mutex
-
+					if (buckets[scratch[s].uid].counter) { 
+						if (debug_prints) printf("info: reseting bucket.counter=%llu with uid = %llu... (BLACKOUT)\n", 
+								 	buckets[scratch[s].uid].counter, scratch[s].uid); 
+					}
+					buckets[scratch[s].uid].counter = 0;
+				}
+				dont_accumulate:;
+			}
 		}
 
-		//// -----------------------------------
+		if (e >= base + pre_run + acc_ins) {
+
+			if (ia_count < required_ia_count) {
+				printf("RIC final batch count:   %llu batches,     [e = %llu]\n", batch_count, e);
+				return true;     // goto backtrack;
+			}
+
+			const double factor = (double) safety_factor / (double) 100.0;  
+			const nat required_data_size = (nat) ((double) factor * (double) timestep_count);
+
+			if (debug_prints) print_buckets(buckets, bucket_count);
+			if (debug_prints) printf("threshold info: \n\n\t\ttimestep_count: %llu,  required_data_size: %llu\n\n", timestep_count, required_data_size);
+			
+			timestep_count = 0;
 
 
+			nat stats[2][2][2] = {0};
+			nat vertical_line_count = 0, good_count = 0;
 
+			for (nat b = 0; b < bucket_count; b++) {
+				if (	buckets[b].data >= required_data_size and 
+					buckets[b].counter > counter_thr and 
+					buckets[b].is_moving
+				) vertical_line_count++; else good_count++;
 
+				stats[buckets[b].data >= required_data_size][buckets[b].counter > counter_thr][buckets[b].is_moving]++;
+			}
 
+			if (debug_prints) printf("FINAL GROUP COUNTS: \n\n\t\tvl_count: %llu,  good_count: %llu\n\n", vertical_line_count, good_count);
+			if (debug_prints){	
+				printf("BUCKET STATISTICS:\n\t\t[buckets[b].data >= bucket_data_thr][buckets[b].counter > counter_thr][buckets[b].is_moving]\n"); 
+				puts("");
+				printf("\t  [0][0][0]: %llu  [0][0][1]: %llu\n", stats[0][0][0], stats[0][0][1]);
+				printf("\t  [0][1][0]: %llu  [0][1][1]: %llu\n", stats[0][1][0], stats[0][1][1]);
+				puts("");
+				printf("\t  [1][0][0]: %llu  [1][0][1]: %llu\n", stats[1][0][0], stats[1][0][1]);
+				printf("\t  [1][1][0]: %llu  [1][1][1]: %llu\n", stats[1][1][0], stats[1][1][1]);
+				puts("");
+			}
+
+			if (stats[1][0][0]) { 
+				puts("");
+				printf( red "NSVLPM ERROR: too low safety_factor parameter! found %llu buckets which where .data >= required_data_size, "
+					"but is_moving=false... soft aborting..." reset, stats[1][0][0]
+				);
+				puts("");
+				fflush(stdout);
+
+				sleep(1);
+			}
+
+			if (debug_prints) printf("vertical_line_count > vl_count_thr ? ==> %d\n", vertical_line_count > vertical_line_count_thr);
+			if (viz or debug_prints) puts("\n\n");
+
+			if (vertical_line_count > vertical_line_count_thr) {
+				printf("FINISHED BATCH final batch count:   %llu batches,     [e = %llu]\n", batch_count, e);
+				return true;       // goto backtrack;
+			}
+
+			base += pre_run + acc_ins; 
+			batch_count++;
+		}
+
+		nat state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+
+		if (graph[I + state] == unknown) abort();
+		ip = graph[I + state];
 	}
-	printf("--> found %llu / pruned %llu  :  after singlefea pruning metric.\n", d->out.count, d->bad.count);
-	
 
 
-
-
+	printf("[passed]\n");
+	return false;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3477,37 +2134,6 @@ loop: 	printf(":IP: ");
 		printf("--> found %llu / pruned %llu  :  after horizonal pruning metric.\n", d->out.count, d->bad.count );
 	}
 
-	else if (is(*command, "fast_expansion", "fx")) {       // fx <timestep_count(nat)> <too_wide_xw_thr(nat)> <viz(0/1)>
-		const nat timestep_count = (nat) atoi(command[1]);
-		if (not timestep_count) { 
-			printf("error: bad timestep_count supplied.\n");
-			goto next;
-		}
-
-		const nat too_wide_threshold = (nat) atoi(command[2]);
-		if (not too_wide_threshold) { 
-			printf("error: bad too_wide_threshold supplied.\n");
-			goto next;
-		}
-
-		const nat viz = (nat) atoi(command[3]);
-
-		for (nat z = 0; z < d->in.count; z++) {
-			printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count);fflush(stdout);
-			memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
-
-			for (nat origin = 0; origin < p.operation_count; origin++) {
-				if (p.graph[4 * origin] != 3) continue;
-
-				if (not is_fast_expansion(timestep_count, too_wide_threshold, origin, p, p.graph, p.execution_limit, viz)) 
-					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
-				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
-			}
-		}
-		printf("--> found %llu / pruned %llu  :  after fast expansion  pruning metric.\n", d->out.count, d->bad.count);
-	} 
-
-
 	else if (is(*command, "repetitive_er", "rer")) {
 
 		const nat rer_count = (nat) atoi(command[1]);
@@ -3631,56 +2257,34 @@ loop: 	printf(":IP: ");
 	}
 
 
-	else if (is(*command, "vertical", "v")) {     // usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> <debug_prints>
-
-
+	else if (is(*command, "vertical", "v")) {   			  // usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> <debug_prints>
 
 		const nat pre_run = (nat) atoi(command[1]); 
-		if (not pre_run) { 
-			printf("error: bad pre_run supplied.\n");
-			goto next;
-		}
+		if (not pre_run) { printf("error: bad pre_run supplied.\n"); goto next; }
 
 		const nat acc_ins = (nat) atoi(command[2]); 
-		if (not acc_ins) { 
-			printf("error: bad acc_ins supplied.\n");
-			goto next;
-		}
+		if (not acc_ins) {  printf("error: bad acc_ins supplied.\n"); goto next; }
 
 		const nat mpp = (nat) atoi(command[3]);
-		if (not mpp) { 
-			printf("error: bad mpp supplied.\n");
-			goto next;
-		}
+		if (not mpp) {  printf("error: bad mpp supplied.\n"); goto next; }
 
 		const nat counter_thr = (nat) atoi(command[4]);
-		if (not counter_thr) { 
-			printf("error: bad counter_thr supplied.\n");
-			goto next;
-		}
+		if (not counter_thr) {  printf("error: bad counter_thr supplied.\n"); goto next; }
 
 		const nat blackout_radius = (nat) atoi(command[5]);
-		if (not blackout_radius) { 
-			printf("error: bad blackout_radius supplied.\n");
-			goto next;
-		}
-		
+		if (not blackout_radius) {  printf("error: bad blackout_radius supplied.\n"); goto next; }
+
 		const nat safety_factor = (nat) atoi(command[6]);
-		if (not safety_factor) { 
-			printf("error: bad safety_factor supplied.\n");
-			goto next;
-		}
+		if (not safety_factor) {  printf("error: bad safety_factor supplied.\n"); goto next; }
 
 		const nat vl_count = (nat) atoi(command[7]);
 		const nat required_ia_count = (nat) atoi(command[8]);
 		const nat viz = (nat) atoi(command[9]);
 
-
 		nat* array 		= calloc(max_array_size, sizeof(nat));
 		bool* modes 		= calloc(max_array_size, sizeof(bool));
 		struct bucket* scratch 	= calloc(max_array_size, sizeof(struct bucket));
 		struct bucket* buckets 	= calloc(max_array_size, sizeof(struct bucket));
-
 
 		for (nat z = 0; z < d->in.count; z++) {
 			printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count); fflush(stdout);
@@ -3712,7 +2316,70 @@ loop: 	printf(":IP: ");
 
 
 
+	else if (is(*command, "vertical__batch_opt", "v_opt")) {    // usage:   v_opt <ic> <base> <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> <debug_prints>
+		nat a = 1;
 
+		const nat instruction_count = (nat) atoi(command[a++]); 
+		if (not instruction_count) { printf("error: bad instruction_count supplied.\n"); goto next; }
+
+		const nat base = (nat) atoi(command[a++]); 
+		if (not base) { printf("error: bad base supplied.\n"); goto next; }
+
+		const nat pre_run = (nat) atoi(command[a++]); 
+		if (not pre_run) { printf("error: bad pre_run supplied.\n"); goto next; }
+
+		const nat acc_ins = (nat) atoi(command[a++]); 
+		if (not acc_ins) {  printf("error: bad acc_ins supplied.\n"); goto next; }
+
+		const nat mpp = (nat) atoi(command[a++]);
+		if (not mpp) {  printf("error: bad mpp supplied.\n"); goto next; }
+
+		const nat counter_thr = (nat) atoi(command[a++]);
+		if (not counter_thr) {  printf("error: bad counter_thr supplied.\n"); goto next; }
+
+		const nat blackout_radius = (nat) atoi(command[a++]);
+		if (not blackout_radius) {  printf("error: bad blackout_radius supplied.\n"); goto next; }
+
+		const nat safety_factor = (nat) atoi(command[a++]);
+		if (not safety_factor) {  printf("error: bad safety_factor supplied.\n"); goto next; }
+
+		const nat vl_count = (nat) atoi(command[a++]);
+		const nat required_ia_count = (nat) atoi(command[a++]);
+		const nat viz = (nat) atoi(command[a++]);
+
+		nat* array 		= calloc(max_array_size, sizeof(nat));
+		bool* modes 		= calloc(max_array_size, sizeof(bool));
+		struct bucket* scratch 	= calloc(max_array_size, sizeof(struct bucket));
+		struct bucket* buckets 	= calloc(max_array_size, sizeof(struct bucket));
+
+		for (nat z = 0; z < d->in.count; z++) {
+			printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count); fflush(stdout);
+			memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+			for (nat origin = 0; origin < p.operation_count; origin++) {
+				if (p.graph[4 * origin] != 3) continue;
+
+				if (not has_vertical_line__batch_opt(
+						base, pre_run, acc_ins, 
+						mpp, counter_thr, blackout_radius, 
+						safety_factor, vl_count, required_ia_count,
+						origin, p, p.graph, viz,
+						array, modes, buckets, scratch,
+						instruction_count
+					)
+
+				) 
+					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+			}
+		}
+		printf("--> found %llu / pruned %llu  :  after non-simplified  vertical line  pruning metric.\n", d->out.count, d->bad.count);
+
+		free(scratch);
+		free(buckets);
+		free(modes);
+		free(array);
+	}
 
 
 	else if (is(*command, "human", "human")) {        // human <print_count> <pre_run_count>             run z for a total of     ins_c + pr_c   ins.
@@ -3783,51 +2450,6 @@ loop: 	printf(":IP: ");
 next:	goto loop; 
 done:;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-	.op = { ###:per, ###:per, ...  }, .lge = {  .l = { ###:per, ###:per,  ... }    .g = { ###:per, ###:per,  ... }   }
-			1, 2, 3, 5, 6					6					6
-
-
-				printf("i = %llu\n", i);
-				printf("p.graph[i] = %llu\n", p.graph[i]);
-				printf("p.operation_count = %llu\n", p.operation_count);
-				fflush(stdout);
-
-
-
-*/
-
-
-
-  // el   1,000,000      //   PRT  999,500         ( 1,000,000 - 500)
-
-
-
-
-
-
-
-
 
 
 static void synthesize_graph(struct parameters p, struct search_data d) {
@@ -3929,107 +2551,62 @@ static void synthesize_graph(struct parameters p, struct search_data d) {
 
 }
 
-
-
-
-
-
-
-
-
-
-
-// each (index pasta) destination in that graph { 
-// pasta < graph_count          
-// for each element in the adj list
-// r  // in the range 0..graph_count
-// graph[r]      // aka destination 
-// in the range of 0..duplcount
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 static nat generate_pruned_D_subspace(const nat origin, struct parameters p, struct search_data* d) {
 
-	nat candidate_count = 0, candidate_capacity = 0;
-	nat candidate_timestamp_capacity = 0;
+	const nat n = p.FEA;
+	const nat expansion_check_timestep = 10000;
+
 	nat* candidates = NULL;
 	char* candidate_timestamps = NULL;
-
 	nat array[max_array_size] = {0};
 	nat modes[max_array_size] = {0};
-
-	nat 
-		pointer = 0, 
-		ip = origin
-	;
-	
+	nat pointer = 0, ip = origin;
 	nat* graph = calloc(p.graph_count, sizeof(nat));
 	memcpy(graph, p.graph, p.graph_count * sizeof(nat));
-
-	const nat n = p.FEA;
-
 	struct stack_frame* stack = calloc(max_stack_size, sizeof(struct stack_frame));
-	nat stack_count = 0;
 
-	nat mcal_index = 0;
-	nat last_mcal_op = 0;
-	nat er_count = 0;
+	nat candidate_count = 0, candidate_capacity = 0, candidate_timestamp_capacity = 0;
+	nat executed_count = 0, stack_count = 0, mcal_index = 0, last_mcal_op = 0, er_count = 0, RER_er_at = 0, RER_counter = 0, 
+	    OER_er_at = 0, OER_counter = 0, R0I_counter = 0, H_counter = 0, found_count = 0, backtracked = 0, total = 0, executed_instruction_count = 0;
 
-	nat RER_er_at = 0;
-	nat RER_counter = 0;
+	nat BT_fea = 0, BT_ns0 = 0, BT_pco = 0, BT_zr5 = 0, BT_zr6 = 0, BT_ndi = 0, BT_mcal = 0, 
+	    BT_rer = 0, BT_oer = 0, BT_r0i = 0, BT_h = 0, BT_exp = 0, BT_com = 0;
 
-	nat OER_er_at = 0;
-	nat OER_counter = 0;
 
-	nat R0I_counter = 0;
+	nat completed_on = 0;
+	if (is_complete(graph, p.operation_count) and not completed_on) completed_on = executed_count;
 
-	nat H_counter = 0;
-
-	nat tried = 0;
-	nat backtracked = 0;
-	nat total = 0;
-
-	nat BT_fea = 0;
-	nat BT_ns0 = 0;
-	nat BT_pco = 0;
-	nat BT_zr5 = 0;
-	nat BT_zr6 = 0;
-	nat BT_ndi = 0;
-	nat BT_mcal = 0;
-	nat BT_rer = 0;
-	nat BT_oer = 0;
-	nat BT_r0i = 0;
-	nat BT_h = 0;
-
-	nat executed_count = 0;	
-
-begin:
+begin:  
 	total++;
-
 	while (executed_count < p.execution_limit) {
+
+
+
+
+/* 	 --------- smart graph stuff ----------
+
+
+		if (is_complete(graph, p.operation_count)) {
+			// we can do the COMPLETE-TYPE smart graph analysis AND THE INCOMPLETE-TYPE.
+		} else {
+			// we can do the INCOMPLETE-TYPE smart graph analysis. 
+		}
+*/
+
+
+		if (is_complete(graph, p.operation_count) and not completed_on)  completed_on = executed_instruction_count;
+
+
+
+		if (executed_count == expansion_check_timestep) {
+			const nat type = determine_expansion_type(array, n, p.required_le_width);
+			if (not (er_count >= p.required_er_count and
+				type == good_expansion and  
+				mcal_index == p.mcal_length 
+			)) { BT_exp++; goto backtrack; }
+		}
+
+
 
 		const nat I = ip * 4;
 		const nat op = graph[I];
@@ -4044,25 +2621,26 @@ begin:
 			if (last_mcal_op != 3) { BT_pco++; goto backtrack; }     // PCO
 			if (not pointer) { BT_zr5++; goto backtrack; }          // ZR-5
 
-		// rer:
+			// rer:
 			if (RER_er_at == pointer) RER_counter++; else { RER_er_at = pointer; RER_counter = 0; }
 			if (RER_counter == p.rer_count) { BT_rer++; goto backtrack; }
 
-
-		// oer:
+			// oer:
 			if (	pointer == OER_er_at or 
 				pointer == OER_er_at + 1) OER_counter++;
 			else { OER_er_at = pointer; OER_counter = 0; }
 
 			if (OER_counter == p.oer_count) { BT_oer++; goto backtrack; }
 
-		//r0i:
+			//r0i:
 			if (*modes) R0I_counter++; else R0I_counter = 0;
 			if (R0I_counter > p.max_acceptable_consecutive_incr) { BT_r0i++; goto backtrack; }
 
 
-			pointer = 0;
+			/// {NSVLPM HERE}
+
 			memset(modes, 0, sizeof modes);
+			pointer = 0;
 			er_count++;
 		}
 
@@ -4078,20 +2656,18 @@ begin:
 		else if (op == 3) {
 			if (last_mcal_op == 3) { BT_ndi++; goto backtrack; }    // NDI
 
-	
-
 			// h
 			if (pointer and modes[pointer - 1]) H_counter++; else H_counter = 0;
 			if (H_counter > p.max_acceptable_run_length) { BT_h++; goto backtrack; }
 
-
-
 			array[pointer]++;
 			modes[pointer] = 1;
 
-		
-		}
+			/// {NSVLPM HERE}
 
+
+		}
+		executed_instruction_count++;
 		executed_count++;
 
 		nat state = 0;
@@ -4118,99 +2694,77 @@ begin:
 		
 		stack[stack_count].try = 0;
 		stack[stack_count].option_count = option_count;
-
+		stack[stack_count].executed_instruction_count = executed_instruction_count;
+		stack[stack_count].completed_on = completed_on;	
 		stack[stack_count].mcal_index = mcal_index;
 		stack[stack_count].ip = ip;
 		stack[stack_count].state = state;
-
 		stack[stack_count].er_count = er_count;
 		stack[stack_count].last_mcal_op = last_mcal_op;
-
 		stack[stack_count].RER_counter = RER_counter;
 		stack[stack_count].RER_er_at = RER_er_at;
-
 		stack[stack_count].OER_counter = OER_counter;
 		stack[stack_count].OER_er_at = OER_er_at;
-
 		stack[stack_count].R0I_counter = R0I_counter;
-
 		stack[stack_count].H_counter = H_counter;
-
 		stack[stack_count].pointer = pointer;
-		
 		memcpy(stack[stack_count].array_state, array, sizeof(nat) * max_array_size);
 		memcpy(stack[stack_count].modes_state, modes, sizeof(nat) * max_array_size);
-		
+
 		stack_count++;
 
 		graph[I + state] = stack[stack_count - 1].options[0];
 		executed_count = 0;
-
 	next_ins:   ip = graph[I + state];
-
 	}
 
-	tried++;
+	found_count++;
 
-	const nat type = determine_expansion_type(array, n, p.required_le_width);
-
-	bool is_candidate = false;
 	const bool complete = is_complete(graph, p.operation_count);
 	const bool all = uses_all_operations(graph, p.operation_count);
 
-	if (	er_count >= p.required_er_count and
-		complete and all and
-		type == good_expansion and  
-		mcal_index == p.mcal_length
-	) {
+	if (not complete or not all) { BT_com++; goto backtrack; }
 
-		char dt[16] = {0};
-		get_datetime(dt);
 
-		if (p.graph_count * (candidate_count + 1) > candidate_capacity) {
-			candidate_capacity = 4 * (candidate_capacity + p.graph_count);
-			candidates = realloc(candidates, sizeof(nat) * candidate_capacity);
-		}
+	
 
-		memcpy(candidates + p.graph_count * candidate_count, graph, p.graph_count * sizeof(nat));
-		
-		if (16 * (candidate_count + 1) > candidate_timestamp_capacity) {
-			candidate_timestamp_capacity = 4 * (candidate_timestamp_capacity + 16);
-			candidate_timestamps = realloc(candidate_timestamps, sizeof(char) * candidate_timestamp_capacity);
-		}
 
-		memcpy(candidate_timestamps + 16 * candidate_count, dt, 16);
+	char dt[16] = {0}; get_datetime(dt);
 
-		candidate_count++;
-		is_candidate = true;
+	if (p.graph_count * (candidate_count + 1) > candidate_capacity) {
+		candidate_capacity = 4 * (candidate_capacity + p.graph_count);
+		candidates = realloc(candidates, sizeof(nat) * candidate_capacity);
 	}
+	memcpy(candidates + p.graph_count * candidate_count, graph, p.graph_count * sizeof(nat));
+	
+	if (16 * (candidate_count + 1) > candidate_timestamp_capacity) {
+		candidate_timestamp_capacity = 4 * (candidate_timestamp_capacity + 16);
+		candidate_timestamps = realloc(candidate_timestamps, sizeof(char) * candidate_timestamp_capacity);
+	}
+	memcpy(candidate_timestamps + 16 * candidate_count, dt, 16);
 
+	  // printf("is_complete() == true,    on   [executed_instruction_count = %llu]    %s\n", completed_on, completed_on > 100000 ? "***************" : " ");
 
-	if (not (tried & ((1 << p.display_rate) - 1))    and p.should_print) {
+	candidate_count++;
+
+	if (not (found_count & ((1 << p.display_rate) - 1))    and p.should_print) {
 		clear_screen();
-
 		printf("\n\t");
 		print_graph_as_z_value(graph, p.graph_count);
 		printf("\n");
 		printf("\n");
-		printf("----> tried [c=%llu] / t=%llu control flow graphs.\n", candidate_count, tried);
-
-		printf("is_candidate? = %s\n", 			is_candidate ? "true" : "false");
-		puts("");
-		printf("mcal_index == mcal_length? %s\n", 	mcal_index == p.mcal_length ? "true" : "false");
-		printf("good_expansion? %s\n", 			type == good_expansion ? "true" : "false" );
-		printf("complete? %s\n", 			complete ? "true" : "false");
-		printf("all? %s\n", 				all ? "true" : "false" );
-		printf("er >= req? %s\n\n", 			er_count >= p.required_er_count ? "true" : "false" );
-
+		printf("----> found [cand=%llu] / found_count=%llu control flow graphs.\n", candidate_count, found_count);
 		printf(
 			" { \n"
 			"   ns0 = %llu, zr5 = %llu, zr6 = %llu \n"
 			"   pco = %llu, fea = %llu, ndi = %llu \n" 
 			"   mcal = %llu rer = %llu, oer = %llu \n"
-			"   r0i = %llu, h = %llu,   \n"
-			" }\n\n",  BT_ns0, BT_zr5, BT_zr6, BT_pco, BT_fea, 
-				BT_ndi, BT_mcal, BT_rer, BT_oer, BT_r0i, BT_h 
+			"   r0i = %llu, h   = %llu, exp = %llu \n"
+			"   com = %llu \n"
+			" }\n\n",  
+				BT_ns0, BT_zr5, BT_zr6, BT_pco, 
+				BT_fea, BT_ndi, BT_mcal, BT_rer, 
+				BT_oer, BT_r0i, BT_h, BT_exp, BT_com
 		);
 		
 		print_graph_as_adj(graph, p.graph_count);
@@ -4225,31 +2779,23 @@ begin:
 
 backtrack:
 	backtracked++;
-
-	if (not stack_count) {
-		// NOTE:  execution_limit must be zero!!!
-		goto done;    // just finish like normal.
-	}
+	if (not stack_count) goto done; 
 
 	// revert:
 	memcpy(array, stack[stack_count - 1].array_state, sizeof(nat) * max_array_size);
 	memcpy(modes, stack[stack_count - 1].modes_state, sizeof(nat) * max_array_size);
-
 	pointer = stack[stack_count - 1].pointer;
 	mcal_index = stack[stack_count - 1].mcal_index;
+	executed_instruction_count = stack[stack_count - 1].executed_instruction_count;
+	completed_on = stack[stack_count - 1].completed_on;
 	er_count = stack[stack_count - 1].er_count;
 	last_mcal_op = stack[stack_count - 1].last_mcal_op;
-
 	RER_counter = stack[stack_count - 1].RER_counter;
 	RER_er_at = stack[stack_count - 1].RER_er_at;
-
 	OER_counter = stack[stack_count - 1].OER_counter;
 	OER_er_at = stack[stack_count - 1].OER_er_at;
-
 	R0I_counter = stack[stack_count - 1].R0I_counter;
-
 	H_counter = stack[stack_count - 1].H_counter;
-
 
 	if (stack[stack_count - 1].try < stack[stack_count - 1].option_count - 1) {
 		stack[stack_count - 1].try++;
@@ -4261,11 +2807,12 @@ backtrack:
 
 	} else {		
 		graph[4 * stack[stack_count - 1].ip + stack[stack_count - 1].state] = unknown;
-		if (stack_count == 0) abort();
+		if (not stack_count) abort();
 		stack_count--;
-		if (stack_count == 0) goto done;
+		if (not stack_count) goto done;
 		goto backtrack;
 	}
+
 done:
 
 	d->port.z = realloc(d->port.z, sizeof(nat) * (d->port.count + candidate_count) * p.graph_count);
@@ -4281,7 +2828,7 @@ done:
 
 	if (p.should_print) printf("total = %llu\n", total);
 	if (p.should_print) printf("backtracked = %llu\n", backtracked);
-	if (p.should_print) printf("tried = %llu\n", tried);
+	if (p.should_print) printf("found_count = %llu\n", found_count);
 	if (p.should_print) printf("\n\n[[ candidate_count = %llu ]] \n\n\n", candidate_count);
 	if (p.should_print) 
 		printf(
@@ -4289,9 +2836,13 @@ done:
 			"   ns0 = %llu, zr5 = %llu, zr6 = %llu \n"
 			"   pco = %llu, fea = %llu, ndi = %llu \n" 
 			"   mcal = %llu rer = %llu, oer = %llu \n"
-			"   r0i = %llu, h = %llu,   \n"
-			" }\n\n",  BT_ns0, BT_zr5, BT_zr6, BT_pco, BT_fea, BT_ndi, BT_mcal, BT_rer, BT_oer, BT_r0i, BT_h 
-		);
+			"   r0i = %llu, h   = %llu, exp = %llu \n"
+			"   com = %llu \n"
+			" }\n\n",  
+				BT_ns0, BT_zr5, BT_zr6, BT_pco, 
+				BT_fea, BT_ndi, BT_mcal, BT_rer, 
+				BT_oer, BT_r0i, BT_h, BT_exp, BT_com
+			);
 
 	free(stack);
 	free(candidates);
@@ -4300,55 +2851,16 @@ done:
 	return candidate_count;
 }
 
-
-
-
-
-/*
-			// previous code for horizontal line:      (too brute force!)
-
-
-			for (nat counter = 0, i = 0; i < max_array_size; i++) {
-				if (modes[i]) counter++; else counter = 0;
-				if (counter > p.max_acceptable_run_length) { BT_h++; goto backtrack; }
-				if (not array[i]) break;
-			}
-		*/
-
-
-
-
-
-
-
-
-
-
-
-
-
 static nat generate_pruned_D_space(struct parameters p, struct search_data* d) {
 	
-	const nat D = p.duplication_count;
-	const nat n = D - 1;
-	const nat U = exponentiate(unique_count, D);
-	const nat m = unique_count - 1;
-
-	nat total = 0;
-	nat tried_count = 0;
-	nat* tried = calloc(U * D, sizeof(nat));
-
-	nat entry = 0;
-
-	nat totals_count = 0;
+	const nat D = p.duplication_count, n = D - 1, U = exponentiate(unique_count, D), m = unique_count - 1;
+	nat entry = 0, totals_count = 0, total = 0, tried_count = 0;
 	nat* totals = NULL;
-
+	nat* tried = calloc(U * D, sizeof(nat));
 	nat* indicies = calloc(D, sizeof(nat));
 	nat* stack_operations = calloc(D, sizeof(nat));
 
-	
-
-	if (D == 0) goto execute;
+	if (not D) goto execute;
 	
 loop:; 	nat pointer = 0;
 
@@ -4371,7 +2883,6 @@ backtrack:
 	goto loop;
 
 done:;
-
 	totals_count = 0;
 	totals = calloc(tried_count, sizeof(nat));
 
@@ -4386,9 +2897,7 @@ done:;
 			p.graph[20 + 4 * offset] = tried[D * entry + offset];
 		}
 
-
-		execute:;
-
+	execute:;
 		nat per_combination_total = 0;
 
 		for (nat origin = 0; origin < p.operation_count; origin++) {
@@ -4409,7 +2918,6 @@ done:;
 				}
 			}
 		}
-
 
 		if (D) totals[totals_count++] = per_combination_total;
 		total += per_combination_total;
@@ -4434,36 +2942,9 @@ done:;
 	free(indicies);
 	free(stack_operations);
 	free(totals);
-
 	return total;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//  set   p.scratch    to the minimum el,   set    p.execution_limit to  the maximum el,    
-//  and set p.step to the stride width/size, to go through el possibilities at.
-//  set p.window_width to the maximum number of characters to print per line, 
-// set  p.scale   to the  maximum total candidate_count   that you expect to see.
-
-// note: the plot/graph is printed downwards, and sideways. 
 
 static void plot_el(struct parameters p) {
 	
@@ -4490,15 +2971,6 @@ static void plot_el(struct parameters p) {
 	puts("[done]");
 }
 
-
-
-//  set   p.scratch    to the minimum fea,   set    p.FEA to  the maximum fea,    
-//  and set p.step to the stride width/size, to go through fea possibilities at.
-//  set p.window_width to the maximum number of characters to print per line, 
-// set  p.scale   to the  maximum total candidate_count   that you expect to see.
-
-// note: the plot/graph is printed downwards, and sideways. 
-
 static void plot_fea(struct parameters p) {
 	
 	const nat max_fea = p.FEA;
@@ -4522,18 +2994,6 @@ static void plot_fea(struct parameters p) {
 
 	puts("[done]");
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 static void print_help_menu() {
 
@@ -4559,7 +3019,7 @@ printf("available commands:\n"
 "\n"
 	"\t- read z_list <existing_z_file> <existing_dt_file>	: read in a list of z values with their datetime stamps from two give files.\n"
 "\n"
-	"\t- generate 	: the generative search stage. search over all possible extensions of the current partial "
+	"\t- [[[]]] 	: the generative search stage. search over all possible extensions of the current partial "
 			"graph in any (variable) duplication_count space.\n"
 
 	"\t- generate_pruned 	: the generative search stage. search over all possible extensions of the current partial "
@@ -4575,10 +3035,6 @@ printf("available commands:\n"
 	
 "\n");
 }
-
-
-
-
 
 int main() {
 
@@ -4660,7 +3116,7 @@ loop: 	printf(":: ");
 	else if (is(*command, "write", "w")) 	 		write_command(command, p, d);
 	else if (is(*command, "read", "r"))    			read_command(command, &p, &d);
 
-	else if (is(*command, "generate", "g")) 		generate_raw_D_space(p, &d);
+	
 	else if (is(*command, "generate_pruned", "gp")) 	generate_pruned_D_space(p, &d);
 
 	else if (is(*command, "prune", "ip")) 			prune_z_list(p, &d);
@@ -4668,7 +3124,6 @@ loop: 	printf(":: ");
 
 	else if (is(*command, "plot_el", "pel")) 		plot_el(p);
 	else if (is(*command, "plot_fea", "pfea"))		plot_fea(p);
-
 
 	else printf("error: unknown command.\n");
 
@@ -4697,7 +3152,81 @@ loop: 	printf(":: ");
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7000,4 +5529,1897 @@ continue? (q/ENTER)
 
 
 */
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+2212316.235956
+~: dt
+2212316.235959
+~: dt
+2301017.000000
+~: dt
+2301017.000007
+~: dt
+2301017.000232
+~: 
+*/
+
+
+
+
+/*
+
+
+
+
+
+
+
+
+2303046.193658
+
+heres the partial graph consistent with the 9 good z values from 1-space, after running nsvlpm and sg:
+
+
+ tallys2 : dupilcating 2 in 1-space:
+{ .op = 1,   .lge={ .l={  ->2: 9(1.00),  },  .g={  ->3: 9(1.00),  },  .e={  ->2: 8(0.89),  ->5: 1(0.11),  },   }   
+
+{ .op = 3,   .lge={ .l={  ->0: 9(1.00),  },  .g={  ->0: 6(0.67),  ->5: 3(0.33),  },  .e={  ->2: 1(0.11),  ->4: 7(0.78),  ->5: 1(0.11),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 9(1.00),  },  .g={  ->1: 8(0.89),  ->4: 1(0.11),  },  .e={  ->3: 2(0.22),  ->5: 7(0.78),  },   }   
+
+{ .op = 6,   .lge={ .l={  ->1: 9(1.00),  },  .g={  },  .e={  ->1: 6(0.67),  ->2: 3(0.33),  },   }   
+
+{ .op = 5,   .lge={ .l={  ->5: 9(1.00),  },  .g={  ->2: 8(0.89),  ->5: 1(0.11),  },  .e={  ->1: 2(0.22),  ->3: 7(0.78),  },   }   
+
+{ .op = 2,   .lge={ .l={  ->0: 2(0.22),  ->2: 7(0.78),  },  .g={  ->0: 7(0.78),  ->1: 1(0.11),  ->4: 1(0.11),  },  .e={  ->1: 6(0.67),  ->3: 3(0.33),  },   }   
+
+:: 
+
+
+
+
+
+ RRXFG partial graph     starting graph: 
+
+	.graph = { 
+			1,  2, 3, _,
+			3,  0, _, _,
+			2,  0, _, _,
+			6,  1, X, _,
+			5,  _, _, _,
+			0,  _, _, _,
+
+
+
+
+			0,  _, _, _,
+			0,  _, _, _,
+			0,  _, _, _,
+			0,  _, _, _,
+		},
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[end of lifetime]
+[origin = 1]
+graph adjacency list: 
+{
+	#0: ins(.op = 1, .lge = [ 2, 3, 2])
+
+	#4: ins(.op = 3, .lge = [ 0, 0, 4])
+
+	#8: ins(.op = 2, .lge = [ 0, 1, 5])
+
+	#12: ins(.op = 6, .lge = [ 1,  , 1])
+
+	#16: ins(.op = 5, .lge = [ 5, 2, 3])
+
+	#20: ins(.op = 2, .lge = [ 2, 0, 1])
+
+}
+
+z=2 / zcount=9   :   12323004201561_155232201
+2211211.202213
+
+continue? (q/ENTER) 
+
+
+						this is oneof the nine following z values, that were good enough to not obviouslyyyyy have vl's,   so nsvlpm did not catch them, given our parameters we supplied. 
+
+
+
+
+
+heres the output of nsvlpm     (14 z values, total)    but    after we human pruned 5 of them, to get rid of 5 ones that had a ER infinite loop.
+
+
+
+
+12323004201561_155232001  :  2211211.202213
+12323054201561_155232001  :  2211211.202213
+12323004201561_155232201  :  2211211.202213
+12323054201561_155232201  :  2211211.202213
+12323004201561_255232201  :  2211211.202214
+12323054201561_255232201  :  2211211.202214
+12323004201561_255232203  :  2211211.202214
+12323005201361_155212243  :  2211211.202233
+12353002204361_155512213  :  2211211.202304
+
+listed out with 9 values.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	2303046.145308
+		iter:
+
+
+			1. code up NSVLPM 
+
+			2. do the official 1-sp search! using all pm's and plot_fea and plot_el  utils.	
+
+
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	things i want to implement:
+
+
+	speed:
+
+		1. find the speed of expansion of each z value
+	
+--->		2. find the speed of the vertical lines precession       (to eventually account for precession!)
+
+
+	viz:
+
+		3. display the histogram each timestep, to know how the hg changes overtime
+
+
+
+
+
+x	***	4. increase the PRT to like 1000000000 ish 
+
+				find the relationship betwwen fea and el   for our z values. 
+
+
+	
+				
+
+x	****	5.        plz run      GRAPH AVERAGERRRRRR
+
+
+
+
+						done!
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+	-------------- 2212316.225619 iter code up thingy -----------------
+
+
+
+
+	x	0-  figure out the bug with horizontal not working properly- its not pruning things it should be pruning. 
+
+	x	1- OER :     oscilating between two ER points.
+
+	x	2- r0i :     constantly incrementing *0 over and over again each CLT.
+
+	x	3- graph averager   : find the partial graph (with percentages) consistent with a given z_list.
+	
+
+
+
+
+
+
+		4- implement vertical line pruning metric!!
+
+
+
+			4.0  determine fea and el
+
+			4.1  run for 5 million ish ts
+
+			4.2  run for 10 and accumulate into buckets
+
+			4.3  blur buckets  using window averaging
+
+			4.4  compute histogram based on blury buckets. 
+
+			4.5. print out HG   check one of the high-bucket-value bars, threshold -> boolean   on it. 
+
+
+
+
+
+	------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------
+
+
+x	1. make the graphing utility for showing the relationship between   fea and execlimit and    candidatecount
+
+
+x	2. merge the 1space, 2space, and 0space functions, to all be the same function, parameterized on   .duplication_count  parameter
+
+
+	3. look at previous iternary
+
+
+-----------------------
+
+
+2210241.004313: iter
+
+
+x		1. add more total counts 
+
+		2. fix viz
+
+		3. plot el and fea 
+
+		4. ip   serialization of z list 
+		
+		5. nf
+	
+
+	
+
+
+
+------------------------
+
+
+
+
+
+
+
+
+iter:       last uaj
+
+
+	1. viz 0 & 1
+
+
+	2. multi-fea pruning     --> ip
+
+
+	3. stuff() alg analysis
+
+
+
+	4. 
+
+
+
+
+
+
+
+2211152.135947:   implementing a couple of things:
+
+	i have a couple of things that i want to implement in the utility real quick:
+
+		
+		x	1. i want to add a script system.    read a file, interpret the commands. yes. 
+
+
+		x	2. i want to make a function to perform a transfer between   z_list's.       .out  .in,    .port     are all z lists. 
+
+					ie, a struct 
+
+
+
+			3. i want to add a function to vizualize when the utility is seeing a horizontal line.   
+						i want it to be visual for debugging purposes. 
+
+
+			4. i also want to      make the utiltiy able to print      a far out sectiono f the z values lifetime:
+
+
+						1000005   to 1000010    timesteps     ie,   5 timesteps,   very far out in the lt. 
+
+				ie, make a timestep_begin   and timestep_end   param to print lifetime  function 
+
+					where the default is begin=0  and  end=timestep_count
+
+
+
+					
+
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+
+
+
+
+
+		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 1000000"
+	"\n",	
+
+		"edit fea 3000"
+	"\n",	
+		"print all"
+		
+		""
+
+
+		"thingy_stuff"
+	"\n",
+
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+
+		"mfea 3 4 0"
+	"\n",
+		
+		"thingy_stuff"
+	"\n",
+
+
+
+
+
+
+
+		"edit zl d2_e1M_z.txt d2_e1M_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+
+
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 7000000 60 5 7 80 2 0 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz> <debug_prints>
+	"\n",
+		"count"
+	"\n",
+
+	"\n",
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+//		"edit zl z18_z.txt z18_dt.txt"
+//	"\n",
+//		"prune"
+//	"\n",
+//		"count"
+//	"\n",
+
+
+
+
+
+	"\n",
+		"edit execution_limit 10000000"
+	"\n",	
+		"edit fea 3000"
+	"\n",	
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 1000000 60 5 7 200 1 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
+	"\n",
+		"count"
+	"\n",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 50000000"
+	"\n",	
+		"edit fea 3000"
+	"\n",	
+		"edit zl three_z.txt three_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 1000000 60 5 7 30 2 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
+	"\n",
+		"count"
+	"\n",
+
+
+
+
+
+
+		used for generating the    list of 3 z values, which nsvlpm was unable to catch,  with an el of only 10 million instructions.    we will try 50 mil next.
+
+
+
+		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 10000000"
+	"\n",	
+		"edit fea 3000"
+	"\n",	
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 1000000 60 5 7 30 2 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
+	"\n",
+		"count"
+	"\n",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+used for re running     rer       to use a larger    el   and fea    to prune 5 bad graphs:
+
+
+
+	"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 10000000"
+	"\n",	
+		"edit fea 3000"
+	"\n",	
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"rer 20"  
+	"\n",
+		"count"
+	"\n",
+		"pause"
+	"\n",
+		"export"
+	"\n",
+		"quitip"
+	"\n",
+		"write z_list d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_rer20_dt.txt"
+	"\n",
+		"quit"
+	"\n",
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+
+	"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 10000000"
+	"\n",	
+		"edit fea 1500"
+	"\n",	
+		"edit zl nine_good_1sp_z.txt nine_good_1sp_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"count"
+	"\n",
+		"quitip"
+	"\n",
+		"synthesize_graph"
+	"\n",
+
+
+
+
+
+
+		"edit duplication_count 1"
+	"\n",
+		"edit execution_limit 10000000"
+	"\n",	
+		"edit fea 1500"
+	"\n",	
+		"edit zl d1_e500k_h6f_rer20_mfea3_oer40_r0i50_z.txt d1_e500k_h6f_rer20_mfea3_oer40_r0i50_dt.txt"
+	"\n",
+		"prune"
+	"\n",
+		"import"
+	"\n",
+		"count"
+	"\n",
+		"vertical 100000 60 5 7 20 0 0"           // usage:   v <ac> <mpp> <cthr> <br> <thr1> <thr2> <viz>
+	"\n",
+		"count"
+	"\n",
+
+
+
+
+
+	2212224.151255:
+
+					we will always do the following pruning metrics in this order:
+
+
+
+					1.	horizontal 6 0
+
+					2.	repetitive_er 20 0
+
+					3. 	mfea 10 200 0
+
+						
+*/
+
+
+
+
+
+
+
+
+// static bool is_reset_statement(nat op) { return op == 5 or op == 6; }
+
+
+
+
+
+
+
+/*
+ins:	  1    2     3      5      6
+	------------------------------
+occ	[ 0    1     0      5      0  ]
+*/
+
+
+// tallys up how many times a given operation is used as a dest in the graph.
+
+
+
+
+
+/*
+
+static nat generate_raw_D_subspace(const nat origin, struct parameters p, struct search_data* d) {
+
+	nat candidate_count = 0, candidate_capacity = 0;
+	nat candidate_timestamp_capacity = 0;
+	nat* candidates = NULL;
+	char* candidate_timestamps = NULL;
+
+	nat array[max_array_size] = {0};
+
+	nat pointer = 0, ip = origin;
+	
+	nat* graph = calloc(p.graph_count, sizeof(nat));
+	memcpy(graph, p.graph, p.graph_count * sizeof(nat));
+
+	const nat n = p.FEA;
+
+	struct stack_frame* stack = calloc(max_stack_size, sizeof(struct stack_frame));
+	nat stack_count = 0;
+
+	nat mcal_index = 0;
+	nat last_mcal_op = 0;
+	nat er_count = 0;
+
+	nat tried = 0;
+	nat backtracked = 0;
+	nat total = 0;
+
+	nat BT_fea = 0;
+	nat BT_ns0 = 0;
+	nat BT_pco = 0;
+	nat BT_zr5 = 0;
+	nat BT_zr6 = 0;
+	nat BT_ndi = 0;
+	nat BT_mcal = 0;
+
+	nat executed_count = 0;	
+
+begin:
+	total++;
+
+	while (executed_count < p.execution_limit) {
+
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) {
+			if (pointer == n) { BT_fea++; goto backtrack; }        // FEA
+			if (not array[pointer]) { BT_ns0++; goto backtrack; }  // No-Skip-Over-Zero-Modnat           (NS0)
+			pointer++;
+		}
+
+		else if (op == 5) {
+			if (last_mcal_op != 3) { BT_pco++; goto backtrack; }     // PCO
+			if (not pointer) { BT_zr5++; goto backtrack; }          // ZR-5
+			pointer = 0;
+			er_count++;
+		}
+
+		else if (op == 2) {
+			array[n]++;
+		}
+
+		else if (op == 6) {  
+			if (not array[n]) { BT_zr6++; goto backtrack; }      //  ZR-6
+			array[n] = 0;   
+		}
+
+		else if (op == 3) {
+			if (last_mcal_op == 3) { BT_ndi++; goto backtrack; }    // NDI
+			array[pointer]++;
+		}
+
+		executed_count++;
+
+		nat state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+
+		if (op == 3 or op == 1 or op == 5) {
+			if (mcal_index < p.mcal_length) {
+				if (op != p.mcal[mcal_index]) { BT_mcal++; goto backtrack; }
+				mcal_index++;
+			}
+			last_mcal_op = op;
+		}
+
+		if (graph[I + state] != unknown) goto next_ins;
+
+		nat option_count = 0; 
+		generate_options(
+			stack[stack_count].options, &option_count, 
+			ip, p.mcal, mcal_index, p.mcal_length, array[n], 
+			graph, p.operation_count
+		);
+		
+		stack[stack_count].try = 0;
+		stack[stack_count].option_count = option_count;
+
+		stack[stack_count].mcal_index = mcal_index;
+		stack[stack_count].ip = ip;
+		stack[stack_count].state = state;
+
+		stack[stack_count].er_count = er_count;
+		stack[stack_count].last_mcal_op = last_mcal_op;
+
+		stack[stack_count].pointer = pointer;
+
+		// save:
+		memcpy(stack[stack_count].array_state, array, sizeof(nat) * max_array_size);
+
+				//	(n + 1)            // CORRECT   and efficient  (? untested.)
+				//	max_array_size            // ALSO CORRECT   but wasteful/inefficient.
+				// );
+		
+		stack_count++;
+
+		graph[I + state] = stack[stack_count - 1].options[0];
+		executed_count = 0;
+
+	next_ins:   ip = graph[I + state];
+
+	}
+
+	tried++;
+
+	const nat type = determine_expansion_type(array, n, p.required_le_width);
+
+	bool is_candidate = false;
+	const bool complete = is_complete(graph, p.operation_count);
+	const bool all = uses_all_operations(graph, p.operation_count);
+
+	if (	er_count >= p.required_er_count and
+		complete and all and
+		type == good_expansion and  
+		mcal_index == p.mcal_length
+	) {
+
+		char dt[16] = {0};
+		get_datetime(dt);
+
+		if (p.graph_count * (candidate_count + 1) > candidate_capacity) {
+			candidate_capacity = 4 * (candidate_capacity + p.graph_count);
+			candidates = realloc(candidates, sizeof(nat) * candidate_capacity);
+		}
+
+		memcpy(candidates + p.graph_count * candidate_count, graph, p.graph_count * sizeof(nat));
+		
+		if (16 * (candidate_count + 1) > candidate_timestamp_capacity) {
+			candidate_timestamp_capacity = 4 * (candidate_timestamp_capacity + 16);
+			candidate_timestamps = realloc(candidate_timestamps, sizeof(char) * candidate_timestamp_capacity);
+		}
+
+		memcpy(candidate_timestamps + 16 * candidate_count, dt, 16);
+
+		candidate_count++;
+		is_candidate = true;
+	}
+
+
+	if (not (tried & ((1 << p.display_rate) - 1))    and p.should_print) {
+		clear_screen();
+
+		printf("\n\t");
+		print_graph_as_z_value(graph, p.graph_count);
+		printf("\n");
+		printf("\n");
+		printf("----> tried [c=%llu] / t=%llu control flow graphs.\n", candidate_count, tried);
+
+		printf("is_candidate? = %s\n", 			is_candidate ? "true" : "false");
+		puts("");
+		printf("mcal_index == mcal_length? %s\n", 	mcal_index == p.mcal_length ? "true" : "false");
+		printf("good_expansion? %s\n", 			type == good_expansion ? "true" : "false" );
+		printf("complete? %s\n", 			complete ? "true" : "false");
+		printf("all? %s\n", 				all ? "true" : "false" );
+		printf("er >= req? %s\n", 			er_count >= p.required_er_count ? "true" : "false" );
+		
+		print_graph_as_adj(graph, p.graph_count);
+		printf("searching: [origin = %llu, limit = %llu, n = %llu]\n", origin, p.execution_limit, n);
+		print_stack(stack, stack_count);
+
+		print_lifetime(origin, p, graph, 100, 0);
+
+		fflush(stdout);
+		if (p.frame_delay) usleep((unsigned) p.frame_delay);
+	}
+
+backtrack:
+	backtracked++;
+
+	if (not stack_count) {
+		// NOTE:  execution_limit must be zero!!!
+		goto done;    // just finish like normal.
+	}
+
+	// revert:
+	memcpy(array, stack[stack_count - 1].array_state, sizeof(nat) * max_array_size);
+
+	pointer = stack[stack_count - 1].pointer;
+	mcal_index = stack[stack_count - 1].mcal_index;
+	er_count = stack[stack_count - 1].er_count;
+	last_mcal_op = stack[stack_count - 1].last_mcal_op;
+
+	if (stack[stack_count - 1].try < stack[stack_count - 1].option_count - 1) {
+		stack[stack_count - 1].try++;
+		const struct stack_frame T = stack[stack_count - 1];
+		graph[4 * T.ip + T.state] = T.options[T.try];
+		ip = T.options[T.try];
+		executed_count = 0;
+		goto begin;
+
+	} else {		
+		graph[4 * stack[stack_count - 1].ip + stack[stack_count - 1].state] = unknown;
+		if (stack_count == 0) abort();
+		stack_count--;
+		if (stack_count == 0) goto done;
+		goto backtrack;
+	}
+done:
+
+	d->port.z = realloc(d->port.z, sizeof(nat) * (d->port.count + candidate_count) * p.graph_count);
+	d->port.dt = realloc(d->port.dt, sizeof(char) * (d->port.count + candidate_count) * 16);
+
+	if (candidate_count * p.graph_count * sizeof(nat)) 
+		memcpy(d->port.z + d->port.count * p.graph_count, candidates, candidate_count * p.graph_count * sizeof(nat));
+
+	if (candidate_count * 16 * sizeof(char)) 
+		memcpy(d->port.dt + d->port.count * 16, candidate_timestamps, candidate_count * 16 * sizeof(char));
+
+	d->port.count += candidate_count;
+
+	if (p.should_print) printf("total = %llu\n", total);
+	if (p.should_print) printf("backtracked = %llu\n", backtracked);
+	if (p.should_print) printf("tried = %llu\n", tried);
+	if (p.should_print) printf("\n\n[[ candidate_count = %llu ]] \n\n\n", candidate_count);
+	if (p.should_print) 
+		printf(
+			" { \n"
+			"   ns0 = %llu, zr5 = %llu, zr6 = %llu \n"
+			"   pco = %llu, fea = %llu, ndi = %llu \n" 
+			"   mcal = %llu \n"
+			" }\n\n",  BT_ns0, BT_zr5, BT_zr6, BT_pco, BT_fea, BT_ndi, BT_mcal
+		);
+
+	free(stack);
+	free(candidates);
+	free(graph);
+
+	return candidate_count;
+}
+
+
+
+
+
+
+
+
+
+static nat generate_raw_D_space(struct parameters p, struct search_data* d) {
+	
+	const nat D = p.duplication_count;
+	const nat n = D - 1;
+	const nat U = exponentiate(unique_count, D);
+	const nat m = unique_count - 1;
+
+	nat total = 0;
+	nat tried_count = 0;
+	nat* tried = calloc(U * D, sizeof(nat));
+
+	nat entry = 0;
+
+	nat* indicies = calloc(D, sizeof(nat));
+	nat* stack_operations = calloc(D, sizeof(nat));
+
+	if (D == 0) goto execute;
+	
+loop:; 	nat pointer = 0;
+
+	for (nat op = 0; op < D; op++) stack_operations[op] = operations[indicies[op]];
+
+	if (is_unique(stack_operations, tried_count, tried, D)) {
+		for (nat offset = 0; offset < D; offset++) 
+			tried[D * tried_count + offset] = stack_operations[offset];
+		tried_count++;
+	}
+
+backtrack: 
+	if (indicies[pointer] >= m) {
+		indicies[pointer] = 0;
+		if (pointer == n) goto done;
+		pointer++;
+		goto backtrack;
+	}
+	indicies[pointer]++;
+	goto loop;
+
+done:;
+
+	if (p.should_print) {
+		print_combinations(tried, tried_count, D);
+		debug_pause();
+	}
+	
+	for (; entry < tried_count; entry++) {
+
+		for (nat offset = 0; offset < D; offset++) {
+			p.graph[20 + 4 * offset] = tried[D * entry + offset];
+		}
+
+		execute:
+		for (nat origin = 0; origin < p.operation_count; origin++) {
+
+			if (p.graph[4 * origin] == 3) {
+
+				total += generate_raw_D_subspace(origin, p, d);
+
+				if (p.should_print) {
+					printf("[origin = %llu]\n", origin);
+					print_graph_as_adj(p.graph, p.graph_count);
+					print_nats(p.mcal, p.mcal_length); 
+					puts("\n");
+
+					if (p.combination_delay == 1) debug_pause();
+					if (p.combination_delay) usleep((unsigned) p.combination_delay);
+				}
+			}
+		}
+	}
+
+	if (p.should_print) printf("\n\t[total candidates = %llu]\n\n\n", total);
+
+	free(tried);
+	free(indicies);
+	free(stack_operations);
+
+	return total;
+
+}
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+/*
+
+// parellel sfea:
+
+static void execute_parallel_singlefea_pruning_metric(
+	struct parameters p, 
+	struct search_data * d, 
+	nat viz) { 			// prune over all graphs using single fea().
+
+
+
+
+
+
+
+	for (nat z = 0; z < d->in.count; z++) {
+
+		printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count);  fflush(stdout);
+
+
+		// lock the input_mutex
+
+		memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+		// unlock the input_mutex
+
+
+
+
+
+		////   all ofthis is done inside the worker_thread  code itself. 
+		///// -----------------------------------    
+
+		for (nat origin = 0; origin < p.operation_count; origin++) {
+
+			if (p.graph[4 * origin] != 3) continue;
+
+
+			if (not goes_out_of_array_bounds(origin, p, p.graph, p.execution_limit, viz)) 
+
+				// lock the out_mutex
+				push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count); 
+				// this would be the push to output.
+				// unlock the out_mutex
+
+
+
+			else    
+				// lock the bad_mutex
+				push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+				// unlock the bad_mutex
+
+		}
+
+		//// -----------------------------------
+
+
+
+
+
+	}
+	printf("--> found %llu / pruned %llu  :  after singlefea pruning metric.\n", d->out.count, d->bad.count);
+	
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/////// trash /////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+else {
+						if (debug_prints) printf("info: found that the max neighbor (uid=%llu) had zero data. did not move.\n", neighbor_uid);
+					}
+
+*/
+
+//scratch_count = gather_buckets_at(buckets, scratch, hole_position, 0, bucket_count);
+
+						//if (debug_prints) printf("info: gathered %llu candidate-neighbor buckets.\n", scratch_count);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/// bucket regeneration step:
+
+						// const nat hole_position = buckets[moving_uid].index - 1;
+
+						//if (debug_prints) printf("info: bucket.index incremented(nei.index=%llu)! looking for hole to regen at %llu...\n", 
+							//buckets[moving_uid].index, hole_position
+						//);
+
+
+
+
+/*if (not scratch_count) {
+
+							// generate a new bucket there!
+
+							buckets[bucket_count] = (struct bucket) {
+								.index = hole_position, 
+								.data = 0, 
+								.counter = 0, 
+								.uid = bucket_count
+							};
+
+
+							if (debug_prints) printf("info: generating NEW bucket!!! {.i=%llu, .d=0, .c=0, .uid=%llu}\n", hole_position, bucket_count);
+				
+							bucket_count++;
+
+							if (debug_prints) printf("---->  there are now %llu buckets total!\n", bucket_count);
+							
+						}*/
+
+
+
+
+
+
+
+
+	/*
+					printf("info: performed IA:\n");
+
+				const nat xw = compute_xw(array, n);
+				const nat dw_count = (nat) ((double) xw * (double) discard_window);
+
+				printf("info: xw = %llu, dw_count = %llu\n", xw, dw_count);
+				
+				if (pointer < dw_count or pointer > xw - dw_count)  goto dont_accumulate;
+				*/
+
+
+
+
+
+
+// clear_screen();
+	//printf("\n\t");
+
+
+
+
+
+
+
+
+
+
+/*
+
+	// compute max_bucket_value:
+
+
+
+	nat max_bucket_value = 0;
+
+	for (nat i = 0; i < n; i++) {
+
+
+
+		// if (buckets[i] > bucket_too_large_thr) return true;
+
+
+
+		if (buckets[i] > max_bucket_value) {
+			max_bucket_value = buckets[i];
+		}
+	}
+
+
+	max_bucket_value++;
+	
+
+	// compute the blurry buckets, using the window averaging 
+
+		// dont do this for now.
+
+
+
+
+
+	// compute the hg  based off of that.
+
+
+	nat* counts = calloc(max_bucket_value, sizeof(nat));
+
+	for (nat i = 0; i < n; i++) {
+		counts[buckets[i]]++;
+	}
+
+	for (nat i = 0; i < max_bucket_value; i++) {
+		printf("%03llu : ", i);
+		for (nat c = 0; c < counts[i]; c++) printf("#");
+		puts("");
+	}
+	
+	puts("\n\n");
+
+	fflush(stdout);
+
+	// if (p.frame_delay) usleep((unsigned) p.frame_delay);
+	free(counts);
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*    hg of vl   graph
+
+##############################################     <----  0.00...9.99
+#################################                  <----  10.00...19.99
+##########################
+################
+###
+#
+##
+#
+#
+#
+##
+#
+#
+#
+#
+##
+#
+##
+#####
+##############
+###############################           <--------  110.00...119.99
+##################
+########
+##
+#
+#
+#
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// buckets[trigger_uid].counter = 0;    // reset the trigger bucket's counter. don't make it benign.
+
+					//ALSO make this (now retired) trigger bucket's counter benign.
+
+
+
+
+
+
+
+// eg, 200       for acc_ins = 2 million.   those are related!!!
+
+
+
+
+
+
+
+/*
+
+
+
+
+			good         h 6 
+
+                                                 I [I I I I I I I]
+		
+
+				2468
+
+
+
+			bad          h 6 
+
+
+						[I I I  I I I I]
+
+                              2464
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// checks if the graph zooms towards star n    immediately.    ("fast expansion")
+// fx
+static bool is_fast_expansion(                                     // this function is not used ever, becuaes we never say "fast_expansion". h catches this.
+	const nat timestep_count,           // eg    10 
+	const nat too_wide_threshold,       // eg    200
+	const nat origin, 
+	struct parameters p, 
+	nat* graph, 
+	const nat instruction_count,
+	const nat viz                      //   0   for now
+) {
+
+	const nat n = p.FEA;
+
+	nat array[max_array_size] = {0};
+	bool modes[max_array_size] = {0};
+
+	nat 
+		pointer = 0, 
+		ip = origin
+	;
+
+
+	nat timestep = 0;
+
+	for (nat e = 0; e < instruction_count; e++) {
+
+		const nat I = ip * 4;
+		const nat op = graph[I];
+
+		if (op == 1) {
+			pointer++;
+		}
+
+		//
+		// 2 3 4 5 9 8 3 0 5 8 9 5 1 9 8 2 4 2 1 2 3 4 5 3 3 2 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 . ..00000 (*n)
+		//
+		//							       ^
+
+		else if (op == 5) {
+			
+			timestep++;
+			nat i = 0;
+
+			for (i = 0; i < n; i++) {
+
+				if (not array[i]) break;   // LE
+
+				if (viz) {					
+					if (modes[i]) {
+							printf("%s", (i == pointer ?  green : white));
+							printf("█" reset); // (print IA's as a different-colored cell..?)
+
+					} else printf(blue "█" reset);
+				}
+			}
+			if (viz) puts("");
+
+			if (timestep == timestep_count) {
+				if (i >= too_wide_threshold) {
+					printf(".\n");
+					return true; 
+				}
+				else return false;
+			}
+
+			pointer = 0;
+			memset(modes, 0, sizeof modes);
+		}
+
+		else if (op == 2) {
+			array[n]++;
+		}
+
+		else if (op == 6) {  
+			array[n] = 0;   
+		}
+
+		else if (op == 3) {
+			array[pointer]++;
+			modes[pointer] = 1;
+		}
+
+		nat state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+
+		if (graph[I + state] == unknown) abort();
+
+		ip = graph[I + state];
+	}
+
+	return false;
+}
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+// at here, the buckets are filled with values    and we are finished with accumulation!
+
+
+
+
+
+ //  if this is nonzero,  the user supplied a   too low  safety_factor   parameter, 
+				//   (in relation to the acc_ins they gave), and we need to alert them about it!!
+
+
+
+
+
+
+
+
+/* off 1space
+
+
+                "edit duplication_count 1"
+        "\n",
+                "edit execution_limit 1000000"
+        "\n",   
+                "edit fea 3000"
+        "\n",   
+                "print all"
+        "\n",
+                "generate_pruned"
+        "\n",
+                "prune"
+        "\n",
+                "import"
+        "\n",
+                "count"
+        "\n",
+                "mfea 3 4 0"
+        "\n",
+                "count"
+        "\n",
+                "next"
+        "\n",
+                "vertical 10000000 2000000 60 5 7 40 2 10"          // usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> 
+        "\n",
+                "count"
+        "\n",
+                "next"
+        "\n",
+                "vertical 100000000 10000000 60 5 7 25 2 10"
+        "\n",
+                "count"
+        "\n",
+                "next"
+        "\n",
+                "vertical 600000000 25000000 60 5 7 15 2 10"
+        "\n",
+                "count"
+        "\n",
+
+
+*/
+
+
+/*
+
+else if (is(*command, "fast_expansion", "fx")) {       // fx <timestep_count(nat)> <too_wide_xw_thr(nat)> <viz(0/1)>
+		const nat timestep_count = (nat) atoi(command[1]);
+		if (not timestep_count) { 
+			printf("error: bad timestep_count supplied.\n");
+			goto next;
+		}
+
+		const nat too_wide_threshold = (nat) atoi(command[2]);
+		if (not too_wide_threshold) { 
+			printf("error: bad too_wide_threshold supplied.\n");
+			goto next;
+		}
+
+		const nat viz = (nat) atoi(command[3]);
+
+		for (nat z = 0; z < d->in.count; z++) {
+			printf("\r z=%llu / zcount=%llu   :          ", z, d->in.count);fflush(stdout);
+			memcpy(p.graph, d->in.z + p.graph_count * z, sizeof(nat) * p.graph_count);
+
+			for (nat origin = 0; origin < p.operation_count; origin++) {
+				if (p.graph[4 * origin] != 3) continue;
+
+				if (not is_fast_expansion(timestep_count, too_wide_threshold, origin, p, p.graph, p.execution_limit, viz)) 
+					push_z_to_list(&d->out, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+				else    push_z_to_list(&d->bad, d->in.z + z * p.graph_count, d->in.dt + z * 16, p.graph_count);
+			}
+		}
+		printf("--> found %llu / pruned %llu  :  after fast expansion  pruning metric.\n", d->out.count, d->bad.count);
+	} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+else if (is(*command, "generate", "g")) 		generate_raw_D_space(p, &d);
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+/*
+
+	.op = { ###:per, ###:per, ...  }, .lge = {  .l = { ###:per, ###:per,  ... }    .g = { ###:per, ###:per,  ... }   }
+			1, 2, 3, 5, 6					6					6
+
+
+				printf("i = %llu\n", i);
+				printf("p.graph[i] = %llu\n", p.graph[i]);
+				printf("p.operation_count = %llu\n", p.operation_count);
+				fflush(stdout);
+
+
+
+*/
+
+
+
+  // el   1,000,000      //   PRT  999,500         ( 1,000,000 - 500)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// each (index pasta) destination in that graph { 
+// pasta < graph_count          
+// for each element in the adj list
+// r  // in the range 0..graph_count
+// graph[r]      // aka destination 
+// in the range of 0..duplcount
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+		printf("is_candidate? = %s\n", 			"true");
+		puts("");
+		printf("mcal_index == mcal_length? %s\n", 	mcal_index == p.mcal_length ? "true" : "false");
+		printf("good_expansion? %s\n", 			type == good_expansion ? "true" : "false" );
+		printf("complete? %s\n", 			complete ? "true" : "false");
+		printf("all? %s\n", 				all ? "true" : "false" );
+		printf("er >= req? %s\n\n", 			er_count >= p.required_er_count ? "true" : "false" );
+*/
+
+
+
+
+
+
+
+
+
+
+
+/*
+			// previous code for horizontal line:      (too brute force!)
+
+
+			for (nat counter = 0, i = 0; i < max_array_size; i++) {
+				if (modes[i]) counter++; else counter = 0;
+				if (counter > p.max_acceptable_run_length) { BT_h++; goto backtrack; }
+				if (not array[i]) break;
+			}
+		*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//  set   p.scratch    to the minimum el,   set    p.execution_limit to  the maximum el,    
+//  and set p.step to the stride width/size, to go through el possibilities at.
+//  set p.window_width to the maximum number of characters to print per line, 
+// set  p.scale   to the  maximum total candidate_count   that you expect to see.
+
+// note: the plot/graph is printed downwards, and sideways. 
+
+
+
+
+
+
+
+//  set   p.scratch    to the minimum fea,   set    p.FEA to  the maximum fea,    
+//  and set p.step to the stride width/size, to go through fea possibilities at.
+//  set p.window_width to the maximum number of characters to print per line, 
+// set  p.scale   to the  maximum total candidate_count   that you expect to see.
+
+// note: the plot/graph is printed downwards, and sideways. 
+
+
+
+
 

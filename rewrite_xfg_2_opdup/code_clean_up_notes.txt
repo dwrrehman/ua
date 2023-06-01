@@ -1,0 +1,10 @@
+code clean up notes:
+---------------------
+
+
+	- make a operation utilization gs  metric    to check if it executed all ops 
+
+
+	- 
+
+
