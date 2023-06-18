@@ -36,8 +36,9 @@ static const nat max_array_size = 4096;   		// effectively infinity.  (xfg uses 
 
 static const nat max_mcal_length = 16;                  // maximum mcal length you can supply.
 
-static const nat unknown = 123456789;			// some bogus value, that represents a hole. 
-static const nat deadstop = unknown;			// same as above. used to mark the unknown as impossible to specify.
+static const nat unknown  = 123456789;			// some bogus value, that represents a hole. 
+static const nat deadstop = 965656565;			// used to mark a hole as impossible to specify or execute.  (eg, > case of 6.
+static const nat deceased = 111111111;                  // this is filled in when we have tried all possible options for a hole. NOT an unknown. its different.
 
 static const nat _ = unknown;
 static const nat X = deadstop;
@@ -49,10 +50,9 @@ static const nat unique_count = sizeof operations / sizeof(nat);
 
 static const char* input_commands[] = {
 
-
          	"edit duplication_count 1"
         "\n",
-                "edit execution_limit 1000000"
+                "edit execution_limit 10000000"
         "\n",   
                 "edit fea 3000"
         "\n",   
@@ -81,9 +81,97 @@ static const char* input_commands[] = {
 
 
 
+
+/* 
+
+// usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> 
+
+
+
+
+
+		    v 10000000 3000000 60 5 7 40 1 10
+
+			prt     acc
+
+
+
+
+
+ // usage:   v_opt <ic> <base> <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> <debug_prints>
+
+
+
+		v_opt 130000001 1 9999999 3000000 60 5 7 40 1 10
+			 ^     ^     ^     ^
+			ic    base  prt    acc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> 
+
+
+
+
+
+		    v 10000000 2900000 60 5 7 40 1 10
+
+			prt     acc
+
+
+
+
+
+ // usage:   v_opt <ic> <base> <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> <debug_prints>
+
+
+
+		v_opt 12900000 200000 100000 1500000 60 5 7 40 1 10 
+			ic      base    prt    acc
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// old:
+
+
+
+
 /*
 
 		    v 10000000 2900000 60 5 7 40 1 10                         // usage:   v <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> 
+
+			prt     acc
 
 
 		v_opt 12900000 200000 100000 1500000 60 5 7 40 1 10            // usage:   v_opt <ic> <base> <prt> <ac> <mpp> <cthr> <br> <sf> <vlc> <ric> <viz> <debug_prints>
@@ -338,7 +426,7 @@ static inline void clear_screen(void) { printf("\033[2J\033[H"); }
 static const nat input_count = sizeof input_commands / sizeof *input_commands;
 static nat input_index = 0;
 
-static int debug_pause() {
+static int debug_pause(void) {
 	printf("continue? ");
 	fflush(stdout);
 	if (input_index >= input_count) return getchar();
@@ -379,7 +467,7 @@ static void get_datetime(char datetime[16]) {
 
 
 
-static void print_datetime() {
+static void print_datetime(void) {
 	char dt[16] = {0};
 	get_datetime(dt);
 	printf("%s\n", dt);
@@ -641,7 +729,17 @@ static void print_lifetime(nat origin, struct parameters p, nat* graph, const na
 		if (array[n] == array[pointer]) state = 3;
 
 		if (graph[I + state] == unknown) {
-			printf(red "ERROR: found hole:  graph[%llu + %llu]\n" reset, I, state);
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = UNKNOWN\n" reset, I, state);
+			break;
+		}
+
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			break;
+		}
+
+		if (graph[I + state] == deceased) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
 			break;
 		}
 
@@ -665,20 +763,23 @@ static inline bool is_complete(nat* graph, nat operation_count) {
 	for (nat i = 0; i < operation_count * 4; i += 4) {
 		if (graph[i + 0] == 6) {
 
-			if (graph[i + 1] == unknown) return false;
+			if (graph[i + 1] == unknown or graph[i + 1] == deceased) return false;
 			// <<deadstop>>
-			if (graph[i + 3] == unknown) return false;
+			if (graph[i + 3] == unknown or graph[i + 3] == deceased) return false;
 
 		} else {
-			if (graph[i + 1] == unknown) return false;
-			if (graph[i + 2] == unknown) return false;
-			if (graph[i + 3] == unknown) return false;
+			if (graph[i + 1] == unknown or graph[i + 1] == deceased) return false;
+			if (graph[i + 2] == unknown or graph[i + 2] == deceased) return false;
+			if (graph[i + 3] == unknown or graph[i + 3] == deceased) return false;
 		}
 	}
 
 	return true;
 }
 
+
+
+/*
 static inline bool uses_all_operations(nat* graph, nat operation_count) {
 	nat ops[7] = {0};
 
@@ -697,6 +798,9 @@ static inline bool uses_all_operations(nat* graph, nat operation_count) {
 	return false;
 }
 
+
+
+
 static nat determine_expansion_type(nat* array, nat n, nat required_le_width) { 
 
 	if (array[0] == 1) return firstone_expansion;
@@ -710,6 +814,12 @@ static nat determine_expansion_type(nat* array, nat n, nat required_le_width) {
 	if (last < required_le_width) return short_expansion;
 	return good_expansion;
 }
+
+*/
+
+
+
+
 
 static void destroy_list(struct list* list) {
 	free(list->z);  list->z = NULL;
@@ -913,7 +1023,7 @@ static void read_command(const char** command, struct parameters* p, struct sear
 	else printf("error: unknown sub-command: %s\n", command[1]);
 }
 
-static void print_pruning_metric_menu() {
+static void print_pruning_metric_menu(void) {
 	printf("unimplemented. look at the source code. lol\n");
 }
 
@@ -974,7 +1084,20 @@ static bool has_horizontal_line(
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 
-		if (graph[I + state] == unknown) abort();
+		if (graph[I + state] == unknown) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = UNKNOWN\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deceased) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
+			abort();
+		}
 
 		ip = graph[I + state];
 	}
@@ -1030,7 +1153,21 @@ static bool increments_star_zero_alot(
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 
-		if (graph[I + state] == unknown) abort();
+		if (graph[I + state] == unknown) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = UNKNOWN\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deceased) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
+			abort();
+		}
+
 
 		ip = graph[I + state];
 	}
@@ -1098,7 +1235,21 @@ static bool ERs_in_same_spot(
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 
-		if (graph[I + state] == unknown) abort();
+		if (graph[I + state] == unknown) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = UNKNOWN\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deceased) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
+			abort();
+		}
+
 
 		ip = graph[I + state];
 	}
@@ -1171,7 +1322,21 @@ static bool ERs_in_two_spots_alternately(
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 
-		if (graph[I + state] == unknown) abort();
+		if (graph[I + state] == unknown) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = UNKNOWN\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deceased) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
+			abort();
+		}
+
 
 		ip = graph[I + state];
 	}
@@ -1213,7 +1378,6 @@ static bool goes_out_of_array_bounds(
 					} else printf(blue "█" reset);
 				}
 				puts("");
-				
 			}
 			pointer = 0;
 			memset(modes, 0, sizeof modes);
@@ -1237,7 +1401,34 @@ static bool goes_out_of_array_bounds(
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 
-		if (graph[I + state] == unknown) abort();
+
+		if (graph[I + state] == unknown) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = UNKNOWN\n" reset, I, state);
+			printf("found hole at: graph[%llu + %llu] == unknown\n", I, state);
+			printf("[origin = %llu]\n", origin);
+			print_graph_as_adj(p.graph, p.graph_count);
+			print_graph_as_z_value(p.graph, p.graph_count); puts("");
+			printf("found hole at instruction: [e = %llu]\n", e);
+			print_lifetime(origin, p, p.graph, 100000000, 0);
+			abort();
+		}
+
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deceased) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
+			printf("found hole at: graph[%llu + %llu] == unknown\n", I, state);
+			printf("[origin = %llu]\n", origin);
+			print_graph_as_adj(p.graph, p.graph_count);
+			print_graph_as_z_value(p.graph, p.graph_count); puts("");
+			printf("found hole at instruction: [e = %llu]\n", e);
+			print_lifetime(origin, p, p.graph, 100000000, 0);
+			abort();
+		}
+
 		ip = graph[I + state];
 	}
 
@@ -1513,7 +1704,21 @@ static bool has_vertical_line(
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 
-		if (graph[I + state] == unknown) abort();
+		if (graph[I + state] == unknown) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = UNKNOWN\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deceased) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
+			abort();
+		}
+
 		ip = graph[I + state];
 	}
 
@@ -1810,9 +2015,6 @@ static bool has_vertical_line__batch_opt(
 
 			if (debug_prints) print_buckets(buckets, bucket_count);
 			if (debug_prints) printf("threshold info: \n\n\t\ttimestep_count: %llu,  required_data_size: %llu\n\n", timestep_count, required_data_size);
-			
-			timestep_count = 0;
-
 
 			nat stats[2][2][2] = {0};
 			nat vertical_line_count = 0, good_count = 0;
@@ -1858,6 +2060,18 @@ static bool has_vertical_line__batch_opt(
 			}
 
 			base += pre_run + acc_ins; 
+
+			scratch_count = 0;
+			memset(scratch, 0, max_array_size * sizeof(struct bucket));
+
+			memset(buckets, 0, max_array_size * sizeof(struct bucket));
+			for (nat b = 0; b < bucket_count; b++) {
+				buckets[b].index = b;
+				buckets[b].uid = b;
+			}
+
+			timestep_count = 0;
+			ia_count = 0;
 			batch_count++;
 		}
 
@@ -1866,7 +2080,21 @@ static bool has_vertical_line__batch_opt(
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 
-		if (graph[I + state] == unknown) abort();
+		if (graph[I + state] == unknown) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = UNKNOWN\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deceased) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
+			abort();
+		}
+
 		ip = graph[I + state];
 	}
 
@@ -2551,6 +2779,53 @@ static void synthesize_graph(struct parameters p, struct search_data d) {
 
 }
 
+
+
+
+
+
+
+/* 	 --------- smart graph stuff ----------
+
+
+		if (is_complete(graph, p.operation_count)) {
+			// we can do the COMPLETE-TYPE smart graph analysis AND THE INCOMPLETE-TYPE.
+		} else {
+			// we can do the INCOMPLETE-TYPE smart graph analysis. 
+		}
+*/
+
+	//  if (is_complete(graph, p.operation_count) and not completed_on) completed_on = t;
+
+
+
+
+			/*
+			nat first = 0, last = n;
+			for (;last--;) if (array[last]) break;
+			last++;
+			for (;first < last; first++) if (not array[first]) break; 
+			if (last != first) abort(); // holes should be impossible now!  because of the no-skip-over-zero-modnat's principle.
+
+			if (last < p.required_le_width) return short_expansion;
+			return good_expansion;
+			*/
+
+
+			// )) { printf("hello world...?\n"); BT_exp++; goto backtrack; } else { printf("other stuff...?\n"); }
+
+
+
+
+
+
+
+
+
+
+
+
+// gp
 static nat generate_pruned_D_subspace(const nat origin, struct parameters p, struct search_data* d) {
 
 	const nat n = p.FEA;
@@ -2568,45 +2843,27 @@ static nat generate_pruned_D_subspace(const nat origin, struct parameters p, str
 	nat candidate_count = 0, candidate_capacity = 0, candidate_timestamp_capacity = 0;
 	nat executed_count = 0, stack_count = 0, mcal_index = 0, last_mcal_op = 0, er_count = 0, RER_er_at = 0, RER_counter = 0, 
 	    OER_er_at = 0, OER_counter = 0, R0I_counter = 0, H_counter = 0, found_count = 0, backtracked = 0, total = 0, executed_instruction_count = 0;
-
 	nat BT_fea = 0, BT_ns0 = 0, BT_pco = 0, BT_zr5 = 0, BT_zr6 = 0, BT_ndi = 0, BT_mcal = 0, 
-	    BT_rer = 0, BT_oer = 0, BT_r0i = 0, BT_h = 0, BT_exp = 0, BT_com = 0;
-
+	    BT_rer = 0, BT_oer = 0, BT_r0i = 0, BT_h = 0, BT_exp = 0, BT_com = 0, BT_all = 0;
 
 	nat completed_on = 0;
-	if (is_complete(graph, p.operation_count) and not completed_on) completed_on = executed_count;
-
 begin:  
 	total++;
 	while (executed_count < p.execution_limit) {
 
-
-
-
-/* 	 --------- smart graph stuff ----------
-
-
-		if (is_complete(graph, p.operation_count)) {
-			// we can do the COMPLETE-TYPE smart graph analysis AND THE INCOMPLETE-TYPE.
-		} else {
-			// we can do the INCOMPLETE-TYPE smart graph analysis. 
-		}
-*/
-
-
 		if (is_complete(graph, p.operation_count) and not completed_on)  completed_on = executed_instruction_count;
 
+		if (executed_count >= expansion_check_timestep) {   
+
+			if (array[0] == 1) { BT_all++; goto backtrack; } 
+
+			if (er_count < p.required_er_count) { BT_exp++; goto backtrack; } 
+
+			if (mcal_index < p.mcal_length) { BT_mcal++; goto backtrack; } 
 
 
-		if (executed_count == expansion_check_timestep) {
-			const nat type = determine_expansion_type(array, n, p.required_le_width);
-			if (not (er_count >= p.required_er_count and
-				type == good_expansion and  
-				mcal_index == p.mcal_length 
-			)) { BT_exp++; goto backtrack; }
+			
 		}
-
-
 
 		const nat I = ip * 4;
 		const nat op = graph[I];
@@ -2664,8 +2921,6 @@ begin:
 			modes[pointer] = 1;
 
 			/// {NSVLPM HERE}
-
-
 		}
 		executed_instruction_count++;
 		executed_count++;
@@ -2683,7 +2938,17 @@ begin:
 			last_mcal_op = op;
 		}
 
-		if (graph[I + state] != unknown) goto next_ins;
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deceased) {
+			// printf(yellow "WARNING: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
+			//abort();
+		}
+
+		if (graph[I + state] != unknown and graph[I + state] != deceased) goto next_ins;
 
 		nat option_count = 0; 
 		generate_options(
@@ -2715,18 +2980,31 @@ begin:
 
 		graph[I + state] = stack[stack_count - 1].options[0];
 		executed_count = 0;
+
 	next_ins:   ip = graph[I + state];
+
 	}
 
 	found_count++;
 
 	const bool complete = is_complete(graph, p.operation_count);
-	const bool all = uses_all_operations(graph, p.operation_count);
 
-	if (not complete or not all) { BT_com++; goto backtrack; }
+	if (complete) {    //  BT_com++; goto backtrack;
+
+		const double thr = 0.90 * (double) p.execution_limit;
+		const nat thrn = (nat) thr;
+
+		printf("is_complete() == true,    on   [completed_on = %llu]    %s\n", completed_on, completed_on > (thrn) ? "***************" : " ");
+
+	}  else {
+		//		printf("is_complete() == false\n");
+	}
+
+ //   
 
 
-	
+	// const bool all = uses_all_operations(graph, p.operation_count);
+	// if (not all) { BT_all++; goto backtrack; }
 
 
 	char dt[16] = {0}; get_datetime(dt);
@@ -2743,7 +3021,7 @@ begin:
 	}
 	memcpy(candidate_timestamps + 16 * candidate_count, dt, 16);
 
-	  // printf("is_complete() == true,    on   [executed_instruction_count = %llu]    %s\n", completed_on, completed_on > 100000 ? "***************" : " ");
+	
 
 	candidate_count++;
 
@@ -2760,11 +3038,11 @@ begin:
 			"   pco = %llu, fea = %llu, ndi = %llu \n" 
 			"   mcal = %llu rer = %llu, oer = %llu \n"
 			"   r0i = %llu, h   = %llu, exp = %llu \n"
-			"   com = %llu \n"
+			"   com = %llu  all = %llu \n"
 			" }\n\n",  
 				BT_ns0, BT_zr5, BT_zr6, BT_pco, 
 				BT_fea, BT_ndi, BT_mcal, BT_rer, 
-				BT_oer, BT_r0i, BT_h, BT_exp, BT_com
+				BT_oer, BT_r0i, BT_h, BT_exp, BT_com, BT_all
 		);
 		
 		print_graph_as_adj(graph, p.graph_count);
@@ -2784,10 +3062,10 @@ backtrack:
 	// revert:
 	memcpy(array, stack[stack_count - 1].array_state, sizeof(nat) * max_array_size);
 	memcpy(modes, stack[stack_count - 1].modes_state, sizeof(nat) * max_array_size);
-	pointer = stack[stack_count - 1].pointer;
-	mcal_index = stack[stack_count - 1].mcal_index;
+
 	executed_instruction_count = stack[stack_count - 1].executed_instruction_count;
 	completed_on = stack[stack_count - 1].completed_on;
+	mcal_index = stack[stack_count - 1].mcal_index;
 	er_count = stack[stack_count - 1].er_count;
 	last_mcal_op = stack[stack_count - 1].last_mcal_op;
 	RER_counter = stack[stack_count - 1].RER_counter;
@@ -2796,6 +3074,7 @@ backtrack:
 	OER_er_at = stack[stack_count - 1].OER_er_at;
 	R0I_counter = stack[stack_count - 1].R0I_counter;
 	H_counter = stack[stack_count - 1].H_counter;
+	pointer = stack[stack_count - 1].pointer;
 
 	if (stack[stack_count - 1].try < stack[stack_count - 1].option_count - 1) {
 		stack[stack_count - 1].try++;
@@ -2805,13 +3084,14 @@ backtrack:
 		executed_count = 0;
 		goto begin;
 
-	} else {		
-		graph[4 * stack[stack_count - 1].ip + stack[stack_count - 1].state] = unknown;
+	} else {
+		graph[4 * stack[stack_count - 1].ip + stack[stack_count - 1].state] = deceased;
 		if (not stack_count) abort();
 		stack_count--;
 		if (not stack_count) goto done;
 		goto backtrack;
 	}
+
 
 done:
 
@@ -2837,12 +3117,12 @@ done:
 			"   pco = %llu, fea = %llu, ndi = %llu \n" 
 			"   mcal = %llu rer = %llu, oer = %llu \n"
 			"   r0i = %llu, h   = %llu, exp = %llu \n"
-			"   com = %llu \n"
+			"   com = %llu  all = %llu \n"
 			" }\n\n",  
 				BT_ns0, BT_zr5, BT_zr6, BT_pco, 
 				BT_fea, BT_ndi, BT_mcal, BT_rer, 
-				BT_oer, BT_r0i, BT_h, BT_exp, BT_com
-			);
+				BT_oer, BT_r0i, BT_h, BT_exp, BT_com, BT_all
+		);
 
 	free(stack);
 	free(candidates);
@@ -2850,6 +3130,45 @@ done:
 
 	return candidate_count;
 }
+
+
+
+
+
+
+/*
+
+		stack[stack_count].try = 0;
+		stack[stack_count].option_count = option_count;
+
+
+		stack[stack_count].executed_instruction_count = executed_instruction_count;
+		stack[stack_count].completed_on = completed_on;	
+		stack[stack_count].mcal_index = mcal_index;
+		stack[stack_count].ip = ip;
+		stack[stack_count].state = state;
+		stack[stack_count].er_count = er_count;
+		stack[stack_count].last_mcal_op = last_mcal_op;
+		stack[stack_count].RER_counter = RER_counter;
+		stack[stack_count].RER_er_at = RER_er_at;
+		stack[stack_count].OER_counter = OER_counter;
+		stack[stack_count].OER_er_at = OER_er_at;
+		stack[stack_count].R0I_counter = R0I_counter;
+		stack[stack_count].H_counter = H_counter;
+		stack[stack_count].pointer = pointer;
+
+		memcpy(stack[stack_count].array_state, array, sizeof(nat) * max_array_size);
+		memcpy(stack[stack_count].modes_state, modes, sizeof(nat) * max_array_size);
+*/
+
+
+
+
+
+
+
+
+
 
 static nat generate_pruned_D_space(struct parameters p, struct search_data* d) {
 	
@@ -2995,7 +3314,7 @@ static void plot_fea(struct parameters p) {
 	puts("[done]");
 }
 
-static void print_help_menu() {
+static void print_help_menu(void) {
 
 printf("available commands:\n"
 
@@ -3036,7 +3355,7 @@ printf("available commands:\n"
 "\n");
 }
 
-int main() {
+int main(void) {
 
 	static struct search_data d = {0};
 
@@ -5200,7 +5519,20 @@ static bool single_fea(
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 
-		if (graph[I + state] == unknown) abort();
+		if (graph[I + state] == unknown) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = UNKNOWN\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deadstop) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DEADSTOP\n" reset, I, state);
+			abort();
+		}
+
+		if (graph[I + state] == deceased) {
+			printf(red "ERROR: found hole:  graph[%llu + %llu] = DECEASED\n" reset, I, state);
+			abort();
+		}
 
 		ip = graph[I + state];
 	}

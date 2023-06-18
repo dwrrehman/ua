@@ -63,14 +63,14 @@ int main() {
 	puts("testing an algorithm to compute iterators of nested for loops (in general) without actually using nested for loops.");
 
 
-	printf("0^0 = %llu\n", exponentiate(0, 0));
-	printf("1^0 = %llu\n", exponentiate(1, 0));
-	printf("0^1 = %llu\n", exponentiate(0, 1));
-	printf("2^3 = %llu\n", exponentiate(2, 3));
-	printf("3^4 = %llu\n", exponentiate(3, 4));
-	printf("4^7 = %llu\n", exponentiate(4, 7));
+//	printf("0^0 = %llu\n", exponentiate(0, 0));
+//	printf("1^0 = %llu\n", exponentiate(1, 0));
+//	printf("0^1 = %llu\n", exponentiate(0, 1));
+//	printf("2^3 = %llu\n", exponentiate(2, 3));
+//	printf("3^4 = %llu\n", exponentiate(3, 4));
+//	printf("4^7 = %llu\n", exponentiate(4, 7));
 
-	// NF(0, 5);
+	NF(10, 6);
 }
 
 

@@ -1,14 +1,17 @@
 #!/bin/zsh
 
 if [ "release" = "$1" ]; then
-	clang -Ofast x.c -o run
+	clang -Weverything -Wno-declaration-after-statement -Ofast x.c -o run
 
 elif [ "clean" = "$1" ]; then
 	rm -rf run
 	rm -rf run.dSYM
 
+elif [ "dr" = "$1" ]; then 
+	clang -Ofast -Weverything -Wno-poison-system-directories -Wno-vla -Wno-gnu-folding-constant -Wno-declaration-after-statement -fsanitize=address,undefined x.c -o run -ferror-limit=5
+
 elif [ "" = "$1" ]; then 
-	clang -g -O0 -Weverything -Wno-poison-system-directories -Wno-strict-prototypes -Wno-vla -Wno-gnu-folding-constant -Wno-declaration-after-statement -fsanitize=address,undefined x.c -o run -ferror-limit=4
+	clang -g -O0 -Weverything -Wno-poison-system-directories -Wno-vla -Wno-gnu-folding-constant -Wno-declaration-after-statement -fsanitize=address,undefined x.c -o run -ferror-limit=5
 
 else 
 	echo "build: unknown target: $1"
