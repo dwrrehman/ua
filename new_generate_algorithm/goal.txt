@@ -1,0 +1,29 @@
+Goal :  202306294.153317:
+------------
+
+	the point of this new version of the genrate_pruned algorithm   is to allow for partial graphs to appear in the output z list!
+
+
+	this is because we don't want to actually prune graphs based on is_complete.   that is not sound in general, i think. or at least,  i don't know what EL you would supply to get all possibilities..  and looking over the previous D-valued search spaces, by having a node not be used at all (which also frees us from having to look over the possible node's operation!) is better than looking over previous D valued search spaces by having a node be an exact duplicate  (in all trich outcomes) (and operation)   as another node. 
+
+
+
+	so this will increase the search space size,   but also shrink it a bit in a certain way,    and generally is more correct  in general, i think. 
+
+
+				hopefully 
+
+
+
+
+	so yeah
+
+
+
+lets code it up now!
+
+
+
+
+
+	
