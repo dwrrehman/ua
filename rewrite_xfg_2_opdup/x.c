@@ -3229,7 +3229,7 @@ done:;
 				if (p.should_print) {
 					printf("[origin = %llu]\n", origin);
 					print_graph_as_adj(p.graph, p.graph_count);
-					print_nats(p.mcal, p.mcal_length); 
+					print_nats(p.mcal, p.mcal_length);
 					puts("\n");
 
 					if (p.combination_delay == 1) debug_pause();

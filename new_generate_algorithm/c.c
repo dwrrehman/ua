@@ -1,75 +1,155 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h>    // rewrite of the generate algorithm, called "nfgp". 
 #include <string.h>
-#include <iso646.h>
+#include <iso646.h>    // written on 2307031.171603 by dwrr
+#include <unistd.h>
 #include <stdbool.h>
 #include <stdint.h>
 
 typedef uint64_t nat;
-const nat unknown = 11223344556677;
+static const nat unknown  = 11223344556677;
+static const nat deadstop = 90909090909090;
+static const nat _ = unknown;
+static const nat X = deadstop;
 
-const nat _ = unknown;
+static const nat unique_operation_count = 5;
+static const nat unique_operations[unique_operation_count] = {1, 2, 3, 5, 6};
+
+struct option {
+	nat option;
+	nat position;
+};
+
+static void print_graph(nat* graph, nat graph_count) {
+	for (nat i = 0; i < graph_count; i++) {
+		if (graph[i] == X) printf("_");
+		else if (graph[i] == _) printf("HOLE");
+		else printf("%llu", graph[i]);
+	}
+	putchar(10);
+}
+
+static bool is_increment(nat a) { return a < 3; }
+static bool is_reset(nat a) { return a >= 3; }
+
+static bool graph_analysis(nat* graph, nat operation_count) {
+	for (nat index = 0; index < operation_count; index++) {
+
+		if (	graph[4 * index + 0] == 4 and 
+			graph[4 * index + 2]
+		) return true;
+	}
+	return false;
+}
 
 int main(void) {
+
+	const nat D = 1;      //    1-space
+
+	const nat max_operation_count = 5 + D;	
+	const nat max_graph_count = 4 * max_operation_count;
+
+	nat operation_count = 5;
+	nat graph_count = 4 * operation_count;
+	nat* graph = calloc(max_graph_count, sizeof(nat));
+
+	const nat initial_hole_count = 9;
+	const nat _63RRXFG[5 * 4] = {
+		0,  1, 4, _,      // 3
+		1,  0, _, _,      // 6 7 
+		2,  0, _, _,      // 10 11
+		3,  _, _, _,      // 13 14 15
+		4,  2, 0, _,      // 19                    // note, 6.> is 0 by force, 
+					///ie deadstop, is never executed, doesnt matter what it is!
+	};
+
+	memcpy(graph, _63RRXFG, graph_count * sizeof(nat));
+
+	nat m1_pointer = 0;
+	nat m1_array_count = initial_hole_count;
+        struct option* m1_array = calloc(3 * max_operation_count, sizeof(struct option));
 	
+	m1_array[0].position = 3;
+	m1_array[1].position = 6; 
+	m1_array[2].position = 7;
+	m1_array[3].position = 10;
+	m1_array[4].position = 11;
+	m1_array[5].position = 13; 
+	m1_array[6].position = 14;
+	m1_array[7].position = 15;
+	m1_array[8].position = 19;
 
-	const nat operation_count = 2 + 3; 		// 2 starting nodes, and 4 extension nodes!
-	const nat graph_count = 4 * operation_count;
-	nat* graph = calloc(graph_count, sizeof(nat));
+	for (nat i = 0; i < m1_array_count; i++) 
+		graph[m1_array[i].position] = m1_array[i].option;
+	
+	nat m2_pointer = 0;
+	nat m2_array_count = 0;
+	struct option* m2_array = calloc(D + 1, sizeof(struct option));
 
-	nat partial_graph[graph_count ] = {
-/*0*/		0,    1,  [0],  1,
-/*1*/		1,   [0],  0,   0,
-/*2*/	       [0],  [1], [2],  _,
-/*3*/		_,    _,   _,   _,
-/*4*/		_,    _,   _,   _,
-/*5*/		_,    _,   _,   _,
-/*6*/		_,    _,   _,   _,
-	}
+	const nat display_rate = 25;
+	nat raw_counter = 0, maybe_counter = 0, good_counter = 0;
 
-
-	memcpy(graph, partial_graph, graph_count * sizeof(nat));
-
-        const nat m = 134;
-        
-
-
-
-        nat* nf_array = calloc((size_t) n + 1, sizeof(nat)), i = 0;
-
-        goto print;
-
-
-
-
-
+	goto print;
 
 loop:
-	if (nf_array[i] < m) goto increment;
-        if (i < n) goto reset;
+	if (m1_array[m1_pointer].option < operation_count - 1) goto m1_increment;
+	if (m1_pointer < m1_array_count - 1) goto m1_reset;
+loop2:
+	if (not m2_array_count) goto check_if_done;
+	if (m2_array[m2_pointer].option < unique_operation_count - 1) goto m2_increment;
+	if (m2_pointer < m2_array_count - 1) goto m2_reset;
+	check_if_done: if (m2_array_count == D) goto done;
 
-        goto done;
+	m2_array[m2_array_count++] = (struct option) {.option = 0, .position = graph_count + 0};
+	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 1};
+	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 2};
+	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 3};
+	operation_count++;
+	graph_count = 4 * operation_count;
+	m2_array[m2_pointer].option = 0; 
+	goto thing_blah;
 
+m2_increment:
+	m2_array[m2_pointer].option++;
+	graph[m2_array[m2_pointer].position] = m2_array[m2_pointer].option;
+	thing_blah: m2_pointer = 0;
+	m1_array[m1_pointer].option = 0;
+	goto print;
 
+m2_reset:
+	m2_array[m2_pointer].option = 0; 
+	m2_pointer++;
+	goto loop2;
 
-increment:    
+m1_increment:
+	m1_array[m1_pointer].option++;
+	graph[m1_array[m1_pointer].position] = m1_array[m1_pointer].option;
+	print: 	m1_pointer = 0; 
 
-	nf_array[i]++;
-	i = 0; 
+	if (not (raw_counter & ((1 << display_rate) - 1))) {
+		for (nat i = 0; i < m1_array_count; i++) printf("%llu ", m1_array[i].option); 
+		printf("  -  ");
+		for (nat i = 0; i < m2_array_count; i++) printf("%llu ", m2_array[i].option); 
 
-print:  
-	for (int _ = 0; _ < n + 1; _++) printf("%d ", nf_array[_]); putchar(10);
+		printf("  ---->  z = ");
+		print_graph(graph, graph_count);
+	}
 
+	raw_counter++;
+	if (graph_analysis(graph, operation_count)) goto loop;
+	maybe_counter++;
+	// {execute instructions using array of size 3 here!! (SFEA)}
+	// {execute instructions using the graph here!}
+	// if (bad) goto loop;
+	good_counter++;
+	// write the good z value to a candidates_list!
         goto loop;
-
-reset:
-	nf_array[i] = 0; 
-	i++; 
-
+m1_reset:
+	m1_array[m1_pointer].option = 0; 
+	m1_pointer++; 
 	goto loop;
 
-done:
-	puts("looked at all possibilites!");
+done:	printf("looked at [%llu:%llu:%llu] poss!\n", raw_counter, maybe_counter, good_counter);
 }
 
 
@@ -79,92 +159,117 @@ done:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// printf("continue to %llu-space? (ENTER) ", operation_count - 5);
+	// if (getchar() == ' ') goto done;   // for debug for now
+
+
+
+
+
+
+
 /*
-	202306294.155521:
+
+
+202307031.153108: 
+
+
+turns out there are   exactly        1,953,125   (ie, 5^9) possibilities       in raw 0 space!
+
+					thats right.           ZERO space. 
+
+
+									not 1 or 2 space. 0.
 
 
 
-	the first thing that this algorithm needs to do, is look over all posibilities  (edge connections)  between nodes that exist in the graph, already!! don'tttttt add any more new nodes YET.
+			soooooooo
+
+	
+yeah 
+				the search spaces
 
 
-	then, once youve done that,  
-			then you are clear to add a new node,         and you need to keep track of the fact that you have to look over all possible operations for that node!
+
+							are 
+								somewhatttt bigger..
 
 
-										so thats like, part of the possible fill-in's for that hole. 
+		lol
 
-										it includes looking at the hole's operations.
+	
 
+
+
+
+
+
+
+
+
+202307031.163338:
+
+CRAP
+
+uhhhh
+
+		uhhhhhhhhhhhhh
+
+				soooo 1-space search space size 
+
+					was just calculated to be 
+
+
+			
+
+			         10,885,864,805
+
+
+
+		which, 
+			if you want to calculate the raw size, 
+
+
+
+			it will be:
+
+
+
+
+
+		0sp:	5^9 = 1,953,125	
+			
+		1sp:	5 * (6^12) = 10,883,911,680
 
 		
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-FACT: 
-
-		the nodes in the graph,     are filled in           as a strick stack, 
-
-			ie, you never have a case, where you fill in     the     address=4  node       beforeeeeee filling in the address 2 or 3 node. 
-
-				ie, if you fill in a node with address          k          then   all nodes at addresses   0...k-1 are filled.
-
-
-
-
-				so yeah, its a stack
-	cool 
-
-
-
-
-	
-
-
-	ALSOO
-
-			FACT:
-
-								once you start filling in a particular node, 
-
-
-						there is no going back,   on it 
-
-
-						ie,   you can never make that node's operation        "unknown"     ie      _
-
-
-					again 
-
-								ie, once you increase your node count in the graph,   it stays increased, 
-
-						and you continue with that many nodes, always,    from there. 
-
-
-
-
-
-
 		
+		0+1sp:		= 1,953,125 + 10,883,911,680
 
-	
-okay 
-	so 
-	i think this is starting form 
+				=  10,885,864,805
 
-
-
-	
 
 		
 
@@ -172,6 +277,140 @@ okay
 
 
 
+
+hypotheticallyyy 
+
+	2 space will end up being around:
+
+
+	5^2 * (7^15) = 118,689,037,748,575  ie  118 trillion z values. 
+
+						in the raw space.
+
+
+			...
+
+	i don't think we are ever going to actually go through that lol.
+
+	so.. 
+
+			WELLLLLLLLL        AT LEAST  WITH    a single threaded application.
+
+
+		soooooo basicallyyyyyyy the only way we have of actually going over 2sp 
+
+	is to PARELLELIZE THIS to the EXTREME. 
+
+	unless we want to wait like MONTHSSS for it to finish. 
+
+
+
+so yeah.
+thats fun lol.
+
+
+0sp  ->  1sp   ->   2sp
+     A          B
+
+
+A =  x5000  increase
+
+B =  x10000  increase
+
+....
+
+
+so yeah basically 3 space is going to be 
+
+	somewhat large.
+
+just slightly 
+
+just 3sp would be:
+
+	(5^3) * (8^18)  =  2,251,799,813,685,248,000
+		
+so about about 2 quintillion
+
+ish
+
+
+
+
+yeahhhhhhh hopefully it doesnt come to that
+
+
+lol
+
+
+
+
+
+
+
+202307031.170434:
+
+
+	okay, so implementing the graph an. deadstop rule, 
+
+
+		ie, enforcing that 6.> == 0    always. 
+
+
+
+		takes the origin 1sp  size of 10,885,864,805
+
+
+
+			and ticks it down to 8709082469
+
+
+		ie, 
+
+			8,709,082,469      we pruned about 2 billion z values.
+
+						niceeeee
+
+
+			okay, thats progress i guesss
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 
 */
 
@@ -188,1093 +427,55 @@ okay
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-0 0 0
-1 0 0
-2 0 0
-0 1 0
-1 1 0
-2 1 0
-0 2 0
-1 2 0
-2 2 0
-0 0 1
-1 0 1
-2 0 1
-0 1 1
-1 1 1
-2 1 1
-0 2 1
-1 2 1
-2 2 1
-0 0 2
-1 0 2
-2 0 2
-0 1 2
-1 1 2
-2 1 2
-0 2 2
-1 2 2
-2 2 2
-
-0 0 0 0
-1 0 0 0
-2 0 0 0
-0 1 0 0
-1 1 0 0
-2 1 0 0
-0 2 0 0
-1 2 0 0
-2 2 0 0
-0 0 1 0
-1 0 1 0
-2 0 1 0
-0 1 1 0
-1 1 1 0
-2 1 1 0
-0 2 1 0
-1 2 1 0
-2 2 1 0
-0 0 2 0
-1 0 2 0
-2 0 2 0
-0 1 2 0
-1 1 2 0
-2 1 2 0
-0 2 2 0
-1 2 2 0
-2 2 2 0
-
-
-0 0 0 1
-1 0 0 1
-2 0 0 1
-0 1 0 1
-1 1 0 1
-2 1 0 1
-0 2 0 1
-1 2 0 1
-2 2 0 1
-0 0 1 1
-1 0 1 1
-2 0 1 1
-0 1 1 1
-1 1 1 1
-2 1 1 1
-0 2 1 1
-1 2 1 1
-2 2 1 1
-0 0 2 1
-1 0 2 1
-2 0 2 1
-0 1 2 1
-1 1 2 1
-2 1 2 1
-0 2 2 1
-1 2 2 1
-2 2 2 1
-
-
-
-
-
-0 0 0 2
-1 0 0 2
-2 0 0 2
-0 1 0 2
-1 1 0 2
-2 1 0 2
-0 2 0 2
-1 2 0 2
-2 2 0 2
-0 0 1 2
-1 0 1 2
-2 0 1 2
-0 1 1 2
-1 1 1 2
-2 1 1 2
-0 2 1 2
-1 2 1 2
-2 2 1 2
-0 0 2 2
-1 0 2 2
-2 0 2 2
-0 1 2 2
-1 1 2 2
-2 1 2 2
-0 2 2 2
-1 2 2 2
-2 2 2 2
-
-
-0 0 0 0 0
-1 0 0 0 0
-2 0 0 0 0
-0 1 0 0 0
-1 1 0 0 0
-2 1 0 0 0
-0 2 0 0 0
-1 2 0 0 0
-2 2 0 0 0
-0 0 1 0 0
-1 0 1 0 0
-2 0 1 0 0
-0 1 1 0 0
-1 1 1 0 0
-2 1 1 0 0
-0 2 1 0 0
-1 2 1 0 0
-2 2 1 0 0
-0 0 2 0 0
-1 0 2 0 0
-2 0 2 0 0
-0 1 2 0 0
-1 1 2 0 0
-2 1 2 0 0
-0 2 2 0 0
-1 2 2 0 0
-2 2 2 0 0
-
-
-0 0 0 1 0
-1 0 0 1 0
-2 0 0 1 0
-0 1 0 1 0
-1 1 0 1 0
-2 1 0 1 0
-0 2 0 1 0
-1 2 0 1 0
-2 2 0 1 0
-0 0 1 1 0
-1 0 1 1 0
-2 0 1 1 0
-0 1 1 1 0
-1 1 1 1 0
-2 1 1 1 0
-0 2 1 1 0
-1 2 1 1 0
-2 2 1 1 0
-0 0 2 1 0
-1 0 2 1 0
-2 0 2 1 0
-0 1 2 1 0
-1 1 2 1 0
-2 1 2 1 0
-0 2 2 1 0
-1 2 2 1 0
-2 2 2 1 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-//
-//	nat n = operation_count - 1;          n, as used in the nf,     corresponds to this. 
-//
-//      nat m = ????;   
-
-///////////////////
-
-nf(1, 1):
-
-	 0 0
-	 0 1
-	 1 0
-	 1 1
-
-
-/////////////////
-
-
-
+// push new elements to m1a and m2a here!!!!
+	// until we reach the max number of elements in m1/m2
 
 
 
 /*
  o#   :=      {          the sequential values  of     an M_2  variable/hole.
 
-		0   	mean "i++",    (1)
-		1 	means "(*n)++" (2)
-		2 	means "(*i)++" (3)
-		3 	means "i = 0"  (5)
-		4 	means "*n = 0" (6)
+		0   ->	mean "i++",    (1)
+		1   ->	means "(*n)++" (2)
+		2   ->	means "(*i)++" (3)
+		3   ->	means "i = 0"  (5)
+		4   ->	means "*n = 0" (6)
 
 	}
+*/
+
+
+/*
+
+	the partial graph we are going to test with:
+
+
+	the 63R:     (RRXFG ("R")    with   6->3         as opposed to 3->6     (which is an alternate valid formulation of the R)
+
+		{
+
+		op   *n<*i  *n>*i *n==*i
+		=============================
+
+			1,  2, 3, _,
+			3,  0, _, _,
+			2,  0, _, _,
+			6,  1, X, _,
+			5,  _, _, _,
+
+		}
+
+
+
+
+	0	1,  2, 3, _,
+	1	3,  0, _, _,
+	2	2,  0, _, _,
+	3	6,  1, X, _,
+	4	5,  _, _, _,
 
 
 */
-	
-//	------------------------------
-//	        o#    <    >    =
-//	------------------------------
-/*0*/		0,    1,  [0],  1,
-/*1*/		1,   [0],  0,   0,
-/*2*/	       [0],  [1], [2], [0],
-/*3*/		_,   _, _, _,
-/*4*/		_,   _, _, _,
-/*5*/		_,   _, _, _,
-/*6*/		_,   _, _, _,
-//	------------------------------
-
-
-	variable:  type=addresss   ->    LRS(operation_count) = M_1          <---------- THIS  MODULUS   INCREASES OVER TIME!!!!!!
-
-	variable:  type=operation   ->    LRS(unique_oc) = M_2
-
-
-
-
-
-
-all of the holes that are of type address, 
-
-
-	they will be at the beginning of the nf_array      will all be of type     address    ie,  have modulus of    M_1
-
-
-		the values at the end of the nfarray    will be of type operation,   and have modulus M_2
-
-
-	
-
-
-when you add a new operation, 
-
-
-		you add               ONE new hole/variable/element-in-the-nfarray      of type    M_2
-
-				and you addd     THREE    variables/etc     of type   M_1
-
-
-
-
-		upon  addding those three holes     of type   M_1         you set     the selected option  for all of them,  
-					to be  
-								0 
-
-										ie, the first option. 
-
-
-				they are NOTTTTT added into graph, as still unknowns. you immediately fill them. 
-
-					upon   adding their spot  into the nfarray. 
-
-
-
-
-
-	nf array:
-
-
-		[M_1] [M_1] [M_1] [M_1] [M_1] [M_1] [M_1]      [M_2] [M_2] [M_2] [M_2] [M_2] 
-
-
-
-
-when we add variables, 
-
-
-		we add them like this:
-
-
-
-		[M_1] [M_1] [M_1] [M_1] [M_1] [M_1] [M_1] [(NEW)M_1] [(NEW)M_1] [(NEW)M_1]      [M_2] [M_2] [M_2] [M_2] [M_2] [(NEW)M_2]
-
-
-	
-
-
-	notice how i added exactlyyyy 3   M_1's   and    1    M_2           the M_2 was put at the veryyyyy end,    definitely 
-
-			but the M_1's were put at the end of the the M_1 variable section.  those all always belong together. 
-
-
-
-			
-			
-
-
-legend:
-
-	(tX){ blah }      is the timestep that we added    the varibles given by blah    into the nfarray.
-	t0   is done before the algorithm starts.
-
-
-
-
-
-
-(t0){ [M_1] [M_1] }     (t1){ [M_2] [M_1] [M_1] [M_1] }   (t2){ [M_2] [M_1] [M_1] [M_1] }   (t3){ [M_2] [M_1] [M_1] [M_1] }
-				0     0     0     0 
-				init of zeros!!!
-				never _  ever again!
-				
-
-								note:	-------> just from a performance standpoint, 
-
-									this approach is better than the   M-grouped approach, i think. 
-
-
-
-	we run the algorithm, after t0,  
-
-	looking at all posibilies, for    these two little holes
-
-
-	and then, when we exhausted all of those, 
-		we arrive at t1, 
-
-
-			where we add 4 more new posibilies. 
-
-
-					AND NOTE:    ALL THESE POSS.  WILL HAVE     INIT  VALUES OF 0         
-
-						ie, at first option. 
-
-
-								ANDDDD they are never empty    (ie, unknown, ever again)
-
-
-	
-							
-
-
-			
-		
-
-
-
-
-
-
-
-
-FACT:	
-
-		when we change the length of   nfarray 
-
-
-
-
-  (ie, add   4  new holes,     (3 of the M_1's,   (which will internally use the new value of M_1!!!! becase now M_1  has been incremented because we added an M_2 variable.)
-
-											and 1 of the M_2 variables.  because we need to try all possible operations this node could be. 
-)
-
-
-
-
-		then it is the case that           THE ENTIRE NFARRAY     will be 0's.        ie,  all options are at their first option, 
-							
-						so thus, its fine that we literally need to increment M_1. 
-
-
-
-							because all existing options, are    0    (ie, at first option!)
-
-
-								so    0 is valid for all M_1  values,   no matter what the new M_1 is. 
-
-
-
-
-				cool
-
-
-
-
-
-
-
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//	------------------------------
-//	        o#    <    >    =
-//	------------------------------
-/*0*/		0,    1,  [0],  1,
-/*1*/		1,   [0],  0,   0,
-/*2*/	       [0],  [1], [2], [0],
-/*3*/		_,   _, _, _,
-/*4*/		_,   _, _, _,
-/*5*/		_,   _, _, _,
-/*6*/		_,   _, _, _,
-//	------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-graph A  :
-
-//	------------------------------
-//	        o#    <    >    =
-//	------------------------------
-/*0*/		0,    1,  [0],  1,
-/*1*/		1,   [2],  0,   0,
-/*2*/	       [3],  [1], [2], [0],
-/*3*/		_,   _, _, _,
-/*4*/		_,   _, _, _,
-/*5*/		_,   _, _, _,
-/*6*/		_,   _, _, _,
-//	------------------------------
-
-
------------------------------------------------------------------------
-
-graph B:
-
-//	------------------------------
-//	        o#    <    >    =
-//	------------------------------
-/*0*/		0,    1,  [0],  1,
-/*1*/		1,   [2],  0,   0,
-/*2*/	       [3],  [1], [2], _, 
-/*3*/		_,   _, _, _,
-/*4*/		_,   _, _, _,
-/*5*/		_,   _, _, _,
-/*6*/		_,   _, _, _,
-//	------------------------------
-
-
-
-
-
-
-
-
-
-#
-# #
-#   #
-# # # 
-  # # #
-#   # #
-#   # #
------------------------
-  # # # #
-#   # #
-#   # #
-  # # # # #  ##   # #
-#   # #
-  # # # ##   # #
-#   # # # # # 
-  # # # ##   # #
-#   # #
-  # # # ##   # #
-#   # #
-  # # # #          
-[--------EL---------]
-
-
-
-
-
-
-
-
-
-
-
-
-two types of partial graphs:
-
-
-	type 1               
-
-/*0*/		0,    1,  [0],  1,
-/*1*/		1,   [2],  0,   0,
-/*2*/	       [3],  [1], [2], [0], 
-
-
-
-
-
-
-
-	type 2
-
-/*0*/		0,    1,  [0],  1,
-/*1*/		1,   [2],  0,   0,
-/*2*/	       [3],  [1], [2],  _, 
-
-
-
-
-
-
-
-
-
-currently, the algorithm can only generate type 1 graphs. 
-
-
-	the algorithm needs to be execution based, 
-
-	and allow for type 2  graphs, i think. 
-
-
-	those two points are related!
-
-
-
-
-i think the way it will work is to	only push an M_1  variable       to the nfarray 
-
-				when we execute it. 
-
-
-	i think. 
-
-	
-
-			until then, 
-
-								that var    is       _            ie, unknown. 
-
-
-
-
-			when we psuh it, 
-
-
-			it no longer ever becomes   unknown, ever. 
-
-
-
-
-		note, 
-
-
-
-			we must keep track of the number of      M_2  var's that we add 
-
-	because that tells the modulus   for all of our  M_1 vars.
-
-
-
-	
-		and when we reach all posibilities for all executed holes      ie          2 2 2 2 2 2 2  
-
-
-						ie, all existing nfarray   values/variables    are at their modulus,  (it won't be the same for all variables of course! some are of type M_1, some of type M_2) 
-
-
-
-
-				so when we reach the state of all poss being at their max, 
-				then
-
-					we NEED to push the M_2 var    onto the back of the  nfarray
-
-
-
-							ANDDDDD at that point, is when the modulus of   all M_1 variables, gets incrmented, 
-						because its always the number of non-unknown-valued operations in the graph.   (ie, nodes in the graph)
-
-
-
-
- 
-
-						but then, from there,	    we only ever add an   M_1  variable,   if we execute it,
-
-								
-
-
-		
-
-
-202306294.173517:
-
-ACTUALLYYYYY
-
-	
-
-
-	turns out there is a problem with this approach!!!
-
-
-			this would cause the NF array to change during looking through all poss   fro the current length of the nf array 
-
-
-
-			and the way that the nfarray works,   
-				we always look over all possibilies, 
-
-
-							THENNNN only after we done that          do we expandddd the nfarray, 
-
-							ie, push (possibly multiple) new variables onto the end of the array. 
-
-
-								
-
-
-
-
-	so
-
-				
-
-
-
-
-						yaeh, having the M_1    be pushed    via execution, 
-
-
-			
-							basically means the array is changing   while we are looking at a particular possibility 
-
-
-
-
-						which, 
-
-								note 
-
-
-								execution   only ever occurs while looking at a paricular poss, 
-
-
-									and so 
-
-
-
-							yeah, thats a completely different situation then what we are wanting to be the caes, 
-								for when we add a new variable. 
-
-	
-
-
-							we want it to be that we finihsed the last poss set    ie, nfarr configuration, 
-										ie,   we finished    2 2 2 2 2 2 
-
-											
-									
-
-										in order to add a new var, 
-
-									
-
-
-								notttttt
-
-										we are still working on one of poss, 
-
-										and we found it executed a hole during running the el ins 
-								
-
-
-
-
-
-this problem seems pretty fundedental... idk. 
-
-
-
-		but yeah, doesnt seem good for adding in  an execution-based    component to this algorithm,... 
-
-		i think we mightttt have to go without it, if we don't see a solution... 
-
-
-	
-
-
-	but even, just having this whole algorithm        as a non-execution based approach, 
-	is already good, because we know it gets alll possibilities that are possible to have,
-			
-
-					and most importantly        can generate partial type1 graphs!
-
-
-
-
-	
-	so yeah thats good 
-
-
-	kinda
-
-
-
-
-
-
-
-	202306294.180532:
-
-	WaIT
-
-				i found a bug   
-
-
-				the bug is that 
-
-
-						you don't want duplicate possibilies,  
-
-
-						  when you exchange the order of  two given operations!
-
-
-
-					thats something we were accounting for, with the previous gp algirothm,  namely, the part where we look over the different operation possibilies,  looking only at the unique combinations,     in the genrate_D_space()  function,
-
-
-
-		so yeah 
-
-					that algorithm treats        [5 5 6]       the exact same   as     [5 6 5]
-
-
-						and   thus ends up deleting  the combination     5 6 5  
-
-
-
-							because its superfluous,  and would just add to the number of z values, needlessly 
-
-
-
-			we need to make the current nfgp  algorithm we are working on, here,    deal with that uniquifcation too 
-
-
-
-
-					how?
-
-
-
-
-			.. 
-						i think to start, we need to pull out all M_2 variables from the nfarray, 
-
-
-
-					they should be in their own array, 
-
-
-
-			which we change   
-
-							according to          a         NOT nf algorithm 
-
-
-									ie, 
-
-
-
-
-								a different algordithm, that is able to  
-
-
-										given a array state,   return the next array state that is one of the unique combinations of values of variables  in the array
-
-
-
-
-
-
-				ie, its like a "already pruned"  version of   nf       where the pruned possibilies are things like  
-
-
-
-						[5 6 5]
-
-
-
-
-				those possibilies        are not even outputted by this        "combination-nf  algorithm"
-
-
-
-
-
-						which is useful 
-
-
-
-
-
-
-				then, 
-					we can just put all the M_2 variables     in their own array, 
-
-
-
-					and we can   apply            M2_array = NEXT_combination-nf(M2_array);
-
-
-
-						each time we roll over    the M_1 array, 
-
-
-
-					and then, when the M2_array rolls over too,        (ie,   when we reach the last combination! given from NEXT_combination-nf()
-
-)
-							then, 
-
-
-								we do the thing where we add    1  M_2 to M2_array, 
-								and add 3 M_1   to the M1_array, 
-
-
-
-			and note, 
-
-
-
-						the ACTUAL nf alrogihtmh 
-
-
-
-
-								ONLY OPERATES        ON         the M1_array. 
-
-
-
-										only. 
-
-
-
-
-	
-
-
-
-		
-
-
-so 
-	ie, 
-
-				there is no        single monolithic    	nf array
-
-
-				there is only          two    nf-like  arrays 
-
-
-
-						one,  which is actually used by nf,         M1_array
-
-						and one, which is used by the NEXT_combination-nf() function,        M2_array
-
-
-							and NEXT_combination-nf()    is only called    when nf   reaches the maximum for all variables    in the M1_array.
-
-
-
-picture:
-
-
-
-		M1_array:                                                    M2_array:
-------------------------------------------------------------------------------------------------------------------
-
-		[M_1] [M_1] [M_1] [M_1] [M_1] [M_1] [M_1]                    [M_2] [M_2] [M_2] [M_2] [M_2] 
-
-
-
-
-
-
-
-
-
-pretty clear    i think 
-
-
-
-				this division will allow us to utilize the fact that     the order that the operations appear in the graph, 
-
-
-						is not important. 
-
-
-						what only matters is the actual connections. 
-
-
-
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-								
-
-
-
-		
-
-
-
-						
-
-
-
-
-
-
-		
-
-
-
-
-
-
-
-
-
-
-
-
-	 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
