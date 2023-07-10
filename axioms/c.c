@@ -13,7 +13,7 @@ struct pair { int first, second; };
 
 
 
-static inline void clear_screen() { printf("\033[2J\033[H"); }
+static inline void clear_screen(void) { printf("\033[2J\033[H"); }
 
 
 static int execute(int input, struct pair* function, int count) {
@@ -217,18 +217,6 @@ static void print_ints(const char* message, int* elements, int count) {
 
 
 
-static inline int unreduce(int* in, int length, int radix) {
-	int s = 0;
-
-	return s;
-}
-
-
-static inline void reduce(int* out, int length, int radix, int s) {
-	for (int i = 0; ) out[i] = s % 10
-}
-
-
 
 
 
@@ -236,6 +224,19 @@ static inline void reduce(int* out, int length, int radix, int s) {
 
 typedef unsigned long long nat;
 
+
+
+/*
+
+static inline int unreduce(int* in, int length, int radix) {
+	int s = 0;
+	return s;
+}
+
+
+static inline void reduce(int* out, int length, int radix, int s) {
+	for (int i = 0; ) out[i] = s % 10
+}
 
 
 
@@ -257,6 +258,7 @@ static inline void do_this_thing() {
 		}
 	}
 }
+*/
 
 
 
@@ -265,8 +267,7 @@ static inline void do_this_thing() {
 
 
 
-
-int main() {
+int main(void) {
 
 	srand((unsigned)time(0));
 	
@@ -309,15 +310,15 @@ loop:;
 
 
 	} else if (not strcmp(buffer, "check") or not strcmp(buffer, "c")) {
-		bool b = satisfies_all_axioms(elements, element_count, 
+		bool b = satisfies_all_axioms(	elements, element_count, 
 						increment, increment_count, 
 						reset, reset_count,
 						less, &less_count);
 		printf("result = %s\n", b ? "consistent" : "contradiction");
 
 
-	} else if (not strcmp(buffer, "bubbles") or not strcmp(buffer, "bubbles")) {
-		do_this_thing();
+//	} else if (not strcmp(buffer, "search") or not strcmp(buffer, "s")) {
+//		do_this_thing();
 	}
 	
 	else if (not strcmp(buffer, "add increment")) {
