@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <iso646.h>
+#include <stdbool.h>
 
 
 #ifdef __APPLE__
@@ -16,53 +18,23 @@
 #endif
 
 typedef uint64_t nat;
+static const nat debug = 0;
+
+#define lightblue "\033[38;5;67m"
+
+#define red   	"\x1B[31m"
+#define green   "\x1B[32m"
+#define yellow  "\x1B[33m"
+#define blue   	"\x1B[34m"
+#define magenta "\x1B[35m"
+#define cyan   	"\x1B[36m"
+#define bold    "\033[1m"
+#define reset 	"\x1B[0m"
+
 
 #define DATA_SIZE (1024 * 1024 * 1024 - 256)
 
-static const char *KernelSource = "\n" \
-"__kernel void square(                                                  \n" \
-"   __global unsigned int* input,                                       \n" \
-"   __global unsigned int* output,                                      \n" \
-"   const unsigned long count)                                          \n" \
-"{                                                                      \n" \
-"   int i = get_global_id(0);                                           \n" \
-"   if (i < count)                                                      \n" \
-"       output[i] = input[i] * input[i];                                \n" \
-"}                                                                      \n" \
-"\n";
- 
 
-
-
-
-/*       this is the code that turns a get_global_id   value into a     ("m1_array") m_1 hole fillings array       
-
-			which        we turn that m1_array into a graph,        which the current nfgp does, right now. 
-
-			
-
-
-	//   turns a z value into an array of options.  (of size hole count, n,      with each hole having m possible values. 
-													)
-
-
-
-	
-
-void reduce(vector out, nat s, nat radix, nat length) {
-    for (nat i = 0, p = 1; i < length; i++, p *= radix)
-        out[i] = (s / p) % radix;
-}
-
-
-
-
-
-
-
-
-
-*/
 
 
 static
@@ -142,15 +114,10 @@ switch(error) {
 }
  
 
-/*
 #define CaseReturnString(x) case x: return #x;
 
-static 
-
-const char *opencl_errstr(cl_int err)
-{
-    switch (err)
-    {
+static const char *opencl_errstr(cl_int err) {
+    switch (err) {
         CaseReturnString(CL_SUCCESS                        )                                  
         CaseReturnString(CL_DEVICE_NOT_FOUND               )
         CaseReturnString(CL_DEVICE_NOT_AVAILABLE           )
@@ -212,7 +179,70 @@ const char *opencl_errstr(cl_int err)
         default: return "Unknown OpenCL error code";
     }
 }
-*/
+
+
+
+
+
+
+#define check(statement) \
+	do {\
+		printf("opencl: calling: ");\
+		puts(#statement);\
+		err = statement;\
+		if (err != CL_SUCCESS) {\
+			printf("opencl: error:   ");\
+			puts(#statement);\
+        		printf("Error number: %d", err);\
+	        	printf(" : %s (\"%s\")\n", getErrorString(err), opencl_errstr(err));\
+			puts("[press enter to continue]");\
+			getchar();\
+		}\
+	} while(0);
+
+
+
+
+#define check_arg(statement, condition) \
+	do {\
+		printf("opencl: calling: ");\
+		puts(#statement);\
+		statement;\
+		if (!condition) {\
+			printf("opencl: error:   ");\
+			puts(#statement);\
+        		printf("Error number: %d", err);\
+	        	printf(" : %s (\"%s\")\n", getErrorString(err), opencl_errstr(err));\
+			puts("[press enter to continue]");\
+			getchar();\
+		}\
+	} while(0);
+
+
+
+
+static char* read_file(const char* filename) {
+	FILE* file = fopen(filename, "r");
+	if (not file) {
+		fprintf(stderr, bold red "error:" reset bold " ");
+		perror(filename);
+		fprintf(stderr, reset);
+		exit(1);
+	}
+	fseek(file, 0, SEEK_END);
+        size_t length = (size_t) ftell(file); 
+	char* text = calloc(length + 1, 1);
+        fseek(file, 0, SEEK_SET); 
+	fread(text, 1, length, file);
+	fclose(file); 
+
+	printf("info: file \"%s\": read %lu bytes\n", filename, length);
+	return text;
+}
+
+
+
+
 
 
 int main(void) {
@@ -279,232 +309,125 @@ int main(void) {
         free(devices);
     }
 
-    free(platforms);
-
-
-
-
+	free(platforms);
 	puts("[finished device info!]\n");
 
 
+	const char* file_contents = read_file("kernel.cl");
 
 
-    int err; 
-
-puts("calling: calloc"); 
-
-    unsigned int* data    = calloc(DATA_SIZE, sizeof(unsigned int));
+	int err = 0; 
+	puts("calling: calloc"); 
+	unsigned int* data    = calloc(DATA_SIZE, sizeof(unsigned int));
 	if (!data) {
 		printf("could not allocate memory using calloc, erroring...\n");
 		return 1;
 	}
-    unsigned int* results = calloc(DATA_SIZE, sizeof(unsigned int));
+	unsigned int* results = calloc(DATA_SIZE, sizeof(unsigned int));
 	if (!results) {
 		printf("could not allocate memory using calloc, erroring...\n");
 		return 1;
 	}
 
-    size_t global;
-    size_t local;
- 
-    cl_device_id device_id;
-    cl_context context;
-    cl_command_queue commands; 
-    cl_program program;
-    cl_kernel kernel; 
+	size_t global = 0;
+	size_t local = 0;
 
+	cl_device_id device_id;
+	cl_context context;
+	cl_command_queue commands; 
+	cl_program program;
+	cl_kernel kernel; 
+	cl_mem input, output;
 
-puts("calling: (filling up loop with random data/contents...)"); 
+	puts("calling: (filling up loop with random data/contents...)"); 
 
-    nat count = DATA_SIZE;
-    for (nat i = 0; i < count; i++)
-        data[i] = (unsigned int) rand();
-    
+	nat count = DATA_SIZE;
+	for (nat i = 0; i < count; i++) data[i] = (unsigned int) rand();
 
-
-
-
-
-puts("calling: clGetDeviceIDs");
-    err = clGetDeviceIDs(NULL, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
-    if (err != CL_SUCCESS)
-    {
-        printf("Error: Failed to create a device group!\n");
-	printf(" : %s\n", getErrorString(err));
-        return EXIT_FAILURE;
-    }
-
-
-
-
-
-
-
-
-
-
-puts("calling: clCreateContext");
-    context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
-    if (!context)
-    {
-        printf("Error: Failed to create a compute context!\n");
-	printf(" : %s\n", getErrorString(err));
-        return EXIT_FAILURE;
-    }
- 
-puts("calling: clCreateCommandQueue");
-    commands = clCreateCommandQueue(context, device_id, 0, &err);
-    if (!commands)
-    {
-        printf("Error: Failed to create a command commands!\n");
-	printf(" : %s\n", getErrorString(err));
-        return EXIT_FAILURE;
-    }
- 
-puts("calling: clCreateProgramWithSource");
-    program = clCreateProgramWithSource(context, 1, (const char **) & KernelSource, NULL, &err);
-    if (!program)
-    {
-        printf("Error: Failed to create compute program!\n");
-        printf(" : %s\n", getErrorString(err));
-	return EXIT_FAILURE;
-    }
- 
-puts("calling: clBuildProgram");
-    err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        size_t len;
-        char buffer[2048];
- 
-        printf("Error: Failed to build program executable!\n");
-        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
-        printf("%s\n", buffer);
-	printf(" : %s\n", getErrorString(err));
+	check(clGetDeviceIDs(NULL, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL));
+	check_arg(context = clCreateContext(0, 1, &device_id, NULL, NULL, &err), context);
+	check_arg(commands = clCreateCommandQueue(context, device_id, 0, &err), commands);
 	
-        exit(1);
-    }
-
-puts("calling: clCreateKernel"); 
-    kernel = clCreateKernel(program, "square", &err);
-    if (!kernel || err != CL_SUCCESS)
-    {
-        printf("Error: Failed to create compute kernel!\n");
-        printf(" : %s\n", getErrorString(err));
-	exit(1);
-    }
- 
-puts("calling: clCreateBuffer"); 
-    cl_mem input = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(unsigned int) * count, NULL, NULL);
-puts("calling: clCreateBuffer"); 
-    cl_mem output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(unsigned int) * count, NULL, NULL);
-    if (!input || !output)
-    {
-        printf("Error: Failed to allocate device memory!\n");
-        printf(" : %s\n", getErrorString(err));
-	exit(1);
-    }    
+	
+	check_arg(program = clCreateProgramWithSource(context, 1, (const char **) &file_contents, NULL, &err), program);
     
+	check(clBuildProgram(program, 0, NULL, NULL, NULL, NULL));
+	if (err != CL_SUCCESS) {
+		printf("Error: Failed to build program executable!\n");
+		size_t len = 0;
+		char buffer[2048];
+		clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &len);
+		printf("%s\n", buffer);
+		printf(" : %s\n", getErrorString(err));
+		puts("[press enter to continue]");
+		getchar();
+		exit(1);
+	}
 
+	check_arg(kernel = clCreateKernel(program, "execute_z_value", &err), kernel);
+	if (err != CL_SUCCESS) {
+		printf("Error: Failed to create execute_z_value kernel!\n");
+		printf(" : %s\n", getErrorString(err));
+		getchar();
+	}
+	
+	check_arg(input = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(unsigned int) * count, NULL, NULL), input);
+	check_arg(output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(unsigned int) * count, NULL, NULL), output);
 
+	clock_t begin = clock();
+	check(clEnqueueWriteBuffer(commands, input, CL_TRUE, 0, sizeof(unsigned int) * count, data, 0, NULL, NULL));
+	check(clSetKernelArg(kernel, 0, sizeof(cl_mem), &input));
+	check(clSetKernelArg(kernel, 1, sizeof(cl_mem), &output));
+	check(clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), &local, NULL));
 
+	global = count;
 
-
-clock_t begin = clock();
-
-
-puts("calling: clEnqueueWriteBuffer"); 
-    err = clEnqueueWriteBuffer(commands, input, CL_TRUE, 0, sizeof(unsigned int) * count, data, 0, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        printf("Error: Failed to write to source array!\n");
-        printf(" : %s\n", getErrorString(err));
-	exit(1);
-    }
- 
-printf("calling: clSetKernelArg natsize=(%lu)\n", sizeof(unsigned long)); 
-    err = 0;
-    err |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &input);
-    err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &output);
-    err |= clSetKernelArg(kernel, 2, sizeof(unsigned long), &count);
-    if (err != CL_SUCCESS)
-    {
-        printf("Error: Failed to set kernel arguments! %d\n", err);
-        printf(" : %s\n", getErrorString(err));
-	exit(1);
-    }
- 
-puts("calling: clGetKernelWorkGroupInfo"); 
-    err = clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), &local, NULL);
-    if (err != CL_SUCCESS)
-    {
-        printf("Error: Failed to retrieve kernel work group info! %d\n", err);
-        printf(" : %s\n", getErrorString(err));
-	exit(1);
-    }
- 
-    
-    global = count;
-puts("calling: clEnqueueNDRangeKernel"); 
-
-	printf("info: local_group_size = %lu, global_group_size = %lu\n", 
-		local, global);
-
-    err = clEnqueueNDRangeKernel(commands, kernel, 1, NULL, &global, &local, 0, NULL, NULL);
-    if (err)
-    {
-        printf("Error: Failed to execute kernel!\n");
-	printf(" : %s\n", getErrorString(err));
-
-        return EXIT_FAILURE;
-    }
- 
-    
-    clFinish(commands);
- 
-puts("calling: clEnqueueReadBuffer"); 
-    err = clEnqueueReadBuffer( commands, output, CL_TRUE, 0, sizeof(unsigned int) * count, results, 0, NULL, NULL );  
-    if (err != CL_SUCCESS)
-    {
-        printf("Error: Failed to read output array! %d\n", err);
-        printf(" : %s\n", getErrorString(err));
-	exit(1);
-    }
-    
+	printf("info: local_group_size = %lu, global_group_size = %lu\n",  local, global);
+	check(clEnqueueNDRangeKernel(commands, kernel, 1, NULL, &global, &local, 0, NULL, NULL));
+	clFinish(commands);
+	check(clEnqueueReadBuffer(commands, output, CL_TRUE, 0, sizeof(unsigned int) * count, results, 0, NULL, NULL ));
 
 	clock_t end = clock();
 	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 	printf("spent %5.5lf seconds on the gpu/opencl...\n", time_spent);
 
-
-
-    puts("calling: (verifying results manually...)"); 
-
-    nat correct = 0;
-    for (nat i = 0; i < count; i++) {
-        if (results[i] == data[i] * data[i]) correct++;
-	else {
-		printf("incorrect values! expected %u but obtained %u...\n", 
-				data[i] * data[i], results[i]);
-		break;
+	puts("calling: (verifying results manually...)"); 
+	nat correct = 0;
+	for (nat i = 0; i < count; i++) {
+		if (results[i] == data[i] * data[i]) correct++;
+		else {
+			printf("incorrect values! expected %u but obtained %u...\n", data[i] * data[i], results[i]);
+			break;
+		}
 	}
-    }
 
-    printf("Computed '%llu/%llu' correct values!\n", correct, count);
+	printf("Computed '%llu/%llu' correct values!\n", correct, count);
+	puts("calling: clRelease*****"); 
 
+	clReleaseMemObject(input);
+	clReleaseMemObject(output);
+	clReleaseProgram(program);
+	clReleaseKernel(kernel);
+	clReleaseCommandQueue(commands);
+	clReleaseContext(context);
 
-    
-puts("calling: clRelease*****"); 
-
-    clReleaseMemObject(input);
-    clReleaseMemObject(output);
-    clReleaseProgram(program);
-    clReleaseKernel(kernel);
-    clReleaseCommandQueue(commands);
-    clReleaseContext(context);
- 
-    return 0;
+	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

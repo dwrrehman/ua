@@ -9,7 +9,7 @@ elif [ "clean" = "$1" ]; then
 	rm -rf run.dSYM
 
 elif [ "" = "$1" ]; then 
-	clang -g -O0 -Weverything -Wno-poison-system-directories -fsanitize=address,undefined main.c -o run
+	clang -g -O0 -Weverything -Wno-poison-system-directories -fsanitize=address,undefined c.c -o run
 
 else 
 	echo "build: unknown target: $1"
