@@ -1,47 +1,37 @@
 #include <stdio.h>
 #include <stdlib.h>    // rewrite of the generate algorithm, called "nfgp". 
-#include <string.h>
-#include <iso646.h>    // written on 2307031.171603 by dwrr
+#include <string.h>    // a rewrite of that rewrite called srnfgp, sub-range nfgp. 
+#include <unistd.h>    // used for parellelizing the nfgp across mulitple machines!!
+#include <iso646.h>    // rewritten on 202308152.195947 by dwrr.
 #include <unistd.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <iso646.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <ctype.h>
 #include <time.h>
-#include <sys/time.h> 
-#include <termios.h>
 #include <math.h>
 #include <errno.h>
+#include <sys/time.h> 
+#include <termios.h>
 
-#define reset    "\x1B[0m"
-#define red      "\x1B[31m"
-#define green    "\x1B[32m"
+#define reset "\x1B[0m"
+#define red   "\x1B[31m"
+#define green   "\x1B[32m"
+#define blue   "\x1B[34m"
 #define yellow   "\x1B[33m"
-#define blue   	 "\x1B[34m"
 // #define magenta  "\x1B[35m"
 #define cyan     "\x1B[36m"
 
+typedef int8_t byte;
 typedef uint64_t nat;
-static const nat unknown  = 11223344556677;
-static const nat deadstop = 90909090909090;
-static const nat _ = unknown;
-static const nat X = deadstop;
 
-static const nat unique_operation_count = 5;
-static const nat unique_operations[unique_operation_count] = {1, 2, 3, 5, 6};
+static const byte unique_operations[5] = {1, 2, 3, 5, 6};
 
 enum pruning_metrics {
-	PM_fea, PM_ns0, PM_pco, 
+	PM_fea, PM_ns0, PM_pco,
 	PM_zr5, PM_zr6, PM_ndi, 
 	PM_rer, PM_oer, PM_r0i, 
 	PM_h,   PM_f1e, PM_erc,
 	PM_ric, PM_nsvl, PM_eda,
-
 	PM_count
 };
 
@@ -53,39 +43,64 @@ static const char* pm_spelling[] = {
 	"PM_ric", "PM_nsvl", "PM_eda",
 };
 
+static const byte _ = 0;
 
-
-struct parameters {
-	nat execution_limit;
-	nat array_size;
-	nat rer_count;
-	nat oer_count;
-	nat required_er_count;
-	nat max_acceptable_consecutive_incr;
-	nat max_acceptable_run_length;
-	nat expansion_check_timestep;
-
-	nat starting_base;
-	nat pre_run;
-	nat acc_ins;
-	nat mpp;
-	nat counter_thr;
-	nat blackout_radius;
-	nat safety_factor;
-	nat vertical_line_count_thr;
-	nat required_ia_count;
-	nat viz;
+static const byte _63R[5 * 4] = {
+	0,  1, 4, _,      //        3
+	1,  0, _, _,      //     6  7 
+	2,  0, _, _,      //    10 11
+	3,  _, _, _,      // 13 14 15
+	4,  2, 0, _,      //       19
 };
+
+static const nat _63R_hole_count = 9;
+static const byte _63R_hole_positions[_63R_hole_count] = {3, 6, 7, 10, 11, 13, 14, 15, 19};
+
+
+static const byte D = 1;       // the duplication count.
+
+static const nat display_rate = 10;
+static const bool debug_prints = 0;           // delete me!
+static const nat viz = 0;
+
+static const byte operation_count = 5 + D;
+static const byte graph_count = 4 * operation_count;
+static const byte initial = _63R_hole_count;              // delete me!!!
+static const byte hole_count = initial + 4 * D;
+
+static const nat execution_limit = 100000000;
+static const nat array_size = 3000;
+static const nat rer_count = 40;
+static const nat oer_count = 80;
+static const nat required_er_count = 6;
+static const nat max_acceptable_consecutive_incr = 50;
+static const nat max_acceptable_run_length = 7;
+static const nat expansion_check_timestep = 10000;
+
+static const nat starting_base = 0;
+static const nat pre_run = 10000000;
+static const nat acc_ins = 3000000;
+static const nat mpp = 60;
+static const nat counter_thr = 5;
+static const nat blackout_radius = 7;
+static const nat safety_factor = 30;
+static const nat vertical_line_count_thr = 1;
+static const nat required_ia_count = 10;
+
+
+static byte* graph = NULL;
+static nat* array = NULL;
+static bool* modes = NULL;
+static bool* executed = NULL; 
+static struct bucket* buckets = NULL;
+static struct bucket* scratch = NULL;
+
+static nat counts[PM_count] = {0};
 
 struct list {
 	nat count;
 	nat* z;
 	char* dt;
-};
-
-struct option {
-	nat option;
-	nat position;
 };
 
 struct bucket {
@@ -96,41 +111,16 @@ struct bucket {
 	nat is_moving;
 };
 
+static void print_graph(void) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); putchar(10); }
 
-
-static nat* array = NULL;
-static bool* modes = NULL;
-static struct bucket* buckets = NULL;
-static struct bucket* scratch = NULL;
-static bool* edge_was_executed = NULL; 
-
-static nat counts[PM_count] = {0};
-
-
-
-
-static void print_graph(nat* graph, nat graph_count) {
-	for (nat i = 0; i < graph_count; i++) {
-		if (graph[i] == X) printf("_");
-		else if (graph[i] == _) printf("HOLE");
-		else printf("%llu", graph[i]);
-	}
-	putchar(10);
-}
-
-/*
 static void get_datetime(char datetime[32]) {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	struct tm* tm_info = localtime(&tv.tv_sec);
 	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
 }
-*/
 
-// static bool is_increment(nat a) { return a < 3; }
-// static bool is_reset(nat a) { return a >= 3; }
-
-static bool graph_analysis(nat* graph, nat operation_count) {
+static bool graph_analysis(void) {
 	for (nat index = 0; index < operation_count; index++) {
 
 		if (	graph[4 * index + 0] == 4 and 
@@ -140,6 +130,15 @@ static bool graph_analysis(nat* graph, nat operation_count) {
 	return false;
 }
 
+static void print_counts(void) {
+	printf("printing pm counts:\n");
+	for (nat i = 0; i < PM_count; i++) {
+		if (i and not (i % 4)) puts("");
+		printf("%6s: %8llu\t\t", pm_spelling[i], counts[i]);
+	}
+	puts("");
+	puts("[done]");
+}
 
 static nat compute_xw(nat* a, const nat n) {
 	nat i = 0;
@@ -187,14 +186,10 @@ static nat get_max_moving_bucket_uid(struct bucket* local_scratch, const nat scr
 	return max_bucket.uid;
 }
 
+static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 
-static bool debug_prints = 0;
-
-
-static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters p, bool should_print_pm, nat graph_count) {
-
-	const nat n = p.array_size;
-	const double mpp_ratio = (double) p.mpp / 100.0;
+	const nat n = array_size;
+	const double mpp_ratio = (double) mpp / 100.0;
 	const double discard_window = (1.0 - mpp_ratio) / 2.0;
 
 	memset(array, 0, (n + 1) * sizeof(nat));
@@ -202,12 +197,14 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 	memset(buckets, 0, (n + 1) * sizeof(struct bucket));
 	memset(scratch, 0, (n + 1) * sizeof(struct bucket));
 
-	memset(edge_was_executed, 0, graph_count * sizeof(bool));
+	memset(executed, 0, graph_count * sizeof(bool));
 	
-	nat pointer = 0, ip = origin;
-	nat a = PM_count;
+	byte ip = origin;
+	byte 	last_mcal_op = 0;
 
-	nat 	last_mcal_op = 0,    	er_count = 0, 
+	nat a = PM_count;
+	nat pointer = 0;
+	nat 	er_count = 0, 
 		RER_er_at = 0, 		RER_counter = 0, 
 	    	OER_er_at = 0, 		OER_counter = 0, 
 		R0I_counter = 0,     	H_counter = 0;
@@ -217,18 +214,18 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 		buckets[b].uid = b;
 	}
 
-	nat base = p.starting_base, timestep_count = 0, ia_count = 0, batch_count = 0, scratch_count = 0;
+	nat base = starting_base, timestep_count = 0, ia_count = 0, batch_count = 0, scratch_count = 0;
 
 	nat e = 0;
-	for (; e < p.execution_limit; e++) {
+	for (; e < execution_limit; e++) {
 
-		if (e >= p.expansion_check_timestep) {   
+		if (e >= expansion_check_timestep) {   
 			if (array[0] == 1) 			{ a = PM_f1e; goto bad; }
-			if (er_count < p.required_er_count) 	{ a = PM_erc; goto bad; }
+			if (er_count < required_er_count) 	{ a = PM_erc; goto bad; }
 		}
 
-		const nat I = ip * 4;
-		const nat op = unique_operations[graph[I]];
+		const byte I = ip * 4;
+		const byte op = unique_operations[graph[I]];
 
 		if (op == 1) {
 			if (pointer == n) 	{ a = PM_fea; goto bad; } 
@@ -242,21 +239,21 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 
 			// rer:
 			if (RER_er_at == pointer) RER_counter++; else { RER_er_at = pointer; RER_counter = 0; }
-			if (RER_counter == p.rer_count) { a = PM_rer; goto bad; }
+			if (RER_counter == rer_count) { a = PM_rer; goto bad; }
 
 			// oer:
 			if (	pointer == OER_er_at or 
 				pointer == OER_er_at + 1) OER_counter++;
 			else { OER_er_at = pointer; OER_counter = 0; }
-			if (OER_counter == p.oer_count) { a = PM_oer; goto bad; }
+			if (OER_counter == oer_count) { a = PM_oer; goto bad; }
 
 			
 			if (*modes) R0I_counter++; else R0I_counter = 0;
-			if (R0I_counter > p.max_acceptable_consecutive_incr) { a = PM_r0i; goto bad; }
+			if (R0I_counter > max_acceptable_consecutive_incr) { a = PM_r0i; goto bad; }
 
 			// nsvl
-			if (e >= base + p.pre_run) timestep_count++;
-			if (p.viz and e >= base + p.pre_run) {
+			if (e >= base + pre_run) timestep_count++;
+			if (viz and e >= base + pre_run) {
 				const nat xw = compute_xw(array, n);
 				const nat dw_count = (nat) ((double) xw * (double) discard_window);
 				for (nat i = 0; i < n; i++) {	
@@ -303,13 +300,13 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 
 			// h
 			if (pointer and modes[pointer - 1]) H_counter++; else H_counter = 0;
-			if (H_counter > p.max_acceptable_run_length) { a = PM_h; goto bad; }
+			if (H_counter > max_acceptable_run_length) { a = PM_h; goto bad; }
 
 			array[pointer]++;
 			modes[pointer] = 1;
 
 			// nsvl
-			if (e >= base + p.pre_run) {
+			if (e >= base + pre_run) {
 				const nat xw = compute_xw(array, n);
 				const nat dw_count = (nat) ((double) xw * (double) discard_window);				
 				if (pointer < dw_count or pointer > xw - dw_count) goto dont_accumulate;
@@ -325,14 +322,14 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 				buckets[trigger_uid].data++;
 				buckets[trigger_uid].counter++;
 
-				scratch_count = gather_buckets_at(buckets, scratch, desired_index, p.blackout_radius, n);
+				scratch_count = gather_buckets_at(buckets, scratch, desired_index, blackout_radius, n);
 				if (not scratch_count) return false;
 
 				nat moving_uid = 0;
 
-				if (buckets[trigger_uid].counter == p.counter_thr) {
+				if (buckets[trigger_uid].counter == counter_thr) {
 
-					buckets[trigger_uid].counter = p.counter_thr + 1;
+					buckets[trigger_uid].counter = counter_thr + 1;
 					buckets[trigger_uid].is_moving = false;
 
 					const nat neighbor_position = buckets[trigger_uid].index - 1;
@@ -344,13 +341,13 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 
 					if (buckets[moving_uid].data) { 
 						buckets[moving_uid].index++;
-						buckets[moving_uid].counter = p.counter_thr + 1; 
+						buckets[moving_uid].counter = counter_thr + 1; 
 						buckets[moving_uid].is_moving = true;
 					}
 				}
 				for (nat s = 0; s < scratch_count; s++) {
 					if (scratch[s].uid == trigger_uid) continue; 
-					if (scratch[s].counter > p.counter_thr) continue;
+					if (scratch[s].counter > counter_thr) continue;
 					if (scratch[s].uid == moving_uid) continue; 
 					buckets[scratch[s].uid].counter = 0;
 				} dont_accumulate:;
@@ -359,9 +356,9 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 
 		if (op == 3 or op == 1 or op == 5) last_mcal_op = op;
 
-		if (e >= base + p.pre_run + p.acc_ins) {
-			if (ia_count < p.required_ia_count) { a = PM_ric; goto bad; } 
-			const double factor = (double) p.safety_factor / (double) 100.0;  
+		if (e >= base + pre_run + acc_ins) {
+			if (ia_count < required_ia_count) { a = PM_ric; goto bad; } 
+			const double factor = (double) safety_factor / (double) 100.0;  
 			const nat required_data_size = (nat) ((double) factor * (double) timestep_count);
 			if (debug_prints) printf("threshold info: \n\n\t\ttimestep_count: %llu,  required_data_size: %llu\n\n", timestep_count, required_data_size);
 
@@ -369,10 +366,10 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 			nat vertical_line_count = 0, good_count = 0;
 			for (nat b = 0; b < n; b++) {
 				if (	buckets[b].data >= required_data_size and 
-					buckets[b].counter > p.counter_thr and 
+					buckets[b].counter > counter_thr and 
 					buckets[b].is_moving
 				) vertical_line_count++; else good_count++;
-				stats[buckets[b].data >= required_data_size][buckets[b].counter > p.counter_thr][buckets[b].is_moving]++;
+				stats[buckets[b].data >= required_data_size][buckets[b].counter > counter_thr][buckets[b].is_moving]++;
 			}
 
 			if (debug_prints) printf("FINAL GROUP COUNTS: \n\n\t\tvl_count: %llu,  good_count: %llu\n\n", vertical_line_count, good_count);
@@ -394,13 +391,14 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 				puts(""); fflush(stdout); sleep(1);
 			}
 
-			if (vertical_line_count > p.vertical_line_count_thr) {
-				 if (should_print_pm) printf("NSVL PRUNED ON BATCH COUNT:   %llu batches,     [e = %llu]\n", batch_count, e);
-				 a = PM_nsvl; goto bad;
+			if (vertical_line_count > vertical_line_count_thr) {
+				// if (should_print_pm) 
+				printf("NSVL PRUNED ON BATCH COUNT:   %llu batches,     [e = %llu]\n", batch_count, e);
+				a = PM_nsvl; 
+				goto bad;
 			}
-			
 
-			base += p.pre_run + p.acc_ins; 
+			base += pre_run + acc_ins; 
 			scratch_count = 0;
 
 			memset(scratch, 0, (n + 1) * sizeof(struct bucket));
@@ -415,28 +413,24 @@ static bool execute_graph_starting_at(nat origin, nat* graph, struct parameters 
 			batch_count++;
 		}
 
-		nat state = 0;
+		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
-		edge_was_executed[I + state] = 1;
+		executed[I + state] = 1;
 		ip = graph[I + state];
 	}
 
-	//eda: empirical deadstop check:
-
-	for (nat i = 0; i < graph_count; i += 4) {
-		if (not edge_was_executed[i + 1] and graph[i + 1] or
-		    not edge_was_executed[i + 2] and graph[i + 2] or
-		    not edge_was_executed[i + 3] and graph[i + 3]
-
+	for (byte i = 0; i < graph_count; i += 4) {
+		if (not executed[i + 1] and graph[i + 1] or
+		    not executed[i + 2] and graph[i + 2] or
+		    not executed[i + 3] and graph[i + 3]
 		) {
-				puts("------------------------------EDA--------EDA---------EDA-----------------EDA-------------");
-				a = PM_eda; 
-				goto bad; 
+			puts("-------EDA-------------");
+			a = PM_eda; 
+			goto bad; 
 		}
 	}
-
 	return false; 
 	
 bad: 	counts[a]++;
@@ -444,39 +438,17 @@ bad: 	counts[a]++;
 	return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool execute_graph(nat* graph, nat operation_count, struct parameters p, bool b, nat graph_count) {
-	for (nat o = 0; o < operation_count; o++) {
+static bool execute_graph(bool b) {
+	for (byte o = 0; o < operation_count; o++) {
 		if (unique_operations[graph[4 * o]] != 3) continue;
-		if (not execute_graph_starting_at(o, graph, p, b, graph_count)) return false;
+		if (not execute_graph_starting_at(o, b)) return false;
 	}
 	return true;
 }
 
 
-
-
-
 /*
+
 static void write_graph(nat* g, nat oc, char dt[32]) {
 
 	nat candidate_count = 0, candidate_capacity = 0, candidate_timestamp_capacity = 0;
@@ -484,11 +456,11 @@ static void write_graph(nat* g, nat oc, char dt[32]) {
 	char* candidate_timestamps = NULL;
 
 
-	if (p.graph_count * (candidate_count + 1) > candidate_capacity) {
-		candidate_capacity = 4 * (candidate_capacity + p.graph_count);
+	if (graph_count * (candidate_count + 1) > candidate_capacity) {
+		candidate_capacity = 4 * (candidate_capacity + graph_count);
 		candidates = realloc(candidates, sizeof(nat) * candidate_capacity);
 	}
-	memcpy(candidates + p.graph_count * candidate_count, graph, p.graph_count * sizeof(nat));
+	memcpy(candidates + graph_count * candidate_count, graph, graph_count * sizeof(nat));
 	
 	if (16 * (candidate_count + 1) > candidate_timestamp_capacity) {
 		candidate_timestamp_capacity = 4 * (candidate_timestamp_capacity + 16);
@@ -497,214 +469,217 @@ static void write_graph(nat* g, nat oc, char dt[32]) {
 	memcpy(candidate_timestamps + 16 * candidate_count, dt, 16);
 }
 
+static void print_nats(nat* v, nat l) {
+	printf("(%llu)[ ", l);
+	for (nat i = 0; i < l; i++) printf("%2llu ", v[i]);
+	printf("]\n");
+}
+
 */
 
 
 
-
-
-
-static void print_counts(void) {
-	printf("printing pm counts:\n");
-	for (nat i = 0; i < PM_count; i++) {
-		if (i and not (i % 4)) puts("");
-		printf("%6s: %8llu\t\t", pm_spelling[i], counts[i]);
-	}
-	puts("");
-	puts("[done]");
+static void print_bytes(byte* v, nat l) {
+	printf("(%llu)[ ", l);
+	for (nat i = 0; i < l; i++) printf("%2hhu ", v[i]);
+	printf("] - ");
 }
 
 
-int main(void) {
+int main(int argc, const char** argv) {
+	if (argc != 3) return puts("./srnfgp <begin:nat> <end:nat>");
 
-	const nat D = 1;
+	char* begin_invalid = NULL, * end_invalid = NULL;
 
-	const nat display_rate = 14;
+	const nat range_begin  = strtoull(argv[1], &begin_invalid, 10);
+	const nat range_end    = strtoull(argv[2], &end_invalid, 10);
 
-	struct parameters p = {
-		.execution_limit = 100000000,
-		.array_size = 3000,
+	if (*begin_invalid) {
+		printf(red "ERROR: error parsing range_begin near \"%s\" aborting...\n" reset, begin_invalid);
+		abort();
+	}
+	if (*end_invalid) {
+		printf(red "ERROR: error parsing range_end near \"%s\" aborting...\n" reset, end_invalid);
+		abort();
+	}
 
-		.rer_count = 40,
-		.oer_count = 80,
-		.required_er_count = 6,
-		.max_acceptable_consecutive_incr = 50,
-		.max_acceptable_run_length = 7,
-		.expansion_check_timestep = 10000,
+	printf("using: [begin=%llu, ...end=%llu)\n", range_begin, range_end);
 
-		.starting_base = 1,
-		.pre_run = 9999999,
-		.acc_ins = 3000000,
-
-		.mpp = 60,
-		.counter_thr = 5,
-		.blackout_radius = 7,
-		.safety_factor = 30,
-		.vertical_line_count_thr = 1,
-		.required_ia_count = 10,
-
-		.viz = 0, 						// temporary
-	};
-
-	array = calloc(p.array_size + 1, sizeof(nat));
-	modes = calloc(p.array_size + 1, sizeof(bool));
-	buckets = calloc(p.array_size + 1, sizeof(struct bucket));
-	scratch = calloc(p.array_size + 1, sizeof(struct bucket));
+	graph    = calloc(graph_count, sizeof(byte));
+	array    = calloc(array_size + 1, sizeof(nat));
+	modes    = calloc(array_size + 1, sizeof(bool));
+	executed = calloc(graph_count, sizeof(bool));
+	buckets  = calloc(array_size + 1, sizeof(struct bucket));
+	scratch  = calloc(array_size + 1, sizeof(struct bucket));
 	
-	const nat max_operation_count = 5 + D;	
-	const nat max_graph_count = 4 * max_operation_count;
+	byte* end        = calloc(hole_count, sizeof(nat));
+	byte* options    = calloc(hole_count, sizeof(nat));
+	byte* moduli     = calloc(hole_count, sizeof(nat));
+	byte* positions  = calloc(hole_count, sizeof(nat));
 
-	nat operation_count = 5;
-	nat graph_count = 4 * operation_count;
+	nat counter = 0;
+	byte pointer = 0;
 
-	nat* graph = calloc(max_graph_count, sizeof(nat));
-	edge_was_executed = calloc(max_graph_count, sizeof(bool));
+	for (byte i = 0; i < initial; i++) {
+		moduli[i] = operation_count;
+		positions[i] = _63R_hole_positions[i];
+	}
+	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i;
+	for (byte i = 0; i < D; i++) {
+		moduli[initial + 4 * i + 0] = 5;
+		moduli[initial + 4 * i + 1] = operation_count;
+		moduli[initial + 4 * i + 2] = operation_count;
+		moduli[initial + 4 * i + 3] = operation_count;
+	}
+
+	nat p = 1;
+	for (nat i = 0; i < hole_count; i++) {
+		options[i] = (byte) ((range_begin / p) % (nat) moduli[i]);
+		p *= (nat) moduli[i];
+	}
+	if (range_begin / p) { puts("range_begin is too big!"); printf("%llu\n", range_begin - 1); printf("%llu\n", p); abort(); }
+
+	p = 1;
+	for (nat i = 0; i < hole_count; i++) {
+		end[i] = (byte) ((range_end / p) % (nat) moduli[i]);
+		p *= (nat) moduli[i];
+	}
+	if (range_end / p and range_end > p) { puts("range_end is too big!"); printf("%llu\n", range_end - 1); printf("%llu\n", p); abort(); }
+
+	memcpy(graph, _63R, 20);
+	for (byte i = 0; i < hole_count; i++) graph[positions[i]] = options[i];
 
 
-	const nat initial_hole_count = 9;
-	const nat _63RRXFG[5 * 4] = {
-		0,  1, 4, _,      // 3
-		1,  0, _, _,      // 6 7 
-		2,  0, _, _,      // 10 11
-		3,  _, _, _,      // 13 14 15
-		4,  2, 0, _,      // 19                    // note, 6.> is 0 by force, 
-							///ie deadstop, is never executed, doesnt matter what it is!
-	};
-
-	memcpy(graph, _63RRXFG, graph_count * sizeof(nat));
-
-	nat m1_pointer = 0;
-	nat m1_array_count = initial_hole_count;
-        struct option* m1_array = calloc(3 * max_operation_count, sizeof(struct option));
-	
-	m1_array[0].position = 3;
-	m1_array[1].position = 6; 
-	m1_array[2].position = 7;
-	m1_array[3].position = 10;
-	m1_array[4].position = 11;
-	m1_array[5].position = 13; 
-	m1_array[6].position = 14;
-	m1_array[7].position = 15;
-	m1_array[8].position = 19;
-
-	for (nat i = 0; i < m1_array_count; i++) graph[m1_array[i].position] = 0;
-	
-	nat m2_pointer = 0;
-	nat m2_array_count = 0;
-	struct option* m2_array = calloc(D + 1, sizeof(struct option));
-
-	nat raw_counter = 0, maybe_counter = 0, good_counter = 0;
-	goto m1_pointer_reset;
-
+	goto init;
 loop:
-	if (m1_array[m1_pointer].option < operation_count - 1) goto m1_increment;
-	if (m1_pointer < m1_array_count - 1) goto m1_reset;
-loop2:
-	if (not m2_array_count) goto check_if_done;
-	if (m2_array[m2_pointer].option < unique_operation_count - 1) goto m2_increment;
-	if (m2_pointer < m2_array_count - 1) goto m2_reset;
-	check_if_done: 
+	if (options[pointer] < moduli[pointer] - 1) goto increment;
+	if (pointer < hole_count - 1) goto reset_; 
+	goto done;
 
-	printf("\n[finished %llu space]: looked at [%llu:%llu:%llu] poss!\n", operation_count - 5, raw_counter, maybe_counter, good_counter);
-	print_counts();
+increment:
+	options[pointer]++;
+	graph[positions[pointer]] = options[pointer];
+init:  	pointer = 0;
 
-	if (m2_array_count == D) goto done;
 
-	m2_array[m2_array_count++] = (struct option) {.option = 0, .position = graph_count + 0};
-	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 1};
-	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 2};	
-	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 3};
+	if (range_end < p and not memcmp(options, end, hole_count)) goto done;
 
-	graph[graph_count + 0] = 0;
-	graph[graph_count + 1] = 0;
-	graph[graph_count + 2] = 0;
-	graph[graph_count + 3] = 0;
 
-	operation_count++;
-	graph_count = 4 * operation_count;
 
-	m2_array[m2_pointer].option = 0; 
-	graph[m2_array[m2_pointer].position] = m2_array[m2_pointer].option;
+	counter++;
+	const bool show = not (counter & ((1 << display_rate) - 1));
+
+	// if (show) print_bytes(end, hole_count);
+	if (show) print_bytes(options, hole_count);
+	// if (show) print_bytes(positions, hole_count);
+	// if (show) print_bytes(moduli, hole_count);
+
+
+
+	char dt[32] = {0}; 
+	get_datetime(dt);
+	if (graph_analysis()) goto loop;
+	if (execute_graph(show)) goto loop;
 	
-	goto thing_blah;
-
-m2_increment:
-	m2_array[m2_pointer].option++;
-	graph[m2_array[m2_pointer].position] = m2_array[m2_pointer].option;
-	thing_blah: m2_pointer = 0;
-	m1_array[m1_pointer].option = 0;
-	goto m1_pointer_reset;
-
-m2_reset:
-
-	m2_array[m2_pointer].option = 0; 
-	graph[m2_array[m2_pointer].position] = m2_array[m2_pointer].option;
-
-	m2_pointer++;
-	goto loop2;
-
-m1_increment:
-
-	m1_array[m1_pointer].option++;
-	graph[m1_array[m1_pointer].position] = m1_array[m1_pointer].option;
-
-	m1_pointer_reset: m1_pointer = 0; 
-
-	if (not (raw_counter & ((1 << display_rate) - 1))) {
-		for (nat i = 0; i < m1_array_count; i++) printf("%llu ", m1_array[i].option); 
-		printf("  -  ");
-		for (nat i = 0; i < m2_array_count; i++) printf("%llu ", m2_array[i].option); 
-		printf("  ---->  ");
-
-		//print_graph(graph, graph_count);
-	}
-
-	//char dt[32] = {0}; get_datetime(dt);
-
-	raw_counter++;
-
-	if (graph_analysis(graph, operation_count)) {
-		puts("#");
-		goto loop;
-	}
-
-	maybe_counter++;
-
-	if (execute_graph(graph, operation_count, p, not (raw_counter & ((1 << display_rate) - 1)), graph_count)) {
-		goto loop;
-	}
-
-	good_counter++;
-
-	// write_graph(graph, operation_count);
-
-	//if (not (raw_counter & ((1 << display_rate) - 1))) {
-		for (nat i = 0; i < m1_array_count; i++) printf("%llu ", m1_array[i].option); 
-		printf("  -  ");
-		for (nat i = 0; i < m2_array_count; i++) printf("%llu ", m2_array[i].option); 
-		printf("  ---->  z = ");
-		print_graph(graph, graph_count);
-	//}
-
+	print_bytes(options, hole_count); printf("  ---->  z = "); print_graph();
 	getchar();
+
+	// write_graph();
 
         goto loop;
 
-m1_reset:
-
-	m1_array[m1_pointer].option = 0; 
-	graph[m1_array[m1_pointer].position] = m1_array[m1_pointer].option;
-
-	m1_pointer++; 
+reset_:
+	options[pointer] = 0; 
+	graph[positions[pointer]] = options[pointer];
+	pointer++;
 	goto loop;
 
-done:	printf("\n [DONE] looked at [%llu:%llu:%llu] poss!\n", raw_counter, maybe_counter, good_counter);
-	print_counts();
+done:	print_counts();
+	printf("\n[finished %hhu-space]: searched over %llu graphs.\n", D, counter);
 }
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+
+
+#define reset    "\x1B[0m"
+#define red      "\x1B[31m"
+#define green    "\x1B[32m"
+#define yellow   "\x1B[33m"
+#define blue   	 "\x1B[34m"
+// #define magenta  "\x1B[35m"
+#define cyan     "\x1B[36m"
+
+
+
+
+
+
+
+
+
+
+static const nat unknown  = 11223344556677;
+static const nat deadstop = 90909090909090;
+static const nat _ = unknown;
+static const nat X = deadstop;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
 
 
 
@@ -1472,25 +1447,8 @@ static bool has_vertical_line__batch_opt(
 
 
 
-
-	*/	
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// static bool is_increment(nat a) { return a < 3; }
+// static bool is_reset(nat a) { return a >= 3; }
 
 
 
@@ -1500,6 +1458,158 @@ static bool has_vertical_line__batch_opt(
 014110212003350442020000
 014110212003354542020000
 014110212003350442020200
+
+
+
+
+   // note, 6.> is 0 by force, 
+							///ie deadstop, is never executed, doesnt matter what it is!
+
+
+
+
+
+
+
+
+[ 0 : 1 2 3]
+[ 1 : 1 2 3]
+[ 2 : 1 2 3]
+[ 3 : 1 2 3]
+[ 4 : 1 2 3]         <- 0sp
+
+[ 0 : 1 2 3]
+[ 0 : 1 2 3]
+[ 0 : 1 2 3]
+[ 0 : 1 2 3]
+
+// init the m1/m2 arrays based on the subrange passed in:
+// init the graph based on the m1/m2 arrays.
+
+
+
+
+
+
+opts:	[ 0 0 0  0 0 0  0 0 0  |  {0 : 0 0 0} ]
+
+opts:	[ 0 0 0 0 0 0 0 0 0 0 0 0 0 ]    				assuming D = 1
+
+mod:    [ m1 m1 m1  m1 m1 m1  m1 m1 m1   m2  m1 m1 m1 ]
+
+// where:
+//	m1 = operation_count
+//	m2 = unique_operation_count (ie, 5)
+
+
+
+
+	*/	
+
+
+
+
+
+
+
+
+
+/*	------------------------------------- trash -----------------------------------------
+
+	m2_array[m2_array_count++] = (struct option) {.option = 0, .position = graph_count + 0};
+	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 1};
+	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 2};
+	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 3};
+
+	graph[graph_count + 0] = 0;
+	graph[graph_count + 1] = 0;
+	graph[graph_count + 2] = 0;
+	graph[graph_count + 3] = 0;
+
+
+
+
+	//operation_count++;
+	//graph_count = 4 * operation_count;
+
+	//m2_array[m2_pointer].option = 0; 
+	//graph[m2_array[m2_pointer].position] = m2_array[m2_pointer].option;
+	
+	//goto do_a_m2_pointer_reset;
+
+m2_increment:
+	m2_array[m2_pointer].option++;
+	graph[m2_array[m2_pointer].position] = m2_array[m2_pointer].option;
+do_a_m2_pointer_reset: 
+	m2_pointer = 0;
+	m1_array[m1_pointer].option = 0;
+	goto m1_pointer_reset;
+
+m2_reset:
+
+	m2_array[m2_pointer].option = 0; 
+	graph[m2_array[m2_pointer].position] = m2_array[m2_pointer].option;
+
+	m2_pointer++;
+	goto loop2;
+
+
+loop2:
+	if (not m2_array_count) goto check_if_done;
+	if (m2_array[m2_pointer].option < unique_operation_count - 1) goto m2_increment;
+	if (m2_pointer < m2_array_count - 1) goto m2_reset;
+	check_if_done: 
+
+
+//if (not (raw_counter & ((1 << display_rate) - 1))) {
+	------------------------------------- trash ----------------------------------------- 
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+const nat _63R[5 * 4] = {
+	0,  1, 4, _,      //        3
+	1,  0, _, _,      //     6  7 
+	2,  0, _, _,      //    10 11
+	3,  _, _, _,      // 13 14 15
+	4,  2, 0, _,      //       19
+};
+
+static const nat _63R_hole_count = 9;
+static const _63R_hole_positions[_63R_hole_count] = {3, 6, 7, 10, 11, 13, 14, 15, 19};
+
+
+*/
+
+
+
+
+
+
+
+
+//struct option {        // delete me!!!!
+//	nat option;
+//	nat position;
+//};
+
+
+
+
+	// void reduce(vector out, nat s, nat radix, nat length) {
+
+	// ....reduce the begin nat to a m1/m2 array state...
 
 
 

@@ -54,7 +54,6 @@ static const char* pm_spelling[] = {
 };
 
 
-
 struct parameters {
 	nat execution_limit;
 	nat array_size;
@@ -501,9 +500,6 @@ static void write_graph(nat* g, nat oc, char dt[32]) {
 
 
 
-
-
-
 static void print_counts(void) {
 	printf("printing pm counts:\n");
 	for (nat i = 0; i < PM_count; i++) {
@@ -612,7 +608,7 @@ loop2:
 
 	m2_array[m2_array_count++] = (struct option) {.option = 0, .position = graph_count + 0};
 	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 1};
-	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 2};	
+	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 2};
 	m1_array[m1_array_count++] = (struct option) {.option = 0, .position = graph_count + 3};
 
 	graph[graph_count + 0] = 0;
@@ -626,12 +622,13 @@ loop2:
 	m2_array[m2_pointer].option = 0; 
 	graph[m2_array[m2_pointer].position] = m2_array[m2_pointer].option;
 	
-	goto thing_blah;
+	goto do_a_m2_pointer_reset;
 
 m2_increment:
 	m2_array[m2_pointer].option++;
 	graph[m2_array[m2_pointer].position] = m2_array[m2_pointer].option;
-	thing_blah: m2_pointer = 0;
+do_a_m2_pointer_reset: 
+	m2_pointer = 0;
 	m1_array[m1_pointer].option = 0;
 	goto m1_pointer_reset;
 
@@ -648,7 +645,7 @@ m1_increment:
 	m1_array[m1_pointer].option++;
 	graph[m1_array[m1_pointer].position] = m1_array[m1_pointer].option;
 
-	m1_pointer_reset: m1_pointer = 0; 
+	m1_pointer_reset: m1_pointer = 0;
 
 	if (not (raw_counter & ((1 << display_rate) - 1))) {
 		for (nat i = 0; i < m1_array_count; i++) printf("%llu ", m1_array[i].option); 
@@ -701,6 +698,53 @@ m1_reset:
 done:	printf("\n [DONE] looked at [%llu:%llu:%llu] poss!\n", raw_counter, maybe_counter, good_counter);
 	print_counts();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
