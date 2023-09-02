@@ -57,9 +57,9 @@ static const nat _63R_hole_count = 9;
 static const byte _63R_hole_positions[_63R_hole_count] = {3, 6, 7, 10, 11, 13, 14, 15, 19};
 
 
-static const byte D = 0;       // the duplication count.
+static const byte D = 1;       // the duplication count.
 
-static const nat display_rate = 0;
+static const nat display_rate = 10;
 static const bool debug_prints = 0;           // delete me!
 static const nat viz = 0;
 
@@ -478,10 +478,11 @@ static void print_nats(nat* v, nat l) {
 */
 
 
+
 static void print_bytes(byte* v, nat l) {
 	printf("(%llu)[ ", l);
 	for (nat i = 0; i < l; i++) printf("%2hhu ", v[i]);
-	printf("] \n");
+	printf("] - ");
 }
 
 
@@ -502,19 +503,19 @@ int main(int argc, const char** argv) {
 		abort();
 	}
 
-	printf("using: [begin=%llu, ...end=%llu]\n", range_begin, range_end);
+	printf("using: [begin=%llu, ...end=%llu)\n", range_begin, range_end);
 
-	graph    = calloc(graph_count, 1);
+	graph    = calloc(graph_count, sizeof(byte));
 	array    = calloc(array_size + 1, sizeof(nat));
 	modes    = calloc(array_size + 1, sizeof(bool));
-	executed = calloc(graph_count,    sizeof(bool));
+	executed = calloc(graph_count, sizeof(bool));
 	buckets  = calloc(array_size + 1, sizeof(struct bucket));
 	scratch  = calloc(array_size + 1, sizeof(struct bucket));
 	
-	byte* end        = calloc(hole_count, 1);
-	byte* options    = calloc(hole_count, 1);
-	byte* moduli     = calloc(hole_count, 1);
-	byte* positions  = calloc(hole_count, 1);
+	byte* end        = calloc(hole_count, sizeof(nat));
+	byte* options    = calloc(hole_count, sizeof(nat));
+	byte* moduli     = calloc(hole_count, sizeof(nat));
+	byte* positions  = calloc(hole_count, sizeof(nat));
 
 	nat counter = 0;
 	byte pointer = 0;
@@ -536,48 +537,54 @@ int main(int argc, const char** argv) {
 		options[i] = (byte) ((range_begin / p) % (nat) moduli[i]);
 		p *= (nat) moduli[i];
 	}
-	if (range_begin >= p) { puts("range_begin is too big!"); printf("%llu\n", range_begin - 1); printf("%llu\n", p); abort(); }
+	if (range_begin / p) { puts("range_begin is too big!"); printf("%llu\n", range_begin - 1); printf("%llu\n", p); abort(); }
 
 	p = 1;
 	for (nat i = 0; i < hole_count; i++) {
 		end[i] = (byte) ((range_end / p) % (nat) moduli[i]);
 		p *= (nat) moduli[i];
 	}
-	if (range_end >= p) { puts("range_end is too big!"); printf("%llu\n", range_end - 1); printf("%llu\n", p); abort(); }
+	if (range_end / p and range_end > p) { puts("range_end is too big!"); printf("%llu\n", range_end - 1); printf("%llu\n", p); abort(); }
 
 	memcpy(graph, _63R, 20);
 	for (byte i = 0; i < hole_count; i++) graph[positions[i]] = options[i];
 
+
 	goto init;
-
-
 loop:
-	if (not memcmp(options, end, hole_count)) goto done;
 	if (options[pointer] < moduli[pointer] - 1) goto increment;
 	if (pointer < hole_count - 1) goto reset_; 
 	goto done;
+
 increment:
 	options[pointer]++;
 	graph[positions[pointer]] = options[pointer];
 init:  	pointer = 0;
 
-	const bool show = not (counter & ((1 << display_rate) - 1));
+
+	if (range_end < p and not memcmp(options, end, hole_count)) goto done;
+
+
+
 	counter++;
+	const bool show = not (counter & ((1 << display_rate) - 1));
 
-	//if (show) print_bytes(end, hole_count);
+	// if (show) print_bytes(end, hole_count);
 	if (show) print_bytes(options, hole_count);
-	//if (show) print_bytes(positions, hole_count);
-	//if (show) print_bytes(moduli, hole_count);
-	// puts("");
+	// if (show) print_bytes(positions, hole_count);
+	// if (show) print_bytes(moduli, hole_count);
 
-	//char dt[32] = {0}; 
-	//get_datetime(dt);
-	//if (graph_analysis()) goto loop;
-	//if (execute_graph(show)) goto loop;
+
+
+	char dt[32] = {0}; 
+	get_datetime(dt);
+	if (graph_analysis()) goto loop;
+	if (execute_graph(show)) goto loop;
+	
+	print_bytes(options, hole_count); printf("  ---->  z = "); print_graph();
+	getchar();
+
 	// write_graph();
-
-	// printf("\tFOUND:  z = "); print_graph();
-	// getchar();
 
         goto loop;
 

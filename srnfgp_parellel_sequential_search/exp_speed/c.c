@@ -22,14 +22,16 @@ typedef unsigned long long nat;
 static const nat unique_operation_count = 5;
 static const nat unique_operations[unique_operation_count] = {1, 2, 3, 5, 6};
 
+static nat graph_count = 0;
+static nat operation_count = 0;
 
 
-static void init_graph_from_string(const char* string, nat* graph, nat graph_count) {
+static void init_graph_from_string(const char* string, nat* graph) {
 	for (nat i = 0; i < graph_count; i++) 
 		graph[i] = (nat) (string[i] - '0');
 }
 
-static void print_graph_as_adj(nat* graph, nat graph_count) {
+static void print_graph_as_adj(nat* graph) {
 	puts("graph adjacency list: ");
 	puts("{");
 	for (nat i = 0; i < graph_count; i += 4) {
@@ -128,6 +130,116 @@ static nat print_lifetime(
 
 
 
+#define lightblue "\033[38;5;67m"
+#define red     "\x1B[31m"
+#define green   "\x1B[32m"
+#define yellow  "\x1B[33m"
+//#define blue    "\x1B[34m"
+//#define magenta "\x1B[35m"
+//#define cyan    "\x1B[36m"
+#define bold    "\033[1m"
+#define reset   "\x1B[0m"
+
+
+static void synthesize_graph(nat** zlist, const nat z_count) {
+
+	nat* graph = calloc(graph_count, sizeof(nat));
+
+	
+	nat* counts = calloc(graph_count * operation_count, sizeof(nat));
+
+	for (nat z = 0; z < z_count; z++) {
+
+		for (nat i = 0; i < graph_count; i++) {
+			if (not (i % 4)) continue;
+			counts[i * operation_count + zlist[z][i]]++;
+		}
+	}
+
+	printf("synthesized graph [over %llu z values]:\n", z_count);
+
+	for (nat i = 0; i < graph_count; i += 4) {
+		printf("  " red "#%llu" reset "  :: { .op = %llu, [ %s %llu %s ]   .lge={ \n", i / 4, zlist[0][i], lightblue bold , unique_operations[zlist[0][i]], reset);
+		printf("\t\t.l={ ");
+		for (nat o = 0; o < operation_count; o++) {
+			const nat count = counts[(i + 1) * operation_count + o];
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu] ", o, count == z_count ?  green : yellow, (double) count / z_count, count); 
+		}
+		printf(" }, \n");
+		printf("\t\t.g={ ");
+		for (nat o = 0; o < operation_count; o++) {
+			const nat count = counts[(i + 2) * operation_count + o];
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == z_count ? green : yellow, (double) count / z_count, count); 
+		}
+		printf(" }, \n");
+		printf("\t\t.e={ ");
+		for (nat o = 0; o < operation_count; o++) {
+			const nat count = counts[(i + 3) * operation_count + o];
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == z_count ? green : yellow, (double) count / z_count, count); 
+		}
+		printf(" }, \n");
+		printf(" }   \n\n");
+	}
+
+
+puts(
+"static const byte _63R[5 * 4] = {" "\n"
+"	0,  1, 4, _,      //        3" "\n"
+"	1,  0, _, _,      //     6  7 " "\n"
+"	2,  0, _, _,      //    10 11" "\n"
+"	3,  _, _, _,      // 13 14 15" "\n"
+"	4,  2, 0, _,      //       19" "\n"
+"};"
+);
+
+
+
+
+}
+
+
+
+
+
+
+
+
+static const nat fea = 10000;
+static const nat el = 0;//10000; 
+static const nat prt = 1000000;
+
+static void write_to_file(void) { // nat* zlist
+
+
+	
+
+
+	FILE* out_file = fopen("_delete_me_.csv", "w+");
+	if (not out_file) { perror("fopen"); exit(1); }
+	fprintf(out_file, "widths\n");
+
+//	const nat limit = 1000000000;
+//	const nat step = 300000;
+//	nat p = 0;
+
+/*
+	for (; p < limit; p += step) {
+		printf("\rprt = %llu / %llu                 ", p, limit);
+		fflush(stdout);
+
+		const nat LE = print_lifetime(zlist[0], 2, fea, el, p);
+		fprintf(out_file, "%llu\n", LE);
+		p += 10000;
+	}
+*/
+
+	fclose(out_file);
+
+
+
+}
+
+
 
 
 int main(void) { // int argc, const char** argv
@@ -139,7 +251,7 @@ int main(void) { // int argc, const char** argv
 	if (not file) { perror("fopen"); exit(1); }
 
 	
-	nat graph_count = 0;
+	
 	nat count = 0; 
 	nat** zlist = NULL;
 
@@ -154,71 +266,44 @@ int main(void) { // int argc, const char** argv
 		graph_count = strlen(buffer);
 		
 		nat* graph = calloc(graph_count, sizeof(nat));
-		init_graph_from_string(buffer, graph, graph_count);
+		init_graph_from_string(buffer, graph);
 
 		zlist = realloc(zlist, sizeof(nat*) * (count + 1));
 		zlist[count++] = graph;
 
 	}
+	operation_count = graph_count / 4;
 
 
 	fclose(file);
 
-	const nat fea = 10000;
-	const nat el = 10000; 
-	const nat prt = 1000000;
-
 	nat* le_array = calloc(count, sizeof(nat));
 	nat* mm_array = calloc(count, sizeof(nat));
 	
-	
 	for (nat i = 0; i < count; i++) {
 
-
-		puts("-----------------------------------------------------------");
+		//puts("-----------------------------------------------------------");
 		print_nats(zlist[i], graph_count); puts("");
-		print_graph_as_adj(zlist[i], graph_count);
+		//print_graph_as_adj(zlist[i]);
 
 		nat mm = 0;
+		//const nat le = print_lifetime(zlist[i], 2, fea, el, prt, &mm);
+		//printf("[LE = %llu, MM = %llu]\n", le, mm);
 
-		const nat le = print_lifetime(zlist[i], 2, fea, el, prt, &mm);
+		//le_array[i] = le;
+		//mm_array[i] = mm;
 
-		printf("[LE = %llu, MM = %llu]\n", le, mm);
-
-		le_array[i] = le;
-		mm_array[i] = mm;
-
-		getchar();
+		//getchar();
 	}
-
 
 	printf("printing results: \n");
 	print_nats(le_array, count); puts("");
 	print_nats(mm_array, count); puts("");
 
-	exit(1);
+	synthesize_graph(zlist, count);
 
+	//write_to_file();
 
-/*
-	FILE* out_file = fopen("_delete_me_.csv", "w+");
-	if (not out_file) { perror("fopen"); exit(1); }
-	fprintf(out_file, "widths\n");
-
-	const nat limit = 1000000000;
-	const nat step = 300000;
-
-	for (nat prt = 0; prt < limit; prt += step) {
-		printf("\rprt = %llu / %llu                 ", prt, limit);
-		fflush(stdout);
-
-		const nat LE = print_lifetime(zlist[0], 2, fea, el, prt);
-		fprintf(out_file, "%llu\n", LE);
-		prt += 10000;
-	}
-
-	fclose(out_file);
-
-*/
 }
 
 
@@ -366,6 +451,59 @@ printf("D = %llu\n", length);
 
 
 014110212003353442020200
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
