@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <math.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <sys/time.h> 
 #include <termios.h>
@@ -43,7 +44,11 @@ static const char* pm_spelling[] = {
 	"PM_ric", "PM_nsvl", "PM_eda",
 };
 
+
+
 static const byte _ = 0;
+
+
 
 static const byte _63R[5 * 4] = {
 	0,  1, 4, _,      //        3
@@ -57,15 +62,38 @@ static const nat _63R_hole_count = 9;
 static const byte _63R_hole_positions[_63R_hole_count] = {3, 6, 7, 10, 11, 13, 14, 15, 19};
 
 
+
+
+static const byte _36R[5 * 4] = {
+	0,  1, 2, _,      //        3
+	1,  0, _, _,      //     6  7 
+	2,  _, 4, _,      //  9    11
+	3,  _, _, _,      // 13 14 15
+	4,  0, 0, _,      //       19
+};
+
+static const nat _36R_hole_count = 9;
+static const byte _36R_hole_positions[_36R_hole_count] = {3, 6, 7, 9, 11, 13, 14, 15, 19};
+
+
+
+
+
+
+static const byte initial = _36R_hole_count;              // delete me!!!
+
+
+
+
 static const byte D = 0;       // the duplication count.
 
-static const nat display_rate = 0;
+static const nat display_rate = 14;
 static const bool debug_prints = 0;           // delete me!
 static const nat viz = 0;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
-static const byte initial = _63R_hole_count;              // delete me!!!
+
 static const byte hole_count = initial + 4 * D;
 
 static const nat execution_limit = 100000000;
@@ -88,6 +116,14 @@ static const nat vertical_line_count_thr = 1;
 static const nat required_ia_count = 10;
 
 
+static const nat max_buffer_count = 10;
+
+struct item {
+	char z[64];
+	char dt[32];
+};
+
+
 static byte* graph = NULL;
 static nat* array = NULL;
 static bool* modes = NULL;
@@ -96,6 +132,14 @@ static struct bucket* buckets = NULL;
 static struct bucket* scratch = NULL;
 
 static nat counts[PM_count] = {0};
+
+
+static nat buffer_count = 0;
+static struct item buffer[max_buffer_count] = {0};
+static char directory[4096] = "./";
+static char filename[4096] = {0};
+
+
 
 struct list {
 	nat count;
@@ -119,6 +163,13 @@ static void get_datetime(char datetime[32]) {
 	struct tm* tm_info = localtime(&tv.tv_sec);
 	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
 }
+
+static void get_graphs_z_value(char string[64]) { 
+	for (byte i = 0; i < graph_count; i++) string[i] = graph[i] + '0';
+	string[graph_count] = 0;
+}
+
+
 
 static bool graph_analysis(void) {
 	for (nat index = 0; index < operation_count; index++) {
@@ -447,27 +498,108 @@ static bool execute_graph(bool b) {
 }
 
 
-/*
-
-static void write_graph(nat* g, nat oc, char dt[32]) {
-
-	nat candidate_count = 0, candidate_capacity = 0, candidate_timestamp_capacity = 0;
-	nat* candidates = NULL;
-	char* candidate_timestamps = NULL;
 
 
-	if (graph_count * (candidate_count + 1) > candidate_capacity) {
-		candidate_capacity = 4 * (candidate_capacity + graph_count);
-		candidates = realloc(candidates, sizeof(nat) * candidate_capacity);
-	}
-	memcpy(candidates + graph_count * candidate_count, graph, graph_count * sizeof(nat));
+
+
+
+
+
+// ... 
+
+
+
+
+
+
+
+static void append_to_file(nat zindex, nat begin, nat end) {
 	
-	if (16 * (candidate_count + 1) > candidate_timestamp_capacity) {
-		candidate_timestamp_capacity = 4 * (candidate_timestamp_capacity + 16);
-		candidate_timestamps = realloc(candidate_timestamps, sizeof(char) * candidate_timestamp_capacity);
+	char newfilename[4096] = {0};
+
+	strlcpy(newfilename, filename, sizeof newfilename);
+
+	const int dir = open(directory, O_RDONLY | O_DIRECTORY, 0);
+	if (dir < 0) { 
+		perror("write open directory"); 
+		printf("directory=%s ", directory); 
+		return; 
 	}
-	memcpy(candidate_timestamps + 16 * candidate_count, dt, 16);
+	int flags = O_WRONLY | O_APPEND;  mode_t m = 0;
+try_open:;
+	const int file = openat(dir, newfilename, flags, m);
+	if (file < 0) {
+		if (m) {
+			perror("create openat file");
+			printf("filename=%s ", newfilename);
+			close(dir); return;
+		}
+		perror("write openat file");
+		printf("filename=%s\n", newfilename);
+		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+		m     = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+
+		char dt[32] = {0};
+		get_datetime(dt);
+		snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu-%llu_z.txt", dt, zindex, begin, end);
+		strlcpy(filename, newfilename, sizeof filename);
+
+		goto try_open;
+	}
+
+	for (nat i = 0; i < buffer_count; i++) {
+		write(file, buffer[i].z, strlen(buffer[i].z));
+		write(file, " ", 1);
+		write(file, buffer[i].dt, strlen(buffer[i].dt));
+		write(file, "\n", 1);
+	}
+
+	close(file); 
+	
+	if (m) {
+		printf("write: created %llu z values to ", buffer_count);
+		printf("%s : %s\n", directory, newfilename);
+		close(dir);  
+		return;
+	}
+
+	char dt[32] = {0};
+	get_datetime(dt);
+	snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu-%llu_z.txt", dt, zindex, begin, end);
+
+	if (renameat(dir, filename, dir, newfilename) < 0) {
+		perror("rename");
+		printf("filename=%s newfilename=%s", filename, newfilename);
+		close(dir); return;
+	}
+	printf("[\"%s\" renamed to  -->  \"%s\"]\n", filename, newfilename);
+	strlcpy(filename, newfilename, sizeof filename);
+
+	close(dir);
+
+	printf("\033[1mwrite: saved %llu z values to ", buffer_count);
+	printf("%s : %s \033[0m\n", directory, newfilename);
 }
+
+
+static void write_graph(nat zindex, nat begin, nat end) {
+
+	get_datetime(buffer[buffer_count].dt);
+	get_graphs_z_value(buffer[buffer_count].z);
+	buffer_count++;
+
+	if (buffer_count == max_buffer_count) {
+		append_to_file(zindex, begin, end);
+		buffer_count = 0;
+	}
+
+	sleep(1);
+	usleep(10000);
+}
+
+
+
+
 
 static void print_nats(nat* v, nat l) {
 	printf("(%llu)[ ", l);
@@ -475,13 +607,18 @@ static void print_nats(nat* v, nat l) {
 	printf("]\n");
 }
 
-*/
-
 
 static void print_bytes(byte* v, nat l) {
 	printf("(%llu)[ ", l);
 	for (nat i = 0; i < l; i++) printf("%2hhu ", v[i]);
 	printf("] \n");
+}
+
+
+static void print_bytes_raw(byte* v, nat l) {
+	printf("(%llu)[ ", l);
+	for (nat i = 0; i < l; i++) printf("%2hhu ", v[i]);
+	printf("] - ");
 }
 
 
@@ -521,7 +658,7 @@ int main(int argc, const char** argv) {
 
 	for (byte i = 0; i < initial; i++) {
 		moduli[i] = operation_count;
-		positions[i] = _63R_hole_positions[i];
+		positions[i] = _36R_hole_positions[i];
 	}
 	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i;
 	for (byte i = 0; i < D; i++) {
@@ -545,7 +682,7 @@ int main(int argc, const char** argv) {
 	}
 	if (range_end >= p) { puts("range_end is too big!"); printf("%llu\n", range_end - 1); printf("%llu\n", p); abort(); }
 
-	memcpy(graph, _63R, 20);
+	memcpy(graph, _36R, 20);
 	for (byte i = 0; i < hole_count; i++) graph[positions[i]] = options[i];
 
 	goto init;
@@ -561,24 +698,21 @@ increment:
 	graph[positions[pointer]] = options[pointer];
 init:  	pointer = 0;
 
-	const bool show = not (counter & ((1 << display_rate) - 1));
+	const bool should_show = not (counter & ((1 << display_rate) - 1));
 	counter++;
 
-	//if (show) print_bytes(end, hole_count);
-	if (show) print_bytes(options, hole_count);
-	//if (show) print_bytes(positions, hole_count);
-	//if (show) print_bytes(moduli, hole_count);
-	// puts("");
+	//if (should_show) print_bytes(end, hole_count);
+	if (should_show) print_bytes_raw(options, hole_count);
+	//if (should_show) print_bytes(positions, hole_count);
+	//if (should_show) print_bytes(moduli, hole_count);
+	// if (should_show) puts("");
 
-	//char dt[32] = {0}; 
-	//get_datetime(dt);
-	//if (graph_analysis()) goto loop;
-	//if (execute_graph(show)) goto loop;
-	// write_graph();
+	if (graph_analysis()) goto loop;
+	if (execute_graph(should_show)) goto loop;
+	write_graph(counter - 1, range_begin, range_end);
 
-	// printf("\tFOUND:  z = "); print_graph();
+	printf("\tFOUND:  z = "); print_graph();
 	// getchar();
-
         goto loop;
 
 reset_:
@@ -587,7 +721,8 @@ reset_:
 	pointer++;
 	goto loop;
 
-done:	print_counts();
+done:	append_to_file(counter - 1, range_begin, range_end);
+	print_counts();
 	printf("\n[finished %hhu-space]: searched over %llu graphs.\n", D, counter);
 }
 
@@ -1603,6 +1738,47 @@ static const _63R_hole_positions[_63R_hole_count] = {3, 6, 7, 10, 11, 13, 14, 15
 	// void reduce(vector out, nat s, nat radix, nat length) {
 
 	// ....reduce the begin nat to a m1/m2 array state...
+
+
+
+//  our  36R that we are using for 0sp:  202309037.163945:
+
+
+//[0    1 2 - ]
+//[1    0 - - ]
+//[2    - 4 - ]
+//[3    - - - ]
+//[4    0 X - ]          (X := deadstop)
+
+
+
+/*
+
+static void write_graph(nat* g, nat oc, char dt[32]) {
+
+	nat candidate_count = 0, candidate_capacity = 0, candidate_timestamp_capacity = 0;
+	nat* candidates = NULL;
+	char* candidate_timestamps = NULL;
+
+
+	if (graph_count * (candidate_count + 1) > candidate_capacity) {
+		candidate_capacity = 4 * (candidate_capacity + graph_count);
+		candidates = realloc(candidates, sizeof(nat) * candidate_capacity);
+	}
+	memcpy(candidates + graph_count * candidate_count, graph, graph_count * sizeof(nat));
+	
+	if (16 * (candidate_count + 1) > candidate_timestamp_capacity) {
+		candidate_timestamp_capacity = 4 * (candidate_timestamp_capacity + 16);
+		candidate_timestamps = realloc(candidate_timestamps, sizeof(char) * candidate_timestamp_capacity);
+	}
+	memcpy(candidate_timestamps + 16 * candidate_count, dt, 16);
+}
+
+
+
+
+
+*/
 
 
 

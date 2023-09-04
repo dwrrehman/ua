@@ -19,6 +19,8 @@
 
 typedef unsigned long long nat;
 
+static const nat window_width = 1300;
+
 static const nat unique_operation_count = 5;
 static const nat unique_operations[unique_operation_count] = {1, 2, 3, 5, 6};
 
@@ -80,6 +82,7 @@ static nat print_lifetime(
 		else if (op == 5) {
 			if (e >= pre_run_count) {
 				for (nat i = 0; i < n; i++) {
+					if (i > window_width) break;
 					if (not array[i]) break;   // LE
 					if (modes[i]) {
 						printf("%s", (i == pointer ?  green : white));
@@ -103,6 +106,7 @@ static nat print_lifetime(
 	}
 	if (print_count) {
 		for (nat i = 0; i < n; i++) {
+			if (i > window_width) break;
 			if (not array[i]) break; 
 			if (modes[i]) {
 				printf("%s", (i == pointer ?  green : white));
@@ -204,9 +208,9 @@ puts(
 
 
 
-static const nat fea = 10000;
-static const nat el = 0;//10000; 
-static const nat prt = 1000000;
+static const nat fea = 100000;
+static const nat el = 80000; 
+static const nat prt = 100000000;
 
 static void write_to_file(void) { // nat* zlist
 
@@ -239,18 +243,12 @@ static void write_to_file(void) { // nat* zlist
 
 }
 
+int main(int argc, const char** argv) {
 
+	if (argc <= 1) return puts("give input z list filename as an argument!");
 
-
-int main(void) { // int argc, const char** argv
-
-	// if (argc <= 1) return puts("give the prt as an argument!");
-
-
-	FILE* file = fopen("z.txt", "r");
+	FILE* file = fopen(argv[1], "r");
 	if (not file) { perror("fopen"); exit(1); }
-
-	
 	
 	nat count = 0; 
 	nat** zlist = NULL;
@@ -282,18 +280,18 @@ int main(void) { // int argc, const char** argv
 	
 	for (nat i = 0; i < count; i++) {
 
-		//puts("-----------------------------------------------------------");
+		puts("-----------------------------------------------------------");
 		print_nats(zlist[i], graph_count); puts("");
-		//print_graph_as_adj(zlist[i]);
+		print_graph_as_adj(zlist[i]);
 
 		nat mm = 0;
-		//const nat le = print_lifetime(zlist[i], 2, fea, el, prt, &mm);
-		//printf("[LE = %llu, MM = %llu]\n", le, mm);
+		const nat le = print_lifetime(zlist[i], 2, fea, el, prt, &mm);
+		printf("[LE = %llu, MM = %llu]\n", le, mm);
 
 		//le_array[i] = le;
 		//mm_array[i] = mm;
 
-		//getchar();
+		getchar();
 	}
 
 	printf("printing results: \n");
@@ -301,9 +299,6 @@ int main(void) { // int argc, const char** argv
 	print_nats(mm_array, count); puts("");
 
 	synthesize_graph(zlist, count);
-
-	//write_to_file();
-
 }
 
 
