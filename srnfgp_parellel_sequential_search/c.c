@@ -78,14 +78,25 @@ static const byte _36R_hole_positions[_36R_hole_count] = {3, 6, 7, 9, 11, 13, 14
 
 
 
-
-
 static const byte initial = _36R_hole_count;              // delete me!!!
 
 
 
 
-static const byte D = 0;       // the duplication count.
+
+
+
+static const byte D = 1;       // the duplication count.
+
+
+
+// formula for size of 1 space:
+
+//	(6 ^ 9) * (5) * (6 ^ 3)  
+
+
+
+
 
 static const nat display_rate = 14;
 static const bool debug_prints = 0;           // delete me!
@@ -504,8 +515,99 @@ static bool execute_graph(bool b) {
 
 
 
+static nat max_e = 0;
 
-// ... 
+
+static bool fea_execute_graph_starting_at(byte origin, bool should_print_pm) {
+
+	const nat n = 5;
+
+	memset(array, 0, (n + 1) * sizeof(nat));
+	memset(modes, 0, (n + 1) * sizeof(bool));
+	
+	byte ip = origin;
+	byte last_mcal_op = 0;
+	nat a = PM_count;
+	nat pointer = 0;
+	nat e = 0;
+	for (; e < 10000; e++) {
+
+		const byte I = ip * 4;
+		const byte op = unique_operations[graph[I]];
+
+		if (op == 1) {
+			if (pointer == n) 	{ a = PM_fea; goto bad; } 
+			if (not array[pointer]) { a = PM_ns0; goto bad; } 
+			pointer++;
+		}
+
+		else if (op == 5) {
+			if (last_mcal_op != 3) 	{ a = PM_pco; goto bad; } 
+			if (not pointer) 	{ a = PM_zr5; goto bad; }
+
+			memset(modes, 0, (n + 1) * sizeof(bool));
+			pointer = 0;
+		}
+
+		else if (op == 2) { array[n]++; }
+
+		else if (op == 6) {  
+			if (not array[n]) 	{ a = PM_zr6; goto bad; }
+			array[n] = 0;   
+		}
+
+		else if (op == 3) {
+			if (last_mcal_op == 3) 	{ a = PM_ndi; goto bad; }
+
+			array[pointer]++;  modes[pointer] = 1;
+		}
+
+		if (op == 3 or op == 1 or op == 5) last_mcal_op = op;
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		ip = graph[I + state];
+	}
+
+	return false; 
+	
+bad: 	counts[a]++;
+	if (should_print_pm or (a == PM_fea and e > max_e)) {
+		printf("[FEA]:%7s ( on e=%8llu )", pm_spelling[a], e);
+		if (a == PM_fea) {
+			printf("  ---------  %llu ", e);
+			if (e > max_e) {
+				getchar();
+				max_e = e;
+			}
+		}
+		puts("");
+	}
+	return true;
+}
+
+static bool fea_execute_graph(bool b) {
+	for (byte o = 0; o < operation_count; o++) {
+		if (unique_operations[graph[4 * o]] != 3) continue;
+		if (not fea_execute_graph_starting_at(o, b)) return false;
+	}
+	return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -708,6 +810,7 @@ init:  	pointer = 0;
 	// if (should_show) puts("");
 
 	if (graph_analysis()) goto loop;
+	if (fea_execute_graph(should_show)) goto loop;
 	if (execute_graph(should_show)) goto loop;
 	write_graph(counter - 1, range_begin, range_end);
 

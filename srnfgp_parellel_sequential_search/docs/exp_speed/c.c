@@ -16,17 +16,13 @@
 // #define cyan     "\x1B[36m"
 
 
+
 typedef unsigned long long nat;
 
 static const nat window_width = 1300;
 
-static const bool viz = 0;
-
 static const nat unique_operation_count = 5;
 static const nat unique_operations[unique_operation_count] = {1, 2, 3, 5, 6};
-
-
-
 
 static nat graph_count = 0;
 static nat operation_count = 0;
@@ -171,7 +167,7 @@ static void synthesize_graph(nat** zlist, const nat z_count) {
 		printf("\t\t.l={ ");
 		for (nat o = 0; o < operation_count; o++) {
 			const nat count = counts[(i + 1) * operation_count + o];
-			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == z_count ?  green : yellow, (double) count / z_count, count); 
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu] ", o, count == z_count ?  green : yellow, (double) count / z_count, count); 
 		}
 		printf(" }, \n");
 		printf("\t\t.g={ ");
@@ -200,15 +196,8 @@ puts(
 "};"
 );
 
-puts(
-"static const byte _36R[5 * 4] = {" "\n"
-"	0,  1, 2, _,      //        3" "\n"
-"	1,  0, _, _,      //     6  7 " "\n"
-"	2,  _, 4, _,      //    10 11" "\n"
-"	3,  _, _, _,      // 13 14 15" "\n"
-"	4,  0, 0, _,      //       19" "\n"
-"};"
-);
+
+
 
 }
 
@@ -220,8 +209,8 @@ puts(
 
 
 static const nat fea = 100000;
-static const nat el = 40000; 
-static const nat prt = 10000000;
+static const nat el = 80000; 
+static const nat prt = 100000000;
 
 static void write_to_file(void) { // nat* zlist
 
@@ -267,16 +256,10 @@ int main(int argc, const char** argv) {
 	char buffer[1024] = {0};
 	while (fgets(buffer, sizeof buffer, file)) {
 
-		
-	
-		char* index = strchr(buffer, ' ');
-		if (not index) abort();
-		buffer[index - buffer] = 0;
-
-
 		printf("reading z value %llu: ", count);
 		puts(buffer);
 
+		buffer[strlen(buffer) - 1] = 0;
 
 		graph_count = strlen(buffer);
 		
@@ -295,24 +278,20 @@ int main(int argc, const char** argv) {
 	nat* le_array = calloc(count, sizeof(nat));
 	nat* mm_array = calloc(count, sizeof(nat));
 	
-
-	
-
-
 	for (nat i = 0; i < count; i++) {
 
-		if (viz) puts("-----------------------------------------------------------");
-		if (viz) print_nats(zlist[i], graph_count); puts("");
-		if (viz) print_graph_as_adj(zlist[i]);
+		puts("-----------------------------------------------------------");
+		print_nats(zlist[i], graph_count); puts("");
+		print_graph_as_adj(zlist[i]);
 
 		nat mm = 0;
-		const nat le = viz ? print_lifetime(zlist[i], 2, fea, el, prt, &mm) : 0;
-		if (viz) printf("[LE = %llu, MM = %llu]\n", le, mm);
+		const nat le = print_lifetime(zlist[i], 2, fea, el, prt, &mm);
+		printf("[LE = %llu, MM = %llu]\n", le, mm);
 
 		//le_array[i] = le;
 		//mm_array[i] = mm;
 
-		if (viz) getchar();
+		getchar();
 	}
 
 	printf("printing results: \n");
@@ -520,55 +499,8 @@ printf("D = %llu\n", length);
 
 
 
-==============================================
-starting from 0 we get this synth graph:
-==============================================
 
 
-synthesized graph [over 80 z values]:
-  #0  :: { .op = 0, [  1  ]   .lge={ 
-		.l={  ->1 : 1.00[80]  }, 
-		.g={  ->2 : 1.00[80] }, 
-		.e={  ->1 : 0.56[45] ->2 : 0.44[35] }, 
- }   
-
-  #1  :: { .op = 1, [  2  ]   .lge={ 
-		.l={  ->0 : 1.00[80]  }, 
-		.g={  ->0 : 0.28[22] ->2 : 0.65[52] ->4 : 0.01[1] ->5 : 0.06[5] }, 
-		.e={  ->0 : 0.03[2] ->1 : 0.90[72] ->2 : 0.07[6] }, 
- }   
-
-  #2  :: { .op = 2, [  3  ]   .lge={ 
-		.l={  ->0 : 0.42[34]  ->3 : 0.45[36]  ->4 : 0.03[2]  ->5 : 0.10[8]  }, 
-		.g={  ->4 : 1.00[80] }, 
-		.e={  ->3 : 1.00[80] }, 
- }   
-
-  #3  :: { .op = 3, [  5  ]   .lge={ 
-		.l={  ->0 : 0.55[44]  ->1 : 0.23[18]  ->5 : 0.23[18]  }, 
-		.g={  ->0 : 0.15[12] ->1 : 0.54[43] ->4 : 0.04[3] ->5 : 0.28[22] }, 
-		.e={  ->0 : 0.29[23] ->1 : 0.06[5] ->2 : 0.03[2] ->4 : 0.26[21] ->5 : 0.36[29] }, 
- }   
-
-  #4  :: { .op = 4, [  6  ]   .lge={ 
-		.l={  ->0 : 1.00[80]  }, 
-		.g={  ->0 : 1.00[80] }, 
-		.e={  ->0 : 1.00[80] }, 
- }   
-
-  #5  :: { .op = 0, [  1  ]   .lge={ 
-		.l={  ->0 : 0.68[54]  ->1 : 0.19[15]  ->2 : 0.09[7]  ->4 : 0.05[4]  }, 
-		.g={  ->0 : 1.00[80] }, 
-		.e={  ->0 : 1.00[80] }, 
- }   
-
-static const byte _63R[5 * 4] = {
-	0,  1, 4, _,      //        3
-	1,  0, _, _,      //     6  7 
-	2,  0, _, _,      //    10 11
-	3,  _, _, _,      // 13 14 15
-	4,  2, 0, _,      //       19
-};
 
 
 
