@@ -6,12 +6,22 @@
 #include <stdint.h>
 
 
-#define reset "\x1B[0m"
+#define lightblue "\033[38;5;67m"
+#define red     "\x1B[31m"
+#define green   "\x1B[32m"
+#define yellow  "\x1B[33m"
+//#define blue    "\x1B[34m"
+//#define magenta "\x1B[35m"
+//#define cyan    "\x1B[36m"
+#define bold    "\033[1m"
+#define reset   "\x1B[0m"
+
+// #define reset "\x1B[0m"
 #define white  yellow
 // #define red   "\x1B[31m"
-#define green   "\x1B[32m"
+// #define green   "\x1B[32m"
 #define blue   "\x1B[34m"
-#define yellow   "\x1B[33m"
+//#define yellow   "\x1B[33m"
 // #define magenta  "\x1B[35m"
 // #define cyan     "\x1B[36m"
 
@@ -19,14 +29,23 @@
 typedef unsigned long long nat;
 
 static const nat window_width = 1300;
-
 static const bool viz = 0;
+
+
+static const nat similarity_threshold = 22;
+
+
+static const nat fea = 100000;
+static const nat el = 40000; 
+static const nat prt = 10000000;
 
 static const nat unique_operation_count = 5;
 static const nat unique_operations[unique_operation_count] = {1, 2, 3, 5, 6};
 
-
-
+struct zlist {
+	nat** values;
+	nat count;
+};
 
 static nat graph_count = 0;
 static nat operation_count = 0;
@@ -138,52 +157,43 @@ static nat print_lifetime(
 
 
 
-#define lightblue "\033[38;5;67m"
-#define red     "\x1B[31m"
-#define green   "\x1B[32m"
-#define yellow  "\x1B[33m"
-//#define blue    "\x1B[34m"
-//#define magenta "\x1B[35m"
-//#define cyan    "\x1B[36m"
-#define bold    "\033[1m"
-#define reset   "\x1B[0m"
+static void synthesize_graph_over_one_group(struct zlist zlist) {
 
-
-static void synthesize_graph(nat** zlist, const nat z_count) {
-
-	nat* graph = calloc(graph_count, sizeof(nat));
+	// nat* graph = calloc(graph_count, sizeof(nat));
 
 	
 	nat* counts = calloc(graph_count * operation_count, sizeof(nat));
 
-	for (nat z = 0; z < z_count; z++) {
+	for (nat z = 0; z < zlist.count; z++) {
 
 		for (nat i = 0; i < graph_count; i++) {
 			if (not (i % 4)) continue;
-			counts[i * operation_count + zlist[z][i]]++;
+			counts[i * operation_count + zlist.values[z][i]]++;
 		}
 	}
 
-	printf("synthesized graph [over %llu z values]:\n", z_count);
+	printf("synthesized graph [over %llu z values]:\n", zlist.count);
 
 	for (nat i = 0; i < graph_count; i += 4) {
-		printf("  " red "#%llu" reset "  :: { .op = %llu, [ %s %llu %s ]   .lge={ \n", i / 4, zlist[0][i], lightblue bold , unique_operations[zlist[0][i]], reset);
+		printf("  " red "#%llu" reset "  :: { .op = %llu, [ %s %llu %s ]   .lge={ \n", i / 4, 
+			zlist.values[0][i], lightblue bold , unique_operations[zlist.values[0][i]], reset);
+
 		printf("\t\t.l={ ");
 		for (nat o = 0; o < operation_count; o++) {
 			const nat count = counts[(i + 1) * operation_count + o];
-			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == z_count ?  green : yellow, (double) count / z_count, count); 
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ?  green : yellow, (double) count / zlist.count, count); 
 		}
 		printf(" }, \n");
 		printf("\t\t.g={ ");
 		for (nat o = 0; o < operation_count; o++) {
 			const nat count = counts[(i + 2) * operation_count + o];
-			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == z_count ? green : yellow, (double) count / z_count, count); 
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ? green : yellow, (double) count / zlist.count, count); 
 		}
 		printf(" }, \n");
 		printf("\t\t.e={ ");
 		for (nat o = 0; o < operation_count; o++) {
 			const nat count = counts[(i + 3) * operation_count + o];
-			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == z_count ? green : yellow, (double) count / z_count, count); 
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ? green : yellow, (double) count / zlist.count, count); 
 		}
 		printf(" }, \n");
 		printf(" }   \n\n");
@@ -216,43 +226,114 @@ puts(
 
 
 
-
-
-
-static const nat fea = 100000;
-static const nat el = 40000; 
-static const nat prt = 10000000;
-
-static void write_to_file(void) { // nat* zlist
-
-
-	
-
-
-	FILE* out_file = fopen("_delete_me_.csv", "w+");
-	if (not out_file) { perror("fopen"); exit(1); }
-	fprintf(out_file, "widths\n");
-
-//	const nat limit = 1000000000;
-//	const nat step = 300000;
-//	nat p = 0;
-
-/*
-	for (; p < limit; p += step) {
-		printf("\rprt = %llu / %llu                 ", p, limit);
-		fflush(stdout);
-
-		const nat LE = print_lifetime(zlist[0], 2, fea, el, p);
-		fprintf(out_file, "%llu\n", LE);
-		p += 10000;
+static void print_zlist(const char* s, nat d, struct zlist list) {
+	printf("%s . %llu . zlist (%llu){\n", s, d, list.count);
+	for (nat k = 0; k < list.count; k++) {
+		putchar(9);
+		print_nats(list.values[k], graph_count);
+		putchar(10);
 	}
-*/
-
-	fclose(out_file);
-
-
-
+	printf("}\n");
 }
+
+
+
+
+
+static nat similarity_count(nat* a, nat* b) {
+	nat count = 0;
+	for (nat i = 0; i < graph_count; i++) {
+		if (a[i] == b[i]) count++;
+	}
+	return count;
+}
+
+static void partition_into_minor_groups(struct zlist total)  {
+	
+	nat hcount = 0;
+	struct zlist* hlist = calloc(total.count, sizeof(struct zlist));
+
+	for (nat z = 0; z < total.count; z++) {
+
+		nat* graph = total.values[z];
+	
+		for (nat hi = 0; hi < hcount; hi++) {
+
+			for (nat i = 0; i < hlist[hi].count; i++) {
+				if (similarity_count(graph, hlist[hi].values[i]) < similarity_threshold) goto next_minor_group;
+			}
+
+			
+			hlist[hi].values[hlist[hi].count++] = graph;
+			goto next_graph;
+			next_minor_group: continue;
+		}
+	
+		struct zlist new = {
+			.values = calloc(total.count, sizeof(nat*)),
+			.count = 0
+		};
+
+		new.values[new.count++] = graph;
+		hlist[hcount++] = new;
+		next_graph: continue;
+	}
+
+	for (nat i = 0; i < hcount; i++) {
+
+		puts("------------------------");
+		printf("[ printing hlist %llu / %llu ]\n", i, hcount);
+		print_zlist("hlist", i, hlist[i]);
+		puts("------------------------");
+		puts("");
+	}
+	getchar();
+
+	for (nat i = 0; i < hcount; i++) {
+
+		puts("------------------------");
+		printf("[ printing hlist %llu / %llu ]\n", i, hcount);
+		print_zlist("hlist", i, hlist[i]);
+		puts("------------------------");
+		puts("");
+
+		printf("MINOR GROUP #%llu :  performing synthesize graph over MINOR GROUP %llu z values:\n", i, hlist[i].count); 
+		if (hlist[i].count > 1) synthesize_graph_over_one_group(hlist[i]); else printf("[ZLIST OF SIZE 1]\n");
+		getchar();
+		
+	}
+}
+
+
+
+static void find_groups(struct zlist list) {
+
+	struct zlist group = {
+		.values = calloc(list.count, sizeof(nat*)), 
+		.count = 0
+	};
+
+	for (nat i = 0; i < 6; i++) {
+
+		for (nat z = 0; z < list.count; z++) {
+			if (list.values[z][7] == 1) continue;
+			if (list.values[z][20] == i or i == 5) group.values[group.count++] = list.values[z];
+		}
+
+		printf("%llu op is new:   performing synthesize graph over %llu z values:\n", i, group.count); 
+		print_zlist("major group", i, group);
+
+		printf("%llu op is new:   performing synthesize graph over MAJOR GROUP %llu z values:\n", i, group.count); 
+		synthesize_graph_over_one_group(group);
+		getchar();
+
+		partition_into_minor_groups(group);
+		group.count = 0;
+	}
+
+	puts("[finished all sythesized graphs over all groups.]");
+}
+
 
 int main(int argc, const char** argv) {
 
@@ -261,52 +342,43 @@ int main(int argc, const char** argv) {
 	FILE* file = fopen(argv[1], "r");
 	if (not file) { perror("fopen"); exit(1); }
 	
-	nat count = 0; 
-	nat** zlist = NULL;
+	struct zlist zlist = {0};
 
 	char buffer[1024] = {0};
 	while (fgets(buffer, sizeof buffer, file)) {
 
-		
-	
 		char* index = strchr(buffer, ' ');
 		if (not index) abort();
 		buffer[index - buffer] = 0;
 
-
-		printf("reading z value %llu: ", count);
+		printf("reading z value %llu: ", zlist.count);
 		puts(buffer);
-
 
 		graph_count = strlen(buffer);
 		
 		nat* graph = calloc(graph_count, sizeof(nat));
 		init_graph_from_string(buffer, graph);
 
-		zlist = realloc(zlist, sizeof(nat*) * (count + 1));
-		zlist[count++] = graph;
+		zlist.values = realloc(zlist.values, sizeof(nat*) * (zlist.count + 1));
+		zlist.values[zlist.count++] = graph;
 
 	}
 	operation_count = graph_count / 4;
 
-
 	fclose(file);
 
-	nat* le_array = calloc(count, sizeof(nat));
-	nat* mm_array = calloc(count, sizeof(nat));
-	
-
-	
+	nat* le_array = calloc(zlist.count, sizeof(nat));
+	nat* mm_array = calloc(zlist.count, sizeof(nat));
 
 
-	for (nat i = 0; i < count; i++) {
+	for (nat i = 0; i < zlist.count; i++) {
 
 		if (viz) puts("-----------------------------------------------------------");
-		if (viz) print_nats(zlist[i], graph_count); puts("");
-		if (viz) print_graph_as_adj(zlist[i]);
+		if (viz) print_nats(zlist.values[i], graph_count); puts("");
+		if (viz) print_graph_as_adj(zlist.values[i]);
 
 		nat mm = 0;
-		const nat le = viz ? print_lifetime(zlist[i], 2, fea, el, prt, &mm) : 0;
+		const nat le = viz ? print_lifetime(zlist.values[i], 2, fea, el, prt, &mm) : 0;
 		if (viz) printf("[LE = %llu, MM = %llu]\n", le, mm);
 
 		//le_array[i] = le;
@@ -316,10 +388,10 @@ int main(int argc, const char** argv) {
 	}
 
 	printf("printing results: \n");
-	print_nats(le_array, count); puts("");
-	print_nats(mm_array, count); puts("");
+	print_nats(le_array, zlist.count); puts("");
+	print_nats(mm_array, zlist.count); puts("");
 
-	synthesize_graph(zlist, count);
+	find_groups(zlist);
 }
 
 
@@ -573,6 +645,103 @@ static const byte _63R[5 * 4] = {
 
 
 
+
+
+
+
+
+
+
+
+
+static const nat fea = 100000;
+static const nat el = 40000; 
+static const nat prt = 10000000;
+
+static void write_to_file(void) { // nat* zlist
+
+
+	
+
+
+	FILE* out_file = fopen("_delete_me_.csv", "w+");
+	if (not out_file) { perror("fopen"); exit(1); }
+	fprintf(out_file, "widths\n");
+
+//	const nat limit = 1000000000;
+//	const nat step = 300000;
+//	nat p = 0;
+
+
+	for (; p < limit; p += step) {
+		printf("\rprt = %llu / %llu                 ", p, limit);
+		fflush(stdout);
+
+		const nat LE = print_lifetime(zlist[0], 2, fea, el, p);
+		fprintf(out_file, "%llu\n", LE);
+		p += 10000;
+	}
+
+
+	fclose(out_file);
+
+
+
+}
+
+
+
+
 */
+
+
+
+
+
+
+
+
+/*
+
+	static void partion_into_minor_groups(list)  {
+	
+		for (z < list) {
+
+			g = list[z];
+		
+			for (hi < hcount) {
+
+				h = hlist[hi];
+
+				for (i < h) {
+					if (similarity_count(g, h[i]) < similarity_thr) goto next_h;
+				}
+
+				h.push(g);
+				goto next_z;
+
+				next_h: continue;
+			}
+		
+			make new_h = {};
+			new_h.push(g);
+			hlist.push(new_h);
+			
+			next_z: continue;
+		}
+
+		print_hs(hlist, hcount);
+	}
+
+
+
+
+
+
+
+*/
+
+
+
 
 
