@@ -13,6 +13,22 @@
 #include <errno.h>
 #include <sys/time.h> 
 #include <termios.h>
+#include <stdio.h>  
+#include <stdlib.h> 
+#include <string.h> 
+#include <fcntl.h>
+#include <unistd.h>
+#include <iso646.h>
+#include <stdbool.h>
+#include <termios.h>
+#include <errno.h>
+#include <ctype.h>
+#include <time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
+#include <sys/wait.h>
 
 #define reset "\x1B[0m"
 #define red   "\x1B[31m"
@@ -24,6 +40,9 @@
 
 typedef int8_t byte;
 typedef uint64_t nat;
+
+static const byte D = 1;       // the duplication count (operation_count = 5 + D)
+static const bool R = 1;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const byte unique_operations[5] = {1, 2, 3, 5, 6};
 
@@ -48,6 +67,32 @@ static const char* pm_spelling[] = {
 
 static const byte _ = 0;
 
+
+/*
+
+
+63R 1sp calls that we executed: 202309166.140547:
+
+
+	./run 0 1360488959
+
+	./run 1360488960 2720977919
+
+	./run 2720977920 4081466879
+
+	./run 4081466880 5441955839
+
+	./run 5441955840 6802444799
+
+	./run 6802444800 8162933759
+
+	./run 8162933760 9523422719
+
+	./run 9523422720 10883911679
+
+
+
+*/
 
 
 static const byte _63R[5 * 4] = {
@@ -78,7 +123,7 @@ static const byte _36R_hole_positions[_36R_hole_count] = {3, 6, 7, 9, 11, 13, 14
 
 
 
-static const byte initial = _36R_hole_count;              // delete me!!!
+static const byte initial = R ? _63R_hole_count : _36R_hole_count;              // delete me!!!
 
 
 
@@ -86,7 +131,7 @@ static const byte initial = _36R_hole_count;              // delete me!!!
 
 
 
-static const byte D = 1;       // the duplication count.
+
 
 
 
@@ -98,7 +143,8 @@ static const byte D = 1;       // the duplication count.
 
 
 
-static const nat display_rate = 14;
+static const nat display_rate = 17;
+
 static const bool debug_prints = 0;           // delete me!
 static const nat viz = 0;
 
@@ -108,7 +154,7 @@ static const byte graph_count = 4 * operation_count;
 static const byte hole_count = initial + 4 * D;
 
 static const nat execution_limit = 100000000;
-static const nat array_size = 3000;
+static const nat array_size = 4000;
 static const nat rer_count = 40;
 static const nat oer_count = 80;
 static const nat required_er_count = 6;
@@ -125,7 +171,6 @@ static const nat blackout_radius = 7;
 static const nat safety_factor = 30;
 static const nat vertical_line_count_thr = 1;
 static const nat required_ia_count = 10;
-
 
 static const nat max_buffer_count = 10;
 
@@ -167,6 +212,20 @@ struct bucket {
 };
 
 static void print_graph(void) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); putchar(10); }
+static void print_graph_raw(void) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
+
+static void print_progress(nat x, nat total, nat window_width) {
+	const double ratio = (double) x / (double) total;
+	const nat w = (nat) ((double) ratio * (double) window_width);
+	const nat rest = window_width - w;
+
+	putchar('\r');
+	printf("%llu:%.*e:[", x, 8, ratio); 
+	for (nat i = 0; i < w; i++) printf("*");
+	for (nat i = 0; i < rest; i++) printf("`");
+	putchar(']');
+	fflush(stdout);
+}
 
 static void get_datetime(char datetime[32]) {
 	struct timeval tv;
@@ -180,10 +239,10 @@ static void get_graphs_z_value(char string[64]) {
 	string[graph_count] = 0;
 }
 
-
-
 static bool graph_analysis(void) {
-	for (nat index = 0; index < operation_count; index++) {
+	for (byte index = 0; index < operation_count; index++) {
+
+		if (graph[4 * index + 3] == index) return true;
 
 		if (	graph[4 * index + 0] == 4 and 
 			graph[4 * index + 2]
@@ -450,12 +509,12 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 				printf( red "NSVLPM ERROR: too low safety_factor parameter! found %llu buckets which where .data >= required_data_size, "
 					"but is_moving=false... soft aborting..." reset, stats[1][0][0]
 				);
-				puts(""); fflush(stdout); sleep(1);
+				puts(""); fflush(stdout); 
 			}
 
 			if (vertical_line_count > vertical_line_count_thr) {
 				// if (should_print_pm) 
-				printf("NSVL PRUNED ON BATCH COUNT:   %llu batches,     [e = %llu]\n", batch_count, e);
+				// printf("NSVL PRUNED ON BATCH COUNT:   %llu batches,     [e = %llu]\n", batch_count, e);
 				a = PM_nsvl; 
 				goto bad;
 			}
@@ -488,7 +547,6 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 		    not executed[i + 2] and graph[i + 2] or
 		    not executed[i + 3] and graph[i + 3]
 		) {
-			puts("-------EDA-------------");
 			a = PM_eda; 
 			goto bad; 
 		}
@@ -496,7 +554,7 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 	return false; 
 	
 bad: 	counts[a]++;
-	if (should_print_pm) printf("%7s ( on e=%8llu )\n", pm_spelling[a], e);
+	// if (should_print_pm)  printf("%7s ( on e=%8llu )\n", pm_spelling[a], e);
 	return true;
 }
 
@@ -510,12 +568,12 @@ static bool execute_graph(bool b) {
 
 
 
-
-
-
+static const nat fea_execution_limit = 10000;
 
 
 static nat max_e = 0;
+
+
 
 
 static bool fea_execute_graph_starting_at(byte origin, bool should_print_pm) {
@@ -530,7 +588,8 @@ static bool fea_execute_graph_starting_at(byte origin, bool should_print_pm) {
 	nat a = PM_count;
 	nat pointer = 0;
 	nat e = 0;
-	for (; e < 10000; e++) {
+
+	for (; e < fea_execution_limit; e++) {
 
 		const byte I = ip * 4;
 		const byte op = unique_operations[graph[I]];
@@ -574,16 +633,10 @@ static bool fea_execute_graph_starting_at(byte origin, bool should_print_pm) {
 	return false; 
 	
 bad: 	counts[a]++;
-	if (should_print_pm or (a == PM_fea and e > max_e)) {
-		printf("[FEA]:%7s ( on e=%8llu )", pm_spelling[a], e);
-		if (a == PM_fea) {
-			printf("  ---------  %llu ", e);
-			if (e > max_e) {
-				getchar();
-				max_e = e;
-			}
-		}
-		puts("");
+	if (a == PM_fea and e > max_e) {
+		printf("\r  ---------  %llu ", e);
+		printf("[FEA]:%7s ( on e=%8llu )\033[K\n", pm_spelling[a], e);
+		max_e = e;
 	}
 	return true;
 }
@@ -667,7 +720,7 @@ try_open:;
 
 	char dt[32] = {0};
 	get_datetime(dt);
-	snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu-%llu_z.txt", dt, zindex, begin, end);
+	snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_%llu_z.txt", dt, zindex, begin, end);
 
 	if (renameat(dir, filename, dir, newfilename) < 0) {
 		perror("rename");
@@ -701,8 +754,6 @@ static void write_graph(nat zindex, nat begin, nat end) {
 
 
 
-
-
 static void print_nats(nat* v, nat l) {
 	printf("(%llu)[ ", l);
 	for (nat i = 0; i < l; i++) printf("%2llu ", v[i]);
@@ -718,9 +769,9 @@ static void print_bytes(byte* v, nat l) {
 
 
 static void print_bytes_raw(byte* v, nat l) {
-	printf("(%llu)[ ", l);
-	for (nat i = 0; i < l; i++) printf("%2hhu ", v[i]);
-	printf("] - ");
+	printf("(%llu)[", l);
+	for (nat i = 0; i < l; i++) printf("%2hhu", v[i]);
+	printf(" ]");
 }
 
 
@@ -741,7 +792,7 @@ int main(int argc, const char** argv) {
 		abort();
 	}
 
-	printf("using: [begin=%llu, ...end=%llu]\n", range_begin, range_end);
+	printf("using: %s:[begin=%llu, ...end=%llu]\n", R ? "63R" : "36R", range_begin, range_end);
 
 	graph    = calloc(graph_count, 1);
 	array    = calloc(array_size + 1, sizeof(nat));
@@ -755,13 +806,18 @@ int main(int argc, const char** argv) {
 	byte* moduli     = calloc(hole_count, 1);
 	byte* positions  = calloc(hole_count, 1);
 
+	struct winsize window = {0};
+	ioctl(0, TIOCGWINSZ, &window);
+	const nat window_width = window.ws_col - 80;
+
 	nat counter = 0;
 	byte pointer = 0;
 
 	for (byte i = 0; i < initial; i++) {
 		moduli[i] = operation_count;
-		positions[i] = _36R_hole_positions[i];
+		positions[i] = R ? _63R_hole_positions[i] : _36R_hole_positions[i];
 	}
+
 	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i;
 	for (byte i = 0; i < D; i++) {
 		moduli[initial + 4 * i + 0] = 5;
@@ -784,11 +840,10 @@ int main(int argc, const char** argv) {
 	}
 	if (range_end >= p) { puts("range_end is too big!"); printf("%llu\n", range_end - 1); printf("%llu\n", p); abort(); }
 
-	memcpy(graph, _36R, 20);
+	memcpy(graph, R ? _63R : _36R, 20);
 	for (byte i = 0; i < hole_count; i++) graph[positions[i]] = options[i];
 
 	goto init;
-
 
 loop:
 	if (not memcmp(options, end, hole_count)) goto done;
@@ -803,8 +858,12 @@ init:  	pointer = 0;
 	const bool should_show = not (counter & ((1 << display_rate) - 1));
 	counter++;
 
+	if (should_show) {
+		print_bytes_raw(options, hole_count);
+		print_progress(counter, range_end - range_begin, window_width);
+	}
+
 	//if (should_show) print_bytes(end, hole_count);
-	if (should_show) print_bytes_raw(options, hole_count);
 	//if (should_show) print_bytes(positions, hole_count);
 	//if (should_show) print_bytes(moduli, hole_count);
 	// if (should_show) puts("");
@@ -814,8 +873,7 @@ init:  	pointer = 0;
 	if (execute_graph(should_show)) goto loop;
 	write_graph(counter - 1, range_begin, range_end);
 
-	printf("\tFOUND:  z = "); print_graph();
-	// getchar();
+	printf("\r\tFOUND:  z = "); print_graph_raw(); printf("\033[K\n"); fflush(stdout);
         goto loop;
 
 reset_:
@@ -1881,7 +1939,56 @@ static void write_graph(nat* g, nat oc, char dt[32]) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	./run 0 10883911679
+
+	1813985280
+	3627970560
+	5441955840
+	7255941120
+	9069926400
+	
+
+
+
+
+
+./run 0 10883911679
+
+./run 0 10883911679
+
+./run 0 10883911679
+
+./run 0 10883911679
+
+./run 0 10883911679
+
+./run 0 10883911679
+
+
+
+
+
 */
+
+
+
+
 
 
 
