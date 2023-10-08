@@ -21,7 +21,6 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
-
 #define lightblue "\033[38;5;67m"
 #define red     "\x1B[31m"
 #define green   "\x1B[32m"
@@ -32,30 +31,20 @@
 #define bold    "\033[1m"
 #define reset   "\x1B[0m"
 
-// #define reset "\x1B[0m"
-// #define white  yellow
-// #define red   "\x1B[31m"
-// #define green   "\x1B[32m"
-// #define blue   "\x1B[34m"
-// #define yellow   "\x1B[33m"
-// #define magenta  "\x1B[35m"
-// #define cyan     "\x1B[36m"
-
-
 typedef unsigned long long nat;
 
 static const nat window_begin = 0;
-static const nat window_end = 1500;
-
-static const nat row_count = 220;
-static const nat el = 10000000; // page size for paging the lifetime
-static const nat prt = 100000;   // iniitial page offset in lifetime. 
-
+static const nat window_end = 3000;
+static const nat row_count = 3000;
+static const nat el = 10000000000; 			// page size for paging the lifetime
+static const nat prt = 100000000;   			// iniitial page offset in lifetime. 
 static const nat fea = 3000000;
 
-// static const bool viz = 1;
-
 static const nat similarity_threshold = 22;
+
+
+static char directory[4096] = "./images/";
+static char filename[4096] = {0};
 
 
 static const nat unique_operation_count = 5;
@@ -100,6 +89,11 @@ static void print_nats(nat* v, nat l) {
 		printf("%llu ", v[i]);
 	}
 	printf("]");
+}
+
+static void get_graphs_z_value(nat* graph, char string[64]) { 
+	for (nat i = 0; i < graph_count; i++) string[i] = (char) graph[i] + '0';
+	string[graph_count] = 0;
 }
 
 static nat print_lifetime(
@@ -190,7 +184,9 @@ done:
 
 
 
-/*
+
+
+
 
 
 	// *mm = max;
@@ -207,111 +203,112 @@ done:
 
 
 
-static void generate_lifetime_images(
-	const char* z_list_filename, 
-	const char* destination_dir, 
-	byte* graph, byte start, 
-	nat begin_timestep, nat end_timestep,
-	nat begin_cell, nat end_cell,
-	nat maximum
+
+static nat generate_image_for_lifetime(
+	nat* graph, 
+	const nat origin, 
+	const nat n, 
+	const nat print_count,
+	const nat pre_run_count
 ) {
-	nat list_count = 0;
-	byte** list = read_z_list_from_file(z_list_filename, &list_count);
-	if (not list) return;
 
-	printf("generate: generating %llu lifetimes .ppm's...\n", list_count);
-
-	const nat n = array_size - 1;
-	nat* array = calloc(array_size, sizeof(nat));
-	nat pointer = 0;
-
-	for (nat z = 0; z < list_count; z++) {
-
-		memcpy(graph, list[z], 32);
-		memset(array, 0, array_size * sizeof(nat));
-		pointer = 0;
-
-		byte i = start;
-
-		nat timestep = 0;
-		
-		printf("\r [ ( %llu / %llu ) ] generating lifetime:  %s            ", 
-				z, list_count, hex_string(graph));
-
-		fflush(stdout);
-
-		
-		char path[4096] = {0}, filename[4096] = {0};
-		sprintf(filename, "z_%s.ppm", hex_string(graph));
-		strcpy(path, destination_dir);
-		strcat(path, "/");
-		strcat(path, filename);
-
-		FILE* file = fopen(path, "wb");
-
-		if (not file) {
-			fprintf(stderr, "error: %s: could not open file for writing: %s\n", 
-				path, strerror(errno));
-			return;
-		}
-
-		fprintf(file, "P6\n%llu %llu\n255\n", end_cell - begin_cell, end_timestep - begin_timestep);
-
-		do {
-			
-			if (i == 5) {
-				if (timestep >= begin_timestep and 
-				    timestep < end_timestep) {
-					for (nat j = begin_cell; j < end_cell; j++) {
-						double x = (double) array[j] / (double) maximum;  
-
-						// nat x = array[j];
-				   //              unsigned char 
-							// r = x ? 255 : 0, 
-							// g = x ? 255 : 0, 
-							// b = x ? 255 : 0;
-
-						unsigned char 
-							r = (unsigned char)(x * 255.0), 
-							g = (unsigned char)(x * 255.0), 
-							b = (unsigned char)(x * 255.0);
-				                fwrite(&r, 1, 1, file);
-				                fwrite(&g, 1, 1, file);
-				                fwrite(&b, 1, 1, file);
-					}
-				}
-				timestep++;
-			}
-
-
-			if (i == 0xE) {
-				i = graph[i * 2 + (array[n] < array[pointer])];
-			} else if (i == 0xC) {
-				i = graph[i * 2 + (array[n] != array[pointer])];
-			} else if (i == 0xF) {
-				i = graph[i * 2 + (array[n] > array[pointer])];
-			}
-
-			else if (i == 1) { pointer++; 			i = graph[i * 2];  }
-			else if (i == 2) { array[n]++; 			i = graph[i * 2];  }
-			else if (i == 3) { array[pointer]++; 		i = graph[i * 2];  }
-			else if (i == 5) { pointer = 0; 		i = graph[i * 2];  }
-			else if (i == 6) { array[n] = 0; 		i = graph[i * 2];  }
-			
-		} while (timestep < end_timestep);
-
-		fclose(file);
-
-
+	const int dir = open(directory, O_RDONLY | O_DIRECTORY, 0);
+	if (dir < 0) { 
+		perror("write open directory"); 
+		printf("directory=%s ", directory); 
+		return 2; 
 	}
-	printf("generate: generated all images.\n");
+	int flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+	mode_t m  = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+	
+	char string[64] = {0};
+	get_graphs_z_value(graph, string);
+	snprintf(filename, sizeof filename, "%s_%llu.ppm", string, origin);
+	printf("filename=%s\n", filename);
+
+	const int file = openat(dir, filename, flags, m);
+	if (file < 0) {
+		perror("create openat file");
+		printf("filename=%s ", filename);
+		close(dir); 
+		return 1;
+	}
+
+	nat* array = calloc(n + 1, sizeof(nat));
+	bool* modes = calloc(n + 1, sizeof(bool));
+
+	nat er = 0;
+	nat e = 0;
+	nat pointer = 0, ip = origin;
+
+
+	char header[128] = {0};
+	snprintf(header, sizeof header, "P6\n%llu %llu\n255\n", window_end - window_begin, row_count);
+	write(file, header, strlen(header));
+
+	for (; e < print_count + pre_run_count; e++) {
+
+		const nat I = ip * 4;
+		const nat op = unique_operations[graph[I]];
+
+		if (op == 1) { if (pointer == n) abort(); pointer++; }
+
+		else if (op == 5) {
+			if (e >= pre_run_count) {
+				if (er >= row_count) goto done;
+				for (nat i = window_begin; i < window_end; i++) {
+					const uint8_t r = modes[i] * 255;
+			                write(file, &r, 1);
+			                write(file, &r, 1);
+			                write(file, &r, 1);
+				}
+				er++;
+			}
+			pointer = 0;
+			memset(modes, 0, sizeof(bool) * (n + 1));
+		}
+		else if (op == 2) { array[n]++; }
+		else if (op == 6) { array[n] = 0; }
+		else if (op == 3) { array[pointer]++; modes[pointer] = 1; }
+
+		nat state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		ip = graph[I + state];
+	}
+		
+done:
 	free(array);
+	free(modes);
+	close(file); 
+	
+	printf("write: created %llu z values to ", 1LLU);
+	printf("%s : %s\n", directory, filename);
+	close(dir); 
+
+	return 0;
 }
 
+static void generate_images(struct zlist list) {
 
-*/
+	printf("generate: generating %llu lifetimes .ppm's...\n", list.count);
+	if (mkdir("images/", 0777)) { perror("mkdir"); getchar(); }
+	
+	for (nat i = 0; i < list.count; i++) {
+		for (nat o = 0; o < graph_count; o += 4) {
 
+			if (list.values[i][o + 0] != 2) continue;
 
+			if (not generate_image_for_lifetime(list.values[i], o / 4, fea, el, prt)) continue;
+
+			printf("warning: image for z value already exists... do you wish to continue? ");
+			getchar();
+		}
+	}
+
+	printf("generated %llu images in %s.\n", list.count, directory);
+}
 
 
 
@@ -505,14 +502,7 @@ static void get_datetime(char datetime[32]) {
 
 
 
-static char directory[4096] = "./";
-static char filename[4096] = {0};
 
-
-static void get_graphs_z_value(nat* graph, char string[64]) { 
-	for (nat i = 0; i < graph_count; i++) string[i] = (char) graph[i] + '0';
-	string[graph_count] = 0;
-}
 
 
 static void write_to_file(nat* graph) {
@@ -552,7 +542,7 @@ try_open:;
 	char string[64] = {0};
 	get_graphs_z_value(graph, string);
 	write(file, string, graph_count);
-	write(file, "\n", 1);
+	write(file, " \n", 2);
 	close(file); 
 	
 	if (m) {
@@ -704,16 +694,12 @@ int main(int argc, const char** argv) {
 
 	if (argc <= 1) return puts("give input z list filename as an argument!");
 
-
-
 	struct termios terminal;
 	tcgetattr(0, &terminal);
 	struct termios copy = terminal; 
 	copy.c_lflag &= ~((size_t) ECHO | ICANON);
 	tcsetattr(0, TCSAFLUSH, &copy);
-	write(1, "\033[?1049h", 8);
-
-
+	// write(1, "\033[?1049h", 8);
 
 
 	FILE* file = fopen(argv[1], "r");
@@ -744,6 +730,23 @@ int main(int argc, const char** argv) {
 
 	fclose(file);
 
+
+	generate_images(zlist);
+	// find_major_groups(zlist);
+
+	// write(1, "\033[?1049l", 8);
+}
+
+
+
+
+
+
+
+
+
+// printf("printing results: \n");
+
 	// nat* le_array = calloc(zlist.count, sizeof(nat));
 	// nat* mm_array = calloc(zlist.count, sizeof(nat));
 
@@ -764,28 +767,24 @@ int main(int argc, const char** argv) {
 	// }
 
 
-	printf("printing results: \n");
-	// print_nats(le_array, zlist.count); puts("");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// print_nats(le_array, zlist.count); puts("");
 	// print_nats(mm_array, zlist.count); puts("");
-
-	find_major_groups(zlist);
-
-
-	write(1, "\033[?1049l", 8);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1077,9 +1076,7 @@ static const byte _63R[5 * 4] = {
 
 
 
-static const nat fea = 100000;
-static const nat el = 40000; 
-static const nat prt = 10000000;
+
 
 static void write_to_file(void) { // nat* zlist
 
@@ -1398,5 +1395,169 @@ visualization_utility: ]]]]]]]]]]]]]]]
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+static void generate_lifetime_images(
+	const char* z_list_filename, 
+	const char* destination_dir, 
+	byte* graph, byte start, 
+	nat begin_timestep, nat end_timestep,
+	nat begin_cell, nat end_cell,
+	nat maximum
+) {
+	nat list_count = 0;
+	byte** list = read_z_list_from_file(z_list_filename, &list_count);
+	if (not list) return;
+
+	printf("generate: generating %llu lifetimes .ppm's...\n", list_count);
+
+	const nat n = array_size - 1;
+	nat* array = calloc(array_size, sizeof(nat));
+	nat pointer = 0;
+
+	for (nat z = 0; z < list_count; z++) {
+
+		memcpy(graph, list[z], 32);
+		memset(array, 0, array_size * sizeof(nat));
+		pointer = 0;
+
+		byte i = start;
+
+		nat timestep = 0;
+		
+		printf("\r [ ( %llu / %llu ) ] generating lifetime:  %s            ", 
+				z, list_count, hex_string(graph));
+
+		fflush(stdout);
+
+		
+		char path[4096] = {0}, filename[4096] = {0};
+		sprintf(filename, "z_%s.ppm", hex_string(graph));
+		strcpy(path, destination_dir);
+		strcat(path, "/");
+		strcat(path, filename);
+
+		FILE* file = fopen(path, "wb");
+
+		if (not file) {
+			fprintf(stderr, "error: %s: could not open file for writing: %s\n", 
+				path, strerror(errno));
+			return;
+		}
+
+		fprintf(file, "P6\n%llu %llu\n255\n", end_cell - begin_cell, end_timestep - begin_timestep);
+
+		do {
+			
+			if (i == 5) {
+				if (timestep >= begin_timestep and 
+				    timestep < end_timestep) {
+					for (nat j = begin_cell; j < end_cell; j++) {
+						double x = (double) array[j] / (double) maximum;  
+
+						// nat x = array[j];
+				   //              unsigned char 
+							// r = x ? 255 : 0, 
+							// g = x ? 255 : 0, 
+							// b = x ? 255 : 0;
+
+						unsigned char 
+							r = (unsigned char)(x * 255.0), 
+							g = (unsigned char)(x * 255.0), 
+							b = (unsigned char)(x * 255.0);
+				                fwrite(&r, 1, 1, file);
+				                fwrite(&g, 1, 1, file);
+				                fwrite(&b, 1, 1, file);
+					}
+				}
+				timestep++;
+			}
+
+
+			if (i == 0xE) {
+				i = graph[i * 2 + (array[n] < array[pointer])];
+			} else if (i == 0xC) {
+				i = graph[i * 2 + (array[n] != array[pointer])];
+			} else if (i == 0xF) {
+				i = graph[i * 2 + (array[n] > array[pointer])];
+			}
+
+			else if (i == 1) { pointer++; 			i = graph[i * 2];  }
+			else if (i == 2) { array[n]++; 			i = graph[i * 2];  }
+			else if (i == 3) { array[pointer]++; 		i = graph[i * 2];  }
+			else if (i == 5) { pointer = 0; 		i = graph[i * 2];  }
+			else if (i == 6) { array[n] = 0; 		i = graph[i * 2];  }
+			
+		} while (timestep < end_timestep);
+
+		fclose(file);
+
+
+	}
+	printf("generate: generated all images.\n");
+	free(array);
+}
+
+
+
+
+
+char dt[32] = {0};
+	get_datetime(dt);
+	snprintf(newfilename, sizeof newfilename, "%s_%u_%u_%u_good.txt", dt, 0, 0, 0);
+
+	if (renameat(dir, filename, dir, newfilename) < 0) {
+		perror("rename");
+		printf("filename=%s newfilename=%s", filename, newfilename);
+		close(dir); return;
+	}
+	printf("[\"%s\" renamed to  -->  \"%s\"]\n", filename, newfilename);
+	strlcpy(filename, newfilename, sizeof filename);
+
+	close(dir);
+
+	printf("\033[1mwrite: saved %llu z values to ",1LLU);
+	printf("%s : %s \033[0m\n", directory, newfilename);
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+// #define reset "\x1B[0m"
+// #define white  yellow
+// #define red   "\x1B[31m"
+// #define green   "\x1B[32m"
+// #define blue   "\x1B[34m"
+// #define yellow   "\x1B[33m"
+// #define magenta  "\x1B[35m"
+// #define cyan     "\x1B[36m"
+
+
+
+
+
+// static const bool viz = 1;
 
 
