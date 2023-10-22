@@ -153,14 +153,21 @@ static const byte graph_count = 4 * operation_count;
 
 static const byte hole_count = initial + 4 * D;
 
+static const nat fea_execution_limit = 10000;
 static const nat execution_limit = 100000000;
 static const nat array_size = 4000;
-static const nat rer_count = 40;
+
+static const nat rer_count = 30; 
 static const nat oer_count = 80;
-static const nat required_er_count = 6;
+
 static const nat max_acceptable_consecutive_incr = 50;
-static const nat max_acceptable_run_length = 7;
+static const nat max_acceptable_run_length = 8;
+
 static const nat expansion_check_timestep = 10000;
+static const nat required_er_count = 25; 
+
+static const nat expansion_check_timestep2 = 1000; 
+static const nat required_s0_increments = 6;  
 
 static const nat starting_base = 0;
 static const nat pre_run = 10000000;
@@ -169,10 +176,12 @@ static const nat mpp = 60;
 static const nat counter_thr = 5;
 static const nat blackout_radius = 7;
 static const nat safety_factor = 30;
-static const nat vertical_line_count_thr = 1;
+static const nat vertical_line_count_thr = 3;
 static const nat required_ia_count = 10;
 
 static const nat max_buffer_count = 10;
+
+
 
 struct item {
 	char z[64];
@@ -188,13 +197,12 @@ static struct bucket* buckets = NULL;
 static struct bucket* scratch = NULL;
 
 static nat counts[PM_count] = {0};
-
+static nat largest_pruned_FEA_instruction_count = 0;
 
 static nat buffer_count = 0;
 static struct item buffer[max_buffer_count] = {0};
 static char directory[4096] = "./";
 static char filename[4096] = {0};
-
 
 
 struct list {
@@ -316,7 +324,8 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 	memset(array, 0, (n + 1) * sizeof(nat));
 	memset(modes, 0, (n + 1) * sizeof(bool));
 	memset(buckets, 0, (n + 1) * sizeof(struct bucket));
-	memset(scratch, 0, (n + 1) * sizeof(struct bucket));
+	memset(scratch, 0, (n + 1) * sizeof(struct bucket));     //todo: delay doing this until you see that the graph is
+								 //      actually worth running nsvlpm on!!! 
 
 	memset(executed, 0, graph_count * sizeof(bool));
 	
@@ -330,7 +339,7 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 	    	OER_er_at = 0, 		OER_counter = 0, 
 		R0I_counter = 0,     	H_counter = 0;
 	
-	for (nat b = 0; b < n; b++) {
+	for (nat b = 0; b < n; b++) {                          /// same with this one too. 
 		buckets[b].index = b;
 		buckets[b].uid = b;
 	}
@@ -340,13 +349,16 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 	nat e = 0;
 	for (; e < execution_limit; e++) {
 
-		if (e >= expansion_check_timestep) {   
-			if (array[0] == 1) 			{ a = PM_f1e; goto bad; }
+		if (e >= expansion_check_timestep2) {
+			if (array[0] < required_s0_increments) { a = PM_f1e; goto bad; }
+		}
+
+		if (e >= expansion_check_timestep) {
 			if (er_count < required_er_count) 	{ a = PM_erc; goto bad; }
 		}
 
 		const byte I = ip * 4;
-		const byte op = unique_operations[graph[I]];
+		const byte op = unique_operations[graph[I]];    // simplify this to use op indexes, not op names. 
 
 		if (op == 1) {
 			if (pointer == n) 	{ a = PM_fea; goto bad; } 
@@ -358,9 +370,9 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 			if (last_mcal_op != 3) 	{ a = PM_pco; goto bad; } 
 			if (not pointer) 	{ a = PM_zr5; goto bad; } 
 
-			// rer:
-			if (RER_er_at == pointer) RER_counter++; else { RER_er_at = pointer; RER_counter = 0; }
-			if (RER_counter == rer_count) { a = PM_rer; goto bad; }
+		//	// rer:
+		//	if (RER_er_at == pointer) RER_counter++; else { RER_er_at = pointer; RER_counter = 0; }
+		//	if (RER_counter == rer_count) { a = PM_rer; goto bad; }
 
 			// oer:
 			if (	pointer == OER_er_at or 
@@ -374,6 +386,7 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 
 			// nsvl
 			if (e >= base + pre_run) timestep_count++;
+
 			if (viz and e >= base + pre_run) {
 				const nat xw = compute_xw(array, n);
 				const nat dw_count = (nat) ((double) xw * (double) discard_window);
@@ -428,11 +441,22 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 
 			// nsvl
 			if (e >= base + pre_run) {
+
+
+			//////////////////////////////////////        <--------- delete this!!!
+
 				const nat xw = compute_xw(array, n);
 				const nat dw_count = (nat) ((double) xw * (double) discard_window);				
 				if (pointer < dw_count or pointer > xw - dw_count) goto dont_accumulate;
 
+			//////////////////////////////////////
+
+
+
+
+
 				ia_count++;
+
 				const nat desired_index = pointer;
 				scratch_count = gather_buckets_at(buckets, scratch, desired_index, 0, n);
 				if (not scratch_count) goto dont_accumulate;
@@ -478,9 +502,19 @@ static bool execute_graph_starting_at(byte origin, bool should_print_pm) {
 		if (op == 3 or op == 1 or op == 5) last_mcal_op = op;
 
 		if (e >= base + pre_run + acc_ins) {
-			if (ia_count < required_ia_count) { a = PM_ric; goto bad; } 
+
+
+
+		/////////////////////////////////////////////////
+
+		//	if (ia_count < required_ia_count) { a = PM_ric; goto bad; } 
+
+		/////////////////////////////////////////////////
+
+
 			const double factor = (double) safety_factor / (double) 100.0;  
 			const nat required_data_size = (nat) ((double) factor * (double) timestep_count);
+
 			if (debug_prints) printf("threshold info: \n\n\t\ttimestep_count: %llu,  required_data_size: %llu\n\n", timestep_count, required_data_size);
 
 			nat stats[2][2][2] = {0};
@@ -568,14 +602,6 @@ static bool execute_graph(bool b) {
 
 
 
-static const nat fea_execution_limit = 10000;
-
-
-static nat max_e = 0;
-
-
-
-
 static bool fea_execute_graph_starting_at(byte origin, bool should_print_pm) {
 
 	const nat n = 5;
@@ -633,10 +659,10 @@ static bool fea_execute_graph_starting_at(byte origin, bool should_print_pm) {
 	return false; 
 	
 bad: 	counts[a]++;
-	if (a == PM_fea and e > max_e) {
+	if (a == PM_fea and e > largest_pruned_FEA_instruction_count) {
 		printf("\r  ---------  %llu ", e);
 		printf("[FEA]:%7s ( on e=%8llu )\033[K\n", pm_spelling[a], e);
-		max_e = e;
+		largest_pruned_FEA_instruction_count = e;
 	}
 	return true;
 }
@@ -648,23 +674,6 @@ static bool fea_execute_graph(bool b) {
 	}
 	return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -748,8 +757,8 @@ static void write_graph(nat zindex, nat begin, nat end) {
 		buffer_count = 0;
 	}
 
-	sleep(1);
-	usleep(10000);
+	//sleep(1);
+	//usleep(10000);
 }
 
 

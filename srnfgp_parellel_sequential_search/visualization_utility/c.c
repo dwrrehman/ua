@@ -183,27 +183,6 @@ done:
 
 
 
-
-
-
-
-
-
-	// *mm = max;
-	// return le;
-
-	// n:
-	//nat le = 0; for (; le < n; le++)  if (not array[le]) break;
-
-	// m:
-	//nat max = 0; for (nat i = 0; i < n; i++)  if (array[i] > max) max = array[i];
-
-
-
-
-
-
-
 static nat generate_image_for_lifetime(
 	nat* graph, 
 	const nat origin, 
@@ -668,8 +647,8 @@ static void find_major_groups(struct zlist list) {
 	for (nat i = 0; i < 6; i++) {
 
 		for (nat z = 0; z < list.count; z++) {
-			if (list.values[z][7] == 1) continue;
-			if (list.values[z][20] == i or i == 5) group.values[group.count++] = list.values[z];
+			if (list.values[z][1 * 4 + 3] == 1) continue;
+			if (list.values[z][5 * 4 + 0] == i or i == 5) group.values[group.count++] = list.values[z];
 		}
 
 		printf("%llu op is new:   performing synthesize graph over %llu z values:\n", i, group.count); 
@@ -730,12 +709,31 @@ int main(int argc, const char** argv) {
 
 	fclose(file);
 
-
 	generate_images(zlist);
+
 	// find_major_groups(zlist);
 
 	// write(1, "\033[?1049l", 8);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1559,5 +1557,24 @@ char dt[32] = {0};
 
 
 // static const bool viz = 1;
+
+
+
+
+
+
+
+	// *mm = max;
+	// return le;
+
+	// n:
+	//nat le = 0; for (; le < n; le++)  if (not array[le]) break;
+
+	// m:
+	//nat max = 0; for (nat i = 0; i < n; i++)  if (array[i] > max) max = array[i];
+
+
+
+
 
 
