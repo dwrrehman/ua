@@ -1,34 +1,26 @@
-#include <stdio.h>
-#include <stdlib.h>    // rewrite of the generate algorithm, called "nfgp". 
-#include <string.h>    // a rewrite of that rewrite called srnfgp, sub-range nfgp. 
-#include <unistd.h>    // used for parellelizing the nfgp across mulitple machines!!
-#include <iso646.h>    // rewritten on 202308152.195947 by dwrr.
-#include <unistd.h>
+// rewrite of the generate algorithm, called "nfgp". 
+// a rewrite of that rewrite called srnfgp, sub-range nfgp. 
+// used for parellelizing the nfgp across mulitple machines!!
+// rewritten on 202308152.195947 by dwrr.
+
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <iso646.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <ctype.h>
-#include <time.h>
-#include <math.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <sys/time.h> 
-#include <termios.h>
 #include <stdio.h>  
-#include <stdlib.h> 
-#include <string.h> 
-#include <fcntl.h>
-#include <unistd.h>
-#include <iso646.h>
-#include <stdbool.h>
-#include <termios.h>
-#include <errno.h>
-#include <ctype.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <stdlib.h>
+#include <string.h>  
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/types.h>
 #include <sys/wait.h>
+#include <termios.h>
+#include <time.h>
+#include <unistd.h>
 
 #define reset "\x1B[0m"
 #define red   "\x1B[31m"
