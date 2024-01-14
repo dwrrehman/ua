@@ -54,19 +54,19 @@ int main() {
 
 	const nat count = 380;			// just the screen width, effectively. 
 
-	const nat modnat_range = 10000000000000;		// effectively  M, the modulus.
+	const nat modnat_range = 8000000;		// effectively  M, the modulus.
 
 	const nat pointer = count - 10;		// this is where the pointer is.   just for visual effect. 
 
-	const nat bucket_count = 105;		// the number of bout length histogram buckets. 
+	const nat bucket_count = 200;		// the number of bout length histogram buckets. 
 	
-	const nat bucket_width = 1600;		// the number of values considered as equivalent to count towards a single bucket. 
+	const nat bucket_width = 60;		// the number of values considered as equivalent to count towards a single bucket. 
 
-	const nat hist_scaler = 9;		// a number to stretch out the bout histogram plot to make it more obvious whats happening. 
+	const nat hist_scaler = 16;		// a number to stretch out the bout histogram plot to make it more obvious whats happening. 
 
 	const nat delay = 0;			// the microseconds to delay after each iteration. 
 
-	const nat display_rate = 19;		// the log2 of the number of ticks to wait before printing another frame of display.
+	const nat display_rate = 20;		// the log2 of the number of ticks to wait before printing another frame of display.
 
 
 
