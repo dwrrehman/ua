@@ -17,38 +17,53 @@
 #include <time.h>
 #include <unistd.h>
 
+
+
+
+// formula for size of 0 space:
+//      (5 ^ 9)
+
+// formula for size of 1 space:
+//	(6 ^ 9) * (5) * (6 ^ 3)
+
+
+
+// general formula:
+//       ((5 + D) ^ 9) * ((5 * ((5 + D) ^ 3)) ^ D)
+
+
+
 #define reset "\x1B[0m"
-#define lightblue "\033[38;5;67m"
 #define red   "\x1B[31m"
 #define green   "\x1B[32m"
-//#define blue   "\x1B[34m"
 #define yellow   "\x1B[33m"
 #define cyan     "\x1B[36m"
 #define bold    "\033[1m"
 
+// #define lightblue "\033[38;5;67m"
+//#define blue   "\x1B[34m"
 
 typedef uint8_t byte;
 typedef uint64_t nat;
-static const byte unique_operations[5] = {1, 2, 3, 5, 6};
 
+enum operations { one, two, three, five, six };
 
 enum pruning_metrics {
 	PM_fea, PM_ns0, PM_pco,
 	PM_zr5, PM_zr6, PM_ndi, 
-	PM_rer, PM_oer, PM_r0i, 
+		PM_oer, PM_r0i, 
 	PM_h,   PM_f1e, PM_erc,
-	PM_ric, PM_nsvl, PM_eda,
-	PM_fdl,
+	PM_nsvl, PM_eda, PM_rmv, PM_ot, PM_mh, 
+	
 	PM_count
 };
 
 static const char* pm_spelling[] = {
 	"PM_fea", "PM_ns0", "PM_pco", 
 	"PM_zr5", "PM_zr6", "PM_ndi", 
-	"PM_rer", "PM_oer", "PM_r0i", 
+		"PM_oer", "PM_r0i", 
 	"PM_h",   "PM_f1e", "PM_erc", 
-	"PM_ric", "PM_nsvl", "PM_eda",
-	"PM_fdl",
+	 "PM_nsvl", "PM_eda", "PM_rmv", "PM_ot", "PM_mh",
 };
 
 
@@ -59,8 +74,8 @@ static const char* pm_spelling[] = {
 
 // general purpose ones:
 
-static const nat execution_limit = 10000000000; //240000000000
-static const nat pre_run_ins = 0;
+static const nat execution_limit = 1000000000; 
+static const nat pre_run_ins = 99999000;
 
 
 
@@ -74,7 +89,7 @@ static const nat pre_run_ins = 0;
 
 //////////////////////////////////////////////////////////////////////
 
-	static const nat array_size = 200000000;
+static const nat array_size = 10000;
 
 
 /// NOTE: we need to compute the xp function for a given graph, if we want to run it in stage 4 ("simplified vertical line") at all.
@@ -91,10 +106,11 @@ static const nat pre_run_ins = 0;
 // other pruning metrics:
 
 
-static const nat fdl_count = 8;
+// static const nat fdl_count = 8;
 
 static const nat oer_count = 80;
 
+static const nat max_acceptable_modnat_repetions = 15;
 static const nat max_acceptable_consecutive_incr = 50;
 static const nat max_acceptable_run_length = 8;
 
@@ -127,10 +143,11 @@ static const nat similarity_threshold = 22;
 // image generation
 // static const nat image_size = 600;
 
-static const nat row_count = 200;
+static const nat row_count = 120;
+
 static const nat paging_row_count = 100;
 static const nat window_begin = 0;
-static const nat window_end = 1000;
+static const nat window_end = 10000000000;
 
 static const nat timestep_delay = 80;
 
@@ -270,10 +287,10 @@ static nat print_lifetime(
 	for (; e < print_count + pre_run_count; e++) {
 
 		const byte I = ip * 4;
-		const byte op = unique_operations[graph[I]];
+		const byte op = graph[I];
 
-		if (op == 1) { if (pointer == n) abort(); pointer++; }
-		else if (op == 5) {
+		if (op == one) { if (pointer == n) abort(); pointer++; }
+		else if (op == five) {
 			if (e >= pre_run_count) {
 				for (nat i = 0; i < n; i++) {
 					if (i < window_begin) continue;
@@ -297,9 +314,9 @@ static nat print_lifetime(
 			memset(modes, 0, sizeof(bool) * (n + 1));
 			
 		}
-		else if (op == 2) { array[n]++; }
-		else if (op == 6) { array[n] = 0; }
-		else if (op == 3) { array[pointer]++; modes[pointer] = 1; }
+		else if (op == two) { array[n]++; }
+		else if (op == six) { array[n] = 0; }
+		else if (op == three) { array[pointer]++; modes[pointer] = 1; }
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -324,6 +341,13 @@ static nat print_lifetime(
 	
 done:
 	if (print_count) puts("[end of lifetime]");
+
+	nat xw = 0;
+	for (; xw < n and array[xw]; xw++) { }
+	puts("");
+	print_nats(array, xw);
+	puts("");
+
 	free(array);
 	free(modes);
 	return Eer;
@@ -390,11 +414,11 @@ static nat generate_image_for_lifetime(
 	for (; e < print_count + pre_run_count; e++) {
 
 		const byte I = ip * 4;
-		const byte op = unique_operations[graph[I]];
+		const byte op = graph[I];
 
-		if (op == 1) { if (pointer == n) abort(); pointer++; }
+		if (op == one) { if (pointer == n) abort(); pointer++; }
 
-		else if (op == 5) {
+		else if (op == five) {
 			if (e >= pre_run_count) {
 				if (er >= row_count) goto done;
 				for (nat i = window_begin; i < window_end; i++) {
@@ -408,9 +432,9 @@ static nat generate_image_for_lifetime(
 			pointer = 0;
 			memset(modes, 0, sizeof(bool) * (n + 1));
 		}
-		else if (op == 2) { array[n]++; }
-		else if (op == 6) { array[n] = 0; }
-		else if (op == 3) { array[pointer]++; modes[pointer] = 1; }
+		else if (op == two) { array[n]++; }
+		else if (op == six) { array[n] = 0; }
+		else if (op == three) { array[pointer]++; modes[pointer] = 1; }
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -468,8 +492,7 @@ static void synthesize_graph_over_one_group(struct zlist zlist) {
 	printf("synthesized graph [over %llu z values]:\n", zlist.count);
 
 	for (byte i = 0; i < graph_count; i += 4) {
-		printf("  " red "#%u" reset "  :: { .op = %u, [ %s %u %s ]   .lge={ \n", i / 4, 
-			zlist.values[0][i], lightblue bold , unique_operations[zlist.values[0][i]], reset);
+		printf("  " red "#%u" reset "  :: { .op = %u,   .lge={ \n", i / 4,  zlist.values[0][i]);
 
 		printf("\t\t.l={ ");
 		for (nat o = 0; o < operation_count; o++) {
@@ -765,7 +788,7 @@ static void human_prune(const char* previous_filename, struct zlist list) {
 			if (c == 10) goto print; 
 
 			else if (c == ' ') { 
-				offset += e; 
+				offset += e;
 				goto print; 
 
 			} else if (c == '\t') { 
@@ -826,8 +849,12 @@ static void find_major_groups(struct zlist list) {
 		print_zlist("major group", i, group);
 
 		printf("%llu op is new:   performing synthesize graph over MAJOR GROUP %llu z values:\n", i, group.count); 
-		synthesize_graph_over_one_group(group);
+
+		if (group.count) synthesize_graph_over_one_group(group);
+		else printf("ERROR: group size is zero. synthesize_graph_over_one_group(group) was not called. \n");
+
 		getchar();
+
 
 		partition_into_minor_groups(group);
 
@@ -973,7 +1000,7 @@ try_open:;
 }
 
 
-static int z_first_timestep_count = 0;
+// static int z_first_timestep_count = 0;
 
 
 
@@ -994,19 +1021,19 @@ static void run_graph_write_timesteps_starting_at(byte* graph, byte origin) {
 
 	for (nat e = 0; e < execution_limit; e++) {
 		const byte I = ip * 4;
-		const byte op = unique_operations[graph[I]]; 
+		const byte op = graph[I]; 
 
-		if (op == 1) pointer++;
-		else if (op == 5) pointer = 0;
-		else if (op == 2) array[n]++;
-		else if (op == 6) array[n] = 0;   
-		else if (op == 3) array[pointer]++;
+		if (op == one) pointer++;
+		else if (op == five) pointer = 0;
+		else if (op == two) array[n]++;
+		else if (op == six) array[n] = 0;   
+		else if (op == three) array[pointer]++;
 
 
 		/*
 
 		nat xw = 0;
-		for (nat i = 0; i < n; i++) if (not array[i]) { xw = i; break; }
+		for (; xw < n and array[xw]; xw++) { }
 		
 		nat lm = 0; 
 		for (nat i = 0; i < n; i++) {
@@ -1055,7 +1082,7 @@ static void run_graph_write_timesteps_starting_at(byte* graph, byte origin) {
 
 
 	nat xw = 0;
-	for (nat i = 0; i < n; i++) if (not array[i]) { xw = i; break; }
+	for (; xw < n and array[xw]; xw++) { }
 
 
 
@@ -1094,7 +1121,7 @@ static void run_graph_write_timesteps_starting_at(byte* graph, byte origin) {
 
 static void run_graph_write_timesteps(byte* graph) {
 	for (byte o = 0; o < operation_count; o++) {
-		if (unique_operations[graph[4 * o]] != 3) continue;
+		if (graph[4 * o] != three) continue;
 		run_graph_write_timesteps_starting_at(graph, o);
 	}
 }
@@ -1106,8 +1133,6 @@ static void run_graph_write_timesteps(byte* graph) {
 static bool execute_graph_starting_at(byte* graph, byte origin) {
 
 
-	
-
 	const nat n = array_size;
 
 	memset(array, 0, (n + 1) * sizeof(nat));
@@ -1115,7 +1140,6 @@ static bool execute_graph_starting_at(byte* graph, byte origin) {
 	memset(buckets, 0, (n + 1) * sizeof(struct bucket));
 	memset(scratch, 0, (n + 1) * sizeof(struct bucket));     //todo: delay doing this until you see that the graph is
 								 //      actually worth running nsvlpm on!!! 
-
 	memset(executed, 0, graph_count * sizeof(bool));
 	
 	byte ip = origin;
@@ -1125,7 +1149,9 @@ static bool execute_graph_starting_at(byte* graph, byte origin) {
 	nat pointer = 0;
 	nat 	er_count = 0, 
 	    	OER_er_at = 0, 		OER_counter = 0, 
-		FDL_er_at = 0, 		FDL_counter = 0, 
+
+		// FDL_er_at = 0, 		FDL_counter = 0, 
+
 		R0I_counter = 0,     	H_counter = 0;
 	
 	for (nat b = 0; b < n; b++) {                          /// same with this one too. 
@@ -1147,17 +1173,17 @@ static bool execute_graph_starting_at(byte* graph, byte origin) {
 		}
 
 		const byte I = ip * 4;
-		const byte op = unique_operations[graph[I]];    // simplify this to use op indexes, not op names. 
+		const byte op = graph[I];   
 
-		if (op == 1) {
+		if (op == one) {
 			if (pointer == n) 	{ a = PM_fea; goto bad; } 
 			if (not array[pointer]) { a = PM_ns0; goto bad; } 
 			pointer++;
 		}
 
-		else if (op == 5) {
-			if (last_mcal_op != 3) 	{ a = PM_pco; goto bad; } 
-			if (not pointer) 	{ a = PM_zr5; goto bad; } 
+		else if (op == five) {
+			if (last_mcal_op != three) 	{ a = PM_pco; goto bad; } 
+			if (not pointer) 		{ a = PM_zr5; goto bad; } 
 
 		//	// rer:
 		//	if (RER_er_at == pointer) RER_counter++; else { RER_er_at = pointer; RER_counter = 0; }
@@ -1171,10 +1197,10 @@ static bool execute_graph_starting_at(byte* graph, byte origin) {
 		
 
 
-			// fdl:
-			if (pointer == FDL_er_at) { FDL_counter++; if (FDL_er_at) FDL_er_at--; } 
-			else { FDL_er_at = pointer; FDL_counter = 0; }
-			if (FDL_counter == fdl_count) { a = PM_fdl; goto bad; }
+		//	// fdl:
+		//	if (pointer == FDL_er_at) { FDL_counter++; if (FDL_er_at) FDL_er_at--; } 
+		//	else { FDL_er_at = pointer; FDL_counter = 0; }
+		//	if (FDL_counter == fdl_count) { a = PM_fdl; goto bad; }
 
 
 			
@@ -1219,17 +1245,17 @@ static bool execute_graph_starting_at(byte* graph, byte origin) {
 			er_count++;
 		}
 
-		else if (op == 2) {
+		else if (op == two) {
 			array[n]++;
 		}
 
-		else if (op == 6) {  
+		else if (op == six) {  
 			if (not array[n]) 	{ a = PM_zr6; goto bad; }
 			array[n] = 0;   
 		}
 
-		else if (op == 3) {
-			if (last_mcal_op == 3) 	{ a = PM_ndi; goto bad; }
+		else if (op == three) {
+			if (last_mcal_op == three) 	{ a = PM_ndi; goto bad; }
 
 			// h
 			if (pointer and modes[pointer - 1]) H_counter++; else H_counter = 0;
@@ -1325,7 +1351,7 @@ static bool execute_graph_starting_at(byte* graph, byte origin) {
 			}
 		}
 
-		if (op == 3 or op == 1 or op == 5) last_mcal_op = op;
+		if (op == three or op == one or op == five) last_mcal_op = op;
 
 		if (e >= base + pre_run + acc_ins) {
 
@@ -1415,8 +1441,8 @@ bad: 	counts[a]++;
 
 static bool execute_graph(byte* graph) {
 	for (byte o = 0; o < operation_count; o++) {
-		if (unique_operations[graph[4 * o]] != 3) continue;
-		if (execute_graph_starting_at(graph, o)) return true;     
+		if (graph[4 * o] != three) continue;
+		if (not execute_graph_starting_at(graph, o)) return false;
 
 		////////////////////////////////////////////////////////////////////////////////////////////
 		
@@ -1426,8 +1452,186 @@ static bool execute_graph(byte* graph) {
 		////////////////////////////////////////////////////////////////////////////////////////////
 
 	}
-	return false;
+	return true;
 }
+
+
+
+
+
+
+
+
+static bool RMV_execute_graph_starting_at(byte* graph, byte origin) {
+
+	const nat n = array_size;
+
+	memset(executed, 0, graph_count * sizeof(bool));
+
+	memset(array, 0, (n + 1) * sizeof(nat));        //todo:  do the lazy array zeroing optimization. 
+	memset(modes, 0, (n + 1) * sizeof(bool));
+	
+	byte ip = origin, last_mcal_op = 0;
+
+	nat 	a = PM_count, 
+		pointer = 0, 
+		er_count = 0, 
+	    	OER_er_at = 0, 
+		OER_counter = 0, 
+		R0I_counter = 0,
+		H_counter = 0,
+		RMV_counter = 0,
+		RMV_value = 0;
+
+
+	nat* timeout = calloc(operation_count, sizeof(nat));
+
+	nat e = 0;
+	for (; e < execution_limit; e++) {
+
+		if (e >= expansion_check_timestep2) {
+			if (array[0] < required_s0_increments) { a = PM_f1e; goto bad; }
+		}
+
+		if (e >= expansion_check_timestep) {
+			if (er_count < required_er_count) 	{ a = PM_erc; goto bad; }
+		}
+
+		const byte I = ip * 4, op = graph[I];
+	
+		for (nat i = 0; i < operation_count; i++) {
+			if (timeout[i] > execution_limit >> 1) { a = PM_ot; goto bad; }
+			timeout[i]++;
+		}
+		timeout[ip] = 0;
+
+		if (op == one) {
+			if (pointer == n) 	{ a = PM_fea; goto bad; } 
+			if (not array[pointer]) { a = PM_ns0; goto bad; } 
+			pointer++;
+		}
+
+		else if (op == five) {
+			if (last_mcal_op != three) { a = PM_pco; goto bad; } 
+			if (not pointer)           { a = PM_zr5; goto bad; } 
+
+			if (	pointer == OER_er_at or 
+				pointer == OER_er_at + 1) OER_counter++;
+			else { OER_er_at = pointer; OER_counter = 0; }
+			if (OER_counter == oer_count) { a = PM_oer; goto bad; }
+			
+			if (*modes) R0I_counter++; else R0I_counter = 0;
+			if (R0I_counter > max_acceptable_consecutive_incr) { a = PM_r0i; goto bad; }
+			
+			RMV_value = (nat) -1;
+			RMV_counter = 0;
+			for (nat i = 0; i < n; i++) {
+				if (not array[i]) break;
+				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
+				if (RMV_counter == max_acceptable_modnat_repetions) { a = PM_rmv; goto bad; }
+			}
+			
+			memset(modes, 0, (n + 1) * sizeof(bool));
+			pointer = 0;
+			er_count++;
+		}
+
+		else if (op == two) array[n]++;
+
+		else if (op == six) {  
+			if (not array[n]) 	{ a = PM_zr6; goto bad; }
+			array[n] = 0;   
+		}
+
+		else if (op == three) {
+			if (last_mcal_op == three) 	{ a = PM_ndi; goto bad; }
+
+			if (pointer and modes[pointer - 1]) H_counter++; else H_counter = 0;
+			if (H_counter > max_acceptable_run_length) { a = PM_h; goto bad; }
+
+			array[pointer]++;
+			modes[pointer] = 1;
+		}
+
+		if (op == three or op == one or op == five) last_mcal_op = op;
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		executed[I + state] = 1;
+		ip = graph[I + state];
+	}
+
+	for (byte i = 0; i < graph_count; i += 4) {
+		if (not executed[i + 1] and graph[i + 1] or
+		    not executed[i + 2] and graph[i + 2] or
+		    not executed[i + 3] and graph[i + 3]
+		) { a = PM_eda; goto bad; }
+	}
+
+	//print_nats(array, n);
+
+	nat xw = 0;
+	for (; xw < n and array[xw]; xw++) { }
+
+	// printf("[PM_MH] info: xw = %llu\n", xw);
+
+	nat* values = calloc(n, sizeof(nat));
+	for (nat i = 0; i < xw; i++) {
+		if (array[i] >= n) { a = PM_mh; goto bad; }
+		values[array[i]]++; 
+	}
+
+	//printf("[PM_MH] info: {");
+	//for (nat i = 0; i < n; i++) {
+	//	if (values[i]) printf("%llu:%llu  ", i, values[i]);
+	//}
+	//printf("}\n");
+
+	for (nat i = 0; i < n; i++) {
+		if (values[i] > xw >> 2) { a = PM_mh; goto bad; }
+	}
+	free(values);
+
+	return false; 
+	
+bad: 	counts[a]++;
+	printf("%7s ([rmv-exec] on e=%8llu )\n", pm_spelling[a], e);
+
+	return true;
+}
+
+static bool RMV_execute_graph(byte* graph) {
+	for (byte o = 0; o < operation_count; o++) {
+		if (graph[4 * o] != three) continue;
+		if (not RMV_execute_graph_starting_at(graph, o)) return false;
+	}
+	return true;
+}
+
+
+
+
+
+
+// todo:     do PM_mh here!             2 2 3 2 2 3 2 2 3 2 2 3 2 2 3 2 2 3 2 3 2 2 3 2 3 2 2 3 2 3 2 
+
+
+
+
+
+	// if (should_print_pm) printf("%7s ( on e=%8llu )\n", pm_spelling[a], e);
+		
+
+	//  {{ z = ", ); print_graph_raw(); puts(" }}");
+	// }
+
+	
+
+
+
+
 
 
 static void print_counts(void) {
@@ -1442,6 +1646,8 @@ static void print_counts(void) {
 
 static void prune(const char* previous_filename, struct zlist list) {
 
+	nat good = 0, bad = 0;
+
 	for (nat z = 0; z < list.count; z++) {
 
 		char string[64] = {0};
@@ -1449,19 +1655,43 @@ static void prune(const char* previous_filename, struct zlist list) {
 		printf("\r trying z = %s     \n", string);
 		
 		if (execute_graph(list.values[z])) {
-			puts(bold red " ---> BAD " reset);
-			// getchar();
+			printf(bold red " ---> BAD (%llu / %llu)" reset "\n", z, list.count);
+			bad++;
 		} else {
-			
-			puts(bold green " ---> good" reset);
+			printf(bold green " ---> GOOD (%llu / %llu)" reset "\n", z, list.count);
 			write_to_file(list.values[z], previous_filename, list.count);
-			//getchar();
+			good++;
 		}
-		
 	}
 	
 	print_counts();
+	printf("\n\n\t\t\tgood: %llu\n\t\t\tbad: %llu\n\n\n", good, bad);
 }
+
+static void RMV_prune(const char* previous_filename, struct zlist list) {
+
+	nat good = 0, bad = 0;
+
+	for (nat z = 0; z < list.count; z++) {
+
+		char string[64] = {0};
+		get_graphs_z_value(list.values[z], string);
+		printf("\r trying z = %s     \n", string);
+		
+		if (RMV_execute_graph(list.values[z])) {
+			printf(bold red " ---> BAD (%llu / %llu)" reset "\n", z, list.count);
+			bad++;
+		} else {
+			printf(bold green " ---> GOOD (%llu / %llu)" reset "\n", z, list.count);
+			write_to_file(list.values[z], previous_filename, list.count);
+			good++;
+		}
+	}
+	
+	print_counts();
+	printf("\n\n\t\t\tgood: %llu\n\t\t\tbad: %llu\n\n\n", good, bad);
+}
+
 
 
 static void record_xp_data(struct zlist list) {     // writes out a single file that has n lifetimes, where n is AT LEAST z_count. might be larger, as some z values must be run from mulitple origins, and thus their lifetimes on all origins will be output, as if they were sepearte z values.
@@ -1476,8 +1706,6 @@ static void record_xp_data(struct zlist list) {     // writes out a single file 
 }
 
 
-
-
 static void print_help(void) {
 	printf("available commands:\n\t quit \n\t list \n\t machine prune \n\t "
 		"human prune \n\t generate images \n\t synthesize graph \n\t print \n\t\n");
@@ -1487,7 +1715,6 @@ int main(int argc, const char** argv) {
 
 	if (argc <= 1) return puts("give input z list filename as "
 		"an argument! eg, ./run old_zlists/1202311234.131009_\\(1202309214.131350_0_0_0_good.txt\\)_114_pruned.txt");
-
 
 
 	FILE* file = fopen(argv[1], "r");
@@ -1520,25 +1747,23 @@ int main(int argc, const char** argv) {
 
 	fclose(file);
 
-
 	array    = calloc(array_size + 1, sizeof(nat));
 	modes    = calloc(array_size + 1, sizeof(bool));
 	executed = calloc(graph_count,    sizeof(bool));
 	buckets  = calloc(array_size + 1, sizeof(struct bucket));
 	scratch  = calloc(array_size + 1, sizeof(struct bucket));
 
-
-
 	char input[4096] = {0};
 
 loop:
 	printf(":%llu: ", zlist.count);
 	fgets(input, sizeof input, stdin);
-	if (not strcmp(input, "quit\n")) { printf("z_first_timestep_count = %u\n", z_first_timestep_count); exit(0); } 
+	if (not strcmp(input, "quit\n")) exit(0);
 	else if (not strcmp(input, "clear\n")) printf("\033[H\033[2J");
 	else if (not strcmp(input, "help\n")) print_help();
 	else if (not strcmp(input, "list\n")) print_zlist("current z list", 0, zlist);
-	else if (not strcmp(input, "m\n")) prune(argv[1], zlist);
+	else if (not strcmp(input, "machine prune\n")) prune(argv[1], zlist);
+	else if (not strcmp(input, "rmv machine prune\n")) RMV_prune(argv[1], zlist);
 	else if (not strcmp(input, "record xp data\n")) record_xp_data(zlist);
 	else if (not strcmp(input, "human prune\n")) human_prune(argv[1], zlist);
 	else if (not strcmp(input, "generate images\n")) generate_images(zlist);
@@ -2519,6 +2744,45 @@ char dt[32] = {0};
 
 
 // write three things to the file:  e, er_count, and xw. to allow for ("coi-ts") ins_count -> xw.
+
+
+
+
+
+
+
+
+
+                                                                                                                                                                                                                                                                      
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
