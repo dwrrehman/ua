@@ -75,7 +75,7 @@ static const char* pm_spelling[] = {
 // general purpose ones:
 
 static const nat execution_limit = 1000000000; 
-static const nat pre_run_ins = 99999000;
+static const nat pre_run_ins = 10000000;
 
 
 
@@ -276,21 +276,59 @@ static nat print_lifetime(
 	const nat pre_run_count
 ) {
 	const nat n = array_size;
-	array = calloc(array_size + 1, sizeof(nat));
-	modes = calloc(array_size + 1, sizeof(bool));
+
+	array = calloc(n + 1, sizeof(nat));
+	modes = calloc(n + 1, sizeof(bool));
 
 	nat er = 0, E = 0, Eer = 0;
 	nat pointer = 0;
 	byte ip = origin;
 	if (print_count) puts("[starting lifetime...]");
 	nat e = 0;
+
+
+
+	//char string[64] = {0};
+	//get_graphs_z_value(graph, string);
+
+	//const bool debug = not strcmp(string, "012110452543300240021000");
+
+
+
+	// printf("[z = %s, origin = %hhu]\n", string, origin);
+
+
+
+
 	for (; e < print_count + pre_run_count; e++) {
 
-		const byte I = ip * 4;
-		const byte op = graph[I];
+		const byte I = ip * 4, op = graph[I];
 
-		if (op == one) { if (pointer == n) abort(); pointer++; }
+	/*	if (debug) { 
+			printf("[e=%llu]: executing &%hhu: [op=%hhu, .lge={%hhu, %hhu, %hhu}]: "
+				"{pointer = %llu, *n = %llu} \n", 
+					e, ip, 
+					graph[4 * ip + 0], 
+					graph[4 * ip + 1], 
+					graph[4 * ip + 2], 
+					graph[4 * ip + 3], 
+					pointer, array[n]
+			);
+			
+			puts(""); print_nats(array, 5); puts(""); 
+			puts(""); 
+			getchar();
+		}*/
+
+
+		if (op == one) { 
+			if (pointer == n) { puts("fea pointer overflow"); abort(); } 
+			pointer++; 
+		}
+
+
 		else if (op == five) {
+
 			if (e >= pre_run_count) {
 				for (nat i = 0; i < n; i++) {
 					if (i < window_begin) continue;
@@ -310,12 +348,17 @@ static nat print_lifetime(
 
 				if (er > er_count) { puts("maxed out er count."); goto done; }
 			}
+
 			pointer = 0;
+
 			memset(modes, 0, sizeof(bool) * (n + 1));
+
 			
 		}
 		else if (op == two) { array[n]++; }
+
 		else if (op == six) { array[n] = 0; }
+
 		else if (op == three) { array[pointer]++; modes[pointer] = 1; }
 
 		byte state = 0;
@@ -2755,7 +2798,7 @@ char dt[32] = {0};
 
                                                                                                                                                                                                                                                                       
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 
 
 

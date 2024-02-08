@@ -51,6 +51,8 @@
 
 typedef int8_t byte;
 typedef uint64_t nat;
+typedef uint32_t u32;
+typedef uint16_t u16;
 
 static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
@@ -62,14 +64,14 @@ enum operations { one, two, three, five, six, };
 enum pruning_metrics {
 	PM_fea, PM_ns0, PM_pco, PM_zr5, PM_zr6, PM_ndi, 
 	PM_oer, PM_r0i, PM_h, PM_f1e, PM_erc,
-	PM_nsvl, PM_eda, PM_rmv, PM_ot, PM_mh, 
+	PM_eda, PM_rmv, PM_ot, PM_csm,
 	PM_count
 };
 
 static const char* pm_spelling[] = {
 	"PM_fea", "PM_ns0", "PM_pco", "PM_zr5", "PM_zr6", "PM_ndi", 
 	"PM_oer", "PM_r0i", "PM_h", "PM_f1e", "PM_erc", 
-	"PM_nsvl", "PM_eda", "PM_rmv", "PM_ot", "PM_mh",
+	"PM_eda", "PM_rmv", "PM_ot", "PM_csm",
 };
 
 
@@ -83,7 +85,7 @@ static const byte _63R[5 * 4] = {
 	4,  2, 0, _,      //       19
 };
 
-static const nat _63R_hole_count = 9;
+static const byte _63R_hole_count = 9;
 static const byte _63R_hole_positions[_63R_hole_count] = {3, 6, 7, 10, 11, 13, 14, 15, 19};
 
 
@@ -95,32 +97,33 @@ static const byte _36R[5 * 4] = {
 	4,  0, 0, _,      //       19
 };
 
-static const nat _36R_hole_count = 9;
+static const byte _36R_hole_count = 9;
 static const byte _36R_hole_positions[_36R_hole_count] = {3, 6, 7, 9, 11, 13, 14, 15, 19};
 
 static const byte initial = R ? _63R_hole_count : _36R_hole_count;
 
-static const nat max_buffer_count = 3;
+static const byte max_buffer_count = 3;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
 
 static const byte hole_count = initial + 4 * D;
 
-static const nat fea_execution_limit = 10000;
+static const nat fea_execution_limit = 5000;
 static const nat execution_limit = 1000000000;
 static const nat array_size = 10000;
 
-static const nat oer_count = 80;
+static const nat max_acceptable_er_repetions = 50;
 
 static const nat max_acceptable_modnat_repetions = 15;
-static const nat max_acceptable_consecutive_incr = 50;
-static const nat max_acceptable_run_length = 8;
+static const nat max_acceptable_consecutive_s0_incr = 30;
+static const nat max_acceptable_run_length = 9;
+static const nat max_acceptable_consequtive_small_modnats = 200;
 
-static const nat expansion_check_timestep = 10000;
-static const nat required_er_count = 25; 
+static const nat expansion_check_timestep = 5000;
+static const nat required_er_count = 25;
 
-static const nat expansion_check_timestep2 = 1000; 
+static const nat expansion_check_timestep2 = 500; 
 static const nat required_s0_increments = 6;
 
 struct item {
@@ -136,10 +139,9 @@ struct list {
 
 static byte* graph = NULL;
 static nat* array = NULL;
-static bool* modes = NULL;
-static bool* executed = NULL; 
 static nat* timeout = NULL; 
-static nat* values = NULL; 
+static bool* executed = NULL; 
+static bool* was_utilized = NULL;
 
 static nat counts[PM_count] = {0};
 
@@ -178,11 +180,74 @@ static void get_graphs_z_value(char string[64]) {
 	string[graph_count] = 0;
 }
 
+
+/*
+graph adjacency list:  {
+
+log = logical address    (index)
+phy = physical address   (index * 4)
+
+
+	log     phy       op idx          l   g  e
+	idx     [i]       +0              +1  +2 +3
+========================================================================
+	&0	#0:  ins(.op = 0, .lge = [ 1, 4, 1 ])
+
+	&1	#4:  ins(.op = 1, .lge = [ 0, 2, 2 ])
+
+	&2	#8:  ins(.op = 2, .lge = [ 0, 5, 3 ])
+
+	&3	#12: ins(.op = 3, .lge = [ 1, 1, 4 ])
+
+	&4	#16: ins(.op = 4, .lge = [ 2, 0, 1 ])
+
+	&5	#20: ins(.op = 0, .lge = [ 0, 5, 0 ])
+========================================================================
+
+}
+*/
+
 static bool graph_analysis(void) {
+
+	memset(was_utilized, 0, operation_count);
+
 	for (byte index = 0; index < operation_count; index++) {
+
+		const byte 
+			l = graph[4 * index + 1], 
+			g = graph[4 * index + 2], 
+			e = graph[4 * index + 3];
+
+		if (l == index and g == index and e == index) return true;
+
+		if (graph[4 * index] == five) 
+			for (byte offset = 1; offset < 4; offset++) 
+				if (graph[4 * graph[4 * index + offset]] == five) return true;
+
+		if (graph[4 * index] == six) 
+			for (byte offset = 1; offset < 4; offset++) 
+				if (graph[4 * graph[4 * index + offset]] == six) return true;
+
+		if (graph[4 * index] == three) 
+			for (byte offset = 1; offset < 4; offset++) 
+				if (graph[4 * graph[4 * index + offset]] == three) return true;
+
+		if (graph[4 * index] == one) {
+			if (l == g and g == e and graph[4 * e] == one) return true;
+		}
+		
 		if (graph[4 * index + 3] == index) return true;
 		if (graph[4 * index + 0] == six and graph[4 * index + 2]) return true;
+		
+		if (l != index) was_utilized[l] = true;
+		if (g != index) was_utilized[g] = true;
+		if (e != index) was_utilized[e] = true;
 	}
+
+	for (byte index = 0; index < operation_count; index++) {
+		if (not was_utilized[index]) return true;
+	}
+
 	return false;
 }
 
@@ -196,51 +261,45 @@ static void print_counts(void) {
 	puts("[done]");
 }
 
+
+
+
+
+
 static bool execute_graph_starting_at(byte origin, bool should_print) {
 
 	const nat n = array_size;
-
-	memset(executed, 0, graph_count * sizeof(bool));
+	array[n] = 0; array[0] = 0; 
+	memset(executed, 0, graph_count);
 	memset(timeout, 0, operation_count * sizeof(nat));
 
-	memset(array, 0, (n + 1) * sizeof(nat));              //todo:  do the lazy array zeroing optimization. 
-	memset(modes, 0, (n + 1) * sizeof(bool));
-	
-	byte ip = origin, last_mcal_op = 0;
+	byte ip = origin, last_mcal_op = 0, s0_was_incremented = 0;
 
-	nat 	a = PM_count, 
-		pointer = 0, 
-		er_count = 0, 
-	    	OER_er_at = 0, 
-		OER_counter = 0, 
-		R0I_counter = 0,
-		H_counter = 0,
-		RMV_counter = 0,
-		RMV_value = 0;
+	nat 	e = 0,  a = 0, xw = 0,
+		pointer = 0,  er_count = 0, 
+	    	OER_er_at = 0,  OER_counter = 0, 
+		R0I_counter = 0, H_counter = 0,
+		RMV_counter = 0, RMV_value = 0, CSM_counter = 0;
 
-	nat e = 0;
 	for (; e < execution_limit; e++) {
 
-		if (e >= expansion_check_timestep2) {
-			if (array[0] < required_s0_increments) { a = PM_f1e; goto bad; }
-		}
-
-		if (e >= expansion_check_timestep) {
-			if (er_count < required_er_count) 	{ a = PM_erc; goto bad; }
-		}
-
+		if (e >= expansion_check_timestep2) { if (array[0] < required_s0_increments) { a = PM_f1e; goto bad; } }
+		if (e >= expansion_check_timestep)  { if (er_count < required_er_count) { a = PM_erc; goto bad; } }
+		
 		const byte I = ip * 4, op = graph[I];
-	
+
 		for (nat i = 0; i < operation_count; i++) {
-			if (timeout[i] > execution_limit >> 1) { a = PM_ot; goto bad; }
+			if (timeout[i] >= execution_limit >> 1) { a = PM_ot; goto bad; }
 			timeout[i]++;
 		}
 		timeout[ip] = 0;
 
 		if (op == one) {
 			if (pointer == n) 	{ a = PM_fea; goto bad; } 
-			if (not array[pointer]) { a = PM_ns0; goto bad; } 
+			if (not array[pointer]) { a = PM_ns0; goto bad; }
+			if (last_mcal_op == one) H_counter = 0;
 			pointer++;
+			if (pointer > xw) { xw = pointer; array[pointer] = 0; }
 		}
 
 		else if (op == five) {
@@ -250,39 +309,41 @@ static bool execute_graph_starting_at(byte origin, bool should_print) {
 			if (	pointer == OER_er_at or 
 				pointer == OER_er_at + 1) OER_counter++;
 			else { OER_er_at = pointer; OER_counter = 0; }
-			if (OER_counter == oer_count) { a = PM_oer; goto bad; }
+			if (OER_counter >= max_acceptable_er_repetions) { a = PM_oer; goto bad; }
 			
-			if (*modes) R0I_counter++; else R0I_counter = 0;
-			if (R0I_counter > max_acceptable_consecutive_incr) { a = PM_r0i; goto bad; }
-			
+			if (s0_was_incremented) {
+				R0I_counter++; 
+				if (R0I_counter >= max_acceptable_consecutive_s0_incr) { a = PM_r0i; goto bad; }
+			} else R0I_counter = 0;
+
+			CSM_counter = 0;
 			RMV_value = (nat) -1;
 			RMV_counter = 0;
-			for (nat i = 0; i < n; i++) {
-				if (not array[i]) break;
+			for (nat i = 0; i < xw; i++) {
+				if (array[i] < 6) CSM_counter++; else CSM_counter = 0;
+				if (CSM_counter > max_acceptable_consequtive_small_modnats) { a = PM_csm; goto bad; } 
 				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
-				if (RMV_counter == max_acceptable_modnat_repetions) { a = PM_rmv; goto bad; }
+				if (RMV_counter >= max_acceptable_modnat_repetions) { a = PM_rmv; goto bad; }
 			}
-			
-			memset(modes, 0, (n + 1) * sizeof(bool));
+
 			pointer = 0;
 			er_count++;
+			s0_was_incremented = false;
 		}
 
 		else if (op == two) array[n]++;
-
 		else if (op == six) {  
-			if (not array[n]) 	{ a = PM_zr6; goto bad; }
+			if (not array[n]) { a = PM_zr6; goto bad; }
 			array[n] = 0;   
 		}
-
 		else if (op == three) {
-			if (last_mcal_op == three) 	{ a = PM_ndi; goto bad; }
-
-			if (pointer and modes[pointer - 1]) H_counter++; else H_counter = 0;
-			if (H_counter > max_acceptable_run_length) { a = PM_h; goto bad; }
-
+			if (last_mcal_op == three) { a = PM_ndi; goto bad; }
+			if (last_mcal_op == one) {
+				H_counter++;
+				if (H_counter >= max_acceptable_run_length) { a = PM_h; goto bad; }
+			}
 			array[pointer]++;
-			modes[pointer] = 1;
+			if (pointer == 0) s0_was_incremented = true;
 		}
 
 		if (op == three or op == one or op == five) last_mcal_op = op;
@@ -301,17 +362,6 @@ static bool execute_graph_starting_at(byte origin, bool should_print) {
 		    not executed[i + 3] and graph[i + 3]
 		) { a = PM_eda; goto bad; }
 	}
-
-	nat xw = 0;
-	for (; xw < n and array[xw]; xw++) { }
-	memset(values, 0, n * sizeof(nat));
-	for (nat i = 0; i < xw; i++) {
-		if (array[i] >= n) { a = PM_mh; goto bad; }
-		values[array[i]]++; 
-	}
-	for (nat i = 0; i < n; i++) 
-		if (values[i] > xw >> 2) { a = PM_mh; goto bad; }
-
 	return false; 
 	
 bad: 	counts[a]++;
@@ -320,6 +370,138 @@ bad: 	counts[a]++;
 	return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// char string[64] = {0};
+	// get_graphs_z_value(string);
+	// const bool debug = not strcmp(string, "012110452543300240021000");
+
+	// if (debug) printf("[z = %s, origin = %hhu]\n", string, origin);
+
+	
+
+	// memset(array, 0, (n + 1) * sizeof(nat));
+
+
+
+	//	if (debug) { 
+	//		printf("[e=%llu]: executing &%hhu: [op=%hhu, .lge={%hhu, %hhu, %hhu}]: "
+	//			"{pointer = %llu, *n = %llu} \n",  e, ip, 
+	//			graph[4 * ip + 0], 
+	//			graph[4 * ip + 1], 
+	//			graph[4 * ip + 2], 
+	//			graph[4 * ip + 3], 
+	//			pointer, array[n]
+	//		);
+	//		
+	//		puts(""); print_nats(array, 5); puts(""); 
+	//		puts(""); 
+	//		getchar();
+	//	}
+
+
+
+
+
+	/*	if (debug) { 
+			printf("[e=%llu]: executing [op=%hhu]: {pointer = %llu, *n = %llu} "
+				"{s0_was_incremented = %hhu} "
+				"{R0I_counter = %llu, max = %llu}\n", 
+					e, ip, pointer, array[n], 
+					s0_was_incremented,
+					R0I_counter, max_acceptable_consecutive_s0_incr
+			);
+			//puts(""); print_nats(array, xw); puts(""); 
+			//puts(""); 
+			getchar();
+		}
+
+
+
+	//memset(array, 0, (n + 1) * sizeof(nat));              //todo:  do the lazy array zeroing optimization. 
+
+
+
+
+xw   lazy zeroing:
+
+
+			[ 9 8 7 5 4 2 3 1 1 0 0 0 0 0 0 0 0 0 0 ]
+                                            ^
+
+
+
+
+
+MCAL operation sequence:
+
+         *0    *1   *2   *3    *4   *5   *6  *7  *8   *9   *10
+	{3 1} {1} {3 1} {3 1} {1} {3 1} {1} {1} {3 1} {1} {3 1} {1} 3 1 3 1 3 1 1 3 1 1 1 3 1 3 1 1 3 1 3 1 1 1 1 1 3 1 3 1 1 3 1 1 3 1
+
+         1     0    1    1     0    1    0   0   1    0     1    0 
+
+
+
+os	3 1    3 1    3 1   3 1    3 1   3 1   3 1   3 1    3 1
+
+modes    1      1      1     1      1     1     1     1      1
+
+
+
+
+os	3 1    3 1    3 1   3 1    3 1    1     3 1    3 1
+
+modes    1      1      1     1      1     0      1      1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
 static bool execute_graph(bool b) {
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
@@ -327,6 +509,26 @@ static bool execute_graph(bool b) {
 	}
 	return true;
 }
+
+
+
+
+
+//	nat xw = 0;
+//	for (; xw < n and array[xw]; xw++) { }
+//	memset(values, 0, n * sizeof(nat));
+//	for (nat i = 0; i < xw; i++) {
+//		if (array[i] >= n) { a = PM_mh; goto bad; }
+//		values[array[i]]++; 
+//	}
+//	for (nat i = 0; i < n; i++) 
+//		if (values[i] > xw >> 2) { a = PM_mh; goto bad; }
+
+
+
+
+
+
 
 static bool fea_execute_graph_starting_at(byte origin) {
 
@@ -455,7 +657,6 @@ try_open:;
 	printf("%s : %s \033[0m\n", directory, newfilename);
 }
 
-
 static void write_graph(nat zindex, nat begin, nat end) {
 
 	get_datetime(buffer[buffer_count].dt);
@@ -468,22 +669,6 @@ static void write_graph(nat zindex, nat begin, nat end) {
 	}
 }
 
-
-/*
-static void print_nats(nat* v, nat l) {
-	printf("(%llu)[ ", l);
-	for (nat i = 0; i < l; i++) printf("%2llu ", v[i]);
-	printf("]\n");
-}
-
-static void print_bytes(byte* v, nat l) {
-	printf("(%llu)[ ", l);
-	for (nat i = 0; i < l; i++) printf("%2hhu ", v[i]);
-	printf("] \n");
-}
-*/
-
-
 static void print_bytes_raw(byte* v, nat l) {
 	printf("(%llu)[", l);
 	for (nat i = 0; i < l; i++) printf("%2hhu", v[i]);
@@ -495,7 +680,6 @@ static nat expn(nat base, nat exponent) {
 	for (nat i = 0; i < exponent; i++) result *= base;
 	return result;
 }
-
 
 int main(int argc, const char** argv) {
 	if (argc != 3) {
@@ -520,17 +704,16 @@ int main(int argc, const char** argv) {
 
 	printf("using: %s:[begin=%llu, ...end=%llu]\n", R ? "63R" : "36R", range_begin, range_end);
 
-	graph    = calloc(graph_count, 1);
-	array    = calloc(array_size + 1, sizeof(nat));
-	modes    = calloc(array_size + 1, sizeof(bool));
-	values   = calloc(array_size,     sizeof(nat));
-	executed = calloc(graph_count,    sizeof(bool));
-	timeout  = calloc(operation_count, sizeof(nat));
+	array = calloc(array_size + 1, sizeof(nat));
+	graph = calloc(graph_count, 1);
+	executed = calloc(graph_count, 1);
+	was_utilized = calloc(operation_count, 1);
+	timeout = calloc(operation_count, sizeof(nat));
 
-	byte* end        = calloc(hole_count, 1);
-	byte* options    = calloc(hole_count, 1);
-	byte* moduli     = calloc(hole_count, 1);
-	byte* positions  = calloc(hole_count, 1);
+	byte* end = calloc(hole_count, 1);
+	byte* options = calloc(hole_count, 1);
+	byte* moduli = calloc(hole_count, 1);
+	byte* positions = calloc(hole_count, 1);
 
 	struct winsize window = {0};
 	ioctl(0, TIOCGWINSZ, &window);
@@ -648,6 +831,21 @@ done:	append_to_file(counter - 1, range_begin, range_end);
 
 
 
+
+
+/*
+static void print_nats(nat* v, nat l) {
+	printf("(%llu)[ ", l);
+	for (nat i = 0; i < l; i++) printf("%2llu ", v[i]);
+	printf("]\n");
+}
+
+static void print_bytes(byte* v, nat l) {
+	printf("(%llu)[ ", l);
+	for (nat i = 0; i < l; i++) printf("%2hhu ", v[i]);
+	printf("] \n");
+}
+*/
 
 
 
@@ -1782,7 +1980,133 @@ static void write_graph(nat* g, nat oc, char dt[32]) {
 // static const byte unique_operations[5] = {1, 2, 3, 5, 6};
 
 
+
+
+static void print_nats(nat* v, nat l) {
+	printf("(%llu)[ ", l);
+	for (nat i = 0; i < l; i++) printf("%2llu ", v[i]);
+	printf("]\n");
+}
+
+
+
+
+
 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                                                                                                                           /*
+
+
+
+
+
+
+
+
+srnfgp_rmv_test: b
+srnfgp_rmv_test: b release
+srnfgp_rmv_test: ./run    
+./srnfgp [D=1][R=0] <begin:nat(0)> <end:nat(10883911679)>
+srnfgp_rmv_test: ./run 0 10883911679
+using: 36R:[begin=0, ...end=10883911679]
+624951297:5.74197325e-02:[******````````````````````````````````````````````````````````````````````````````````````````````````````````] PM_zr5 ( on e=       1 ) 0 2 0 ]
+ PM_f1e ( on e=     500 )
+775946241:7.12929564e-02:[*******```````````````````````````````````````````````````````````````````````````````````````````````````````] PM_f1e ( on e=     500 ) 3 2 0 ]
+1228931073:1.12912628e-01:[************``````````````````````````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      32 ) 0 4 0 ]
+1568669697:1.44127382e-01:[***************```````````````````````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      32 ) 1 5 0 ]
+1738539009:1.59734759e-01:[*****************`````````````````````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      32 ) 4 5 0 ]
+ PM_zr6 ( on e=       1 )
+1880096769:1.72740906e-01:[*******************```````````````````````````````````````````````````````````````````````````````````````````] PM_f1e ( on e=     500 ) 1 0 1 ]
+1917845505:1.76209212e-01:[*******************```````````````````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      16 ) 2 0 1 ]
+2027945985:1.86325105e-01:[********************``````````````````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      16 ) 4 0 1 ]
+2182086657:2.00487354e-01:[**********************````````````````````````````````````````````````````````````````````````````````````````] PM_f1e ( on e=     500 ) 1 1 1 ]
+2427453441:2.23031343e-01:[************************``````````````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      16 ) 0 2 1 ]
+2474639361:2.27366726e-01:[*************************`````````````````````````````````````````````````````````````````````````````````````] PM_f1e ( on e=     500 ) 1 2 1 ]
+2729443329:2.50777791e-01:[***************************```````````````````````````````````````````````````````````````````````````````````] PM_f1e ( on e=     500 ) 0 3 1 ]
+2776629249:2.55113174e-01:[****************************``````````````````````````````````````````````````````````````````````````````````] PM_f1e ( on e=     500 ) 1 3 1 ]
+2792357889:2.56558301e-01:[****************************``````````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      16 ) 1 3 1 ]
+   PM_h ( on e=      18 )
+2825912321:2.59641240e-01:[****************************``````````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      38 ) 2 3 1 ]
+2877292545:2.64361989e-01:[*****************************`````````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      16 ) 3 3 1 ]
+2984247297:2.74188856e-01:[******************************````````````````````````````````````````````````````````````````````````````````] PM_f1e ( on e=     500 ) 5 3 1 ]
+3053453313:2.80547417e-01:[******************************````````````````````````````````````````````````````````````````````````````````] PM_zr5 ( on e=       1 ) 0 4 1 ]
+   PM_h ( on e=      27 )
+3239051265:2.97599922e-01:[********************************``````````````````````````````````````````````````````````````````````````````] PM_f1e ( on e=     500 ) 4 4 1 ]
+3352297473:3.08004840e-01:[*********************************`````````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      32 ) 0 5 1 ]
+   PM_h ( on e=      30 )
+3603955713:3.31126880e-01:[************************************``````````````````````````````````````````````````````````````````````````]   PM_h ( on e=      16 ) 5 5 1 ]
+ PM_ndi ( on e=       1 )
+4031774721:3.70434347e-01:[****************************************``````````````````````````````````````````````````````````````````````]   PM_h ( on e=      32 ) 2 1 2 ]
+4211081217:3.86908801e-01:[******************************************````````````````````````````````````````````````````````````````````]   PM_h ( on e=      16 ) 5 1 2 ]
+ PM_ndi ( on e=       1 )
+4238344193:3.89413689e-01:[******************************************````````````````````````````````````````````````````````````````````]   PM_h ( on e=      38 ) 0 2 2 ]
+4406116353:4.04828382e-01:[********************************************``````````````````````````````````````````````````````````````````]   PM_h ( on e=      16 ) 3 2 2 ]
+ PM_zr5 ( on e=       1 )
+        FOUND:  z = 012110252143310240010242
+5211422721:4.78818909e-01:[****************************************************``````````````````````````````````````````````````````````] PM_zr5 ( on e=       1 ) 1 5 2 ]
+ PM_f1e ( on e=     500 )
+6325010433:5.81133936e-01:[***************************************************************```````````````````````````````````````````````]   PM_h ( on e=      32 ) 5 2 3 ]
+ PM_ndi ( on e=       1 )
+6579814401:6.04545001e-01:[******************************************************************````````````````````````````````````````````]   PM_h ( on e=      32 ) 4 3 3 ]
+ PM_zr6 ( on e=       1 )
+7017070593:6.44719546e-01:[**********************************************************************````````````````````````````````````````] PM_f1e ( on e=     500 ) 1 5 3 ]
+7463763969:6.85761166e-01:[***************************************************************************```````````````````````````````````]   PM_h ( on e=      16 ) 4 0 4 ]
+7523532801:6.91252651e-01:[****************************************************************************``````````````````````````````````]   PM_h ( on e=      16 ) 5 0 4 ]
+7570718721:6.95588033e-01:[****************************************************************************``````````````````````````````````]   PM_h ( on e=      32 ) 0 1 4 ]
+7633633281:7.01368543e-01:[*****************************************************************************`````````````````````````````````]   PM_h ( on e=      16 ) 1 1 4 ]
+   PM_h ( on e=      18 )
+7728005121:7.10039308e-01:[******************************************************************************````````````````````````````````]   PM_h ( on e=      32 ) 3 1 4 ]
+7778336769:7.14663716e-01:[******************************************************************************````````````````````````````````]   PM_h ( on e=      16 ) 4 1 4 ]
+7825522689:7.18999099e-01:[*******************************************************************************```````````````````````````````]   PM_h ( on e=      32 ) 5 1 4 ]
+8570011649:7.87401800e-01:[**************************************************************************************````````````````````````]   PM_h ( on e=      32 ) 2 4 4 ]
+8618246145:7.91833524e-01:[***************************************************************************************```````````````````````]   PM_h ( on e=      32 ) 3 4 4 ]
+8797552641:8.08307978e-01:[****************************************************************************************``````````````````````]   PM_h ( on e=      16 ) 0 5 4 ]
+   PM_h ( on e=      16 )
+10883170305:9.99931883e-01:[*************************************************************************************************************`]write openat file: No such file or directory
+filename=
+write: created 1 z values to ./ : 1202402073.223329_10883911679_0_10883911679_z.txt
+printing pm counts:
+PM_fea: 39694252                PM_ns0: 59823459                PM_pco: 148705593               PM_zr5: 398252350               
+PM_zr6: 319103143               PM_ndi: 494764522               PM_oer:    78304                PM_r0i:   127089                
+  PM_h: 27885701                PM_f1e: 28790797                PM_erc:       18                PM_nsvl:        0
+PM_eda:        4                PM_rmv:   682516                 PM_ot:      610                PM_csm:      270                
+[done]
+
+[finished 1-space]: searched over 10883911680 graphs.
+srnfgp_rmv_test: 
+
+
+
+
+
+
+
+
+
+*/                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+
+
+
 
 
 
