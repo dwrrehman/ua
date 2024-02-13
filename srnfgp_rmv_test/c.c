@@ -21,7 +21,6 @@
 // general formula:
 //       ((5 + D) ^ 9) * ((5 * ((5 + D) ^ 3)) ^ D)
 
-
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -35,26 +34,27 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <termios.h>
 #include <time.h>
+#include <time.h>
 #include <unistd.h>
 
-#define reset "\x1B[0m"
-#define red   "\x1B[31m"
-//#define green   "\x1B[32m"
-//#define blue   "\x1B[34m"
-//#define yellow   "\x1B[33m"
-// #define magenta  "\x1B[35m"
-//#define cyan     "\x1B[36m"
+#include <stdio.h>
+#include <time.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <iso646.h>
+#include <stdbool.h>
 
-typedef int8_t byte;
+typedef uint8_t byte;
 typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 2;        // the duplication count (operation_count = 5 + D)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat display_rate = 20;
@@ -102,7 +102,7 @@ static const byte _36R_hole_positions[_36R_hole_count] = {3, 6, 7, 9, 11, 13, 14
 
 static const byte initial = R ? _63R_hole_count : _36R_hole_count;
 
-static const byte max_buffer_count = 3;
+static const byte max_buffer_count = 1;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -114,7 +114,6 @@ static const nat execution_limit = 1000000000;
 static const nat array_size = 10000;
 
 static const nat max_acceptable_er_repetions = 50;
-
 static const nat max_acceptable_modnat_repetions = 15;
 static const nat max_acceptable_consecutive_s0_incr = 30;
 static const nat max_acceptable_run_length = 9;
@@ -125,6 +124,8 @@ static const nat required_er_count = 25;
 
 static const nat expansion_check_timestep2 = 500; 
 static const nat required_s0_increments = 6;
+
+static const byte required_executed_count = 8;
 
 struct item {
 	char z[64];
@@ -138,10 +139,17 @@ struct list {
 };
 
 static byte* graph = NULL;
-static nat* array = NULL;
+static byte* end = NULL;
+static byte* moduli = NULL;
+static byte* positions = NULL;
+static byte* was_utilized = NULL;
+static byte* executed = NULL; 
 static nat* timeout = NULL; 
-static bool* executed = NULL; 
-static bool* was_utilized = NULL;
+
+static nat* array = NULL;
+
+
+
 
 static nat counts[PM_count] = {0};
 
@@ -151,20 +159,20 @@ static struct item buffer[max_buffer_count] = {0};
 static char directory[4096] = "./";
 static char filename[4096] = {0};
 
-// static void print_graph(void) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); putchar(10); }
-
 static void print_graph_raw(void) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
 
 static void print_progress(nat x, nat total, nat window_width) {
 	const double ratio = (double) x / (double) total;
 	const nat w = (nat) ((double) ratio * (double) window_width);
 	const nat rest = window_width - w;
-
 	putchar('\r');
-	printf("%llu:%.*e:[", x, 8, ratio); 
+	printf("%020llu:%.*e:[", x, 8, ratio); 
 	for (nat i = 0; i < w; i++) printf("*");
 	for (nat i = 0; i < rest; i++) printf("`");
 	putchar(']');
+	putchar(':');
+	print_graph_raw();
+	for (nat i = 0; i < 10; i++) putchar(32);
 	fflush(stdout);
 }
 
@@ -176,7 +184,7 @@ static void get_datetime(char datetime[32]) {
 }
 
 static void get_graphs_z_value(char string[64]) { 
-	for (byte i = 0; i < graph_count; i++) string[i] = graph[i] + '0';
+	for (byte i = 0; i < graph_count; i++) string[i] = (char) graph[i] + '0';
 	string[graph_count] = 0;
 }
 
@@ -262,11 +270,7 @@ static void print_counts(void) {
 }
 
 
-
-
-
-
-static bool execute_graph_starting_at(byte origin, bool should_print) {
+static bool execute_graph_starting_at(byte origin) {
 
 	const nat n = array_size;
 	array[n] = 0; array[0] = 0; 
@@ -352,7 +356,7 @@ static bool execute_graph_starting_at(byte origin, bool should_print) {
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
-		executed[I + state] = 1;
+		if (executed[I + state] < 253) executed[I + state]++;
 		ip = graph[I + state];
 	}
 
@@ -362,173 +366,23 @@ static bool execute_graph_starting_at(byte origin, bool should_print) {
 		    not executed[i + 3] and graph[i + 3]
 		) { a = PM_eda; goto bad; }
 	}
+	for (byte i = 0; i < graph_count; i += 4) {
+		if (executed[i + 1] < required_executed_count) { a = PM_eda; goto bad; }
+		if (executed[i + 2] < required_executed_count) { a = PM_eda; goto bad; }
+		if (executed[i + 3] < required_executed_count) { a = PM_eda; goto bad; }
+	}
 	return false; 
-	
 bad: 	counts[a]++;
-	if (should_print) printf("%7s ( on e=%8llu )\n", pm_spelling[a], e);
-
 	return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// char string[64] = {0};
-	// get_graphs_z_value(string);
-	// const bool debug = not strcmp(string, "012110452543300240021000");
-
-	// if (debug) printf("[z = %s, origin = %hhu]\n", string, origin);
-
-	
-
-	// memset(array, 0, (n + 1) * sizeof(nat));
-
-
-
-	//	if (debug) { 
-	//		printf("[e=%llu]: executing &%hhu: [op=%hhu, .lge={%hhu, %hhu, %hhu}]: "
-	//			"{pointer = %llu, *n = %llu} \n",  e, ip, 
-	//			graph[4 * ip + 0], 
-	//			graph[4 * ip + 1], 
-	//			graph[4 * ip + 2], 
-	//			graph[4 * ip + 3], 
-	//			pointer, array[n]
-	//		);
-	//		
-	//		puts(""); print_nats(array, 5); puts(""); 
-	//		puts(""); 
-	//		getchar();
-	//	}
-
-
-
-
-
-	/*	if (debug) { 
-			printf("[e=%llu]: executing [op=%hhu]: {pointer = %llu, *n = %llu} "
-				"{s0_was_incremented = %hhu} "
-				"{R0I_counter = %llu, max = %llu}\n", 
-					e, ip, pointer, array[n], 
-					s0_was_incremented,
-					R0I_counter, max_acceptable_consecutive_s0_incr
-			);
-			//puts(""); print_nats(array, xw); puts(""); 
-			//puts(""); 
-			getchar();
-		}
-
-
-
-	//memset(array, 0, (n + 1) * sizeof(nat));              //todo:  do the lazy array zeroing optimization. 
-
-
-
-
-xw   lazy zeroing:
-
-
-			[ 9 8 7 5 4 2 3 1 1 0 0 0 0 0 0 0 0 0 0 ]
-                                            ^
-
-
-
-
-
-MCAL operation sequence:
-
-         *0    *1   *2   *3    *4   *5   *6  *7  *8   *9   *10
-	{3 1} {1} {3 1} {3 1} {1} {3 1} {1} {1} {3 1} {1} {3 1} {1} 3 1 3 1 3 1 1 3 1 1 1 3 1 3 1 1 3 1 3 1 1 1 1 1 3 1 3 1 1 3 1 1 3 1
-
-         1     0    1    1     0    1    0   0   1    0     1    0 
-
-
-
-os	3 1    3 1    3 1   3 1    3 1   3 1   3 1   3 1    3 1
-
-modes    1      1      1     1      1     1     1     1      1
-
-
-
-
-os	3 1    3 1    3 1   3 1    3 1    1     3 1    3 1
-
-modes    1      1      1     1      1     0      1      1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool execute_graph(bool b) {
+static bool execute_graph(void) {
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
-		if (not execute_graph_starting_at(o, b)) return false;
+		if (not execute_graph_starting_at(o)) return false;
 	}
 	return true;
 }
-
-
-
-
-
-//	nat xw = 0;
-//	for (; xw < n and array[xw]; xw++) { }
-//	memset(values, 0, n * sizeof(nat));
-//	for (nat i = 0; i < xw; i++) {
-//		if (array[i] >= n) { a = PM_mh; goto bad; }
-//		values[array[i]]++; 
-//	}
-//	for (nat i = 0; i < n; i++) 
-//		if (values[i] > xw >> 2) { a = PM_mh; goto bad; }
-
-
-
-
-
-
 
 static bool fea_execute_graph_starting_at(byte origin) {
 
@@ -589,7 +443,7 @@ static bool fea_execute_graph(void) {
 	return true;
 }
 
-static void append_to_file(nat zindex, nat begin, nat end) {
+static void append_to_file(nat zindex, nat b, nat e) {
 	
 	char newfilename[4096] = {0};
 
@@ -617,7 +471,7 @@ try_open:;
 
 		char dt[32] = {0};
 		get_datetime(dt);
-		snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_%llu_z.txt", dt, zindex, begin, end);
+		snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_%llu_z.txt", dt, zindex, b, e);
 		strlcpy(filename, newfilename, sizeof filename);
 
 		goto try_open;
@@ -641,7 +495,7 @@ try_open:;
 
 	char dt[32] = {0};
 	get_datetime(dt);
-	snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_%llu_z.txt", dt, zindex, begin, end);
+	snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_%llu_z.txt", dt, zindex, b, e);
 
 	if (renameat(dir, filename, dir, newfilename) < 0) {
 		perror("rename");
@@ -657,22 +511,16 @@ try_open:;
 	printf("%s : %s \033[0m\n", directory, newfilename);
 }
 
-static void write_graph(nat zindex, nat begin, nat end) {
+static void write_graph(nat zindex, nat b, nat e) {
 
 	get_datetime(buffer[buffer_count].dt);
 	get_graphs_z_value(buffer[buffer_count].z);
 	buffer_count++;
 
 	if (buffer_count == max_buffer_count) {
-		append_to_file(zindex, begin, end);
+		append_to_file(zindex, b, e);
 		buffer_count = 0;
 	}
-}
-
-static void print_bytes_raw(byte* v, nat l) {
-	printf("(%llu)[", l);
-	for (nat i = 0; i < l; i++) printf("%2hhu", v[i]);
-	printf(" ]");
 }
 
 static nat expn(nat base, nat exponent) {
@@ -682,6 +530,7 @@ static nat expn(nat base, nat exponent) {
 }
 
 int main(int argc, const char** argv) {
+
 	if (argc != 3) {
 		printf("./srnfgp [D=%hhu][R=%hhu] <begin:nat(0)> <end:nat(%llu)>\n", 
 			D, R, expn(5 + D, 9) * expn(5 * expn(5 + D, 3), D) - 1);
@@ -694,33 +543,37 @@ int main(int argc, const char** argv) {
 	const nat range_end    = strtoull(argv[2], &end_invalid, 10);
 
 	if (*begin_invalid) {
-		printf(red "ERROR: error parsing range_begin near \"%s\" aborting...\n" reset, begin_invalid);
+		printf("ERROR: error parsing range_begin near \"%s\" aborting...\n", begin_invalid);
 		abort();
 	}
 	if (*end_invalid) {
-		printf(red "ERROR: error parsing range_end near \"%s\" aborting...\n" reset, end_invalid);
+		printf("ERROR: error parsing range_end near \"%s\" aborting...\n", end_invalid);
 		abort();
 	}
 
 	printf("using: %s:[begin=%llu, ...end=%llu]\n", R ? "63R" : "36R", range_begin, range_end);
 
-	array = calloc(array_size + 1, sizeof(nat));
-	graph = calloc(graph_count, 1);
-	executed = calloc(graph_count, 1);
-	was_utilized = calloc(operation_count, 1);
-	timeout = calloc(operation_count, sizeof(nat));
-
-	byte* end = calloc(hole_count, 1);
-	byte* options = calloc(hole_count, 1);
-	byte* moduli = calloc(hole_count, 1);
-	byte* positions = calloc(hole_count, 1);
-
 	struct winsize window = {0};
 	ioctl(0, TIOCGWINSZ, &window);
 	const nat window_width = window.ws_col - 80;
 
-	nat counter = 0;
+	array = calloc(array_size + 1, sizeof(nat));
+
+	executed = calloc(graph_count, 1);
+	was_utilized = calloc(operation_count, 1);
+	timeout = calloc(operation_count, sizeof(nat));
+
+	moduli = calloc(hole_count, 1);
+	positions = calloc(hole_count, 1);
+
+	graph = calloc(1, graph_count + 8 - (graph_count % 8));
+	end = calloc(1, graph_count + 8 - (graph_count % 8));
+
+	nat counter = 0, found = 0;
 	byte pointer = 0;
+
+	memcpy(graph, R ? _63R : _36R, 20);
+	memcpy(end, R ? _63R : _36R, 20);
 
 	for (byte i = 0; i < initial; i++) {
 		moduli[i] = operation_count;
@@ -737,63 +590,55 @@ int main(int argc, const char** argv) {
 
 	nat p = 1;
 	for (nat i = 0; i < hole_count; i++) {
-		options[i] = (byte) ((range_begin / p) % (nat) moduli[i]);
+		graph[positions[i]] = (byte) ((range_begin / p) % (nat) moduli[i]);
 		p *= (nat) moduli[i];
 	}
-	if (range_begin >= p) { puts("range_begin is too big!"); printf("%llu\n", range_begin - 1); printf("%llu\n", p); abort(); }
+	if (range_begin >= p) { puts("range_begin is too big!"); printf("range_begin = %llu, p = %llu\n", range_begin, p); abort(); }
 
 	p = 1;
 	for (nat i = 0; i < hole_count; i++) {
-		end[i] = (byte) ((range_end / p) % (nat) moduli[i]);
+		end[positions[i]] = (byte) ((range_end / p) % (nat) moduli[i]);
 		p *= (nat) moduli[i];
 	}
-	if (range_end >= p) { puts("range_end is too big!"); printf("%llu\n", range_end - 1); printf("%llu\n", p); abort(); }
+	if (range_end >= p) { puts("range_end is too big!"); printf("range_end = %llu, p = %llu\n", range_end, p); abort(); }
 
-	memcpy(graph, R ? _63R : _36R, 20);
-	for (byte i = 0; i < hole_count; i++) graph[positions[i]] = options[i];
-
+	const clock_t time_begin = clock();
 	goto init;
 
 loop:
-	if (not memcmp(options, end, hole_count)) goto done;
-	if (options[pointer] < moduli[pointer] - 1) goto increment;
+	for (byte i = 0; i < 1 + (operation_count >> 1); i++) 
+		if (((uint64_t*) graph)[i] != ((uint64_t*) end)[i]) goto continue_;
+	goto done;
+continue_:
+	if (graph[positions[pointer]] < moduli[pointer] - 1) goto increment;
 	if (pointer < hole_count - 1) goto reset_; 
 	goto done;
 increment:
-	options[pointer]++;
-	graph[positions[pointer]] = options[pointer];
+	graph[positions[pointer]]++;
 init:  	pointer = 0;
-
 	const bool should_show = not (counter & ((1 << display_rate) - 1));
 	counter++;
-
-	if (should_show) {
-		print_bytes_raw(options, hole_count);
-		print_progress(counter, range_end - range_begin, window_width);
-	}
-
-	//if (should_show) print_bytes(end, hole_count);
-	//if (should_show) print_bytes(positions, hole_count);
-	//if (should_show) print_bytes(moduli, hole_count);
-	// if (should_show) puts("");
-
+	if (should_show) print_progress(counter, range_end - range_begin, window_width);
 	if (graph_analysis()) goto loop;
 	if (fea_execute_graph()) goto loop;
-	if (execute_graph(should_show)) goto loop;
+	if (execute_graph()) goto loop;
 	write_graph(counter - 1, range_begin, range_end);
-
-	printf("\r\tFOUND:  z = "); print_graph_raw(); printf("\033[K\n"); fflush(stdout);
+	printf("\r     FOUND:  z = "); print_graph_raw(); printf("\033[K\n"); fflush(stdout);
+	found++;
         goto loop;
 
 reset_:
-	options[pointer] = 0; 
-	graph[positions[pointer]] = options[pointer];
+	graph[positions[pointer]] = 0; 
 	pointer++;
 	goto loop;
-
-done:	append_to_file(counter - 1, range_begin, range_end);
+done:;
+	const clock_t time_end = clock();
+	const double elapsed_seconds = (double)(time_end - time_begin) / CLOCKS_PER_SEC;
+	append_to_file(counter - 1, range_begin, range_end);
 	print_counts();
-	printf("\n[finished %hhu-space]: searched over %llu graphs.\n", D, counter);
+	printf("\n[finished %hhu-space-(R=%hhu)]: found %llu graphs, "
+		"searched over %llu graphs in %10.10lf seconds [throughput = %10.10lf z/s] \n", 
+		D, R, found, counter, elapsed_seconds, (double) counter / elapsed_seconds);
 }
 
 
@@ -808,6 +653,26 @@ done:	append_to_file(counter - 1, range_begin, range_end);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//if (should_show) print_bytes(end, hole_count);
+	//if (should_show) print_bytes(positions, hole_count);
+	//if (should_show) print_bytes(moduli, hole_count);
+	// if (should_show) puts("");
 
 
 
@@ -2106,6 +1971,200 @@ srnfgp_rmv_test:
 */                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// char string[64] = {0};
+	// get_graphs_z_value(string);
+	// const bool debug = not strcmp(string, "012110452543300240021000");
+
+	// if (debug) printf("[z = %s, origin = %hhu]\n", string, origin);
+
+	
+
+	// memset(array, 0, (n + 1) * sizeof(nat));
+
+
+
+	//	if (debug) { 
+	//		printf("[e=%llu]: executing &%hhu: [op=%hhu, .lge={%hhu, %hhu, %hhu}]: "
+	//			"{pointer = %llu, *n = %llu} \n",  e, ip, 
+	//			graph[4 * ip + 0], 
+	//			graph[4 * ip + 1], 
+	//			graph[4 * ip + 2], 
+	//			graph[4 * ip + 3], 
+	//			pointer, array[n]
+	//		);
+	//		
+	//		puts(""); print_nats(array, 5); puts(""); 
+	//		puts(""); 
+	//		getchar();
+	//	}
+
+
+
+
+
+	/*	if (debug) { 
+			printf("[e=%llu]: executing [op=%hhu]: {pointer = %llu, *n = %llu} "
+				"{s0_was_incremented = %hhu} "
+				"{R0I_counter = %llu, max = %llu}\n", 
+					e, ip, pointer, array[n], 
+					s0_was_incremented,
+					R0I_counter, max_acceptable_consecutive_s0_incr
+			);
+			//puts(""); print_nats(array, xw); puts(""); 
+			//puts(""); 
+			getchar();
+		}
+
+
+
+	//memset(array, 0, (n + 1) * sizeof(nat));              //todo:  do the lazy array zeroing optimization. 
+
+
+
+
+xw   lazy zeroing:
+
+
+			[ 9 8 7 5 4 2 3 1 1 0 0 0 0 0 0 0 0 0 0 ]
+                                            ^
+
+
+
+
+
+MCAL operation sequence:
+
+         *0    *1   *2   *3    *4   *5   *6  *7  *8   *9   *10
+	{3 1} {1} {3 1} {3 1} {1} {3 1} {1} {1} {3 1} {1} {3 1} {1} 3 1 3 1 3 1 1 3 1 1 1 3 1 3 1 1 3 1 3 1 1 1 1 1 3 1 3 1 1 3 1 1 3 1
+
+         1     0    1    1     0    1    0   0   1    0     1    0 
+
+
+
+os	3 1    3 1    3 1   3 1    3 1   3 1   3 1   3 1    3 1
+
+modes    1      1      1     1      1     1     1     1      1
+
+
+
+
+os	3 1    3 1    3 1   3 1    3 1    1     3 1    3 1
+
+modes    1      1      1     1      1     0      1      1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// static void print_graph(void) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); putchar(10); }
+
+
+#define reset "\x1B[0m"
+#define red   "\x1B[31m"
+//#define green   "\x1B[32m"
+//#define blue   "\x1B[34m"
+//#define yellow   "\x1B[33m"
+// #define magenta  "\x1B[35m"
+//#define cyan     "\x1B[36m"
+
+static void print_bytes_raw(byte* v, nat l) {
+	printf("(%llu)[", l);
+	for (nat i = 0; i < l; i++) printf("%2hhu", v[i]);
+	printf(" ]");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+//	nat xw = 0;
+//	for (; xw < n and array[xw]; xw++) { }
+//	memset(values, 0, n * sizeof(nat));
+//	for (nat i = 0; i < xw; i++) {
+//		if (array[i] >= n) { a = PM_mh; goto bad; }
+//		values[array[i]]++; 
+//	}
+//	for (nat i = 0; i < n; i++) 
+//		if (values[i] > xw >> 2) { a = PM_mh; goto bad; }
 
 
 
