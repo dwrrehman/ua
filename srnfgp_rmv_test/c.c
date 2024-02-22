@@ -34,20 +34,11 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <termios.h>
 #include <time.h>
-#include <time.h>
 #include <unistd.h>
-
-#include <stdio.h>
-#include <time.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <iso646.h>
-#include <stdbool.h>
 
 typedef uint8_t byte;
 typedef uint64_t nat;
@@ -146,8 +137,6 @@ static byte* executed = NULL;
 static nat* timeout = NULL; 
 
 static nat* array = NULL;
-
-
 
 
 static nat counts[PM_count] = {0};
@@ -327,9 +316,6 @@ static bool execute_graph_starting_at(byte origin) {
 bad: 	counts[a]++;
 	return true;
 }
-
-
-
 
 
 static bool execute_graph(void) {
@@ -572,8 +558,9 @@ init:  	pointer = 0;
 	goto done;
 
 process:
-	counter++;
+	
 	if (not (counter & ((1 << display_rate) - 1))) { putchar('\r'); print_graph_raw(); fflush(stdout); }
+	counter++;
 
 	//memset(was_utilized, 0, operation_count); // make this NOT a memset, by making the was_utilized, NOT an array!
 							//       simply store the Op_count bits in a     single  uint16_t!!!!
@@ -583,18 +570,34 @@ process:
 	for (byte index = operation_count; index--;) {
 
 		if (graph[4 * index + 3] == index) {  a = 4 * index + 3; goto bad; }
-
 		if (graph[4 * index] == six and graph[4 * index + 2]) { a = 4 * index; goto bad; }
 
 		const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
 
-		if (graph[4 * index] == one) {
-			if (l == g and g == e and graph[4 * e] == one) { 
-				if (e == one) { a = 4 * index; goto bad; } 
-				a = 4 * (index < e ? index : e); goto bad;
-			}
-		}
 
+			//
+			// WRONG:  
+			//    consider the various 5 -x-> XXX -e-> 1    possibliities...  we can't account for all of them. 
+			//
+			//    if (graph[4 * index] != five and graph[4 * e] == one) {  a = 4 * index + 3; goto bad; }     // the revised version.
+			//
+			//	if (graph[4 * index] == one and graph[4 * e] == one) {          ///    NOTE:   this changed!!!! talk about this!!!!
+			//		//if (index == one) { a = 4 * index + 3; goto bad; }      // i noticed that one->one uncond, is a subset of 
+			//		//if (e == one) { a = 4 * index; goto bad; }              // one->one on eq,  which is stronger! 
+			//		//a = 4 * (index < e ? index : e); goto bad;              //    and also prunable because fea constraint,. 
+			//									//
+			//							// ..then i realized that the one source doesnt need to be there!
+			//	}
+			//
+
+
+		if (graph[4 * index] == one and graph[4 * e] == one) {          ///    NOTE:   this changed!!!! talk about this!!!!
+			if (index == one) { a = 4 * index + 3; goto bad; }      // i noticed that one->one uncond, is a subset of 
+			if (e == one) { a = 4 * index; goto bad; }              // one->one on eq,  which is stronger! 
+			a = 4 * (index < e ? index : e); goto bad;              //    and also prunable because fea constraint,. 
+		}								//
+										// ..then i realized that the one source doesnt need to be there!..?
+		
 		if (graph[4 * index] == five) 
 			for (byte offset = 1; offset < 4; offset++) 
 				if (graph[4 * graph[4 * index + offset]] == five) { 
@@ -637,7 +640,7 @@ process:
 	goto try_executing;
 
 bad:	
-	//goto loop;
+	//goto loop;              // for testing!         this is commented out.
 
 	for (byte i = 0; i < hole_count; i++) {                      //  -----  NOTE: ---------------------------------------
 		if (positions[i] == a) { pointer = i; goto loop; }    // I edited this off camera!  
@@ -665,7 +668,7 @@ done:;
 	print_counts();
 	printf("\n[finished %hhu-space-(R=%hhu)]: found %llu graphs, "
 		"searched over %llu graphs in %10.10lf seconds [throughput = %10.10lf z/s] \n", 
-		D, R, found, counter, elapsed_seconds, (double) counter / elapsed_seconds);
+		D, R, found, (range_end - range_begin), elapsed_seconds, (double) (range_end - range_begin) / elapsed_seconds);
 }
 //donn't use counter!!!!   use rend-rbegin       as the count!!!! more correct!!!!!!!!
 
