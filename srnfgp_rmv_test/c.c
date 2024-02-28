@@ -116,7 +116,7 @@ static const nat required_er_count = 25;
 static const nat expansion_check_timestep2 = 500; 
 static const nat required_s0_increments = 6;
 
-static const byte required_executed_count = 8;
+// static const byte required_executed_count = 8;
 
 struct item {
 	char z[64];
@@ -131,13 +131,11 @@ struct list {
 
 static byte* graph = NULL;
 static byte* end = NULL;
-static byte* moduli = NULL;
-static byte* positions = NULL;
+static byte* positions = NULL;     // TODO:  make the partial graph implemented via GA, and thus remove the need for this array. 
 static byte* executed = NULL; 
 static nat* timeout = NULL; 
 
 static nat* array = NULL;
-
 
 static nat counts[PM_count] = {0};
 
@@ -161,43 +159,6 @@ static void get_graphs_z_value(char string[64]) {
 	string[graph_count] = 0;
 }
 
-
-/*
-graph adjacency list:  {
-
-log = logical address    (index)
-phy = physical address   (index * 4)
-
-
-	log     phy       op idx          l   g  e
-	idx     [i]       +0              +1  +2 +3
-========================================================================
-	&0	#0:  ins(.op = 0, .lge = [ 1, 4, 1 ])
-
-	&1	#4:  ins(.op = 1, .lge = [ 0, 2, 2 ])
-
-	&2	#8:  ins(.op = 2, .lge = [ 0, 5, 3 ])
-
-	&3	#12: ins(.op = 3, .lge = [ 1, 1, 4 ])
-
-	&4	#16: ins(.op = 4, .lge = [ 2, 0, 1 ])
-
-	&5	#20: ins(.op = 0, .lge = [ 0, 5, 0 ])
-========================================================================
-
-}
-
-
-
-static bool graph_analysis(void) {
-
-
-}
-*/
-
-
-
-
 static void print_counts(void) {
 	printf("printing pm counts:\n");
 	for (nat i = 0; i < PM_count; i++) {
@@ -207,7 +168,6 @@ static void print_counts(void) {
 	puts("");
 	puts("[done]");
 }
-
 
 static bool execute_graph_starting_at(byte origin) {
 
@@ -303,20 +263,63 @@ static bool execute_graph_starting_at(byte origin) {
 		ip = graph[I + state];
 	}
 	for (byte i = 0; i < graph_count; i += 4) {
-		//if (executed[i + 1] < required_executed_count) { a = PM_eda; goto bad; }
-		//if (executed[i + 2] < required_executed_count) { a = PM_eda; goto bad; }
-		//if (executed[i + 3] < required_executed_count) { a = PM_eda; goto bad; }      WRONGGGGGG!!!!!!!!!!!    6.g!!!!!!!
 
 		if (	not executed[i + 1] and graph[i + 1] or 
 			not executed[i + 2] and graph[i + 2] or 
 			not executed[i + 3] and graph[i + 3])               // make this use an array of booleans, ie, a single uint64!!!!!!
 				{ a = PM_eda; goto bad; }
 	}
-	return false; 
+	return false;
 bad: 	counts[a]++;
 	return true;
 }
 
+
+
+/*
+
+
+
+
+
+		//if (executed[i + 1] < required_executed_count) { a = PM_eda; goto bad; }
+		//if (executed[i + 2] < required_executed_count) { a = PM_eda; goto bad; }
+		//if (executed[i + 3] < required_executed_count) { a = PM_eda; goto bad; }      WRONGGGGGG!!!!!!!!!!!    6.g!!!!!!!
+
+
+
+
+
+	//	char string[64] = {0};
+	//	get_graphs_z_value(string);
+	//	const bool debug = not strcmp(string, "0122106523433510400006112000");
+	//	if (debug) printf("[z = %s, origin = %hhu]\n", string, origin);
+
+
+	static void print_nats(nat* v, nat l) {
+		printf("(%llu)[ ", l);
+		for (nat i = 0; i < l; i++) printf("%2llu ", v[i]);
+		printf("]\n");
+	}
+
+
+
+
+if (debug) { 
+			printf("[e=%llu]: executing &%hhu: [op=%hhu, .lge={%hhu, %hhu, %hhu}]: "
+				"{pointer = %llu, *n = %llu} \n", 
+					e, ip, 
+					graph[4 * ip + 0], 
+					graph[4 * ip + 1], 
+					graph[4 * ip + 2], 
+					graph[4 * ip + 3], 
+					pointer, array[n]
+			);
+			puts(""); print_nats(array, 10); puts(""); 
+			puts(""); 
+			getchar();
+		}
+*/
 
 static bool execute_graph(void) {
 	for (byte o = 0; o < operation_count; o++) {
@@ -384,7 +387,7 @@ static bool fea_execute_graph(void) {
 	return true;
 }
 
-static void append_to_file(nat zindex, nat b, nat e) {
+static void append_to_file(nat b, nat e) {
 	
 	char newfilename[4096] = {0};
 
@@ -412,7 +415,7 @@ try_open:;
 
 		char dt[32] = {0};
 		get_datetime(dt);
-		snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_%llu_z.txt", dt, zindex, b, e);
+		snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_z.txt", dt, b, e);
 		strlcpy(filename, newfilename, sizeof filename);
 
 		goto try_open;
@@ -436,7 +439,7 @@ try_open:;
 
 	char dt[32] = {0};
 	get_datetime(dt);
-	snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_%llu_z.txt", dt, zindex, b, e);
+	snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_z.txt", dt, b, e);
 
 	if (renameat(dir, filename, dir, newfilename) < 0) {
 		perror("rename");
@@ -452,14 +455,14 @@ try_open:;
 	printf("%s : %s \033[0m\n", directory, newfilename);
 }
 
-static void write_graph(nat zindex, nat b, nat e) {
+static void write_graph(nat b, nat e) {
 
 	get_datetime(buffer[buffer_count].dt);
 	get_graphs_z_value(buffer[buffer_count].z);
 	buffer_count++;
 
 	if (buffer_count == max_buffer_count) {
-		append_to_file(zindex, b, e);
+		append_to_file(b, e);
 		buffer_count = 0;
 	}
 }
@@ -497,8 +500,7 @@ int main(int argc, const char** argv) {
 	array = calloc(array_size + 1, sizeof(nat));
 	executed = calloc(graph_count, 1);
 	timeout = calloc(operation_count, sizeof(nat));
-	moduli = calloc(hole_count, 1);
-	positions = calloc(hole_count, 1);
+	positions = calloc(hole_count, 1);      // [REMOVING_POSITIONS]: remove this line
 	void* raw_graph = calloc(1, graph_count + (8 - (graph_count % 8)) % 8);
 	void* raw_end = calloc(1, graph_count   + (8 - (graph_count % 8)) % 8);
 
@@ -506,48 +508,41 @@ int main(int argc, const char** argv) {
 	end = raw_end;
 	uint64_t* graph_64 = raw_graph;
 	uint64_t* end_64 = raw_end;
-	nat counter = 0, found = 0;
+	nat display_counter = 0, found = 0;
 	byte pointer = 0;
 
 	memcpy(graph, R ? _63R : _36R, 20);
 	memcpy(end, R ? _63R : _36R, 20);
 
-	for (byte i = 0; i < initial; i++) {
-		moduli[i] = operation_count;
-		positions[i] = R ? _63R_hole_positions[i] : _36R_hole_positions[i];
-	}
-
-	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i;
-	for (byte i = 0; i < D; i++) {
-		moduli[initial + 4 * i + 0] = 5;
-		moduli[initial + 4 * i + 1] = operation_count;
-		moduli[initial + 4 * i + 2] = operation_count;
-		moduli[initial + 4 * i + 3] = operation_count;
-	}
+	for (byte i = 0; i < initial; i++) positions[i] = R ? _63R_hole_positions[i] : _36R_hole_positions[i]; // [REMOVING_POSITIONS]: remove this line
+	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i; // [REMOVING_POSITIONS]: remove this line
 
 	nat p = 1;
 	for (nat i = 0; i < hole_count; i++) {
-		graph[positions[i]] = (byte) ((range_begin / p) % (nat) moduli[i]);
-		p *= (nat) moduli[i];
+		graph[positions[i]] = (byte) ((range_begin / p) % (nat) (positions[i] & 3 ? operation_count : 5));
+		// [REMOVING_POSITIONS]: make the iterator i in the lrs of graph count, and index i directy, instead of through positions. 
+		p *= (nat) (positions[i] & 3 ? operation_count : 5);
 	}
 	if (range_begin >= p) { puts("range_begin is too big!"); printf("range_begin = %llu, p = %llu\n", range_begin, p); abort(); }
 
 	p = 1;
 	for (nat i = 0; i < hole_count; i++) {
-		end[positions[i]] = (byte) ((range_end / p) % (nat) moduli[i]);
-		p *= (nat) moduli[i];
+		end[positions[i]] = (byte) ((range_end / p) % (nat) (positions[i] & 3 ? operation_count : 5));
+		// [REMOVING_POSITIONS]: same here.
+		p *= (nat) (positions[i] & 3 ? operation_count : 5);
 	}
 	if (range_end >= p) { puts("range_end is too big!"); printf("range_end = %llu, p = %llu\n", range_end, p); abort(); }
 
 	const clock_t time_begin = clock();
 	goto init;
 
-loop:	if (graph[positions[pointer]] < moduli[pointer] - 1) goto increment;
-	if (pointer < hole_count - 1) goto reset_; 
+loop:	if (graph[positions[pointer]] < (positions[pointer] & 3 ? operation_count - 1 : 4)) goto increment;
+	// [REMOVING_POSITIONS]: index pointer into graph directly, 
+	if (pointer < hole_count - 1) goto reset_;  // [REMOVING_POSITIONS]: pointer < graphcount - 1
 	goto done;
 
 increment:
-	graph[positions[pointer]]++;
+	graph[positions[pointer]]++; // [REMOVING_POSITIONS]: index pointer into graph directly. 
 init:  	pointer = 0;
 
 	for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
@@ -558,14 +553,19 @@ init:  	pointer = 0;
 	goto done;
 
 process:
-	
-	if (not (counter & ((1 << display_rate) - 1))) { putchar('\r'); print_graph_raw(); fflush(stdout); }
-	counter++;
+	if (not (display_counter & ((1 << display_rate) - 1))) { putchar('\r'); print_graph_raw(); fflush(stdout); }
+	display_counter++;
 
-	//memset(was_utilized, 0, operation_count); // make this NOT a memset, by making the was_utilized, NOT an array!
-							//       simply store the Op_count bits in a     single  uint16_t!!!!
 	u16 was_utilized = 0;
 	byte a = 0;
+
+// constructive GA:
+
+	// [REMOVING_POSITIONS]: before doing our pattern-based GA, we will actually do a check before this whole thing, 
+	//                      checking for each PA in our 36R to be present with a particular value at that PA. 
+	//                      if it isnt there, then we will do a zskip over the correct number of options in the graph. 
+
+// non-constructive GA:   (ie, actual GA)
 
 	for (byte index = operation_count; index--;) {
 
@@ -574,29 +574,11 @@ process:
 
 		const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
 
-
-			//
-			// WRONG:  
-			//    consider the various 5 -x-> XXX -e-> 1    possibliities...  we can't account for all of them. 
-			//
-			//    if (graph[4 * index] != five and graph[4 * e] == one) {  a = 4 * index + 3; goto bad; }     // the revised version.
-			//
-			//	if (graph[4 * index] == one and graph[4 * e] == one) {          ///    NOTE:   this changed!!!! talk about this!!!!
-			//		//if (index == one) { a = 4 * index + 3; goto bad; }      // i noticed that one->one uncond, is a subset of 
-			//		//if (e == one) { a = 4 * index; goto bad; }              // one->one on eq,  which is stronger! 
-			//		//a = 4 * (index < e ? index : e); goto bad;              //    and also prunable because fea constraint,. 
-			//									//
-			//							// ..then i realized that the one source doesnt need to be there!
-			//	}
-			//
-
-
-		if (graph[4 * index] == one and graph[4 * e] == one) {          ///    NOTE:   this changed!!!! talk about this!!!!
-			if (index == one) { a = 4 * index + 3; goto bad; }      // i noticed that one->one uncond, is a subset of 
-			if (e == one) { a = 4 * index; goto bad; }              // one->one on eq,  which is stronger! 
-			a = 4 * (index < e ? index : e); goto bad;              //    and also prunable because fea constraint,. 
-		}								//
-										// ..then i realized that the one source doesnt need to be there!..?
+		if (graph[4 * index] == one and graph[4 * e] == one) {         
+			if (index == one) { a = 4 * index + 3; goto bad; }     
+			if (e == one) { a = 4 * index; goto bad; }             
+			a = 4 * (index < e ? index : e); goto bad;             
+		}						
 		
 		if (graph[4 * index] == five) 
 			for (byte offset = 1; offset < 4; offset++) 
@@ -638,39 +620,41 @@ process:
 	for (byte index = 0; index < operation_count; index++) 
 		if (not ((was_utilized >> index) & 1)) goto loop;
 	goto try_executing;
-
-bad:	
-	//goto loop;              // for testing!         this is commented out.
-
-	for (byte i = 0; i < hole_count; i++) {                      //  -----  NOTE: ---------------------------------------
-		if (positions[i] == a) { pointer = i; goto loop; }    // I edited this off camera!  
-		else graph[positions[i]] = 0;                       /// i added this line because we want to process all options!
-	}                            // ----------------------------------------------------------------------------------------
-	abort();
+bad:
+	//goto loop;
+	for (byte i = 0; i < hole_count; i++) {
+		if (positions[i] == a) { pointer = i; goto loop; }
+		else graph[positions[i]] = 0;
+		// [REMOVING_POSITIONS]: index i directly of course,      but don't do the finding of a,   just index a directly!!! 
+	}
+	abort(); // [REMOVING_POSITIONS]: remove this line
+	
 
 try_executing:
 	if (fea_execute_graph()) goto loop;
 	if (execute_graph()) goto loop;
-	write_graph(counter - 1, range_begin, range_end);
+	write_graph(range_begin, range_end);
 	printf("\r     FOUND:  z = "); print_graph_raw(); printf("\033[K\n"); fflush(stdout);
 	found++;
         goto loop;
 
 reset_:
-	graph[positions[pointer]] = 0; 
+	graph[positions[pointer]] = 0; // [REMOVING_POSITIONS]: index pointer directly! 
 	pointer++;
 	goto loop;
 
 done:;
 	const clock_t time_end = clock();
 	const double elapsed_seconds = (double)(time_end - time_begin) / CLOCKS_PER_SEC;
-	if (buffer_count) append_to_file(counter - 1, range_begin, range_end);
+	if (buffer_count) append_to_file(range_begin, range_end);
 	print_counts();
 	printf("\n[finished %hhu-space-(R=%hhu)]: found %llu graphs, "
 		"searched over %llu graphs in %10.10lf seconds [throughput = %10.10lf z/s] \n", 
-		D, R, found, (range_end - range_begin), elapsed_seconds, (double) (range_end - range_begin) / elapsed_seconds);
+		D, R, found, (range_end - range_begin), elapsed_seconds, 
+		(double) (range_end - range_begin) / elapsed_seconds);
 }
-//donn't use counter!!!!   use rend-rbegin       as the count!!!! more correct!!!!!!!!
+
+
 
 
 
@@ -698,6 +682,19 @@ done:;
 
 
 /*
+
+
+
+
+
+
+//donn't use counter!!!!   use rend-rbegin       as the count!!!! more correct!!!!!!!!
+
+
+
+
+	//memset(was_utilized, 0, operation_count); // make this NOT a memset, by making the was_utilized, NOT an array!
+							//       simply store the Op_count bits in a     single  uint16_t!!!!
 
 
 
@@ -2387,6 +2384,100 @@ static void print_bytes_raw(byte* v, nat l) {
 //	}
 //	for (nat i = 0; i < n; i++) 
 //		if (values[i] > xw >> 2) { a = PM_mh; goto bad; }
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+graph adjacency list:  {
+
+log = logical address    (index)
+phy = physical address   (index * 4)
+
+
+	log     phy       op idx          l   g  e
+	idx     [i]       +0              +1  +2 +3
+========================================================================
+	&0	#0:  ins(.op = 0, .lge = [ 1, 4, 1 ])
+
+	&1	#4:  ins(.op = 1, .lge = [ 0, 2, 2 ])
+
+	&2	#8:  ins(.op = 2, .lge = [ 0, 5, 3 ])
+
+	&3	#12: ins(.op = 3, .lge = [ 1, 1, 4 ])
+
+	&4	#16: ins(.op = 4, .lge = [ 2, 0, 1 ])
+
+	&5	#20: ins(.op = 0, .lge = [ 0, 5, 0 ])
+========================================================================
+
+}
+
+
+
+static bool graph_analysis(void) {
+
+
+}
+
+
+118689037748574
+118689037748574
+
+
+
+
+		//
+			// WRONG:  
+			//    consider the various 5 -x-> XXX -e-> 1    possibliities...  we can't account for all of them. 
+			//
+			//    if (graph[4 * index] != five and graph[4 * e] == one) {  a = 4 * index + 3; goto bad; }     // the revised version.
+			//
+			//	if (graph[4 * index] == one and graph[4 * e] == one) {          ///    NOTE:   this changed!!!! talk about this!!!!
+			//		//if (index == one) { a = 4 * index + 3; goto bad; }      // i noticed that one->one uncond, is a subset of 
+			//		//if (e == one) { a = 4 * index; goto bad; }              // one->one on eq,  which is stronger! 
+			//		//a = 4 * (index < e ? index : e); goto bad;              //    and also prunable because fea constraint,. 
+			//									//
+			//							// ..then i realized that the one source doesnt need to be there!
+			//	}
+			//
+
+
+
+ ///    NOTE:   this changed!!!! talk about this!!!!
+ // i noticed that one->one uncond, is a subset of 
+ // one->one on eq,  which is stronger! 
+ //    and also prunable because fea constraint,. 
+//
+// ..then i realized that the one source doesnt need to be there!..?
+
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
 
 
 

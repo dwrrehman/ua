@@ -1,1 +1,1 @@
-clang -g -O0 -Weverything -fsanitize=address,undefined c.c -o run
+clang -g -O0 -Weverything -Wno-declaration-after-statement -fsanitize=address,undefined c.c -o run
