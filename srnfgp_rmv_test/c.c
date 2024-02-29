@@ -363,7 +363,7 @@ static void append_to_file(nat b, nat e) {
 	
 	char newfilename[4096] = {0};
 
-	strlcpy(newfilename, filename, sizeof newfilename);
+	strncpy(newfilename, filename, sizeof newfilename);
 
 	const int dir = open(directory, O_RDONLY | O_DIRECTORY, 0);
 	if (dir < 0) { 
@@ -388,7 +388,7 @@ try_open:;
 		char dt[32] = {0};
 		get_datetime(dt);
 		snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_z.txt", dt, b, e);
-		strlcpy(filename, newfilename, sizeof filename);
+		strncpy(filename, newfilename, sizeof filename);
 
 		goto try_open;
 	}
@@ -419,7 +419,7 @@ try_open:;
 		close(dir); return;
 	}
 	printf("[\"%s\" renamed to  -->  \"%s\"]\n", filename, newfilename);
-	strlcpy(filename, newfilename, sizeof filename);
+	strncpy(filename, newfilename, sizeof filename);
 
 	close(dir);
 
@@ -506,7 +506,14 @@ int main(int argc, const char** argv) {
 	const clock_t time_begin = clock();
 	goto init;
 
-loop:	if (graph[positions[pointer]] < (positions[pointer] & 3 ? operation_count - 1 : 4)) goto increment;
+loop:	for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+		if (graph_64[i] <  end_64[i]) goto process;
+		if (graph_64[i] >  end_64[i]) break;
+		if (graph_64[i] == end_64[i]) continue;
+	}
+	goto done;
+process:
+	if (graph[positions[pointer]] < (positions[pointer] & 3 ? operation_count - 1 : 4)) goto increment;
 	if (pointer < hole_count - 1) goto reset_;
 	goto done;
 
@@ -514,14 +521,6 @@ increment:
 	graph[positions[pointer]]++;
 init:  	pointer = 0;
 
-	for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
-		if (graph_64[i] <  end_64[i]) goto process;
-		if (graph_64[i] >  end_64[i]) break;
-		if (graph_64[i] == end_64[i]) continue;
-	}
-	goto done;
-
-process:
 	if (not (display_counter & ((1 << display_rate) - 1))) { print_graph_raw(); putchar(10); fflush(stdout); }
 	display_counter++;
 

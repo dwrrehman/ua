@@ -60,17 +60,31 @@ int main(int argc, const char** argv) {
 		abort();
 	}
 
-	printf("using: [total=%llu, parallelization_factor=%llu]\n", total, parallelization_factor);
+	printf("using: [search_space_size=%llu, jobcount-parallelization_factor=%llu] continue? (enter)\n", 
+		total, parallelization_factor);
+	getchar();
 
 	const nat width = total / parallelization_factor;
 	printf("range_generate: run these calls: (%llu,%llu)\n\n", total, parallelization_factor);
 
 	nat begin = 0;
 	for (nat i = 0; i < parallelization_factor; i++) {
-		printf("\t./run %llu %llu\n\n", begin, i < parallelization_factor - 1 ? begin + width - 1 : total - 1);
+		char command [4096] = {0};
+		snprintf(command, sizeof command, "screen -d -m ../run %llu %llu", 
+			begin, i < parallelization_factor - 1
+				? begin + width - 1 : total - 1
+		);
 		begin += width;
+		printf("executing: \"%s\"\n", command);
+		getchar();
+		system(command);
 	}
 }
+
+
+
+
+
 
 
 
