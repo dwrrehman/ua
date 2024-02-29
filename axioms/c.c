@@ -36,7 +36,7 @@
 
 		check
 	
-		
+		list
 		
 
 */
@@ -176,7 +176,7 @@ static void print_nats(const char* message, nat* elements, nat count) {
 
 static inline void search_definition_space(void) {
 
-	use the nf twice in a row(?)   to search over all  possible    reset   and increment  defintions you could give!
+	//use the nf twice in a row(?)   to search over all  possible    reset   and increment  defintions you could give!
 
 		// note   there are n + 1 elementst for the output   for the increment function,  but n inputs. ie, you have the option to use an element which does not appear in the input list. only for the increment though. lol. 
 
