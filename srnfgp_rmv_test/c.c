@@ -48,7 +48,7 @@ typedef uint16_t u16;
 static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
-static const nat display_rate = 20;
+static const nat display_rate = 24;
 
 enum operations { one, two, three, five, six, };
 
@@ -116,7 +116,7 @@ static const nat required_er_count = 25;
 static const nat expansion_check_timestep2 = 10000;        // <-------------- changed this!!! was 1000
 static const nat required_s0_increments = 5;               //
 
-// static const byte required_executed_count = 8;
+// static const byte required_executed_count = 8;    // PM_eda is removed.
 
 struct item {
 	char z[64];
@@ -522,7 +522,7 @@ init:  	pointer = 0;
 	goto done;
 
 process:
-	if (not (display_counter & ((1 << display_rate) - 1))) { putchar('\r'); print_graph_raw(); fflush(stdout); }
+	if (not (display_counter & ((1 << display_rate) - 1))) { print_graph_raw(); putchar(10); fflush(stdout); }
 	display_counter++;
 
 	u16 was_utilized = 0;
