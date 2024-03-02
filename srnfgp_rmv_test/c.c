@@ -45,8 +45,8 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 2;        // the duplication count (operation_count = 5 + D)
-static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
+static const bool R = 1;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat display_rate = 24;
 
