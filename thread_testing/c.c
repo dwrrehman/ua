@@ -10,7 +10,7 @@
 typedef long long nat;
 
 static nat thread_count = 9;
-static const nat job_count = 10000000;
+static const nat job_count = 1000000;
 
 struct thread_arguments {
 	nat index;
@@ -19,7 +19,7 @@ struct thread_arguments {
 static pthread_mutex_t input_mutex;
 static pthread_mutex_t output_mutex;
 
-static _Atomic nat output_count = 0; 
+static _Atomic nat output_count = 0;
 static _Atomic nat input_count = 0;
 
 static nat* output = NULL; 
@@ -56,7 +56,7 @@ int main(int argc, const char** argv) {
 
 	srand(42);
 
-	clock_t begin = clock();
+	//clock_t begin = clock();
 
 	pthread_mutex_init(&output_mutex, NULL);
 	pthread_mutex_init(&input_mutex, NULL);
@@ -86,9 +86,9 @@ int main(int argc, const char** argv) {
 	free(input);
 	free(output);
 
-	clock_t end = clock();
-	double total_time = (double)(end - begin) / CLOCKS_PER_SEC;
-	printf("\t time for %llu threads:   %10.10lfs\n", thread_count, total_time);
+	//clock_t end = clock();
+	//double total_time = (double)(end - begin) / CLOCKS_PER_SEC;
+	//printf("\t time for %llu threads:   %10.10lfs\n", thread_count, total_time);
 }
 
 

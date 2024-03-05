@@ -46,11 +46,11 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 
 static const byte D = 1;        // the duplication count (operation_count = 5 + D)
-static const bool R = 1;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
+static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat display_rate = 24;
 
-enum operations { one, two, three, five, six, };
+enum operations { one, two, three, five, six };
 
 enum pruning_metrics {
 	PM_fea, PM_ns0, PM_pco, PM_zr5, PM_zr6, PM_ndi, 
@@ -131,7 +131,7 @@ struct list {
 
 static byte* graph = NULL;
 static byte* end = NULL;
-static byte* positions = NULL;     // TODO:  make the partial graph implemented via GA, and thus remove the need for this array. 
+static byte* positions = NULL; 
 // static byte* executed = NULL; 
 static nat* timeout = NULL; 
 
@@ -186,16 +186,13 @@ static bool execute_graph_starting_at(byte origin) {
 
 	for (; e < execution_limit; e++) {
 
-		if (e >= expansion_check_timestep2) { 
+		if (e == expansion_check_timestep2) { 
 			for (byte i = 0; i < 5; i++) {
-				if (array[i] < required_s0_increments) { 
-					a = PM_f1e; 
-					goto bad; 
-				} 
+				if (array[i] < required_s0_increments) { a = PM_f1e; goto bad; } 
 			}
 		}
 
-		if (e >= expansion_check_timestep)  { 
+		if (e == expansion_check_timestep)  { 
 			if (er_count < required_er_count) { a = PM_erc; goto bad; } 
 		}
 		
@@ -221,7 +218,8 @@ static bool execute_graph_starting_at(byte origin) {
 		else if (op == five) {
 			if (last_mcal_op != three) { a = PM_pco; goto bad; } 
 			if (not pointer)           { a = PM_zr5; goto bad; } 
-			if (not array[pointer])    { a = PM_ne0; goto bad; }
+
+			if (not array[pointer])    { a = PM_ne0; goto bad; }     // delete me!!!!     redundant becuaes of pco.
 
 			if (	pointer == OER_er_at or 
 				pointer == OER_er_at + 1) OER_counter++;
@@ -244,17 +242,15 @@ static bool execute_graph_starting_at(byte origin) {
 		}
 
 		else if (op == two) {
-
 			array[n]++;
-
 			if (array[n] >= 65535) { a = PM_snm; goto bad; }
-
-
 		}
+
 		else if (op == six) {  
 			if (not array[n]) { a = PM_zr6; goto bad; }
 			array[n] = 0;   
 		}
+
 		else if (op == three) {
 			if (last_mcal_op == three) { a = PM_ndi; goto bad; }
 
@@ -521,14 +517,26 @@ increment:
 	graph[positions[pointer]]++;
 init:  	pointer = 0;
 
+
+///////////////
 	if (not (display_counter & ((1 << display_rate) - 1))) { print_graph_raw(); putchar(10); fflush(stdout); }
 	display_counter++;
+	nat zindex = 0;
+	nat p = 1;
+	for (byte i = 0; i < hole_count; i++) {
+		zindex += p * graph[positions[i]];
+		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+	}
+////////////////
+
+
+
 
 	u16 was_utilized = 0;
-	byte a = 0;
+	byte a = 0;  // rename this to "zskip_at"
 
-	byte previous_op = graph[20];
-	for (byte index = 20; index < graph_count; index += 4) {
+	byte previous_op = graph[20];     // make this not use this temporary variable, by using   index and index + 4   
+	for (byte index = 20; index < graph_count; index += 4) {                 // (except if index+4==graphcount, then we will  just say its index.. yeah)
 		const byte op = graph[index];
 		if (previous_op > op) { a = index; goto bad; }
 		previous_op = op;
@@ -561,7 +569,7 @@ init:  	pointer = 0;
 			if (tohere == five) { a = 4 * index; goto bad; }
 			a = 4 * (index < tohere ? index : tohere); goto bad; 
 		}
- 		
+ 
 		const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
 
 		if (graph[4 * index] == one and graph[4 * e] == one) {

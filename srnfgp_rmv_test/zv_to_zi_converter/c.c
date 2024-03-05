@@ -26,7 +26,7 @@ typedef uint16_t u16;
 /*
 	this utility converts a z value to a z index. 
 
-	0122101221433002400305122300       (has z index =    1198722845076   )
+	0122101221433002400305122300       (has z index =    1198722845077   )
 
 		convert this z value into its corresponding z index!   (in this case, for 2 space search!)
 
@@ -93,7 +93,6 @@ int main(int argc, const char** argv) {
 	print_graph_as_adj(graph);
 
 	nat zindex = 0;
-
 	nat p = 1;
 	for (byte i = 0; i < hole_count; i++) {
 		zindex += p * graph[positions[i]];
