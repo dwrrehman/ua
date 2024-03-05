@@ -320,7 +320,7 @@ try_open:;
 			abort();
 		}
 		snprintf(filename, size, "%s_%08x%08x%08x%08x_z.txt", dt, 
-			arc4random(), arc4random(), arc4random(), arc4random()
+			rand(), rand(), rand(), rand()
 		);
 		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
 		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
@@ -533,6 +533,8 @@ static nat expn(nat base, nat exponent) {
 }
 
 int main(void) {
+	srand((unsigned)time(0)); rand();
+
 	// compiletime computation:
 	atomic_init(&head, 0);
 	space_size = expn(5 + D, 9) * expn(5 * expn(5 + D, 3), D);
