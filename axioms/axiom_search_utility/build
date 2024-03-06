@@ -1,0 +1,3 @@
+clang -g -O0 c.c -Weverything -Wno-declaration-after-statement -fsanitize=address,undefined
+
+

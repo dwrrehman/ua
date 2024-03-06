@@ -553,7 +553,7 @@ int main(void) {
 	while (1) {
 		const nat h = atomic_fetch_add_explicit(&head, 0, memory_order_seq_cst);   // TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
 		if (h >= space_size) break;
-		printf("%llu\n", h);
+		printf("%llu .. %lf%%\n", h, (double) h / (double) spacesize);
 		sleep(1 << display_rate);
 	}
 
