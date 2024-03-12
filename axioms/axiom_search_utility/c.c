@@ -31,17 +31,62 @@ static nat is_consistent(
 	*ecount = 0; *lcount = 0;
 	nat* s = array, * z = array + count;
 repeat:
+
 	for (nat i = 0; i < count; i++) {
-		if (contains(i, i, less, lcount)) return 1;
-		if (inserted(i, s[i], less, lcount)) goto repeat;
+		for (nat j = 0; j < count; j++) {
+
+			if (contains(  i , z[j], less,  lcount)) return 1;
+			if (contains(  i , s[j], less,  lcount)) return 1;
+			if (contains(z[i],   j , less,  lcount)) return 1;
+			if (contains(s[i],   j , less,  lcount)) return 1;
+
+			if (contains(  i , z[j], equal, ecount)) return 1;
+			if (contains(  i , s[j], equal, ecount)) return 1;
+			if (contains(z[i],   j , equal, ecount)) return 1;
+			if (contains(s[i],   j , equal, ecount)) return 1;
+
+			if (contains(z[i], z[j], less,  lcount)) return 1;
+			if (contains(z[i], s[j], less,  lcount)) return 1;
+			if (contains(s[i], z[j], less,  lcount)) return 1;
+			if (contains(s[i], s[j], less,  lcount)) return 1;
+
+			if (contains(z[i], z[j], equal, ecount)) return 1;
+			if (contains(z[i], s[j], equal, ecount)) return 1;
+			if (contains(s[i], z[j], equal, ecount)) return 1;
+			if (contains(s[i], s[j], equal, ecount)) return 1;
+
+			// inserted, goto repeat; // contains, return 1;
+		}
+	}
+
+
+
+	/*for (nat i = 0; i < count; i++) {
+		if (contains(i, i,    less, lcount)) return 1;
 		if (contains(i, z[i], less, lcount)) return 3;
-		if (inserted(i, i, equal, ecount)) goto repeat;
+		if (inserted(i, s[i], less, lcount)) goto repeat;
+
+		// duplicate:  if (contains(i, i, less, lcount)) return 1;
+
+		if (contains(s[i], i, less, lcount)) return 2;
+		if (inserted(z[i], i, less, lcount)) goto repeat;
+
+		if (inserted(i, i,    equal, ecount)) goto repeat;
 		if (contains(i, s[i], equal, ecount)) return 8;
+		if (contains(i, z[i], equal, ecount)) return 7;
+
+		if (contains(s[i], z[i], less,  lcount)) return 5;
+		if (inserted(z[i], s[i], less,  lcount)) goto repeat;
+		if (contains(z[i], s[i], equal, ecount)) return 10;
+	}*/
 
 
-		//if (contains(i, z[i], equal, ecount)) return 9;      // are zero resets allowed?.... 
+
 
 		
+		//if (contains(i, z[i], equal, ecount)) return 9;      // are zero resets allowed?.... 
+
+		/*
 		for (nat j = 0; j < count; j++) {
 			if (contains(z[i], s[j], equal, ecount)) return 10;
 			if (inserted(z[i], s[j], less,  lcount)) goto repeat;
@@ -53,22 +98,22 @@ repeat:
 			if (contains(i, j, less,  lcount) and inserted(s[i], s[j], less,  lcount)) goto repeat;
 			if (contains(i, j, equal, ecount) and inserted(s[i], s[j], equal, ecount)) goto repeat;
 			if (contains(i, j, equal, ecount) and contains(s[i], s[j], less,  lcount)) return 12;
-
 		}
-	}
+		*/
+	//}
 	return 0;
 }
 
 
 int main(void) {
-	const nat element_count = 2;
+	const nat element_count = 3;
 
 	const nat k = element_count + 1;
 	nat less_count = 0, equal_count = 0;
 	nat* less = calloc(2 * k * k, sizeof(nat));
 	nat* equal = calloc(2 * k * k, sizeof(nat));
 
-	const nat modulus = element_count, numerus = (element_count << 1) - 1;
+	const nat modulus = element_count + 1, numerus = (element_count << 1) - 1;
 	nat* array = calloc(numerus + 1, sizeof(nat));
 	nat pointer = 0;
 	goto init;
@@ -135,7 +180,62 @@ done:
 
 
 
+
 /*
+
+
+
+
+202403063.202101:
+
+				i think we can actually make a new axiom,   maybe:
+							
+
+							reset(x) < x    is true!     becuase basically,
+											you cant reset 0, so this works out!!
+
+											wow nice 
+
+							yay
+									kinda complementary  to    x < reset(x)   is false!! nice.
+
+
+								hmm
+
+						of course, we also know that          x == reset(x)   is false     but yeah. 
+
+
+										yeah, the < relation is order dependant, so there is technically a tonnn of other relations we could add    that are technicallyyyy      greater than!?!?!
+
+								like, we would then have 
+
+
+								<   =   and       >   
+
+
+
+								axioms for all of those.   wow thats actually so cool
+
+
+
+					yeah, in hardware,   theres a trichotomy anyways!      trichotomies are probably the right way to go, in terms of branches, actually. wow. interesting. 
+
+		hm
+
+
+
+
+	so yeah
+
+	we'll try adding axioms for those lol 
+
+	yay 
+
+
+
+	
+
+
 
 clang -g -O0 c.c -Weverything -fsanitize=address,undefined
 

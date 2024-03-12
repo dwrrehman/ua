@@ -1,51 +1,24 @@
 // 202403041.192520: by dwrr         
 //      the prthead  cpu-parellelized version of the srnfgpr.
 //
-#define _XOPEN_SOURCE
-#include <ctype.h>
-#include <errno.h>
+#include <time.h>
+#include <math.h>
+#include <string.h>
+#include <unistd.h>
+#include <termios.h>
 #include <fcntl.h>
 #include <iso646.h>
 #include <signal.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdnoreturn.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <termios.h>
-#include <time.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <stdatomic.h>
-#include <iso646.h>
-#include <stdbool.h>
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <iso646.h>
-#include <math.h>
-#include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>  
+#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>  
-#include <sys/ioctl.h>
+#include <stdatomic.h>
+#include <stdnoreturn.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <termios.h>
-#include <time.h>
-#include <unistd.h>
+#include <pthread.h>
 
 typedef uint8_t byte;
 typedef uint64_t nat;
@@ -355,7 +328,11 @@ static void* worker_thread(void* __attribute__((unused)) _unused_arg) {
 	byte pointer = 0;
 	
 next_job:;
-	const nat h = atomic_fetch_add_explicit(&head, job_size, memory_order_seq_cst);   // TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
+	const nat h = atomic_fetch_add_explicit(&head, job_size, memory_order_relaxed);   
+			// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
+
+				// CHANGED: yup, we can just use memory_order_relaxed. 
+
 	if (h >= space_size) goto terminate_thread;
 
 	const nat range_begin = h;
