@@ -46,9 +46,9 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 
 static const byte D = 1;        // the duplication count (operation_count = 5 + D)
-static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
+static const bool R = 1;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
-static const nat display_rate = 24;
+static const nat display_rate = 21;
 
 enum operations { one, two, three, five, six };
 
@@ -64,7 +64,6 @@ static const char* pm_spelling[] = {
 	"PM_oer", "PM_r0i", "PM_h", "PM_f1e", "PM_erc", "PM_ne0",
 	"PM_eda", "PM_rmv", "PM_ot", "PM_csm", "PM_mm", "PM_snm"
 };
-
 
 static const byte _ = 0;
 
@@ -116,7 +115,7 @@ static const nat required_er_count = 25;
 static const nat expansion_check_timestep2 = 10000;        // <-------------- changed this!!! was 1000
 static const nat required_s0_increments = 5;               //
 
-// static const byte required_executed_count = 8;    // PM_eda is removed.
+		// static const byte required_executed_count = 8;    // PM_eda is removed.
 
 struct item {
 	char z[64];
@@ -132,7 +131,7 @@ struct list {
 static byte* graph = NULL;
 static byte* end = NULL;
 static byte* positions = NULL; 
-// static byte* executed = NULL; 
+						// static byte* executed = NULL; 
 static nat* timeout = NULL; 
 
 static nat* array = NULL;
@@ -172,8 +171,9 @@ static void print_counts(void) {
 static bool execute_graph_starting_at(byte origin) {
 
 	const nat n = array_size;
-	array[n] = 0; array[0] = 0; 
-	//memset(executed, 0, graph_count);
+	array[n] = 0; 
+	array[0] = 0; 
+								//memset(executed, 0, graph_count);
 	memset(timeout, 0, operation_count * sizeof(nat));
 
 	byte ip = origin, last_mcal_op = 0;
@@ -212,21 +212,20 @@ static bool execute_graph_starting_at(byte origin) {
 			if (last_mcal_op == five) R0I_counter = 0;
 
 			pointer++;
-			if (pointer > xw) { xw = pointer; array[pointer] = 0; }
+			if (pointer > xw and pointer < n) { xw = pointer; array[pointer] = 0; }  // CHANGED to fix lazy zero opt.
 		}
 
 		else if (op == five) {
 			if (last_mcal_op != three) { a = PM_pco; goto bad; } 
 			if (not pointer)           { a = PM_zr5; goto bad; } 
 
-			if (not array[pointer])    { a = PM_ne0; goto bad; }     // delete me!!!!     redundant becuaes of pco.
+			//if (not array[pointer])    { a = PM_ne0; goto bad; }     // delete me!!!!     redundant becuaes of pco.
 
 			if (	pointer == OER_er_at or 
 				pointer == OER_er_at + 1) OER_counter++;
 			else { OER_er_at = pointer; OER_counter = 0; }
 			if (OER_counter >= max_acceptable_er_repetions) { a = PM_oer; goto bad; }
 			
-
 			CSM_counter = 0;
 			RMV_value = (nat) -1;
 			RMV_counter = 0;
@@ -277,16 +276,20 @@ static bool execute_graph_starting_at(byte origin) {
 		//if (executed[I + state] < 253) executed[I + state]++;
 		ip = graph[I + state];
 	}
+	return false;
+bad: 	counts[a]++;
+	return true;
+}
+
+
 	//for (byte i = 0; i < graph_count; i += 4) {
 	//
 	//	if (	executed[i + 1] < 5 and graph[i + 1] or         // slightly concerning here... think about this more...? 
 	//		executed[i + 2] < 5 and graph[i + 2] or 
 	//		executed[i + 3] < 5 and graph[i + 3]) { a = PM_eda; goto bad; }
 	//}
-	return false;
-bad: 	counts[a]++;
-	return true;
-}
+
+
 
 
 static bool execute_graph(void) {
@@ -300,10 +303,11 @@ static bool execute_graph(void) {
 static bool fea_execute_graph_starting_at(byte origin) {
 
 	const nat n = 5;
-	memset(array, 0, (n + 1) * sizeof(nat));
+	array[n] = 0; 
+	array[0] = 0; 
 	
 	byte ip = origin, last_mcal_op = 0;
-	nat a = PM_count, pointer = 0, e = 0;
+	nat a = PM_count, pointer = 0, e = 0, xw = 0;
 
 	for (; e < fea_execution_limit; e++) {
 
@@ -312,7 +316,11 @@ static bool fea_execute_graph_starting_at(byte origin) {
 		if (op == one) {
 			if (pointer == n) 	{ a = PM_fea; goto bad; } 
 			if (not array[pointer]) { a = PM_ns0; goto bad; } 
+
 			pointer++;
+
+			if (pointer > xw and pointer < n) { xw = pointer; array[pointer] = 0; }  
+			// CHANGED to fix lazy zero opt.
 		}
 
 		else if (op == five) {
@@ -383,7 +391,7 @@ try_open:;
 
 		char dt[32] = {0};
 		get_datetime(dt);
-		snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_z.txt", dt, b, e);
+		snprintf(newfilename, sizeof newfilename, "%s_%hhu_%hhu_%llu_%llu_z.txt", dt, D, R, b, e);
 		strncpy(filename, newfilename, sizeof filename);
 
 		goto try_open;
@@ -407,7 +415,7 @@ try_open:;
 
 	char dt[32] = {0};
 	get_datetime(dt);
-	snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_z.txt", dt, b, e);
+	snprintf(newfilename, sizeof newfilename, "%s_%hhu_%hhu_%llu_%llu_z.txt", dt, D, R, b, e);
 
 	if (renameat(dir, filename, dir, newfilename) < 0) {
 		perror("rename");
@@ -443,9 +451,10 @@ static nat expn(nat base, nat exponent) {
 
 int main(int argc, const char** argv) {
 
+	const nat space_size = expn(5 + D, 9) * expn(5 * expn(5 + D, 3), D);
+
 	if (argc != 3) {
-		printf("./srnfgp [D=%hhu][R=%hhu] <begin:nat(0)> <end:nat(%llu)>\n", 
-			D, R, expn(5 + D, 9) * expn(5 * expn(5 + D, 3), D) - 1);
+		printf("./srnfgp [D=%hhu][R=%hhu] <begin:nat(0)> <end:nat(%llu)>\n", D, R, space_size - 1);
 		exit(0);
 	}
 
@@ -466,7 +475,7 @@ int main(int argc, const char** argv) {
 	printf("using: %s:[begin=%llu, ...end=%llu]\n", R ? "63R" : "36R", range_begin, range_end);
 
 	array = calloc(array_size + 1, sizeof(nat));
-	//executed = calloc(graph_count, 1);
+									//executed = calloc(graph_count, 1);
 	timeout = calloc(operation_count, sizeof(nat));
 	positions = calloc(hole_count, 1); 
 	void* raw_graph = calloc(1, graph_count + (8 - (graph_count % 8)) % 8);
@@ -517,20 +526,21 @@ increment:
 	graph[positions[pointer]]++;
 init:  	pointer = 0;
 
-
-///////////////
-	if (not (display_counter & ((1 << display_rate) - 1))) { print_graph_raw(); putchar(10); fflush(stdout); }
-	display_counter++;
 	nat zindex = 0;
-	nat p = 1;
+	p = 1;
 	for (byte i = 0; i < hole_count; i++) {
 		zindex += p * graph[positions[i]];
 		p *= (nat) (positions[i] & 3 ? operation_count : 5);
 	}
-////////////////
 
-
-
+	if (not (display_counter & ((1 << display_rate) - 1))) { 
+		print_graph_raw(); 
+		printf(" %llu : %lf%%\n", zindex, 
+			(double) zindex / (double) space_size
+		);
+		fflush(stdout); 
+	}
+	display_counter++;
 
 	u16 was_utilized = 0;
 	byte a = 0;  // rename this to "zskip_at"
@@ -645,7 +655,12 @@ try_executing:
 	if (fea_execute_graph()) goto loop;
 	if (execute_graph()) goto loop;
 	write_graph(range_begin, range_end);
-	printf("\r     FOUND:  z = "); print_graph_raw(); printf("\033[K\n"); fflush(stdout);
+	
+	printf("\r     FOUND:  z = "); 
+	print_graph_raw(); 
+	printf("\033[K\n"); 
+	fflush(stdout);
+
 	found++;
         goto loop;
 

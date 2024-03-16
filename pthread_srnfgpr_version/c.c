@@ -28,10 +28,9 @@ typedef uint16_t u16;
 static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
-static const nat job_size = 500000;
-static const nat thread_count = 2;
-
-static const nat display_rate = 3;
++static const nat job_size = 10000000000;
++static const nat thread_count = 64;
++static const nat display_rate = 4;
 
 enum operations { one, two, three, five, six };
 
@@ -47,7 +46,6 @@ static const byte _63R[5 * 4] = {
 
 #define _63R_hole_count 9
 static const byte _63R_hole_positions[_63R_hole_count] = {3, 6, 7, 10, 11, 13, 14, 15, 19};
-
 
 static const byte _36R[5 * 4] = {
 	0,  1, 2, _,      //        3
@@ -148,7 +146,11 @@ static bool execute_graph_starting_at(byte origin, byte* graph, nat* array, nat*
 			if (last_mcal_op == five) R0I_counter = 0;
 
 			pointer++;
-			if (pointer > xw) { xw = pointer; array[pointer] = 0; }
+
+			if (pointer > xw and pointer < n) {    // <--------- ALSO CHANGED THIS ONE TOO.
+				xw = pointer; 
+				array[pointer] = 0; 
+			}
 		}
 
 		else if (op == five) {
@@ -207,11 +209,12 @@ static bool execute_graph_starting_at(byte origin, byte* graph, nat* array, nat*
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
-		//if (executed[I + state] < 253) executed[I + state]++;
 		ip = graph[I + state];
 	}
 	return false;
 }
+
+//if (executed[I + state] < 253) executed[I + state]++;
 
 static bool execute_graph(byte* graph, nat* array, nat* timeout) {
 	for (byte o = 0; o < operation_count; o++) {
@@ -238,7 +241,37 @@ static bool fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) 
 			if (pointer == n) return true;
 			if (not array[pointer]) return true;
 			pointer++;
-			if (pointer > xw) { xw = pointer; array[pointer] = 0; }
+
+			// new correct lazy zeroing:
+
+			if (pointer > xw and pointer < n) { 
+				xw = pointer; 
+				array[pointer] = 0; 
+			}
+
+
+			// WAS:  if (pointer > xw) { xw = pointer; array[pointer] = 0; }   // ERROR HERE!!!!
+			
+			
+
+			/////////////////////////////////////////////////////////////////////////////////////////
+			
+
+				//  WHAT IF pointer ALIAS's   STAR N!!!!!!!   CRAPPP
+
+				// we'll reset it, and thus change the graphs behavior!!!!
+
+
+
+
+
+					// we had added the lazy zeroing opt to the fea pass,  and thus the "i == n" alias condition will occur MUCH more likely!!!
+
+			/////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 		}
 
 		else if (op == five) {
@@ -329,14 +362,13 @@ static void* worker_thread(void* __attribute__((unused)) _unused_arg) {
 	
 next_job:;
 	const nat h = atomic_fetch_add_explicit(&head, job_size, memory_order_relaxed);   
-			// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
-
-				// CHANGED: yup, we can just use memory_order_relaxed. 
+						// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
+						// CHANGED: yup, we can just use memory_order_relaxed. 
 
 	if (h >= space_size) goto terminate_thread;
 
 	const nat range_begin = h;
-	nat range_end = h + job_size;
+	nat range_end = h + job_size - 1;
 	if (range_end >= space_size) range_end = space_size - 1;
 
 	nat p = 1;
@@ -355,10 +387,9 @@ next_job:;
 
 	goto init;
 
-
 loop:	for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
-		if (graph_64[i] <  end_64[i]) goto process;
-		if (graph_64[i] >  end_64[i]) break;
+		if (graph_64[i] < end_64[i]) goto process;
+		if (graph_64[i] > end_64[i]) break;
 	}
 	goto next_job;
 process:
@@ -373,8 +404,15 @@ init:  	pointer = 0;
 	u16 was_utilized = 0;
 	byte a = 0;  // rename this to "zskip_at"
 
-	byte previous_op = graph[20];     // make this not use this temporary variable, by using   index and index + 4   
-	for (byte index = 20; index < graph_count; index += 4) {                 // (except if index+4==graphcount, then we will  just say its index.. yeah)
+	byte previous_op = graph[20];     
+
+					// make this not use this temporary variable, by using   index and index + 4   
+
+	for (byte index = 20; index < graph_count; index += 4) {                 
+
+
+					// (except if index+4==graphcount, then we will  just say its index.. yeah)
+
 		const byte op = graph[index];
 		if (previous_op > op) { a = index; goto bad; }
 		previous_op = op;
@@ -502,7 +540,6 @@ terminate_thread:
 	return 0;
 }
 
-
 static nat expn(nat base, nat exponent) {
 	nat result = 1;
 	for (nat i = 0; i < exponent; i++) result *= base;
@@ -515,8 +552,8 @@ int main(void) {
 	// compiletime computation:
 	atomic_init(&head, 0);
 	space_size = expn(5 + D, 9) * expn(5 * expn(5 + D, 3), D);
-	positions = malloc(hole_count);
-	threads = malloc(thread_count * sizeof(pthread_t));
+	positions = calloc(hole_count, 1);
+	threads = calloc(thread_count, sizeof(pthread_t));
 	for (byte i = 0; i < initial; i++) positions[i] = R ? _63R_hole_positions[i] : _36R_hole_positions[i];
 	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i; 
 
@@ -528,9 +565,14 @@ int main(void) {
 	for (nat i = 0; i < thread_count; i++) pthread_create(threads + i, NULL, worker_thread, NULL);
 
 	while (1) {
-		const nat h = atomic_fetch_add_explicit(&head, 0, memory_order_seq_cst);   // TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
+		const nat h = atomic_fetch_add_explicit(&head, 0, memory_order_relaxed);   
+
+				// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
+				// CHANGED:   yup, its correct i think.
+		
+		printf("%llu .. %lf%%\n", h, (double) h / (double) space_size);
 		if (h >= space_size) break;
-		printf("%llu .. %lf%%\n", h, (double) h / (double) spacesize);
+
 		sleep(1 << display_rate);
 	}
 
