@@ -28,9 +28,9 @@ typedef uint16_t u16;
 static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
-+static const nat job_size = 10000000000;
-+static const nat thread_count = 64;
-+static const nat display_rate = 4;
+static const nat job_size = 10000000000;
+static const nat thread_count = 64;
+static const nat display_rate = 4;
 
 enum operations { one, two, three, five, six };
 
@@ -533,6 +533,7 @@ reset_:
 	goto loop;
 
 terminate_thread:
+	printf("info: [thread with fileid=\"%s\" terminated]\n", filename);
 	free(raw_graph);
 	free(raw_end);
 	free(array);
@@ -571,7 +572,10 @@ int main(void) {
 				// CHANGED:   yup, its correct i think.
 		
 		printf("%llu .. %lf%%\n", h, (double) h / (double) space_size);
-		if (h >= space_size) break;
+		if (h >= space_size) {
+			printf("info: [all jobs allocated to threads. waiting for them to finish.]\n");
+			break;
+		}
 
 		sleep(1 << display_rate);
 	}
