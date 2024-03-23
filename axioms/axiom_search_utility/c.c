@@ -42,8 +42,8 @@ repeat:
 
 			if (contains(  i , z[j], equal, ecount)) return 1;
 			if (contains(  i , s[j], equal, ecount)) return 1;
-			if (contains(z[i],   j , equal, ecount)) return 1;
-			if (contains(s[i],   j , equal, ecount)) return 1;
+			//if (contains(z[i],   j , equal, ecount)) return 1;
+			//if (contains(s[i],   j , equal, ecount)) return 1;
 
 			if (contains(z[i], z[j], less,  lcount)) return 1;
 			if (contains(z[i], s[j], less,  lcount)) return 1;
@@ -52,7 +52,7 @@ repeat:
 
 			if (contains(z[i], z[j], equal, ecount)) return 1;
 			if (contains(z[i], s[j], equal, ecount)) return 1;
-			if (contains(s[i], z[j], equal, ecount)) return 1;
+			//if (contains(s[i], z[j], equal, ecount)) return 1;
 			if (contains(s[i], s[j], equal, ecount)) return 1;
 
 			// inserted, goto repeat; // contains, return 1;
@@ -106,7 +106,7 @@ repeat:
 
 
 int main(void) {
-	const nat element_count = 3;
+	const nat element_count = 1;
 
 	const nat k = element_count + 1;
 	nat less_count = 0, equal_count = 0;
@@ -181,6 +181,16 @@ done:
 
 
 
+
+
+
+
+
+
+
+
+
+
 /*
 
 
@@ -234,6 +244,17 @@ done:
 
 
 	
+
+
+
+
+
+
+
+
+
+
+
 
 
 

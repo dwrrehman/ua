@@ -378,7 +378,6 @@ static inline nat power(nat base, nat exponent) {
 
 	ax0.			x : N					 			 is true.
 
-
 <
 	l.ax1.			for all x : N,      x < x                                        is false.
 
@@ -391,9 +390,6 @@ static inline nat power(nat base, nat exponent) {
 	l.ax5.			for all x,y : N,    _neoi_(x) < _neoi_(y)     			 is false.
 
 	l.ax6.			for all x,y : N,    if  x < y,   then _asht_(x) < _asht_(y)      is true.
-
-
-
 
 ==
 	e.ax1.			for all x : N,      x == x                                       is true.
