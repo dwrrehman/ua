@@ -1,0 +1,17 @@
+#!/bin/zsh
+
+if [ "release" = "$1" ]; then
+	clang -Ofast `sdl2-config --cflags --libs` c.c -Weverything -o run 
+
+elif [ "clean" = "$1" ]; then
+	echo unimplemented
+
+elif [ "" = "$1" ]; then 
+	clang -g -O0 `sdl2-config --cflags --libs` c.c -Weverything -fsanitize=address,undefined -o run
+
+else 
+	echo "build: unknown target: $1"
+fi
+
+
+
