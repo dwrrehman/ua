@@ -7,7 +7,7 @@ elif [ "clean" = "$1" ]; then
 	echo unimplemented
 
 elif [ "" = "$1" ]; then 
-	clang -g -O0 `sdl2-config --cflags --libs` c.c -Weverything -fsanitize=address,undefined -o run
+	clang -g -O0 `sdl2-config --cflags --libs` c.c -Weverything -fsanitize=address,undefined -o run -ferror-limit=1
 
 else 
 	echo "build: unknown target: $1"

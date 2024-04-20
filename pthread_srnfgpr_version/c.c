@@ -26,11 +26,11 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 
 static const byte D = 1;        // the duplication count (operation_count = 5 + D)
-static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
+static const bool R = 1;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
-static const nat job_size = 10000000000;
-static const nat thread_count = 64;
-static const nat display_rate = 4;
+static const nat job_size = 80000000;
+static const nat thread_count = 3;
+static const nat display_rate = 2;
 
 enum operations { one, two, three, five, six };
 
@@ -66,8 +66,8 @@ static const byte graph_count = 4 * operation_count;
 static const byte hole_count = initial + 4 * D;
 
 static const nat fea_execution_limit = 5000;
-static const nat execution_limit = 1000000000;
-static const nat array_size = 10000;
+static const nat execution_limit = 10000000000;
+static const nat array_size = 100000;
 
 static const nat max_acceptable_er_repetions = 50;
 static const nat max_acceptable_modnat_repetions = 15;
@@ -559,7 +559,7 @@ int main(void) {
 	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i; 
 
 	// runtime computation:
-	printf("using [D=%hhu, R=%hhu]: threadcount=%llu, spacesize=%llu\n", D, R, thread_count, space_size);
+	printf("using [D=%hhu, R=%hhu]: threadcount=%llu, jobsize=%llu, spacesize=%llu\n", D, R, thread_count, job_size, space_size);
 
 	struct timeval time_begin = {0};
 	gettimeofday(&time_begin, NULL);

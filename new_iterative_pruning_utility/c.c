@@ -65,38 +65,42 @@ typedef uint16_t u16;
 
 enum operations { one, two, three, five, six };
 
-static const byte D = 2;        // the duplication count (operation_count = 5 + D)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 
 static const nat fea_execution_limit = 5000;
-static const nat execution_limit = 10000000000;
-static const nat pre_run_ins = 100;
-static const nat array_size = 10000;
+static const nat execution_limit = 50000000;
+static const nat pre_run_ins = 0;
+static const nat array_size = 100000;
 
 enum pruning_metrics {
-	z_is_good, PM_fea, PM_ns0, 
+	z_is_good, PM_ga, PM_fea, PM_ns0, 
 	PM_pco, PM_zr5, PM_zr6, PM_ndi, 
 	PM_oer, PM_r0i, PM_h, PM_f1e, 
 	PM_erc, PM_rmv, PM_ot, PM_csm, 
-	PM_mm, PM_snm, 
+	PM_mm, PM_snm, PM_bdl, PM_bdl2, 
+	PM_erw, PM_mcal, PM_snl,
 	PM_count
 };
 
 static const char* pm_spelling[] = {
-	"z_is_good", "PM_fea", "PM_ns0", 
+	"z_is_good", "PM_ga", "PM_fea", "PM_ns0", 
 	"PM_pco", "PM_zr5", "PM_zr6", "PM_ndi", 
 	"PM_oer", "PM_r0i", "PM_h", "PM_f1e", 
 	"PM_erc", "PM_rmv", "PM_ot", "PM_csm", 
-	"PM_mm", "PM_snm"
+	"PM_mm", "PM_snm", "PM_bdl", "PM_bdl2", 
+	"PM_erw", "PM_mcal", "PM_snl",
 };
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
 
 static const nat max_acceptable_er_repetions = 50;
+static const nat max_acceptable_bdl_er_repetions = 25;
 static const nat max_acceptable_modnat_repetions = 15;
 static const nat max_acceptable_consecutive_s0_incr = 30;
 static const nat max_acceptable_run_length = 9;
 static const nat max_acceptable_consequtive_small_modnats = 200;
+static const nat max_acceptable_sn_loop_iterations = 100 * 2;
 
 static const nat expansion_check_timestep = 5000;
 static const nat required_er_count = 25;
@@ -106,10 +110,6 @@ static const nat required_s0_increments = 5;
 
 static char image_directory[] = "./images/";
 static nat space_size = 0;
-
-
-// major/minor groups
-static const nat similarity_threshold = 22;
 
 // image generation
 // static const nat image_size = 600;
@@ -220,13 +220,18 @@ static nat execute_graph_starting_at(byte origin) {
 	array[n] = 0; 
 	memset(timeout, 0, operation_count * sizeof(nat));
 
-	byte ip = origin, last_mcal_op = 0;
+	byte ip = origin, last_mcal_op = 255, last_op = 0, mcal_path = 0;
 
 	nat 	e = 0,  xw = 0, 
 		pointer = 0,  er_count = 0, 
+		walk_ia_counter = 0, ERW_counter = 0, 
+		SNL_counter = 0,   mcal_index = 0,
 	    	OER_er_at = 0,  OER_counter = 0, 
+		BDL_er_at = 0,  BDL_counter = 0, 
+		BDL2_er_at = 0,  BDL2_counter = 0, 
 		R0I_counter = 0, H_counter = 0,
 		RMV_counter = 0, RMV_value = 0, CSM_counter = 0;
+		
 
 	for (; e < execution_limit; e++) {
 
@@ -271,7 +276,17 @@ static nat execute_graph_starting_at(byte origin) {
 				pointer == OER_er_at + 1) OER_counter++;
 			else { OER_er_at = pointer; OER_counter = 0; }
 			if (OER_counter >= max_acceptable_er_repetions) return PM_oer; 
-			
+
+
+			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
+			else { BDL_er_at = pointer; BDL_counter = 0; }
+			if (BDL_counter >= max_acceptable_bdl_er_repetions) return PM_bdl; 
+
+			if (BDL2_er_at > 1 and pointer == BDL2_er_at - 2) { BDL2_counter++; BDL2_er_at -= 2; }
+			else { BDL2_er_at = pointer; BDL2_counter = 0; }
+			if (BDL2_counter >= max_acceptable_bdl_er_repetions) return PM_bdl2; 
+
+
 			CSM_counter = 0;
 			RMV_value = (nat) -1;
 			RMV_counter = 0;
@@ -282,17 +297,32 @@ static nat execute_graph_starting_at(byte origin) {
 				if (RMV_counter >= max_acceptable_modnat_repetions) return PM_rmv; 
 			}
 
+
+			if (walk_ia_counter == 1) {
+				ERW_counter++;
+				if (ERW_counter == 100) return PM_erw;
+			} else ERW_counter = 0;
+			walk_ia_counter = 0;
+
 			pointer = 0;
 			er_count++;
 		}
 
 		else if (op == two) {
-			array[n]++;
 			if (array[n] >= 65535) return PM_snm; 
+
+			if (last_op == six) SNL_counter++; else SNL_counter = 0;
+			if (SNL_counter == max_acceptable_sn_loop_iterations) return PM_snl;
+
+			array[n]++;
 		}
 		else if (op == six) {  
 			if (not array[n]) return PM_zr6; 
-			array[n] = 0;   
+
+			if (last_op == two) SNL_counter++; else SNL_counter = 0;
+			if (SNL_counter == max_acceptable_sn_loop_iterations) return PM_snl;
+
+			array[n] = 0;
 		}
 		else if (op == three) {
 			if (last_mcal_op == three) return PM_ndi; 
@@ -307,11 +337,35 @@ static nat execute_graph_starting_at(byte origin) {
 				if (R0I_counter >= max_acceptable_consecutive_s0_incr) return PM_r0i; 
 			}
 
+			walk_ia_counter++;
+
 			if (array[pointer] >= 65535) return PM_mm; 
 			array[pointer]++;
 		}
 
-		if (op == three or op == one or op == five) last_mcal_op = op;
+		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
+		last_op = op;
+
+		if (mcal_index == 1  and last_mcal_op != three) return PM_mcal; 
+		if (mcal_index == 2  and last_mcal_op != one) 	return PM_mcal;
+		if (mcal_index == 3  and last_mcal_op != three) return PM_mcal;
+		if (mcal_index == 4  and last_mcal_op != five) 	return PM_mcal;
+		if (mcal_index == 5  and last_mcal_op != three) return PM_mcal;
+		if (mcal_index == 6  and last_mcal_op != one) 	return PM_mcal;
+
+		if (mcal_index == 7) {
+			if (last_mcal_op == five) return PM_mcal;
+			mcal_path = last_mcal_op == three ? 1 : 2;
+		}
+
+		if (mcal_index == 8 and mcal_path == 1 and last_mcal_op != one)  	return PM_mcal;
+		if (mcal_index == 8 and mcal_path == 2 and last_mcal_op != three)  	return PM_mcal;
+
+		if (mcal_index == 9 and mcal_path == 1 and last_mcal_op != three)  	return PM_mcal;
+		if (mcal_index == 9 and mcal_path == 2 and last_mcal_op != five)  	return PM_mcal;
+
+		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return PM_mcal;
+
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -321,6 +375,98 @@ static nat execute_graph_starting_at(byte origin) {
 	}
 	return z_is_good;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+        [   main  ]   [  x  ]               x := extra
+	3 1 3 5 3 1   3 1 3 [5]   <--- deleted  the thing in brackets
+
+        [   main  ]   [ x ]
+	3 1 3 5 3 1   1 3 5 [X]   <--- deleted  the thing in brackets
+
+
+
+
+
+
+
+
+
+const nat mcal_string0_length = 10;
+		const byte mcal_string0[] = { 255, three, one, three, five, three, one,   three, one, three, five };
+
+		const nat mcal_string1_length = 9;
+		const byte mcal_string1[] = { 255, three, one, three, five, three, one,   one, three, five };
+
+
+		if (	mcal_index < mcal_string0_length and 
+			last_mcal_op != mcal_string0[mcal_index]
+
+			and 
+
+			mcal_index < mcal_string1_length and 
+			last_mcal_op != mcal_string1[mcal_index]
+
+			) return PM_mcal;
+
+		
+
+
+
+
+
+		if (mcal_index == 7  and last_mcal_op != x) return PM_mcal;
+		if (mcal_index == 8  and last_mcal_op != x) return PM_mcal;
+		if (mcal_index == 9  and last_mcal_op != x) return PM_mcal;
+		if (mcal_index == 10 and last_mcal_op != x) return PM_mcal;
+		
+
+		if (mcal_index == 7  and last_mcal_op != x) 	return PM_mcal;
+		if (mcal_index == 8  and last_mcal_op != x) return PM_mcal;
+		if (mcal_index == 9  and last_mcal_op != x) return PM_mcal;
+		
+
+
+
+
+
+
+// printf("[MCAL index = %llu]: expected %hhu, "); 
+
+
+
+
+*/
+
+
+
+
 
 static nat execute_graph(void) {
 	nat pm = 0;
@@ -332,7 +478,7 @@ static nat execute_graph(void) {
 	return pm;
 }
 
-static bool fea_execute_graph_starting_at(byte origin) {
+static nat fea_execute_graph_starting_at(byte origin) {
 
 	const nat n = 5;
 	array[n] = 0; 
@@ -384,7 +530,7 @@ static bool fea_execute_graph_starting_at(byte origin) {
 	return z_is_good; 
 }
 
-static bool fea_execute_graph(void) {
+static nat fea_execute_graph(void) {
 	nat pm = 0;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
@@ -394,7 +540,7 @@ static bool fea_execute_graph(void) {
 	return pm;
 }
 
-static void append_to_file(char* filename, size_t size) {
+static void append_to_file(char* filename) {
 	char dt[32] = {0};   get_datetime(dt);
 	char z[64] = {0};    get_graphs_z_value(z); 
 	int flags = O_WRONLY | O_APPEND;
@@ -409,7 +555,7 @@ try_open:;
 			fflush(stdout);
 			abort();
 		}
-		snprintf(filename, size, "%s_%08x%08x%08x%08x_z.txt", dt, 
+		snprintf(filename, 4096, "%s_%08x%08x%08x%08x_z.txt", dt, 
 			rand(), rand(), rand(), rand()
 		);
 		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
@@ -612,9 +758,7 @@ static void synthesize_graph_over_one_group(struct zlist zlist) {
 	nat* tallys = calloc((size_t) (graph_count * operation_count), sizeof(nat));
 
 	for (nat z = 0; z < zlist.count; z++) {
-
 		for (nat i = 0; i < graph_count; i++) {
-			if (not (i % 4)) continue;
 			tallys[i * operation_count + zlist.values[z][i]]++;
 		}
 	}
@@ -622,8 +766,14 @@ static void synthesize_graph_over_one_group(struct zlist zlist) {
 	printf("synthesized graph [over %llu z values]:\n", zlist.count);
 
 	for (byte i = 0; i < graph_count; i += 4) {
-		printf("  " red "#%u" reset "  :: { .op = %u,   .lge={ \n", i / 4,  zlist.values[0][i]);
+		printf("  " red "#%u" reset "  :: { \n", i / 4);
 
+		printf("\t\t.op={ ");
+		for (nat o = 0; o < operation_count; o++) {
+			const nat count = tallys[(i + 0) * operation_count + o];
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ?  green : yellow, (double) count / zlist.count, count); 
+		}
+		printf(" }, \n");
 		printf("\t\t.l={ ");
 		for (nat o = 0; o < operation_count; o++) {
 			const nat count = tallys[(i + 1) * operation_count + o];
@@ -666,6 +816,17 @@ static void synthesize_graph_over_one_group(struct zlist zlist) {
 	);
 }
 
+
+/*      -       202404195.164643:  redo this sg stuff completely, when we go to 3 space! 
+
+
+
+
+
+// major/minor groups
+static const nat similarity_threshold = 22;
+
+
 static nat similarity_count(byte* a, byte* b) {
 	nat count = 0;
 	for (nat i = 0; i < graph_count; i++) {
@@ -674,6 +835,7 @@ static nat similarity_count(byte* a, byte* b) {
 	return count;
 }
 
+
 static void partition_into_minor_groups(struct zlist total)  {
 	
 	nat hcount = 0;
@@ -681,12 +843,12 @@ static void partition_into_minor_groups(struct zlist total)  {
 
 	for (nat z = 0; z < total.count; z++) {
 
-		byte* graph = total.values[z];
+		byte* local_graph = total.values[z];
 		for (nat hi = 0; hi < hcount; hi++) {
 			for (nat i = 0; i < hlist[hi].count; i++) {
-				if (similarity_count(graph, hlist[hi].values[i]) < similarity_threshold) goto next_minor_group;
+				if (similarity_count(local_graph, hlist[hi].values[i]) < similarity_threshold) goto next_minor_group;
 			}
-			hlist[hi].values[hlist[hi].count++] = graph;
+			hlist[hi].values[hlist[hi].count++] = local_graph;
 			goto next_graph;
 			next_minor_group: continue;
 		}
@@ -696,7 +858,7 @@ static void partition_into_minor_groups(struct zlist total)  {
 			.count = 0
 		};
 
-		new.values[new.count++] = graph;
+		new.values[new.count++] = local_graph;
 		hlist[hcount++] = new;
 		next_graph: continue;
 	}
@@ -749,10 +911,10 @@ static void partition_into_minor_groups(struct zlist total)  {
 
 	printf("\n-----!#!#!#!#!#!#!#!#-----"); fflush(stdout);
 }
+*/
 
 
-
-static bool graph_analysis(void) {
+static nat graph_analysis(void) {
 
 	u16 was_utilized = 0;
 	nat a = 0;
@@ -846,11 +1008,14 @@ static bool graph_analysis(void) {
 		if (e != index) was_utilized |= 1 << e;
 	}
 
+	if (a) a = 0;   // for now lol.   a is only used in search lololol.
+
+
 	for (byte index = 0; index < operation_count; index++) 
 		if (not ((was_utilized >> index) & 1)) goto bad;
 
-	return false;
-bad:	return true;
+	return z_is_good;
+bad:	return PM_ga;
 }
 
 static nat graph_was_pruned_by(void) {
@@ -889,6 +1054,16 @@ static void find_major_groups(struct zlist list) {
 	puts("[finished all sythesized graphs over all groups.]");
 }
 
+
+
+
+
+
+
+
+
+
+/*
 static void count_dup_types(struct zlist list) {
 
 	const nat max_group_count = expn(5, D);
@@ -899,6 +1074,16 @@ static void count_dup_types(struct zlist list) {
 		
 	}
 }
+*/
+
+
+
+
+
+
+
+
+
 
 
 
@@ -917,80 +1102,6 @@ static void visualize(char* string) {
 	print_graph_as_adj();
 }
 
-static void visualize_list(struct zlist list) {
-
-	/*
-
-
-			202403225.181528:
-
-			TODO:    add   the new visualization method in addition to this binary lifetime one
-
-
-				where we actually print out a certain number of "#" characters per line, equal to the cell value, 
-
-					line zero is representing *0,  line one, *1, etc,    the "#" count   is the cell value,  ie  like a histogram kinda. 
-
-
-						ie, visualizing the array state in cardinal unary!!! so useful. 
-
-							also, print a fixedwidth integer at the beginning of the array, as well, easy little thing 
-
-	*/
-
-	struct termios terminal;
-	tcgetattr(0, &terminal);
-	struct termios copy = terminal; 
-	copy.c_lflag &= ~((size_t) ECHO | ICANON);
-	tcsetattr(0, TCSAFLUSH, &copy);
-
-	for (nat z = 0; z < list.count; z++) {
-
-		// bool written = false;
-
-		for (byte o = 0; o < graph_count; o += 4) {
-			
-			if (list.values[z][o + 0] != 2) continue;
-
-			nat offset = pre_run_ins;
-		print:;
-			printf("\033[H\033[2J");
-			puts(""); puts("");
-			for (nat i = 0; i < z * 5; i++) putchar('@');
-			for (nat i = 0; i < (list.count - z) * 5; i++) putchar('.');
-			puts(""); puts("");
-
-			set_graph(list.values[z]);
-			const nat e = print_lifetime(o / 4, execution_limit, row_count, offset);
-			print_bytes(graph, graph_count); 
-			puts(""); puts("");
-			for (nat t = 0; t < o / 4; t++) {
-				for (nat i = 0; i < 300; i++) printf("%u", o / 4);
-				puts("");
-			}
-
-			print_graph_as_adj(); puts("");
-			printf(":ready: ");
-			fflush(stdout);
-
-			int c = getchar();
-			if (c == 10) goto print; 
-			else if (c == ' ') {  offset += e; goto print; } 
-			else if (c == '\t') {  if (offset > e) offset -= e; goto print; } 
-			else if (c == 'q') goto return_;
-			else if (c == '[') {  if (z) { z -= 2; continue; } else goto print; } 
-			else if (c == ']' or c == 't') continue;
-			else {
-				puts("input error"); 
-				getchar();
-				goto print; 
-			}
-		}
-	}
-return_:
-	tcsetattr(0, TCSAFLUSH, &terminal);
-}
-
 static void machine_prune(struct zlist list) { //  const char* previous_filename, 
 
 	char filename[4096] = {0};
@@ -1003,7 +1114,7 @@ static void machine_prune(struct zlist list) { //  const char* previous_filename
 		const char* color = pm ? red : green;
 		const char* type =  pm ? "BAD" : "GOOD";
 		printf(bold "%s ---> %s (%llu / %llu) -- ( via %s )" reset "\n", color, type, z, list.count, pm_spelling[pm]);
-		if (pm) bad++; else { append_to_file(filename, list.count); good++; } 
+		if (pm) bad++; else { append_to_file(filename); good++; } 
 		pm_counts[pm]++;
 	}
 	print_counts();
@@ -1074,12 +1185,15 @@ loop:
 	else if (not strcmp(input, "help\n")) print_help();
 
 	else if (not strcmp(input, "list\n")) print_zlist("current z list", 0, zlist);
-	else if (not strncmp(input, "viz ", 10)) visualize(input + 10);
-	else if (not strcmp(input, "viz list\n")) visualize_list(zlist);
+
+	else if (not strncmp(input, "viz ", 4)) visualize(input + 4);
+
+	//else if (not strcmp(input, "viz list\n")) visualize_list(zlist);
 	else if (not strcmp(input, "generate images\n")) generate_images(zlist);
 
 	else if (not strcmp(input, "synthesize graph\n")) find_major_groups(zlist);
-	else if (not strcmp(input, "count_dup_types\n")) count_dup_types(zlist);
+
+	//else if (not strcmp(input, "count_dup_types\n")) count_dup_types(zlist);  //todo: redo synthesize graph when we go to 3 space.
 
 	else if (not strcmp(input, "machine prune\n")) machine_prune(zlist); // argv[1]
 
@@ -1126,8 +1240,93 @@ loop:
 
 
 
-
 /*
+
+
+			202403225.181528:
+
+			TODO:    add   the new visualization method in addition to this binary lifetime one
+
+
+				where we actually print out a certain number of "#" characters per line, equal to the cell value, 
+
+					line zero is representing *0,  line one, *1, etc,    the "#" count   is the cell value,  ie  like a histogram kinda. 
+
+
+						ie, visualizing the array state in cardinal unary!!! so useful. 
+
+							also, print a fixedwidth integer at the beginning of the array, as well, easy little thing 
+
+	
+
+
+
+
+
+static void visualize_list(struct zlist list) {
+
+	
+
+	struct termios terminal;
+	tcgetattr(0, &terminal);
+	struct termios copy = terminal; 
+	copy.c_lflag &= ~((size_t) ECHO | ICANON);
+	tcsetattr(0, TCSAFLUSH, &copy);
+
+	for (nat z = 0; z < list.count; z++) {
+
+		// bool written = false;
+
+		for (byte o = 0; o < graph_count; o += 4) {
+			
+			if (list.values[z][o + 0] != 2) continue;
+
+			nat offset = pre_run_ins;
+		print:;
+			printf("\033[H\033[2J");
+			puts(""); puts("");
+			for (nat i = 0; i < z * 5; i++) putchar('@');
+			for (nat i = 0; i < (list.count - z) * 5; i++) putchar('.');
+			puts(""); puts("");
+
+			set_graph(list.values[z]);
+			const nat e = print_lifetime(o / 4, execution_limit, row_count, offset);
+			print_bytes(graph, graph_count); 
+			puts(""); puts("");
+			for (nat t = 0; t < o / 4; t++) {
+				for (nat i = 0; i < 300; i++) printf("%u", o / 4);
+				puts("");
+			}
+
+			print_graph_as_adj(); puts("");
+			printf(":ready: ");
+			fflush(stdout);
+
+			int c = getchar();
+			if (c == 10) goto print; 
+			else if (c == ' ') {  offset += e; goto print; } 
+			else if (c == '\t') {  if (offset > e) offset -= e; goto print; } 
+			else if (c == 'q') goto return_;
+			else if (c == '[') {  if (z) { z -= 2; continue; } else goto print; } 
+			else if (c == ']' or c == 't') continue;
+			else {
+				puts("input error"); 
+				getchar();
+				goto print; 
+			}
+		}
+	}
+return_:
+	tcsetattr(0, TCSAFLUSH, &terminal);
+}
+
+
+
+
+
+
+
+
 
 
 else if (c == 'a') { 
