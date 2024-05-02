@@ -10,7 +10,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 1;        // the duplication count (operation_count = 5 + D)
+static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
@@ -22,14 +22,11 @@ static const byte D = 1;        // the duplication count (operation_count = 5 + 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeclaration-after-statement"
 
-
-
 enum operations { one, two, three, five, six };
-
 
 static const bool should_deduplicate_z_list = true;
 
-
+static const size_t max_height = 4096, max_width = 4096;
 static const int delay_ms_per_frame = 16;
 static const int display_rate = 1;
 
@@ -37,10 +34,11 @@ static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
 static const nat fea_execution_limit = 5000;
-static const nat execution_limit = 1000000;
-static const nat array_size = 60000;
-static const nat lifetime_length = 100000;
-static const nat pre_run_ins = 0;
+static const nat execution_limit = 100000;
+static const nat array_size = 10000;
+static const nat lifetime_length = 50000;
+
+// static const nat pre_run_ins = 0;
 
 enum pruning_metrics {
 	z_is_good, PM_ga, PM_fea, PM_ns0, 
@@ -79,13 +77,13 @@ static nat* timeout = NULL;
 static byte* graph = NULL;
 
 struct z_value {
-	uint32_t* lifetime;
+	uint32_t** lifetime;
 	byte* value;
 	nat origin;
 	nat unique;
 };
 
-
+/*
 static void print_nats(nat* v, nat l) {
 	printf("(%llu)[ ", l);
 	for (nat i = 0; i < l; i++) {
@@ -93,6 +91,7 @@ static void print_nats(nat* v, nat l) {
 	}
 	printf("]");
 }
+*/
 
 static void print_bytes(byte* v, nat l) {
 	printf("(%llu)[ ", l);
@@ -105,8 +104,6 @@ static void init_graph_from_string(const char* string) {
 	for (byte i = 0; i < graph_count; i++) 
 		graph[i] = (byte) (string[i] - '0');
 }
-
-
 
 
 static void set_graph(byte* z) { memcpy(graph, z, graph_count); }
@@ -274,21 +271,6 @@ static nat fea_execute_graph_starting_at(byte origin) {
 	return z_is_good; 
 }
 
-
-/*
-static nat fea_execute_graph(void) {
-	nat pm = 0;
-	for (byte o = 0; o < operation_count; o++) {
-		if (graph[4 * o] != three) continue;
-		pm = fea_execute_graph_starting_at(o);
-		if (not pm) return z_is_good;
-	}
-	return pm;
-}
-*/
-
-
-
 static nat graph_analysis(void) {
 
 	u16 was_utilized = 0;
@@ -383,6 +365,8 @@ static nat graph_analysis(void) {
 		if (e != index) was_utilized |= 1 << e;
 	}
 
+	if (a) a = 0;      ///  only used in search loll. 
+
 	for (byte index = 0; index < operation_count; index++) 
 		if (not ((was_utilized >> index) & 1)) goto bad;
 
@@ -407,56 +391,27 @@ static void print_z_list(struct z_value* list, nat count) {
 	
 }
 
-
-static void print_unique_list(struct z_value* list, nat count) {
-	nat unique_count = 0;
-	printf("printing unique z list: \n");
-	for (nat i = 0; i < count; i++) {
-		if (not list[i].unique) continue;
-		printf("z #%llu: ", i);
-		print_bytes(list[i].value, graph_count);
-		printf(", origin = %llu, lifetime = %p\n", list[i].origin, (void*) list[i].lifetime);
-		unique_count++;
-	}
-	printf("printed %llu unique z values.\n", unique_count);
-}
-
 static struct z_value* generate_good_origins_z_list(struct z_value* list, nat count, nat* out_new_count) {
-
-	//puts("generate_good_origins_z_list: origin-pruning this list: ");
-	//print_z_list(list, count);
-	//getchar();
 
 	struct z_value* new = NULL;
 	nat new_count = 0;
-
-	//puts("--------------------- generating new z list...---------------------");
-	
 	for (nat i = 0; i < count; i++) {
-		//printf("trying z value index %llu... ", i);
 		for (byte o = 0; o < operation_count; o++) {
 			if (graph[4 * o] != three) continue;
-			//printf(", [trying origin=%hhu]\n", o);
-		
 			set_graph(list[i].value);
 			const nat pm = graph_at_origin_was_pruned_by(o);
 
 			if (not pm) {
 				list[i].origin = o;
 				list[i].unique = true;
-
 				printf("generating z #%llu: ", new_count);
 				print_bytes(list[i].value, graph_count);
 				printf(", origin = %llu, lifetime = %p\n", list[i].origin, (void*) list[i].lifetime);
-
 				new = realloc(new, sizeof(struct z_value) * (new_count + 1)); 
 				new[new_count++] = list[i];
-			} else {
-				printf("pruned z #%llu using pm = %s...\n", i, pm_spelling[pm]);
-			}
+			} else printf("pruned z #%llu using pm = %s...\n", i, pm_spelling[pm]);
 		}
 	}
-
 	*out_new_count = new_count;
 	return new;
 }
@@ -474,7 +429,9 @@ static void generate_lifetime(struct z_value* z) {
 	printf("info: generating lifetime for origin = %hhu, z = ", ip);
 	print_graph();
 
-	z->lifetime = calloc(width * lifetime_length, 4);
+	z->lifetime = calloc(2, sizeof(uint32_t*));
+	z->lifetime[0] = calloc(width * lifetime_length, 4);
+	z->lifetime[1] = calloc(width * lifetime_length, 4);
 
 	while (1) {
 		const byte I = ip * 4, op = graph[I];
@@ -484,14 +441,14 @@ static void generate_lifetime(struct z_value* z) {
 
 		} else if (op == five) {
 			timestep++;
-			if (timestep >= lifetime_length) return;
+			if (timestep >= lifetime_length) break;
 			pointer = 0;
 		}
-		else if (op == two) { array[n]++; z->lifetime[width * timestep + n] = (uint32_t) ~0; }
+		else if (op == two) { array[n]++; }
 
 		else if (op == six) { array[n] = 0; }
 
-		else if (op == three) { array[pointer]++; z->lifetime[width * timestep + pointer] = (uint32_t) ~0; }
+		else if (op == three) { array[pointer]++; z->lifetime[0][width * timestep + pointer] = (uint32_t) ~0; }
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -499,11 +456,11 @@ static void generate_lifetime(struct z_value* z) {
 		if (array[n] == array[pointer]) state = 3;
 		ip = graph[I + state];
 	}
+
+	for (nat h = 0; h < n + 1 and h < lifetime_length - 1; h++) 
+		for (nat w = 0; w < width; w++) 
+			if (w < array[h]) z->lifetime[1][width * (h + 1) + w] = (uint32_t) ~0;
 }
-
-
-
-
 
 static struct z_value* load_zlist(const char* filename, nat* list_count) {
 	FILE* file = fopen(filename, "r");
@@ -523,7 +480,6 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 		memcpy(g, graph, graph_count);
 		list = realloc(list, sizeof(struct z_value) * (count + 1));
 		list[count++] = (struct z_value) {.value = g};
-
 	}
 	fclose(file);
 	*list_count = count;
@@ -554,34 +510,42 @@ int main(int argc, const char** argv) {
 	printf("loading lifetime data for zlist...\n");
 	print_z_list(list, count);
 
-
-
-	//de-duplication of lifetime images:
-
-
 	if (should_deduplicate_z_list) {
 
 		nat* equivalent_count = calloc(count, sizeof(nat));
 		nat* equivalent_z = calloc(count * count, sizeof(nat));
 		
-		
 		const nat lifetime_byte_count = 4 * ((array_size + 1) * (lifetime_length));
 
 		puts("finding all equivalent lifetimes...");
 
-
+		nat dupl_count = 0;
+		nat* duplicates = NULL;
+	
 		for (nat i = 0; i < count; i++) { 
-			for (nat j = 0; j < count; j++) {
-				if (i == j) continue;
-				printf("testing i=%llu and j=%llu...\n", i, j);
 
-				if (not memcmp(list[i].lifetime, list[j].lifetime, lifetime_byte_count)) {
+			for (nat d = 0; d < dupl_count; d++) {
+				if (duplicates[d] == i) goto next_i;
+			}
+
+			for (nat j = i + 1; j < count; j++) {
+				printf("testing i=%llu and j=%llu... ", i, j);
+
+				if (not memcmp(list[i].lifetime[0], list[j].lifetime[0], lifetime_byte_count)) {
 					equivalent_z[count * i + equivalent_count[i]] = j;
 					equivalent_count[i]++;
+
+					duplicates = realloc(duplicates, sizeof(nat) * (dupl_count + 1));
+					duplicates[dupl_count++] = j;
+
+					printf("[%llu IS A DUPLICATE].\n", j);
+
+				} else {
+					puts("different.");
 				}
 			}
+			next_i: continue;
 		}
-
 
 		puts("list has these empirical lifetime equivalencies: ");
 		for (nat i = 0; i < count; i++) {
@@ -590,51 +554,26 @@ int main(int argc, const char** argv) {
 				printf(" %llu ", equivalent_z[count * i + j]);
 			puts("");
 		}
-
-
-
-
-
 		byte* seen = calloc(count, 1);
-		
 		for (nat i = 0; i < count; i++) {
 			if (seen[i]) continue;
-
 			for (nat j = 0; j < equivalent_count[i]; j++) {
 				const nat index = equivalent_z[count * i + j];
 				seen[index] = true;
 			}
 		}
+		for (nat i = 0; i < count; i++) list[i].unique = not seen[i];
 
-
-
-		for (nat i = 0; i < count; i++) {
-			list[i].unique = not seen[i];
-		}
-
-		print_unique_list(list, count);
-
-
-
-		puts("dedeuplicating z list...");
+		puts("de-deuplicating z list...");
 		nat unique_count = 0;
 		for (nat i = 0; i < count; i++) {
-			if (list[i].unique) unique_count++;
-			else memmove(list + i, list + i + 1, count - i - 1);
+			if (not list[i].unique) continue;
+			list[unique_count++] = list[i];
 		}
 		count = unique_count;
-		
-
-
+		print_z_list(list, count);
 	}
-
-
-
-
-
-
-
-
+	
 	size_t height = default_window_size_height >> 1, width = default_window_size_width >> 1;
 	size_t screen_size = height * width * 4;
 
@@ -653,12 +592,12 @@ int main(int argc, const char** argv) {
 	nat counter = 0, speed = 1;
 	nat current = 0, initial_y = 0, initial_x = 0;
 
+	nat viz_method = 0;
 
 	while (not quit) {
 		uint32_t start = SDL_GetTicks();
 
 		if (not (counter & ((1 << display_rate) - 1))) {
-
 			if (lifetime_length < height) abort();
 			if (array_size + 1 < width) abort();
 
@@ -670,23 +609,15 @@ int main(int argc, const char** argv) {
 				nat w_l = initial_x;
 				for (nat w = 0; w < width; w++) {
 					const nat lifetime_width = array_size + 1;
-					screen[width * h + w] = list[current].lifetime[lifetime_width * h_l + w_l];
+					screen[width * h + w] = list[current].lifetime[viz_method][lifetime_width * h_l + w_l];
 					w_l++;
 				}
 				h_l++;
 			}
-
-
-
 			const double ratio = (double) current / (double) count;
 			const nat progress = (nat) (ratio * (double) width);
-
-			for (nat i = 0; i < progress; i++) {
-				screen[i] = (uint32_t) ~0;
-			}
-			for (nat i = 0; i < width - progress; i++) {
-				screen[progress + i] = 0;
-			}
+			for (nat i = 0; i < progress; i++) screen[i] = (uint32_t) ~0;
+			for (nat i = 0; i < width - progress; i++) screen[progress + i] = 0;
 		}
 
 		SDL_LockTexture(texture, NULL, (void**) &pixels, &pitch);
@@ -705,25 +636,22 @@ int main(int argc, const char** argv) {
 
 				const bool command = !!key[SDL_SCANCODE_LGUI];
 
-				if (not command) {
-				
-					if (event.wheel.y < 0) { 
-						if ((int64_t) initial_y + (int64_t) speed < (int64_t) lifetime_length - (int64_t) height) initial_y += speed; 
-						else initial_y = lifetime_length - height;
-					}
+				if (not command and event.wheel.y < 0) { 
+					if ((int64_t) initial_y + (int64_t) speed < (int64_t) lifetime_length - (int64_t) height) initial_y += speed; 
+					else initial_y = lifetime_length - height;
+				}
 
-					if (event.wheel.y > 0) { 
-						if (initial_y >= speed) initial_y -= speed; else initial_y = 0;
-					}
-		
-					if (event.wheel.x > 0) { 
-						if ((int64_t) initial_x + (int64_t) speed < (int64_t) array_size + 1 - (int64_t) width) initial_x += speed; 
-						else initial_x = array_size + 1 - width;
-					}
+				if (not command and event.wheel.y > 0) { 
+					if (initial_y >= speed) initial_y -= speed; else initial_y = 0;
+				}
+	
+				if (not command and event.wheel.x > 0) { 
+					if ((int64_t) initial_x + (int64_t) speed < (int64_t) array_size + 1 - (int64_t) width) initial_x += speed; 
+					else initial_x = array_size + 1 - width;
+				}
 
-					if (event.wheel.x < 0) { 
-						if (initial_x >= speed) initial_x -= speed; else initial_x = 0;
-					}
+				if (not command and event.wheel.x < 0) { 
+					if (initial_x >= speed) initial_x -= speed; else initial_x = 0;
 				}
 	
 				if (command and event.wheel.y > 0) {
@@ -734,7 +662,6 @@ int main(int argc, const char** argv) {
 					}
 				} 
 
-
 				if (command and event.wheel.y < 0) {
 
 					if (width >= array_size + 1)   goto done_resizing;
@@ -742,6 +669,8 @@ int main(int argc, const char** argv) {
 
 					width += speed; 
 					height += speed;
+					if (width > max_width) width = max_width;
+					if (height > max_height) height = max_height;
 
 				resize1: 
 					screen_size = width * height * 4;
@@ -763,9 +692,11 @@ int main(int argc, const char** argv) {
 
 			if (event.type == SDL_KEYDOWN) {
 				if (key[SDL_SCANCODE_GRAVE]) SDL_SetWindowFullscreen(window, (fullscreen = !fullscreen) ? SDL_WINDOW_FULLSCREEN : 0);
-				if (key[SDL_SCANCODE_0] or key[SDL_SCANCODE_ESCAPE] or key[SDL_SCANCODE_Q]) quit = true;
-				if (key[SDL_SCANCODE_1]) { initial_x = 0; initial_y = 0; }
-				if (key[SDL_SCANCODE_2]) {}
+				if (key[SDL_SCANCODE_ESCAPE] or key[SDL_SCANCODE_Q]) quit = true;
+
+				if (key[SDL_SCANCODE_0]) { initial_x = 0; initial_y = 0; }
+				if (key[SDL_SCANCODE_1]) viz_method = 0;
+				if (key[SDL_SCANCODE_2]) viz_method = 1;
 
 				if (key[SDL_SCANCODE_F]) { if (current < count - 1) current++; printf("current is now %llu.\n", current); } 
 				if (key[SDL_SCANCODE_A]) { if (current) current--; printf("current is now %llu.\n", current); } 
@@ -774,12 +705,11 @@ int main(int argc, const char** argv) {
 				if (key[SDL_SCANCODE_L]) { speed <<= 1; printf("speed = %llu\n", speed); }
 
 				if (key[SDL_SCANCODE_Z]) {
-					printf("current displaying: origin = %llu,  ", list[current].origin);
+					printf("[index in list = %llu]: current displaying: origin = %llu,  ", current, list[current].origin);
 					set_graph(list[current].value);
 					print_graph();
 					puts("");
 				}
-
 			}
 		}
 
@@ -799,6 +729,23 @@ int main(int argc, const char** argv) {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1032,4 +979,212 @@ s
 
 
 // printf("width = %llu, timestep = %llu, n = %llu\n", width, timestep, n);fflush(stdout);
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+		we can make the equivalence finder faster by leverging the transitive nature of equality!
+
+
+		simply stop looking at zv which are already equiv to ones you've checked!
+
+			only chechk against "currently still unique zv"
+
+
+			yay
+
+
+
+
+
+*/
+
+
+
+
+
+
+/*
+static nat fea_execute_graph(void) {
+	nat pm = 0;
+	for (byte o = 0; o < operation_count; o++) {
+		if (graph[4 * o] != three) continue;
+		pm = fea_execute_graph_starting_at(o);
+		if (not pm) return z_is_good;
+	}
+	return pm;
+}
+*/
+
+
+
+
+
+
+
+
+
+/*
+static void print_unique_list(struct z_value* list, nat count) {
+	nat unique_count = 0;
+	printf("printing unique z list: \n");
+	for (nat i = 0; i < count; i++) {
+		if (not list[i].unique) continue;
+		printf("z #%llu: ", i);
+		print_bytes(list[i].value, graph_count);
+		printf(", origin = %llu, lifetime = %p\n", list[i].origin, (void*) list[i].lifetime);
+		unique_count++;
+	}
+	printf("printed %llu unique z values.\n", unique_count);
+}
+
+*/
+
+
+
+
+
+
+
+	//puts("--------------------- generating new z list...---------------------");
+
+	//puts("generate_good_origins_z_list: origin-pruning this list: ");
+	//print_z_list(list, count);
+	//getchar();
+
+
+
+
+
+
+//printf(", [trying origin=%hhu]\n", o); //printf("trying z value index %llu... ", i);
+
+
+
+
+
+
+/*
+
+                                 v 
+
+	[0]	[3]	[2]	[3]
+         U	 U	 D	 U
+
+                         ^
+
+
+
+
+
+
+	[0] [3] 
+
+*/
+
+
+
+
+
+
+
+/*
+##########################################     <--------- *0
+##############################    <----- *1
+##################### 
+#######################
+##################
+########           <--- *5
+###########
+#########
+
+
+
+
+
+
+
+202405013.180150:
+
+	loooked back through the 2 space z value
+
+	0122102521433062400106614201                     ie        0122 1025 2143 3062 4001 0661 4201
+
+
+		its actually even better than the previous z values we were looking at!!!
+
+
+			i want to actually write it out  on paper and see what the graph looks like!  like with nodes and arrows
+
+				should be interesting!
+
+
+
+				one interseting thing is that it does still     have a  DOL   that falls within spec of the NDH!!
+
+
+									the nested DOL hypothesis!   
+
+
+					its duplicating    {  0   4  }   
+
+
+
+					which means that its a strict superset of 1 space! so NDH is still   possiblyyyyyyyy valid loll
+								not definitely, just possibly. 
+
+
+								lol 
+					so yeah 
+
+
+
+		
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// 0122 1025 2143 3062 4001 0661 4201
+
 

@@ -26,13 +26,35 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 
 static const byte D = 1;        // the duplication count (operation_count = 5 + D)
-static const bool R = 1;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
+static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
-static const nat job_size = 80000000;
+static const nat job_size = 100000;
 static const nat thread_count = 3;
 static const nat display_rate = 2;
 
 enum operations { one, two, three, five, six };
+
+enum pruning_metrics {
+	z_is_good, PM_ga, PM_fea, PM_ns0, 
+	PM_pco, PM_zr5, PM_zr6, PM_ndi, 
+	PM_oer, PM_r0i, PM_h0, PM_f1e, 
+	PM_erc, PM_rmv, PM_ot, PM_csm, 
+	PM_mm, PM_snm, PM_bdl, PM_bdl2, 
+	PM_erw, PM_mcal, PM_snl, 
+	PM_h1, PM_h2, PM_h3, PM_eda,
+	PM_count
+};
+
+static const char* pm_spelling[] = {
+	"z_is_good", "PM_ga", "PM_fea", "PM_ns0", 
+	"PM_pco", "PM_zr5", "PM_zr6", "PM_ndi", 
+	"PM_oer", "PM_r0i", "PM_h0", "PM_f1e", 
+	"PM_erc", "PM_rmv", "PM_ot", "PM_csm", 
+	"PM_mm", "PM_snm", "PM_bdl", "PM_bdl2", 
+	"PM_erw", "PM_mcal", "PM_snl", 
+	"PM_h1", "PM_h2", "PM_h3", "PM_eda",
+
+};
 
 static const byte _ = 0;
 
@@ -72,8 +94,13 @@ static const nat array_size = 100000;
 static const nat max_acceptable_er_repetions = 50;
 static const nat max_acceptable_modnat_repetions = 15;
 static const nat max_acceptable_consecutive_s0_incr = 30;
-static const nat max_acceptable_run_length = 9;
-static const nat max_acceptable_consequtive_small_modnats = 200;
+static const nat max_acceptable_consecutive_small_modnats = 200;
+static const nat max_acceptable_bdl_er_repetions = 25;
+static const nat max_acceptable_sn_loop_iterations = 100 * 2;
+static const nat max_acceptable_consecutive_h0_bouts = 10;
+static const nat max_acceptable_consecutive_h1_bouts = 30;
+static const nat max_acceptable_consecutive_h2_bouts = 30;
+static const nat max_acceptable_consecutive_h3_bouts = 30;
 
 static const nat expansion_check_timestep = 5000;
 static const nat required_er_count = 25;
@@ -88,6 +115,9 @@ static pthread_t* threads = NULL;
 
 // globals:
 static _Atomic nat head;
+
+
+
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
 
@@ -110,118 +140,186 @@ static bool execute_graph_starting_at(byte origin, byte* graph, nat* array, nat*
 	array[n] = 0; 
 	memset(timeout, 0, operation_count * sizeof(nat));
 
-	byte ip = origin, last_mcal_op = 0;
+	byte ip = origin, last_mcal_op = 255, last_op = 0, mcal_path = 0;
 
-	nat 	e = 0,  xw = 0,
-		pointer = 0,  er_count = 0, 
+	nat 	e = 0,  xw = 0, 
+		pointer = 0,  er_count = 0, bout_length = 0,
+		walk_ia_counter = 0, ERW_counter = 0, 
+		SNL_counter = 0,   mcal_index = 0,
 	    	OER_er_at = 0,  OER_counter = 0, 
-		R0I_counter = 0, H_counter = 0,
+		BDL_er_at = 0,  BDL_counter = 0, 
+		BDL2_er_at = 0,  BDL2_counter = 0, 
+		R0I_counter = 0, H0_counter = 0, 
+		H1_counter = 0, H2_counter = 0, H3_counter = 0,
 		RMV_counter = 0, RMV_value = 0, CSM_counter = 0;
 
 	for (; e < execution_limit; e++) {
 
 		if (e == expansion_check_timestep2) { 
 			for (byte i = 0; i < 5; i++) {
-				if (array[i] < required_s0_increments) return true; 
+				if (array[i] < required_s0_increments) return PM_f1e; 
 			}
 		}
 
 		if (e == expansion_check_timestep)  { 
-			if (er_count < required_er_count) return true; 
+			if (er_count < required_er_count) return PM_erc; 
 		}
 		
 		const byte I = ip * 4, op = graph[I];
 
 		for (nat i = 0; i < operation_count; i++) {
-			if (timeout[i] >= execution_limit >> 1) return true; 
+			if (timeout[i] >= execution_limit >> 1) return PM_ot; 
 			timeout[i]++;
 		}
 		timeout[ip] = 0;
 
 		if (op == one) {
-			if (pointer == n) return true; 
-			if (not array[pointer]) return true; 
+			if (pointer == n) return PM_fea; 
+			if (not array[pointer]) return PM_ns0; 
 
-			if (last_mcal_op == one) H_counter = 0;
+			if (last_mcal_op == one)  H0_counter = 0;
 			if (last_mcal_op == five) R0I_counter = 0;
 
+			bout_length++;
 			pointer++;
 
-			if (pointer > xw and pointer < n) {    // <--------- ALSO CHANGED THIS ONE TOO.
+			if (pointer > xw and pointer < n) { 
 				xw = pointer; 
 				array[pointer] = 0; 
 			}
 		}
 
 		else if (op == five) {
-			if (last_mcal_op != three) return true; 
-			if (not pointer) return true; 
-				
+			if (last_mcal_op != three) return PM_pco; 
+			if (not pointer) return PM_zr5; 
+			
 			if (	pointer == OER_er_at or 
 				pointer == OER_er_at + 1) OER_counter++;
 			else { OER_er_at = pointer; OER_counter = 0; }
-			if (OER_counter >= max_acceptable_er_repetions) return true; 
-			
+			if (OER_counter >= max_acceptable_er_repetions) return PM_oer; 
+
+			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
+			else { BDL_er_at = pointer; BDL_counter = 0; }
+			if (BDL_counter >= max_acceptable_bdl_er_repetions) return PM_bdl; 
+
+			if (BDL2_er_at > 1 and pointer == BDL2_er_at - 2) { BDL2_counter++; BDL2_er_at -= 2; }
+			else { BDL2_er_at = pointer; BDL2_counter = 0; }
+			if (BDL2_counter >= max_acceptable_bdl_er_repetions) return PM_bdl2; 
+
 			CSM_counter = 0;
 			RMV_value = (nat) -1;
 			RMV_counter = 0;
 			for (nat i = 0; i < xw; i++) {
 				if (array[i] < 6) CSM_counter++; else CSM_counter = 0;
-				if (CSM_counter > max_acceptable_consequtive_small_modnats) return true; 
+				if (CSM_counter > max_acceptable_consecutive_small_modnats) return PM_csm; 
 				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
-				if (RMV_counter >= max_acceptable_modnat_repetions) return true; 
+				if (RMV_counter >= max_acceptable_modnat_repetions) return PM_rmv; 
 			}
+
+			if (walk_ia_counter == 1) {
+				ERW_counter++;
+				if (ERW_counter == 100) return PM_erw;
+			} else ERW_counter = 0;
+			walk_ia_counter = 0;
 
 			pointer = 0;
 			er_count++;
 		}
 
 		else if (op == two) {
+			if (array[n] >= 65535) return PM_snm; 
+
+			if (last_op == six) SNL_counter++; else SNL_counter = 0;
+			if (SNL_counter == max_acceptable_sn_loop_iterations) return PM_snl;
+
 			array[n]++;
-			if (array[n] >= 65535) return true; 
 		}
-
 		else if (op == six) {  
-			if (not array[n]) return true; 
-			array[n] = 0;   
+			if (not array[n]) return PM_zr6; 
+
+			if (last_op == two) SNL_counter++; else SNL_counter = 0;
+			if (SNL_counter == max_acceptable_sn_loop_iterations) return PM_snl;
+
+			array[n] = 0;
 		}
-
 		else if (op == three) {
-			if (last_mcal_op == three) return true; 
-
-			if (last_mcal_op == one) {
-				H_counter++;
-				if (H_counter >= max_acceptable_run_length) return true; 
-			}
+			if (last_mcal_op == three) return PM_ndi; 
 
 			if (last_mcal_op == five) {
 				R0I_counter++; 
-				if (R0I_counter >= max_acceptable_consecutive_s0_incr) return true; 
+				if (R0I_counter >= max_acceptable_consecutive_s0_incr) return PM_r0i; 
 			}
 
-			if (array[pointer] >= 65535) return true; 
+			if (last_mcal_op == one) {
+				H0_counter++;
+				if (H0_counter >= max_acceptable_consecutive_h0_bouts) return PM_h0; 
+			}
+
+			if (bout_length == 1) {
+				H1_counter++;
+				if (H1_counter >= max_acceptable_consecutive_h1_bouts) return PM_h1; 
+			} else H1_counter = 0;
+
+			if (bout_length == 2) {
+				H2_counter++;
+				if (H2_counter >= max_acceptable_consecutive_h2_bouts) return PM_h2; 
+			} else H2_counter = 0;
+
+			if (bout_length == 3) {
+				H3_counter++;
+				if (H3_counter >= max_acceptable_consecutive_h3_bouts) return PM_h3; 
+			} else H3_counter = 0;
+
+			bout_length = 0;
+			walk_ia_counter++;
+
+			if (array[pointer] >= 65535) return PM_mm; 
 			array[pointer]++;
 		}
 
-		if (op == three or op == one or op == five) last_mcal_op = op;
+		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
+		last_op = op;
+
+		if (mcal_index == 1  and last_mcal_op != three) return PM_mcal; 
+		if (mcal_index == 2  and last_mcal_op != one) 	return PM_mcal;
+		if (mcal_index == 3  and last_mcal_op != three) return PM_mcal;
+		if (mcal_index == 4  and last_mcal_op != five) 	return PM_mcal;
+		if (mcal_index == 5  and last_mcal_op != three) return PM_mcal;
+		if (mcal_index == 6  and last_mcal_op != one) 	return PM_mcal;
+
+		if (mcal_index == 7) {
+			if (last_mcal_op == five) return PM_mcal;
+			mcal_path = last_mcal_op == three ? 1 : 2;
+		}
+
+		if (mcal_index == 8 and mcal_path == 1 and last_mcal_op != one)  	return PM_mcal;
+		if (mcal_index == 8 and mcal_path == 2 and last_mcal_op != three)  	return PM_mcal;
+
+		if (mcal_index == 9 and mcal_path == 1 and last_mcal_op != three)  	return PM_mcal;
+		if (mcal_index == 9 and mcal_path == 2 and last_mcal_op != five)  	return PM_mcal;
+
+		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return PM_mcal;
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
+		
 		ip = graph[I + state];
 	}
-	return false;
+
+
+	return z_is_good;
 }
 
-//if (executed[I + state] < 253) executed[I + state]++;
-
 static bool execute_graph(byte* graph, nat* array, nat* timeout) {
+	nat pm = 0;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
-		if (not execute_graph_starting_at(o, graph, array, timeout)) return false;
+		pm = execute_graph_starting_at(o, graph, array, timeout);   
+		if (not pm) return z_is_good;
 	}
-	return true;
+	return pm;
 }
 
 static bool fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) {
@@ -238,56 +336,30 @@ static bool fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) 
 		const byte I = ip * 4, op = graph[I];
 
 		if (op == one) {
-			if (pointer == n) return true;
-			if (not array[pointer]) return true;
+			if (pointer == n) return PM_fea;
+			if (not array[pointer]) return PM_ns0;
 			pointer++;
-
-			// new correct lazy zeroing:
 
 			if (pointer > xw and pointer < n) { 
 				xw = pointer; 
 				array[pointer] = 0; 
 			}
-
-
-			// WAS:  if (pointer > xw) { xw = pointer; array[pointer] = 0; }   // ERROR HERE!!!!
-			
-			
-
-			/////////////////////////////////////////////////////////////////////////////////////////
-			
-
-				//  WHAT IF pointer ALIAS's   STAR N!!!!!!!   CRAPPP
-
-				// we'll reset it, and thus change the graphs behavior!!!!
-
-
-
-
-
-					// we had added the lazy zeroing opt to the fea pass,  and thus the "i == n" alias condition will occur MUCH more likely!!!
-
-			/////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
 		}
 
 		else if (op == five) {
-			if (last_mcal_op != three) return true;
-			if (not pointer) return true;
+			if (last_mcal_op != three) return PM_pco;
+			if (not pointer) return PM_zr5;
 			pointer = 0;
 		}
 
 		else if (op == two) { array[n]++; }
 		else if (op == six) {  
-			if (not array[n]) return true;
+			if (not array[n]) return PM_zr6;
 			array[n] = 0;   
 		}
 
 		else if (op == three) {
-			if (last_mcal_op == three) return true;
+			if (last_mcal_op == three) return PM_ndi;
 			array[pointer]++;
 		}
 
@@ -299,15 +371,18 @@ static bool fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) 
 		if (array[n] == array[pointer]) state = 3;
 		ip = graph[I + state];
 	}
-	return false; 
+	return z_is_good; 
 }
 
+
 static bool fea_execute_graph(byte* graph, nat* array) {
+	nat pm = 0;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
-		if (not fea_execute_graph_starting_at(o, graph, array)) return false;
+		pm = fea_execute_graph_starting_at(o, graph, array);
+		if (not pm) return z_is_good;
 	}
-	return true;
+	return pm;
 }
 
 static void append_to_file(char* filename, size_t size, byte* graph) {
@@ -361,10 +436,7 @@ static void* worker_thread(void* __attribute__((unused)) _unused_arg) {
 	byte pointer = 0;
 	
 next_job:;
-	const nat h = atomic_fetch_add_explicit(&head, job_size, memory_order_relaxed);   
-						// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
-						// CHANGED: yup, we can just use memory_order_relaxed. 
-
+	const nat h = atomic_fetch_add_explicit(&head, job_size, memory_order_relaxed);  
 	if (h >= space_size) goto terminate_thread;
 
 	const nat range_begin = h;
@@ -389,9 +461,45 @@ next_job:;
 
 loop:	for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
 		if (graph_64[i] < end_64[i]) goto process;
-		if (graph_64[i] > end_64[i]) break;
+		if (graph_64[i] > end_64[i]) goto do_zskip;      // here, we know we are doing a zskip, becuase we are over the end.
 	}
 	goto next_job;
+
+
+
+
+
+
+
+do_zskip:;
+
+	
+	// do an unreduce of the graph. 
+	nat zindex = 0, p = 1;
+	for (byte i = 0; i < hole_count; i++) {
+		zindex += p * graph[positions[i]];
+		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+	}
+
+
+
+	// only open part of the multithreading-zskip solution that we devised:    the sychronization part-
+
+	atomic_store_explicit(&head, zindex, memory_order_relaxed);    		// we need this to COME BEFORE the atomic_fetch_add_explicit() call. 
+
+										// (using better  memory orderings  probably???...)
+
+
+	
+
+
+	goto next_job;
+
+
+
+
+
+
 process:
 	if (graph[positions[pointer]] < (positions[pointer] & 3 ? operation_count - 1 : 4)) goto increment;
 	if (pointer < hole_count - 1) goto reset_;
@@ -404,13 +512,9 @@ init:  	pointer = 0;
 	u16 was_utilized = 0;
 	byte a = 0;  // rename this to "zskip_at"
 
-	byte previous_op = graph[20];     
-
+	byte previous_op = graph[20];
 					// make this not use this temporary variable, by using   index and index + 4   
-
 	for (byte index = 20; index < graph_count; index += 4) {                 
-
-
 					// (except if index+4==graphcount, then we will  just say its index.. yeah)
 
 		const byte op = graph[index];
@@ -432,7 +536,7 @@ init:  	pointer = 0;
 
 		if (graph[4 * index] == three and graph[4 * index + 1] == index) {  a = 4 * index + 1 * (index == three); goto bad; } //  5:   2 5 x x
 
-		if (graph[4 * index] == six and graph[4 * graph[4 * index + 3]] == one) {
+		if (graph[4 * index] == six and graph[4 * graph[4 * index + 3]] == one) {      //  6  --e->  1  (0)
 			if (index == six) { a = 4 * index + 3; goto bad; } 
 			const byte tohere = graph[4 * index + 3];
 			if (tohere == one) { a = 4 * index; goto bad; }
@@ -566,17 +670,12 @@ int main(void) {
 	for (nat i = 0; i < thread_count; i++) pthread_create(threads + i, NULL, worker_thread, NULL);
 
 	while (1) {
-		const nat h = atomic_fetch_add_explicit(&head, 0, memory_order_relaxed);   
-
-				// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
-				// CHANGED:   yup, its correct i think.
-		
+		const nat h = atomic_fetch_add_explicit(&head, 0, memory_order_relaxed);
 		printf("%llu .. %lf%%\n", h, (double) h / (double) space_size);
 		if (h >= space_size) {
 			printf("info: [all jobs allocated to threads. waiting for them to finish.]\n");
 			break;
 		}
-
 		sleep(1 << display_rate);
 	}
 
@@ -596,6 +695,145 @@ int main(void) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+	// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
+				// CHANGED:   yup, its correct i think.
+
+
+
+
+
+
+
+
+
+
+
+static nat execute_graph_starting_at(byte origin) {
+
+
+}
+
+
+
+
+
+
+
+
+
+
+static nat execute_graph(void) {
+	
+}
+
+static nat fea_execute_graph_starting_at(byte origin) {
+
+	
+}
+
+static nat fea_execute_graph(void) {
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+*/
 
 
 
@@ -1094,5 +1332,268 @@ perror("write openat file");
 
 // if (not array[pointer])    { a = PM_ne0; goto bad; }     // delete me!!!!     redundant becuaes of pco.
 
+/*
+
+
+
+
+
+
+
+
+
+
+for (byte o = 0; o < operation_count; o++) {
+		if (graph[4 * o] != three) continue;
+		if (not fea_execute_graph_starting_at(o, graph, array)) return false;
+	}
+	return true;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	const nat n = array_size;
+	array[0] = 0; 
+	array[n] = 0; 
+	memset(timeout, 0, operation_count * sizeof(nat));
+
+	byte ip = origin, last_mcal_op = 0;
+
+	nat 	e = 0,  xw = 0,
+		pointer = 0,  er_count = 0, 
+	    	OER_er_at = 0,  OER_counter = 0, 
+		R0I_counter = 0, H_counter = 0,
+		RMV_counter = 0, RMV_value = 0, CSM_counter = 0;
+
+	for (; e < execution_limit; e++) {
+
+		if (e == expansion_check_timestep2) { 
+			for (byte i = 0; i < 5; i++) {
+				if (array[i] < required_s0_increments) return true; 
+			}
+		}
+
+		if (e == expansion_check_timestep)  { 
+			if (er_count < required_er_count) return true; 
+		}
+		
+		const byte I = ip * 4, op = graph[I];
+
+		for (nat i = 0; i < operation_count; i++) {
+			if (timeout[i] >= execution_limit >> 1) return true; 
+			timeout[i]++;
+		}
+		timeout[ip] = 0;
+
+		if (op == one) {
+			if (pointer == n) return true; 
+			if (not array[pointer]) return true; 
+
+			if (last_mcal_op == one) H_counter = 0;
+			if (last_mcal_op == five) R0I_counter = 0;
+
+			pointer++;
+
+			if (pointer > xw and pointer < n) {    // <--------- ALSO CHANGED THIS ONE TOO.
+				xw = pointer; 
+				array[pointer] = 0; 
+			}
+		}
+
+		else if (op == five) {
+			if (last_mcal_op != three) return true; 
+			if (not pointer) return true; 
+				
+			if (	pointer == OER_er_at or 
+				pointer == OER_er_at + 1) OER_counter++;
+			else { OER_er_at = pointer; OER_counter = 0; }
+			if (OER_counter >= max_acceptable_er_repetions) return true; 
+			
+			CSM_counter = 0;
+			RMV_value = (nat) -1;
+			RMV_counter = 0;
+			for (nat i = 0; i < xw; i++) {
+				if (array[i] < 6) CSM_counter++; else CSM_counter = 0;
+				if (CSM_counter > max_acceptable_consequtive_small_modnats) return true; 
+				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
+				if (RMV_counter >= max_acceptable_modnat_repetions) return true; 
+			}
+
+			pointer = 0;
+			er_count++;
+		}
+
+		else if (op == two) {
+			array[n]++;
+			if (array[n] >= 65535) return true; 
+		}
+
+		else if (op == six) {  
+			if (not array[n]) return true; 
+			array[n] = 0;   
+		}
+
+		else if (op == three) {
+			if (last_mcal_op == three) return true; 
+
+			if (last_mcal_op == one) {
+				H_counter++;
+				if (H_counter >= max_acceptable_run_length) return true; 
+			}
+
+			if (last_mcal_op == five) {
+				R0I_counter++; 
+				if (R0I_counter >= max_acceptable_consecutive_s0_incr) return true; 
+			}
+
+			if (array[pointer] >= 65535) return true; 
+			array[pointer]++;
+		}
+
+		if (op == three or op == one or op == five) last_mcal_op = op;
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		ip = graph[I + state];
+	}
+	return false;
+
+
+
+
+
+
+
+
+for (byte o = 0; o < operation_count; o++) {
+		if (graph[4 * o] != three) continue;
+		if (not execute_graph_starting_at(o, graph, array, timeout)) return false;
+	}
+	return true;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	const nat n = 5;
+	array[n] = 0; 
+	array[0] = 0; 
+
+	byte ip = origin, last_mcal_op = 0;
+	nat pointer = 0, e = 0, xw = 0;
+
+	for (; e < fea_execution_limit; e++) {
+
+		const byte I = ip * 4, op = graph[I];
+
+		if (op == one) {
+			if (pointer == n) return true;
+			if (not array[pointer]) return true;
+			pointer++;
+
+			// new correct lazy zeroing:
+
+			if (pointer > xw and pointer < n) { 
+				xw = pointer; 
+				array[pointer] = 0; 
+			}
+
+
+			// WAS:  if (pointer > xw) { xw = pointer; array[pointer] = 0; }   // ERROR HERE!!!!
+			
+			
+
+			/////////////////////////////////////////////////////////////////////////////////////////
+			
+
+				//  WHAT IF pointer ALIAS's   STAR N!!!!!!!   CRAPPP
+
+				// we'll reset it, and thus change the graphs behavior!!!!
+
+
+
+
+
+					// we had added the lazy zeroing opt to the fea pass,  and thus the "i == n" alias condition will occur MUCH more likely!!!
+
+			/////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+		}
+
+		else if (op == five) {
+			if (last_mcal_op != three) return true;
+			if (not pointer) return true;
+			pointer = 0;
+		}
+
+		else if (op == two) { array[n]++; }
+		else if (op == six) {  
+			if (not array[n]) return true;
+			array[n] = 0;   
+		}
+
+		else if (op == three) {
+			if (last_mcal_op == three) return true;
+			array[pointer]++;
+		}
+
+		if (op == three or op == one or op == five) last_mcal_op = op;
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		ip = graph[I + state];
+	}
+	return false; 
+
+
+
+
+
+
+
+
+*/
+
+
+
+
+//if (executed[I + state] < 253) executed[I + state]++;
+
+
+
+
+
+
+
+// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
+						// CHANGED: yup, we can just use memory_order_relaxed. 
 
 

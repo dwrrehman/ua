@@ -65,7 +65,7 @@ typedef uint16_t u16;
 
 enum operations { one, two, three, five, six };
 
-static const byte D = 1;        // the duplication count (operation_count = 5 + D)
+static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 
 static const nat fea_execution_limit = 5000;
 static const nat execution_limit = 50000000;
@@ -75,20 +75,23 @@ static const nat array_size = 100000;
 enum pruning_metrics {
 	z_is_good, PM_ga, PM_fea, PM_ns0, 
 	PM_pco, PM_zr5, PM_zr6, PM_ndi, 
-	PM_oer, PM_r0i, PM_h, PM_f1e, 
+	PM_oer, PM_r0i, PM_h0, PM_f1e, 
 	PM_erc, PM_rmv, PM_ot, PM_csm, 
 	PM_mm, PM_snm, PM_bdl, PM_bdl2, 
-	PM_erw, PM_mcal, PM_snl,
+	PM_erw, PM_mcal, PM_snl, 
+	PM_h1, PM_h2, PM_h3, PM_eda,
 	PM_count
 };
 
 static const char* pm_spelling[] = {
 	"z_is_good", "PM_ga", "PM_fea", "PM_ns0", 
 	"PM_pco", "PM_zr5", "PM_zr6", "PM_ndi", 
-	"PM_oer", "PM_r0i", "PM_h", "PM_f1e", 
+	"PM_oer", "PM_r0i", "PM_h0", "PM_f1e", 
 	"PM_erc", "PM_rmv", "PM_ot", "PM_csm", 
 	"PM_mm", "PM_snm", "PM_bdl", "PM_bdl2", 
-	"PM_erw", "PM_mcal", "PM_snl",
+	"PM_erw", "PM_mcal", "PM_snl", 
+	"PM_h1", "PM_h2", "PM_h3", "PM_eda",
+
 };
 
 static const byte operation_count = 5 + D;
@@ -98,9 +101,13 @@ static const nat max_acceptable_er_repetions = 50;
 static const nat max_acceptable_bdl_er_repetions = 25;
 static const nat max_acceptable_modnat_repetions = 15;
 static const nat max_acceptable_consecutive_s0_incr = 30;
-static const nat max_acceptable_run_length = 9;
-static const nat max_acceptable_consequtive_small_modnats = 200;
+static const nat max_acceptable_consecutive_small_modnats = 200;
 static const nat max_acceptable_sn_loop_iterations = 100 * 2;
+
+static const nat max_acceptable_consecutive_h0_bouts = 10;
+static const nat max_acceptable_consecutive_h1_bouts = 30;
+static const nat max_acceptable_consecutive_h2_bouts = 30;
+static const nat max_acceptable_consecutive_h3_bouts = 30;
 
 static const nat expansion_check_timestep = 5000;
 static const nat required_er_count = 25;
@@ -223,15 +230,15 @@ static nat execute_graph_starting_at(byte origin) {
 	byte ip = origin, last_mcal_op = 255, last_op = 0, mcal_path = 0;
 
 	nat 	e = 0,  xw = 0, 
-		pointer = 0,  er_count = 0, 
+		pointer = 0,  er_count = 0, bout_length = 0,
 		walk_ia_counter = 0, ERW_counter = 0, 
 		SNL_counter = 0,   mcal_index = 0,
 	    	OER_er_at = 0,  OER_counter = 0, 
 		BDL_er_at = 0,  BDL_counter = 0, 
 		BDL2_er_at = 0,  BDL2_counter = 0, 
-		R0I_counter = 0, H_counter = 0,
+		R0I_counter = 0, H0_counter = 0, 
+		H1_counter = 0, H2_counter = 0, H3_counter = 0,
 		RMV_counter = 0, RMV_value = 0, CSM_counter = 0;
-		
 
 	for (; e < execution_limit; e++) {
 
@@ -257,9 +264,10 @@ static nat execute_graph_starting_at(byte origin) {
 			if (pointer == n) return PM_fea; 
 			if (not array[pointer]) return PM_ns0; 
 
-			if (last_mcal_op == one) H_counter = 0;
+			if (last_mcal_op == one)  H0_counter = 0;
 			if (last_mcal_op == five) R0I_counter = 0;
 
+			bout_length++;
 			pointer++;
 
 			if (pointer > xw and pointer < n) { 
@@ -292,7 +300,7 @@ static nat execute_graph_starting_at(byte origin) {
 			RMV_counter = 0;
 			for (nat i = 0; i < xw; i++) {
 				if (array[i] < 6) CSM_counter++; else CSM_counter = 0;
-				if (CSM_counter > max_acceptable_consequtive_small_modnats) return PM_csm; 
+				if (CSM_counter > max_acceptable_consecutive_small_modnats) return PM_csm; 
 				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
 				if (RMV_counter >= max_acceptable_modnat_repetions) return PM_rmv; 
 			}
@@ -327,16 +335,32 @@ static nat execute_graph_starting_at(byte origin) {
 		else if (op == three) {
 			if (last_mcal_op == three) return PM_ndi; 
 
-			if (last_mcal_op == one) {
-				H_counter++;
-				if (H_counter >= max_acceptable_run_length) return PM_h; 
-			}
-
 			if (last_mcal_op == five) {
 				R0I_counter++; 
 				if (R0I_counter >= max_acceptable_consecutive_s0_incr) return PM_r0i; 
 			}
 
+			if (last_mcal_op == one) {
+				H0_counter++;
+				if (H0_counter >= max_acceptable_consecutive_h0_bouts) return PM_h0; 
+			}
+
+			if (bout_length == 1) {
+				H1_counter++;
+				if (H1_counter >= max_acceptable_consecutive_h1_bouts) return PM_h1; 
+			} else H1_counter = 0;
+
+			if (bout_length == 2) {
+				H2_counter++;
+				if (H2_counter >= max_acceptable_consecutive_h2_bouts) return PM_h2; 
+			} else H2_counter = 0;
+
+			if (bout_length == 3) {
+				H3_counter++;
+				if (H3_counter >= max_acceptable_consecutive_h3_bouts) return PM_h3; 
+			} else H3_counter = 0;
+
+			bout_length = 0;
 			walk_ia_counter++;
 
 			if (array[pointer] >= 65535) return PM_mm; 
@@ -366,13 +390,15 @@ static nat execute_graph_starting_at(byte origin) {
 
 		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return PM_mcal;
 
-
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
+		
 		ip = graph[I + state];
 	}
+
+
 	return z_is_good;
 }
 
@@ -392,77 +418,6 @@ static nat execute_graph_starting_at(byte origin) {
 
 
 
-
-
-
-
-
-
-
-/*
-
-
-
-
-        [   main  ]   [  x  ]               x := extra
-	3 1 3 5 3 1   3 1 3 [5]   <--- deleted  the thing in brackets
-
-        [   main  ]   [ x ]
-	3 1 3 5 3 1   1 3 5 [X]   <--- deleted  the thing in brackets
-
-
-
-
-
-
-
-
-
-const nat mcal_string0_length = 10;
-		const byte mcal_string0[] = { 255, three, one, three, five, three, one,   three, one, three, five };
-
-		const nat mcal_string1_length = 9;
-		const byte mcal_string1[] = { 255, three, one, three, five, three, one,   one, three, five };
-
-
-		if (	mcal_index < mcal_string0_length and 
-			last_mcal_op != mcal_string0[mcal_index]
-
-			and 
-
-			mcal_index < mcal_string1_length and 
-			last_mcal_op != mcal_string1[mcal_index]
-
-			) return PM_mcal;
-
-		
-
-
-
-
-
-		if (mcal_index == 7  and last_mcal_op != x) return PM_mcal;
-		if (mcal_index == 8  and last_mcal_op != x) return PM_mcal;
-		if (mcal_index == 9  and last_mcal_op != x) return PM_mcal;
-		if (mcal_index == 10 and last_mcal_op != x) return PM_mcal;
-		
-
-		if (mcal_index == 7  and last_mcal_op != x) 	return PM_mcal;
-		if (mcal_index == 8  and last_mcal_op != x) return PM_mcal;
-		if (mcal_index == 9  and last_mcal_op != x) return PM_mcal;
-		
-
-
-
-
-
-
-// printf("[MCAL index = %llu]: expected %hhu, "); 
-
-
-
-
-*/
 
 
 
@@ -1151,8 +1106,7 @@ int main(int argc, const char** argv) {
 	// runtime computation:
 	printf("using [D=%hhu]: spacesize=%llu\n", D, space_size);
 
-	if (argc <= 1) return puts("give input z list filename as "
-		"an argument! eg, ./run old_zlists/1202311234.131009_\\(1202309214.131350_0_0_0_good.txt\\)_114_pruned.txt");
+	if (argc <= 1) return puts("give input z list filename as an argument!");
 
 	FILE* file = fopen(argv[1], "r");
 	if (not file) { perror("fopen"); exit(1); }
@@ -1401,11 +1355,239 @@ static byte* positions = NULL;
 
 
 
+
+
+
+
+
+
+
+
+
+Dedup:   14
+
+--------------
+
+* 0121102521433102400102624001
+* 0122102521433062400106614201
+
+
+0  1  2  1  1  0  4  5  2  0  4  3  3  6  0  2  4  0  0  6   0  1  6  6   1  1  2  4 
+ 
+0  1  2  1  1  0  4  5  2  0  4  3  3  1  1  2  4  0  0  6   0  1  6  6   1  1  2  4 
+
+0  1  2  1  1  0  4  5  2  0  4  3  3  6  1  2  4  0  0  6   0  1  6  6   1  1  2  4 
+
+0  1  2  1  1  0  4  5  2  0  4  3  3  1  6  2  4  0  0  6   0  1  6  6   1  1  2  4 
+
+0  1  2  1  1  0  4  5  2  0  4  3  3  6  6  2  4  0  0  6   0  1  6  6   1  1  2  4 
+
+0  1  4  6  1  0  6  5  2  0  0  3  3  0  1  1  4  2  0  6   0  1  6  6   1  1  2  4 
+
+0  1  4  6  1  0  6  5  2  0  0  3  3  0  4  1  4  2  0  6   0  1  6  6   1  1  2  4 
+
+0  1  4  6  1  0  3  5  2  0  0  1  3  5  6  4  4  2  0  6   0  1  6  6   1  1  2  4 
+
+
+
+
+0  1  4  6  1  0  2  5  2  0  3  3  3  0  4  0  4  2  0  6   0  4  1  1   1  4  1  4 
+
+0  1  4  6  1  0  2  5  2  0  3  0  3  1  4  0  4  2  0  6   0  4  1  1   1  4  1  4 
+ 
+0  1  4  6  1  0  2  5  2  0  3  0  3  0  4  1  4  2  0  6   0  4  1  1   1  4  1  4 
+
+
+
+
+0  1  4  6  1  0  6  5  2  0  0  3  3  0  1  1  4  2  0  6   0  6  1  6   1  2  2  4 
+
+
+
+
+
+ip    6:
+---------------
+
+
+012110452043360240060166 1124
+012110452043361240060166 1124
+012110452043364240060166 1124
+012110452043366240060166 1124
+
+01461065200330114206 0616 1224
+01461065200330614206 0616 1224
+
+
+
+
+
+
 */
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+202405013.192700:
+
+	for (nat i = 0; i < graph_count; i++) {
+
+		if (not (i & 3)) continue;
+
+		if (edge_was_executed & (1 << i)) continue;
+
+		if (graph[i]) {      // if we can think of a CORRECT way to canonicalize the z list w.r.t empirical deadstops,
+						// then we can have EDA. until then, no we can't.  its wrong. 
+
+					// we can't require   0   to be located at a deadstop          willy nilly,   because GA CARES ABOUT THAT
+
+														A LOT
+
+
+
+
+			printf("edge_was_executed = %llx\n", edge_was_executed);
+			printf("found an EDA error in   graph = ");
+			print_graph();
+			puts("");
+			printf("the error was that graph[%llu] was found to be nonzero, (value %hhu).", i, graph[i]);
+
+			return PM_eda;
+		}
+	}
+
+
+						this code prunes          0122102521433062400106614201 1202403155.232327     
+
+									   when it shouldnt. 
+
+							this graph is fine, perfectly good,    it was just constrained by GA    when in search
+
+
+							to have    1       at position   [19]    which is not executed in this graph due to an emergent deadstop, but shouldnt be forced to be 0, becuase GA pruned that graph that had that.
+
+
+
+
+
+
+
+
+
+
+
+ 0122102521433062400106614201 1202403155.232327  
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        [   main  ]   [  x  ]               x := extra
+	3 1 3 5 3 1   3 1 3 [5]   <--- deleted  the thing in brackets
+
+        [   main  ]   [ x ]
+	3 1 3 5 3 1   1 3 5 [X]   <--- deleted  the thing in brackets
+
+
+
+
+
+
+
+
+
+const nat mcal_string0_length = 10;
+		const byte mcal_string0[] = { 255, three, one, three, five, three, one,   three, one, three, five };
+
+		const nat mcal_string1_length = 9;
+		const byte mcal_string1[] = { 255, three, one, three, five, three, one,   one, three, five };
+
+
+		if (	mcal_index < mcal_string0_length and 
+			last_mcal_op != mcal_string0[mcal_index]
+
+			and 
+
+			mcal_index < mcal_string1_length and 
+			last_mcal_op != mcal_string1[mcal_index]
+
+			) return PM_mcal;
+
+		
+
+
+
+
+
+		if (mcal_index == 7  and last_mcal_op != x) return PM_mcal;
+		if (mcal_index == 8  and last_mcal_op != x) return PM_mcal;
+		if (mcal_index == 9  and last_mcal_op != x) return PM_mcal;
+		if (mcal_index == 10 and last_mcal_op != x) return PM_mcal;
+		
+
+		if (mcal_index == 7  and last_mcal_op != x) 	return PM_mcal;
+		if (mcal_index == 8  and last_mcal_op != x) return PM_mcal;
+		if (mcal_index == 9  and last_mcal_op != x) return PM_mcal;
+		
+
+
+
+
+
+
+// printf("[MCAL index = %llu]: expected %hhu, "); 
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+// edge_was_executed |= 1 << (I + state);
 
 
