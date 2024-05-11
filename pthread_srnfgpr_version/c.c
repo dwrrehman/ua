@@ -2,19 +2,14 @@
 //      the prthead  cpu-parellelized version of the srnfgpr.
 //
 #include <time.h>
-#include <math.h>
 #include <string.h>
 #include <unistd.h>
-#include <termios.h>
 #include <fcntl.h>
 #include <iso646.h>
-#include <signal.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdatomic.h>
-#include <stdnoreturn.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -25,8 +20,8 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 1;        // the duplication count (operation_count = 5 + D)
-static const bool R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
+static const byte D = 2;        // the duplication count (operation_count = 5 + D)
+static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat job_size = 100000;
 static const nat thread_count = 3;
@@ -35,25 +30,28 @@ static const nat display_rate = 2;
 enum operations { one, two, three, five, six };
 
 enum pruning_metrics {
-	z_is_good, PM_ga, PM_fea, PM_ns0, 
-	PM_pco, PM_zr5, PM_zr6, PM_ndi, 
-	PM_oer, PM_r0i, PM_h0, PM_f1e, 
-	PM_erc, PM_rmv, PM_ot, PM_csm, 
-	PM_mm, PM_snm, PM_bdl, PM_bdl2, 
-	PM_erw, PM_mcal, PM_snl, 
-	PM_h1, PM_h2, PM_h3, PM_eda,
-	PM_count
+	z_is_good, pm_ga, pm_fea, pm_ns0, 
+	pm_pco, pm_zr5, pm_zr6, pm_ndi, 
+	pm_oer, pm_r0i, pm_h0, pm_f1e, 
+	pm_erc, pm_rmv, pm_ot, pm_csm, 
+	pm_mm, pm_snm, pm_bdl, pm_bdl2, 
+	pm_erw, pm_mcal, pm_snl, 
+	pm_h1, pm_h2, pm_h3, pm_per,
+	pmf_fea, pmf_ns0, pmf_pco,
+	pmf_zr5, pmf_zr6, pmf_ndi,
+	pm_count
 };
 
-static const char* pm_spelling[] = {
-	"z_is_good", "PM_ga", "PM_fea", "PM_ns0", 
-	"PM_pco", "PM_zr5", "PM_zr6", "PM_ndi", 
-	"PM_oer", "PM_r0i", "PM_h0", "PM_f1e", 
-	"PM_erc", "PM_rmv", "PM_ot", "PM_csm", 
-	"PM_mm", "PM_snm", "PM_bdl", "PM_bdl2", 
-	"PM_erw", "PM_mcal", "PM_snl", 
-	"PM_h1", "PM_h2", "PM_h3", "PM_eda",
-
+static const char* pm_spelling[pm_count] = {
+	"z_is_good", "pm_ga", "pm_fea", "pm_ns0", 
+	"pm_pco", "pm_zr5", "pm_zr6", "pm_ndi", 
+	"pm_oer", "pm_r0i", "pm_h0", "pm_f1e", 
+	"pm_erc", "pm_rmv", "pm_ot", "pm_csm", 
+	"pm_mm", "pm_snm", "pm_bdl", "pm_bdl2", 
+	"pm_erw", "pm_mcal", "pm_snl", 
+	"pm_h1", "pm_h2", "pm_h3", "pm_per",
+	"pmf_fea", "pmf_ns0", "pmf_pco",
+	"pmf_zr5", "pmf_zr6", "pmf_ndi",
 };
 
 static const byte _ = 0;
@@ -91,16 +89,17 @@ static const nat fea_execution_limit = 5000;
 static const nat execution_limit = 10000000000;
 static const nat array_size = 100000;
 
-static const nat max_acceptable_er_repetions = 50;
-static const nat max_acceptable_modnat_repetions = 15;
-static const nat max_acceptable_consecutive_s0_incr = 30;
-static const nat max_acceptable_consecutive_small_modnats = 200;
-static const nat max_acceptable_bdl_er_repetions = 25;
-static const nat max_acceptable_sn_loop_iterations = 100 * 2;
-static const nat max_acceptable_consecutive_h0_bouts = 10;
-static const nat max_acceptable_consecutive_h1_bouts = 30;
-static const nat max_acceptable_consecutive_h2_bouts = 30;
-static const nat max_acceptable_consecutive_h3_bouts = 30;
+static const nat max_er_repetions = 50;
+static const nat max_erw_count = 100;
+static const nat max_modnat_repetions = 15;
+static const nat max_consecutive_s0_incr = 30;
+static const nat max_consecutive_small_modnats = 200;
+static const nat max_bdl_er_repetions = 25;
+static const nat max_sn_loop_iterations = 100 * 2;
+static const nat max_consecutive_h0_bouts = 10;
+static const nat max_consecutive_h1_bouts = 30;
+static const nat max_consecutive_h2_bouts = 30;
+static const nat max_consecutive_h3_bouts = 30;
 
 static const nat expansion_check_timestep = 5000;
 static const nat required_er_count = 25;
@@ -116,9 +115,6 @@ static pthread_t* threads = NULL;
 // globals:
 static _Atomic nat head;
 
-
-
-
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
 
 static void get_graphs_z_value(char string[64], byte* graph) {
@@ -133,7 +129,7 @@ static void get_datetime(char datetime[32]) {
 	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
 }
 
-static bool execute_graph_starting_at(byte origin, byte* graph, nat* array, nat* timeout) {
+static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, nat* timeout) {
 
 	const nat n = array_size;
 	array[0] = 0; 
@@ -141,7 +137,6 @@ static bool execute_graph_starting_at(byte origin, byte* graph, nat* array, nat*
 	memset(timeout, 0, operation_count * sizeof(nat));
 
 	byte ip = origin, last_mcal_op = 255, last_op = 0, mcal_path = 0;
-
 	nat 	e = 0,  xw = 0, 
 		pointer = 0,  er_count = 0, bout_length = 0,
 		walk_ia_counter = 0, ERW_counter = 0, 
@@ -153,29 +148,31 @@ static bool execute_graph_starting_at(byte origin, byte* graph, nat* array, nat*
 		H1_counter = 0, H2_counter = 0, H3_counter = 0,
 		RMV_counter = 0, RMV_value = 0, CSM_counter = 0;
 
+	nat did_ier_at = (nat)~0;
+
 	for (; e < execution_limit; e++) {
 
 		if (e == expansion_check_timestep2) { 
 			for (byte i = 0; i < 5; i++) {
-				if (array[i] < required_s0_increments) return PM_f1e; 
+				if (array[i] < required_s0_increments) return pm_f1e; 
 			}
 		}
 
 		if (e == expansion_check_timestep)  { 
-			if (er_count < required_er_count) return PM_erc; 
+			if (er_count < required_er_count) return pm_erc; 
 		}
 		
 		const byte I = ip * 4, op = graph[I];
 
 		for (nat i = 0; i < operation_count; i++) {
-			if (timeout[i] >= execution_limit >> 1) return PM_ot; 
+			if (timeout[i] >= execution_limit >> 1) return pm_ot; 
 			timeout[i]++;
 		}
 		timeout[ip] = 0;
 
 		if (op == one) {
-			if (pointer == n) return PM_fea; 
-			if (not array[pointer]) return PM_ns0; 
+			if (pointer == n) return pm_fea; 
+			if (not array[pointer]) return pm_ns0; 
 
 			if (last_mcal_op == one)  H0_counter = 0;
 			if (last_mcal_op == five) R0I_counter = 0;
@@ -190,115 +187,119 @@ static bool execute_graph_starting_at(byte origin, byte* graph, nat* array, nat*
 		}
 
 		else if (op == five) {
-			if (last_mcal_op != three) return PM_pco; 
-			if (not pointer) return PM_zr5; 
+			if (last_mcal_op != three) return pm_pco; 
+			if (not pointer) return pm_zr5; 
 			
 			if (	pointer == OER_er_at or 
 				pointer == OER_er_at + 1) OER_counter++;
 			else { OER_er_at = pointer; OER_counter = 0; }
-			if (OER_counter >= max_acceptable_er_repetions) return PM_oer; 
+			if (OER_counter >= max_er_repetions) return pm_oer; 
 
 			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
 			else { BDL_er_at = pointer; BDL_counter = 0; }
-			if (BDL_counter >= max_acceptable_bdl_er_repetions) return PM_bdl; 
+			if (BDL_counter >= max_bdl_er_repetions) return pm_bdl; 
 
 			if (BDL2_er_at > 1 and pointer == BDL2_er_at - 2) { BDL2_counter++; BDL2_er_at -= 2; }
 			else { BDL2_er_at = pointer; BDL2_counter = 0; }
-			if (BDL2_counter >= max_acceptable_bdl_er_repetions) return PM_bdl2; 
+			if (BDL2_counter >= max_bdl_er_repetions) return pm_bdl2; 
 
 			CSM_counter = 0;
 			RMV_value = (nat) -1;
 			RMV_counter = 0;
 			for (nat i = 0; i < xw; i++) {
 				if (array[i] < 6) CSM_counter++; else CSM_counter = 0;
-				if (CSM_counter > max_acceptable_consecutive_small_modnats) return PM_csm; 
+				if (CSM_counter > max_consecutive_small_modnats) return pm_csm; 
 				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
-				if (RMV_counter >= max_acceptable_modnat_repetions) return PM_rmv; 
+				if (RMV_counter >= max_modnat_repetions) return pm_rmv; 
 			}
 
 			if (walk_ia_counter == 1) {
 				ERW_counter++;
-				if (ERW_counter == 100) return PM_erw;
+				if (ERW_counter == max_erw_count) return pm_erw;
 			} else ERW_counter = 0;
-			walk_ia_counter = 0;
 
-			pointer = 0;
+			did_ier_at = pointer;
+			walk_ia_counter = 0;
 			er_count++;
+			pointer = 0;
 		}
 
 		else if (op == two) {
-			if (array[n] >= 65535) return PM_snm; 
-
+			if (array[n] >= 65535) return pm_snm; 
 			if (last_op == six) SNL_counter++; else SNL_counter = 0;
-			if (SNL_counter == max_acceptable_sn_loop_iterations) return PM_snl;
+			if (SNL_counter == max_sn_loop_iterations) return pm_snl;
 
 			array[n]++;
 		}
 		else if (op == six) {  
-			if (not array[n]) return PM_zr6; 
-
+			if (not array[n]) return pm_zr6; 
 			if (last_op == two) SNL_counter++; else SNL_counter = 0;
-			if (SNL_counter == max_acceptable_sn_loop_iterations) return PM_snl;
+			if (SNL_counter == max_sn_loop_iterations) return pm_snl;
 
 			array[n] = 0;
 		}
 		else if (op == three) {
-			if (last_mcal_op == three) return PM_ndi; 
+			if (last_mcal_op == three) return pm_ndi; 
 
 			if (last_mcal_op == five) {
 				R0I_counter++; 
-				if (R0I_counter >= max_acceptable_consecutive_s0_incr) return PM_r0i; 
+				if (R0I_counter >= max_consecutive_s0_incr) return pm_r0i; 
 			}
 
 			if (last_mcal_op == one) {
 				H0_counter++;
-				if (H0_counter >= max_acceptable_consecutive_h0_bouts) return PM_h0; 
+				if (H0_counter >= max_consecutive_h0_bouts) return pm_h0; 
 			}
 
 			if (bout_length == 1) {
 				H1_counter++;
-				if (H1_counter >= max_acceptable_consecutive_h1_bouts) return PM_h1; 
+				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
 			} else H1_counter = 0;
 
 			if (bout_length == 2) {
 				H2_counter++;
-				if (H2_counter >= max_acceptable_consecutive_h2_bouts) return PM_h2; 
+				if (H2_counter >= max_consecutive_h2_bouts) return pm_h2; 
 			} else H2_counter = 0;
 
 			if (bout_length == 3) {
 				H3_counter++;
-				if (H3_counter >= max_acceptable_consecutive_h3_bouts) return PM_h3; 
+				if (H3_counter >= max_consecutive_h3_bouts) return pm_h3; 
 			} else H3_counter = 0;
+
+			if (did_ier_at != (nat) ~0) {
+				if (pointer >= did_ier_at) return pm_per;
+				did_ier_at = (nat) ~0;
+			}
 
 			bout_length = 0;
 			walk_ia_counter++;
 
-			if (array[pointer] >= 65535) return PM_mm; 
+			if (array[pointer] >= 65535) return pm_mm; 
 			array[pointer]++;
 		}
 
 		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
 		last_op = op;
 
-		if (mcal_index == 1  and last_mcal_op != three) return PM_mcal; 
-		if (mcal_index == 2  and last_mcal_op != one) 	return PM_mcal;
-		if (mcal_index == 3  and last_mcal_op != three) return PM_mcal;
-		if (mcal_index == 4  and last_mcal_op != five) 	return PM_mcal;
-		if (mcal_index == 5  and last_mcal_op != three) return PM_mcal;
-		if (mcal_index == 6  and last_mcal_op != one) 	return PM_mcal;
+		if (mcal_index == 1  and last_mcal_op != three) return pm_mcal; 
+		if (mcal_index == 2  and last_mcal_op != one) 	return pm_mcal;
+		if (mcal_index == 3  and last_mcal_op != three) return pm_mcal;
+		if (mcal_index == 4  and last_mcal_op != five) 	return pm_mcal;
+		if (mcal_index == 5  and last_mcal_op != three) return pm_mcal;
+		if (mcal_index == 6  and last_mcal_op != one) 	return pm_mcal;
 
 		if (mcal_index == 7) {
-			if (last_mcal_op == five) return PM_mcal;
+			if (last_mcal_op == five) return pm_mcal;
 			mcal_path = last_mcal_op == three ? 1 : 2;
 		}
 
-		if (mcal_index == 8 and mcal_path == 1 and last_mcal_op != one)  	return PM_mcal;
-		if (mcal_index == 8 and mcal_path == 2 and last_mcal_op != three)  	return PM_mcal;
+		if (mcal_index == 8 and mcal_path == 1 and last_mcal_op != one)  	return pm_mcal;
+		if (mcal_index == 8 and mcal_path == 2 and last_mcal_op != three)  	return pm_mcal;
 
-		if (mcal_index == 9 and mcal_path == 1 and last_mcal_op != three)  	return PM_mcal;
-		if (mcal_index == 9 and mcal_path == 2 and last_mcal_op != five)  	return PM_mcal;
+		if (mcal_index == 9 and mcal_path == 1 and last_mcal_op != three)  	return pm_mcal;
+		if (mcal_index == 9 and mcal_path == 2 and last_mcal_op != five)  	return pm_mcal;
 
-		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return PM_mcal;
+		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return pm_mcal;
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -307,22 +308,20 @@ static bool execute_graph_starting_at(byte origin, byte* graph, nat* array, nat*
 		
 		ip = graph[I + state];
 	}
-
-
 	return z_is_good;
 }
 
-static bool execute_graph(byte* graph, nat* array, nat* timeout) {
+static nat execute_graph(byte* graph, nat* array, nat* timeout, byte* origin) {
 	nat pm = 0;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
 		pm = execute_graph_starting_at(o, graph, array, timeout);   
-		if (not pm) return z_is_good;
+		if (not pm) { *origin = o; return z_is_good; } 
 	}
 	return pm;
 }
 
-static bool fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) {
+static nat fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 	const nat n = 5;
 	array[n] = 0; 
@@ -336,8 +335,8 @@ static bool fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) 
 		const byte I = ip * 4, op = graph[I];
 
 		if (op == one) {
-			if (pointer == n) return PM_fea;
-			if (not array[pointer]) return PM_ns0;
+			if (pointer == n) return pmf_fea;
+			if (not array[pointer]) return pmf_ns0;
 			pointer++;
 
 			if (pointer > xw and pointer < n) { 
@@ -347,19 +346,19 @@ static bool fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) 
 		}
 
 		else if (op == five) {
-			if (last_mcal_op != three) return PM_pco;
-			if (not pointer) return PM_zr5;
+			if (last_mcal_op != three) return pmf_pco;
+			if (not pointer) return pmf_zr5;
 			pointer = 0;
 		}
 
 		else if (op == two) { array[n]++; }
 		else if (op == six) {  
-			if (not array[n]) return PM_zr6;
+			if (not array[n]) return pmf_zr6;
 			array[n] = 0;   
 		}
 
 		else if (op == three) {
-			if (last_mcal_op == three) return PM_ndi;
+			if (last_mcal_op == three) return pmf_ndi;
 			array[pointer]++;
 		}
 
@@ -374,8 +373,7 @@ static bool fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) 
 	return z_is_good; 
 }
 
-
-static bool fea_execute_graph(byte* graph, nat* array) {
+static nat fea_execute_graph(byte* graph, nat* array) {
 	nat pm = 0;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
@@ -385,9 +383,11 @@ static bool fea_execute_graph(byte* graph, nat* array) {
 	return pm;
 }
 
-static void append_to_file(char* filename, size_t size, byte* graph) {
-	char dt[32] = {0};   get_datetime(dt);                            ////  these should be happening in the workerthread.
-	char z[64] = {0};    get_graphs_z_value(z, graph);                //
+static void append_to_file(char* filename, size_t size, byte* graph, byte origin) {
+	char dt[32] = {0};   get_datetime(dt);
+	char z[64] = {0};    get_graphs_z_value(z, graph); 
+	char o[16] = {0};    snprintf(o, sizeof o, "%hhu", origin);
+
 	int flags = O_WRONLY | O_APPEND;
 	mode_t permissions = 0;
 
@@ -410,12 +410,13 @@ try_open:;
 
 	write(file, z, strlen(z));
 	write(file, " ", 1);
+	write(file, o, strlen(o));
+	write(file, " ", 1);
 	write(file, dt, strlen(dt));
 	write(file, "\n", 1);
-
 	close(file);
 
-	printf("[%s]: write: %s z = %s to file \"%s\"\n",                // do this in the workerthread.
+	printf("[%s]: write: %s z = %s to file \"%s\"\n",
 		dt, permissions ? "created" : "wrote", z, filename
 	);
 }
@@ -423,6 +424,7 @@ try_open:;
 static void* worker_thread(void* __attribute__((unused)) _unused_arg) {
 
 	char filename[4096] = {0};
+	nat* pms = calloc(pm_count, sizeof(nat));
 	nat* array = calloc(array_size + 1, sizeof(nat));
 	nat* timeout = calloc(operation_count, sizeof(nat));
 	void* raw_graph = calloc(1, graph_count + (8 - (graph_count % 8)) % 8);
@@ -436,7 +438,7 @@ static void* worker_thread(void* __attribute__((unused)) _unused_arg) {
 	byte pointer = 0;
 	
 next_job:;
-	const nat h = atomic_fetch_add_explicit(&head, job_size, memory_order_relaxed);  
+	const nat h = atomic_fetch_add_explicit(&head, job_size, memory_order_relaxed);
 	if (h >= space_size) goto terminate_thread;
 
 	const nat range_begin = h;
@@ -448,57 +450,31 @@ next_job:;
 		graph[positions[i]] = (byte) ((range_begin / p) % (nat) (positions[i] & 3 ? operation_count : 5));
 		p *= (nat) (positions[i] & 3 ? operation_count : 5);
 	}
-	if (range_begin >= p) { puts("range_begin is too big!"); printf("range_begin = %llu, p = %llu\n", range_begin, p); abort(); } // delete me?
 
 	p = 1;
 	for (nat i = 0; i < hole_count; i++) {
 		end[positions[i]] = (byte) ((range_end / p) % (nat) (positions[i] & 3 ? operation_count : 5));
 		p *= (nat) (positions[i] & 3 ? operation_count : 5);
 	}
-	if (range_end >= p) { puts("range_end is too big!"); printf("range_end = %llu, p = %llu\n", range_end, p); abort(); }  // delete me?
 
 	goto init;
 
 loop:	for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
 		if (graph_64[i] < end_64[i]) goto process;
-		if (graph_64[i] > end_64[i]) goto do_zskip;      // here, we know we are doing a zskip, becuase we are over the end.
+		if (graph_64[i] > end_64[i]) goto do_zskip; 
 	}
 	goto next_job;
 
-
-
-
-
-
-
 do_zskip:;
-
-	
-	// do an unreduce of the graph. 
-	nat zindex = 0, p = 1;
+	nat zindex = 0;
+	p = 1;
 	for (byte i = 0; i < hole_count; i++) {
 		zindex += p * graph[positions[i]];
 		p *= (nat) (positions[i] & 3 ? operation_count : 5);
 	}
 
-
-
-	// only open part of the multithreading-zskip solution that we devised:    the sychronization part-
-
-	atomic_store_explicit(&head, zindex, memory_order_relaxed);    		// we need this to COME BEFORE the atomic_fetch_add_explicit() call. 
-
-										// (using better  memory orderings  probably???...)
-
-
-	
-
-
+	atomic_store_explicit(&head, zindex, memory_order_relaxed);
 	goto next_job;
-
-
-
-
-
 
 process:
 	if (graph[positions[pointer]] < (positions[pointer] & 3 ? operation_count - 1 : 4)) goto increment;
@@ -508,102 +484,89 @@ process:
 increment:
 	graph[positions[pointer]]++;
 init:  	pointer = 0;
-
 	u16 was_utilized = 0;
-	byte a = 0;  // rename this to "zskip_at"
+	byte at = 0;
 
-	byte previous_op = graph[20];
-					// make this not use this temporary variable, by using   index and index + 4   
-	for (byte index = 20; index < graph_count; index += 4) {                 
-					// (except if index+4==graphcount, then we will  just say its index.. yeah)
-
-		const byte op = graph[index];
-		if (previous_op > op) { a = index; goto bad; }
-		previous_op = op;
+	for (byte index = 20; index < graph_count - 4; index += 4) {
+		if (graph[index] > graph[index + 4]) { at = index; goto bad; }
 	}
-
-	// constructive GA here
 
 	for (byte index = operation_count; index--;) {
 
-		if (graph[4 * index + 3] == index) {  a = 4 * index + 3; goto bad; }
-		
-		if (graph[4 * index] == one   and graph[4 * index + 2] == index) {  a = 4 * index; goto bad; } 			      //  5:   0 x 5 x
+		if (graph[4 * index + 3] == index) {  at = 4 * index + 3; goto bad; }
+		if (graph[4 * index] == one   and graph[4 * index + 2] == index) {  at = 4 * index; goto bad; }
+		if (graph[4 * index] == six   and graph[4 * index + 2])          {  at = 4 * index; goto bad; }
+		if (graph[4 * index] == two   and graph[4 * index + 2] == index) {  at = 4 * index + 2 * (index == two); goto bad; }
+		if (graph[4 * index] == three and graph[4 * index + 1] == index) {  at = 4 * index + 1 * (index == three); goto bad; }
 
-		if (graph[4 * index] == six   and graph[4 * index + 2])          {  a = 4 * index; goto bad; }
-
-		if (graph[4 * index] == two   and graph[4 * index + 2] == index) {  a = 4 * index + 2 * (index == two); goto bad; }   //  5:   1 x 5 x
-
-		if (graph[4 * index] == three and graph[4 * index + 1] == index) {  a = 4 * index + 1 * (index == three); goto bad; } //  5:   2 5 x x
-
-		if (graph[4 * index] == six and graph[4 * graph[4 * index + 3]] == one) {      //  6  --e->  1  (0)
-			if (index == six) { a = 4 * index + 3; goto bad; } 
+		if (graph[4 * index] == six and graph[4 * graph[4 * index + 3]] == one) {
+			if (index == six) { at = 4 * index + 3; goto bad; } 
 			const byte tohere = graph[4 * index + 3];
-			if (tohere == one) { a = 4 * index; goto bad; }
-			a = 4 * (index < tohere ? index : tohere); goto bad;
+			if (tohere == one) { at = 4 * index; goto bad; }
+			at = 4 * (index < tohere ? index : tohere); goto bad;
 		}
  
 		if (graph[4 * index] == six and graph[4 * graph[4 * index + 3]] == five) {
-			if (index == six) { a = 4 * index + 3; goto bad; } 
+			if (index == six) { at = 4 * index + 3; goto bad; } 
 			const byte tohere = graph[4 * index + 3];
-			if (tohere == five) { a = 4 * index; goto bad; }
-			a = 4 * (index < tohere ? index : tohere); goto bad; 
+			if (tohere == five) { at = 4 * index; goto bad; }
+			at = 4 * (index < tohere ? index : tohere); goto bad; 
 		}
  
 		const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
 
 		if (graph[4 * index] == one and graph[4 * e] == one) {
-			if (index == one) { a = 4 * index + 3; goto bad; }
-			if (e == one) { a = 4 * index; goto bad; }
-			a = 4 * (index < e ? index : e); goto bad;
+			if (index == one) { at = 4 * index + 3; goto bad; }
+			if (e == one) { at = 4 * index; goto bad; }
+			at = 4 * (index < e ? index : e); goto bad;
 		}
 
 		if (graph[4 * index] == five and l == g and l == e and graph[4 * e] == one) {
-			if (index == five) { a = 4 * index + 1; goto bad; } 
-			if (e == one) { a = 4 * index; goto bad; }
-			a = 4 * (index < e ? index : e); goto bad; 
+			if (index == five) { at = 4 * index + 1; goto bad; } 
+			if (e == one) { at = 4 * index; goto bad; }
+			at = 4 * (index < e ? index : e); goto bad; 
 		}
 
 		if (graph[4 * index] == five and l == g and l == e and graph[4 * e] == three) {
-			if (index == five) { a = 4 * index + 1; goto bad; } 
-			if (e == three) { a = 4 * index; goto bad; }
-			a = 4 * (index < e ? index : e); goto bad; 
+			if (index == five) { at = 4 * index + 1; goto bad; } 
+			if (e == three) { at = 4 * index; goto bad; }
+			at = 4 * (index < e ? index : e); goto bad; 
 		}
 
 		if (graph[4 * index] == one)
 			for (byte offset = 1; offset < 4; offset++) 
 				if (graph[4 * graph[4 * index + offset]] == five) { 
-					if (index == one) { a = 4 * index + offset; goto bad; } 
+					if (index == one) { at = 4 * index + offset; goto bad; } 
 					const byte tohere = graph[4 * index + offset];
-					if (tohere == five) { a = 4 * index; goto bad; }
-					a = 4 * (index < tohere ? index : tohere); goto bad; 
+					if (tohere == five) { at = 4 * index; goto bad; }
+					at = 4 * (index < tohere ? index : tohere); goto bad; 
 				}
 		
 		if (graph[4 * index] == five) 
 			for (byte offset = 1; offset < 4; offset++) 
 				if (graph[4 * graph[4 * index + offset]] == five) { 
-					if (index == five) { a = 4 * index + offset; goto bad; } 
+					if (index == five) { at = 4 * index + offset; goto bad; } 
 					const byte tohere = graph[4 * index + offset];
-					if (tohere == five) { a = 4 * index; goto bad; } 
-					a = 4 * (index < tohere ? index : tohere); goto bad; 
+					if (tohere == five) { at = 4 * index; goto bad; } 
+					at = 4 * (index < tohere ? index : tohere); goto bad; 
 				}
 
 		if (graph[4 * index] == six) 
 			for (byte offset = 1; offset < 4; offset++) 
 				if (graph[4 * graph[4 * index + offset]] == six) { 
-					if (index == six) { a = 4 * index + offset; goto bad; } 
+					if (index == six) { at = 4 * index + offset; goto bad; } 
 					const byte tohere = graph[4 * index + offset];
-					if (tohere == six) { a = 4 * index; goto bad; } 
-					a = 4 * (index < tohere ? index : tohere); goto bad; 
+					if (tohere == six) { at = 4 * index; goto bad; } 
+					at = 4 * (index < tohere ? index : tohere); goto bad; 
 				}
 
 		if (graph[4 * index] == three) 
 			for (byte offset = 1; offset < 4; offset++) 
 				if (graph[4 * graph[4 * index + offset]] == three) { 
-					if (index == three) { a = 4 * index + offset; goto bad; } 
+					if (index == three) { at = 4 * index + offset; goto bad; } 
 					const byte tohere = graph[4 * index + offset];
-					if (tohere == three) { a = 4 * index; goto bad; } 
-					a = 4 * (index < tohere ? index : tohere); goto bad; 
+					if (tohere == three) { at = 4 * index; goto bad; } 
+					at = 4 * (index < tohere ? index : tohere); goto bad; 
 				}
 		
 		if (l != index) was_utilized |= 1 << l;
@@ -616,14 +579,17 @@ init:  	pointer = 0;
 	goto try_executing;
 bad:
 	for (byte i = 0; i < hole_count; i++) {
-		if (positions[i] == a) { pointer = i; goto loop; } else graph[positions[i]] = 0;
+		if (positions[i] == at) { pointer = i; goto loop; } else graph[positions[i]] = 0;
 	}
 	abort();
 	
-try_executing:
-	if (fea_execute_graph(graph, array)) goto loop;
-	if (execute_graph(graph, array, timeout)) goto loop;
-	append_to_file(filename, sizeof filename, graph);
+try_executing:;
+	nat pm = fea_execute_graph(graph, array);       if (pm) { pms[pm]++; goto loop; } 
+	byte origin;
+	    pm = execute_graph(graph, array, timeout, &origin);  if (pm) { pms[pm]++; goto loop; } 
+
+	pms[z_is_good]++; 
+	append_to_file(filename, sizeof filename, graph, origin);
 
 	printf("\n    FOUND:  z = "); 
 	print_graph_raw(graph); 
@@ -642,7 +608,7 @@ terminate_thread:
 	free(raw_end);
 	free(array);
 	free(timeout);
-	return 0;
+	return pms;
 }
 
 static nat expn(nat base, nat exponent) {
@@ -651,10 +617,11 @@ static nat expn(nat base, nat exponent) {
 	return result;
 }
 
+
+
 int main(void) {
 	srand((unsigned)time(0)); rand();
 
-	// compiletime computation:
 	atomic_init(&head, 0);
 	space_size = expn(5 + D, 9) * expn(5 * expn(5 + D, 3), D);
 	positions = calloc(hole_count, 1);
@@ -662,8 +629,7 @@ int main(void) {
 	for (byte i = 0; i < initial; i++) positions[i] = R ? _63R_hole_positions[i] : _36R_hole_positions[i];
 	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i; 
 
-	// runtime computation:
-	printf("using [D=%hhu, R=%hhu]: threadcount=%llu, jobsize=%llu, spacesize=%llu\n", D, R, thread_count, job_size, space_size);
+	printf("SRNFGPR: searching [D=%hhu, R=%hhu] space....\n", D, R);
 
 	struct timeval time_begin = {0};
 	gettimeofday(&time_begin, NULL);
@@ -679,7 +645,18 @@ int main(void) {
 		sleep(1 << display_rate);
 	}
 
-	for (nat i = 0; i < thread_count; i++) pthread_join(threads[i], NULL);
+	nat counts[pm_count] = {0};
+	for (nat i = 0; i < thread_count; i++) {
+		nat* local_counts = NULL;
+		pthread_join(threads[i], (void**) &local_counts);
+		for (nat j = 0; j < pm_count; j++) counts[j] += local_counts[j];
+		free(local_counts);
+	}
+
+	nat sum = 0;
+	for (nat i = 0; i < pm_count; i++) sum += counts[i];
+	counts[pm_ga] = space_size - sum;
+
 	struct timeval time_end = {0};
 	gettimeofday(&time_end, NULL);
 
@@ -687,11 +664,46 @@ int main(void) {
 	char time_begin_dt[32] = {0}, time_end_dt[32] = {0};
 	strftime(time_end_dt,   32, "1%Y%m%d%u.%H%M%S", localtime(&time_end.tv_sec));
 	strftime(time_begin_dt, 32, "1%Y%m%d%u.%H%M%S", localtime(&time_begin.tv_sec));
-	printf("\n[D=%hhu:R=%hhu]: searched %llu zvs using %llu threads in %10.10lfs[%s:%s], at %lf z/s.\n", 
+
+	printf("using [D=%hhu, R=%hhu]:"
+			"\n\tthreadcount=%llu"
+			"\n\tjobsize=%llu"
+			"\n\tspacesize=%llu"
+			"\n\tdisplay_rate=%llu"
+			"\n\tfea_execution_limit=%llu"
+			"\n\texecution_limit=%llu"
+			"\n\tarray_size=%llu"
+			"\n\n", 
+		D, R,  thread_count,  job_size, space_size, display_rate,
+		fea_execution_limit, execution_limit, array_size
+	);
+
+	printf("\n[D=%hhu:R=%hhu]:\n\tsearched %llu zvs\n\tusing %llu threads\n\tin %10.10lfs[%s:%s],\n\tat %lf z/s.\n\n", 
 		D, R, space_size, thread_count, seconds, time_begin_dt, time_end_dt, zthroughput
 	);
+	printf("\npm counts:\n");
+	for (nat i = 0; i < pm_count; i++) {
+		if (i and not (i % 2)) puts("");
+		printf("%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
+	}
+	puts("\n[done]");
 }
  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -907,7 +919,7 @@ static void write_graph(nat b, nat e) {
 	//
 	//	if (	executed[i + 1] < 5 and graph[i + 1] or         // slightly concerning here... think about this more...? 
 	//		executed[i + 2] < 5 and graph[i + 2] or 
-	//		executed[i + 3] < 5 and graph[i + 3]) { a = PM_eda; goto bad; }
+	//		executed[i + 3] < 5 and graph[i + 3]) { a = pm_eda; goto bad; }
 	//}
 
 
@@ -1596,4 +1608,37 @@ for (byte o = 0; o < operation_count; o++) {
 // TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
 						// CHANGED: yup, we can just use memory_order_relaxed. 
 
+
+
+
+
+// only open part of the multithreading-zskip solution that we devised:    the sychronization part-
+// we need this to COME BEFORE the atomic_fetch_add_explicit() call. 
+// (using better  memory orderings  probably???...)
+
+
+
+
+
+
+// {0 1 3 [4} ]
+	// byte previous_op = graph[20];
+	// make this not use this temporary variable, by using   index and index + 4   
+	// (except if index+4==graphcount, then we will  just say its index.. yeah)
+
+	// constructive GA here
+
+
+
+
+
+     // here, we know we are doing a zskip, becuase we are over the end.
+
+
+
+
+/*
+if (range_begin >= p) { puts("range_begin is too big!"); printf("range_begin = %llu, p = %llu\n", range_begin, p); abort(); } // delete me?
+	if (range_end >= p) { puts("range_end is too big!"); printf("range_end = %llu, p = %llu\n", range_end, p); abort(); }  // delete me?
+*/
 

@@ -68,7 +68,7 @@ enum operations { one, two, three, five, six };
 static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 
 static const nat fea_execution_limit = 5000;
-static const nat execution_limit = 50000000;
+static const nat execution_limit = 10000000;
 static const nat pre_run_ins = 0;
 static const nat array_size = 100000;
 
@@ -79,7 +79,7 @@ enum pruning_metrics {
 	PM_erc, PM_rmv, PM_ot, PM_csm, 
 	PM_mm, PM_snm, PM_bdl, PM_bdl2, 
 	PM_erw, PM_mcal, PM_snl, 
-	PM_h1, PM_h2, PM_h3, PM_eda,
+	PM_h1, PM_h2, PM_h3, PM_per,
 	PM_count
 };
 
@@ -90,7 +90,7 @@ static const char* pm_spelling[] = {
 	"PM_erc", "PM_rmv", "PM_ot", "PM_csm", 
 	"PM_mm", "PM_snm", "PM_bdl", "PM_bdl2", 
 	"PM_erw", "PM_mcal", "PM_snl", 
-	"PM_h1", "PM_h2", "PM_h3", "PM_eda",
+	"PM_h1", "PM_h2", "PM_h3", "PM_per",
 
 };
 
@@ -156,7 +156,7 @@ static void init_graph_from_string(const char* string) {
 static void print_nats(nat* v, nat l) {
 	printf("(%llu)[ ", l);
 	for (nat i = 0; i < l; i++) {
-		printf("%llu ", v[i]);
+		printf("%lld ", v[i]);
 	}
 	printf("]");
 }
@@ -220,6 +220,32 @@ static void print_counts(void) {
 }
 
 
+
+static void debug_lifetime(byte op, byte origin, nat e, nat* history) {
+
+	if (op == three or op == one or op == five) {
+		memmove(history, history + 1, sizeof(nat) * 99);
+		history[99] = op;
+	}
+
+	printf("\n\033[33m at origin=%hhu: [PRUNED GRAPH VIA PER AT %llu]:\033[0m\n", origin, e);
+	puts("[LIFETIME-START]"); 
+
+	for (nat i = 0; i < 100; i++) {
+		// if (history[i] == (nat) -1) {}
+		if (history[i] == one) { 
+			if (i and (history[i - 1] == one or history[i - 1] == five)) { 
+				printf("."); 
+				fflush(stdout); 
+			} 
+		} 
+		else if (history[i] == five) { printf("\n"); fflush(stdout); } 
+		else if (history[i] == three) { printf("#"); fflush(stdout); } 
+	}
+	getchar();
+}
+
+
 static nat execute_graph_starting_at(byte origin) {
 
 	const nat n = array_size;
@@ -239,6 +265,31 @@ static nat execute_graph_starting_at(byte origin) {
 		R0I_counter = 0, H0_counter = 0, 
 		H1_counter = 0, H2_counter = 0, H3_counter = 0,
 		RMV_counter = 0, RMV_value = 0, CSM_counter = 0;
+
+
+	nat did_ier_at = (nat)~0;
+
+	//bool debug = false;
+
+	//char z[64] = {0};    get_graphs_z_value(z); 
+
+	/*if (not strcmp(z, "0122102025433510400605662103")) {
+
+		puts("testing this z value in particular...");
+		getchar();
+
+		//if (origin == 6) { puts("origin 6 "); abort(); } 
+		//else { printf("origin OTHER = %hhu\n", origin); abort();  } 
+
+		printf("has origin = %hhu\n", origin);
+		debug = true;
+	}*/
+
+
+
+	nat history[100] = {0};
+	memset(history, 255, sizeof history);
+
 
 	for (; e < execution_limit; e++) {
 
@@ -285,7 +336,6 @@ static nat execute_graph_starting_at(byte origin) {
 			else { OER_er_at = pointer; OER_counter = 0; }
 			if (OER_counter >= max_acceptable_er_repetions) return PM_oer; 
 
-
 			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
 			else { BDL_er_at = pointer; BDL_counter = 0; }
 			if (BDL_counter >= max_acceptable_bdl_er_repetions) return PM_bdl; 
@@ -293,7 +343,6 @@ static nat execute_graph_starting_at(byte origin) {
 			if (BDL2_er_at > 1 and pointer == BDL2_er_at - 2) { BDL2_counter++; BDL2_er_at -= 2; }
 			else { BDL2_er_at = pointer; BDL2_counter = 0; }
 			if (BDL2_counter >= max_acceptable_bdl_er_repetions) return PM_bdl2; 
-
 
 			CSM_counter = 0;
 			RMV_value = (nat) -1;
@@ -305,15 +354,18 @@ static nat execute_graph_starting_at(byte origin) {
 				if (RMV_counter >= max_acceptable_modnat_repetions) return PM_rmv; 
 			}
 
-
 			if (walk_ia_counter == 1) {
 				ERW_counter++;
-				if (ERW_counter == 100) return PM_erw;
+				if (ERW_counter == 100) {
+					// debug_lifetime(op, origin, e, history);
+					return PM_erw; //TODO: make this not a literal!
+				}
 			} else ERW_counter = 0;
-			walk_ia_counter = 0;
 
-			pointer = 0;
+			did_ier_at = pointer;
+			walk_ia_counter = 0;
 			er_count++;
+			pointer = 0;
 		}
 
 		else if (op == two) {
@@ -360,6 +412,11 @@ static nat execute_graph_starting_at(byte origin) {
 				if (H3_counter >= max_acceptable_consecutive_h3_bouts) return PM_h3; 
 			} else H3_counter = 0;
 
+			if (did_ier_at != (nat) ~0) {
+				if (pointer >= did_ier_at) return PM_per;
+				did_ier_at = (nat) ~0;
+			}
+
 			bout_length = 0;
 			walk_ia_counter++;
 
@@ -367,7 +424,12 @@ static nat execute_graph_starting_at(byte origin) {
 			array[pointer]++;
 		}
 
-		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
+		if (op == three or op == one or op == five) { 
+			last_mcal_op = op; mcal_index++; 
+
+			memmove(history, history + 1, sizeof(nat) * 99);
+			history[99] = op;
+		}
 		last_op = op;
 
 		if (mcal_index == 1  and last_mcal_op != three) return PM_mcal; 
@@ -389,6 +451,9 @@ static nat execute_graph_starting_at(byte origin) {
 		if (mcal_index == 9 and mcal_path == 2 and last_mcal_op != five)  	return PM_mcal;
 
 		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return PM_mcal;
+
+
+
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -414,9 +479,57 @@ static nat execute_graph_starting_at(byte origin) {
 
 
 
+/*
 
 
 
+
+// if (debug)  { printf("[DID_IER!]"); fflush(stdout); } 
+
+
+
+
+PER:
+========
+
+
+
+  [*]  [ ]  [*]  [ ]  [ ]  [ ]  [*]  [ ]  [(3,5)IER]
+
+  [ ]  [ ]  [ ]  [ ]  [ ]  [ ]  [ ]  [ ]  [(3;1)IA]    [(3;5)IER]
+
+
+
+
+
+
+when we say 3,
+we keep track of the cell index we did it at
+
+
+the then say 5,   set a flag that we had said 5,
+
+and if we say 3 again, then we check the index we had said 3 at   
+the second time 
+
+and if the given new index is greater (>=!!!! this means 
+	PER and ANDI are the same PM!!) 
+
+	than the previous index   then we prune it 
+
+
+
+		ie, it needs to be less than!!!
+
+
+
+
+
+
+
+
+
+*/
 
 
 
