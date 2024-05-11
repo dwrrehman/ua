@@ -23,9 +23,9 @@ typedef uint16_t u16;
 static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
-static const nat job_size = 100000;
-static const nat thread_count = 3;
-static const nat display_rate = 2;
+static const nat job_size = 1000000;
+static const nat thread_count = 9;
+static const nat display_rate = 3;
 
 enum operations { one, two, three, five, six };
 
