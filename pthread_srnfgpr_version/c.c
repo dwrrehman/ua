@@ -617,9 +617,39 @@ static nat expn(nat base, nat exponent) {
 	return result;
 }
 
+static void print(char* filename, size_t size, const char* string) {
+	char dt[32] = {0};   get_datetime(dt);
 
+	int flags = O_WRONLY | O_APPEND;
+	mode_t permissions = 0;
+try_open:;
+	const int file = open(filename, flags, permissions);
+	if (file < 0) {
+		if (permissions) {
+			perror("create openat file");
+			printf("print: [%s]: failed to create filename = \"%s\"\n", dt, filename);
+			fflush(stdout);
+			abort();
+		}
+		snprintf(filename, size, "%s_%08x%08x%08x%08x_z.txt", dt, 
+			rand(), rand(), rand(), rand()
+		);
+		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		goto try_open;
+	}
+
+	write(file, string, strlen(string));
+	close(file);
+	printf("%s", string);
+	fflush(stdout);
+}
 
 int main(void) {
+
+	static char output_filename[4096] = {0};
+	static char output_string[4096] = {0};
+	
 	srand((unsigned)time(0)); rand();
 
 	atomic_init(&head, 0);
@@ -629,7 +659,8 @@ int main(void) {
 	for (byte i = 0; i < initial; i++) positions[i] = R ? _63R_hole_positions[i] : _36R_hole_positions[i];
 	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i; 
 
-	printf("SRNFGPR: searching [D=%hhu, R=%hhu] space....\n", D, R);
+	snprintf(output_string, 4096, "SRNFGPR: searching [D=%hhu, R=%hhu] space....\n", D, R);
+	print(output_filename, 4096, output_string);
 
 	struct timeval time_begin = {0};
 	gettimeofday(&time_begin, NULL);
@@ -637,9 +668,13 @@ int main(void) {
 
 	while (1) {
 		const nat h = atomic_fetch_add_explicit(&head, 0, memory_order_relaxed);
-		printf("%llu .. %lf%%\n", h, (double) h / (double) space_size);
+
+		snprintf(output_string, 4096, "%llu .. %lf%%\n", h, (double) h / (double) space_size);
+		print(output_filename, 4096, output_string);
+
 		if (h >= space_size) {
-			printf("info: [all jobs allocated to threads. waiting for them to finish.]\n");
+			snprintf(output_string, 4096, "info: [all jobs allocated to threads. waiting for them to finish.]\n");
+			print(output_filename, 4096, output_string);
 			break;
 		}
 		sleep(1 << display_rate);
@@ -665,7 +700,7 @@ int main(void) {
 	strftime(time_end_dt,   32, "1%Y%m%d%u.%H%M%S", localtime(&time_end.tv_sec));
 	strftime(time_begin_dt, 32, "1%Y%m%d%u.%H%M%S", localtime(&time_begin.tv_sec));
 
-	printf("using [D=%hhu, R=%hhu]:"
+	snprintf(output_string, 4096, "using [D=%hhu, R=%hhu]:"
 			"\n\tthreadcount=%llu"
 			"\n\tjobsize=%llu"
 			"\n\tspacesize=%llu"
@@ -673,20 +708,27 @@ int main(void) {
 			"\n\tfea_execution_limit=%llu"
 			"\n\texecution_limit=%llu"
 			"\n\tarray_size=%llu"
-			"\n\n", 
-		D, R,  thread_count,  job_size, space_size, display_rate,
-		fea_execution_limit, execution_limit, array_size
+			"\n\n"
+			"\n[D=%hhu:R=%hhu]:"
+			"\n\t""searched %llu zvs"
+			"\n\tusing %llu threads"
+			"\n\tin %10.10lfs[%s:%s],"
+			"\n\tat %lf z/s."
+			"\n\n\npm counts:\n", 
+		D, R,  thread_count,  job_size, 
+		space_size, display_rate,
+		fea_execution_limit, execution_limit, array_size, 
+		D, R, space_size, thread_count, seconds, 
+		time_begin_dt, time_end_dt, zthroughput
 	);
-
-	printf("\n[D=%hhu:R=%hhu]:\n\tsearched %llu zvs\n\tusing %llu threads\n\tin %10.10lfs[%s:%s],\n\tat %lf z/s.\n\n", 
-		D, R, space_size, thread_count, seconds, time_begin_dt, time_end_dt, zthroughput
-	);
-	printf("\npm counts:\n");
+	print(output_filename, 4096, output_string);
 	for (nat i = 0; i < pm_count; i++) {
 		if (i and not (i % 2)) puts("");
-		printf("%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
+		snprintf(output_string, 4096, "%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
+		print(output_filename, 4096, output_string);
 	}
-	puts("\n[done]");
+	snprintf(output_string, 4096, "\n[done]\n");
+	print(output_filename, 4096, output_string);
 }
  
 
