@@ -1,0 +1,19 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     run
+relocations:
+  - { offset: 0x26, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001EC0, symSize: 0x7FC }
+  - { offset: 0x33, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100001EC0, symSize: 0x7FC }
+  - { offset: 0x5A, size: 0x8, addend: 0x0, symName: _main.output_filename, symObjAddr: 0x15140, symBinAddr: 0x10001C000, symSize: 0x0 }
+  - { offset: 0x70, size: 0x8, addend: 0x0, symName: _main.output_string, symObjAddr: 0x16140, symBinAddr: 0x10001D000, symSize: 0x0 }
+  - { offset: 0x56E, size: 0x8, addend: 0x0, symName: __MergedGlobals, symObjAddr: 0x17140, symBinAddr: 0x10001E000, symSize: 0x0 }
+  - { offset: 0x585, size: 0x8, addend: 0x0, symName: __MergedGlobals, symObjAddr: 0x17140, symBinAddr: 0x10001E000, symSize: 0x0 }
+  - { offset: 0x5AB, size: 0x8, addend: 0x0, symName: __MergedGlobals, symObjAddr: 0x17140, symBinAddr: 0x10001E000, symSize: 0x0 }
+  - { offset: 0x663, size: 0x8, addend: 0x0, symName: __36R_hole_positions, symObjAddr: 0x3B18, symBinAddr: 0x10000ADB8, symSize: 0x0 }
+  - { offset: 0x69C, size: 0x8, addend: 0x0, symName: __36R, symObjAddr: 0x3B21, symBinAddr: 0x10000ADC1, symSize: 0x0 }
+  - { offset: 0x775, size: 0x8, addend: 0x0, symName: _pm_spelling, symObjAddr: 0x3F08, symBinAddr: 0x10000C1D0, symSize: 0x0 }
+  - { offset: 0x865, size: 0x8, addend: 0x0, symName: _print, symObjAddr: 0x7FC, symBinAddr: 0x1000026BC, symSize: 0x200 }
+  - { offset: 0xA5B, size: 0x8, addend: 0x0, symName: _worker_thread, symObjAddr: 0x9FC, symBinAddr: 0x1000028BC, symSize: 0x30E4 }
+  - { offset: 0x1372, size: 0x8, addend: 0x0, symName: _worker_thread, symObjAddr: 0x9FC, symBinAddr: 0x1000028BC, symSize: 0x30E4 }
+  - { offset: 0x1F52, size: 0x8, addend: 0x0, symName: ___llvm_profile_runtime_user, symObjAddr: 0x3AE0, symBinAddr: 0x1000059A0, symSize: 0xC }
+...

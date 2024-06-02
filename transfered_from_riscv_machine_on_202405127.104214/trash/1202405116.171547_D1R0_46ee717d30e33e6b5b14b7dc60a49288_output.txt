@@ -1,0 +1,24 @@
+SRNFGPR: searching [D=1, R=0] space....
+1070000000 .. 0.098310%
+11180000000 .. 1.027204%
+info: [all jobs allocated to threads. waiting for them to finish.]
+using [D=1, R=0]:
+	threadcount=64
+	jobsize=10000000
+	spacesize=10883911680
+	display_rate=3
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+[D=1:R=0]:
+	searched 10883911680 zvs
+	using 64 threads
+	in 20.0000000000s[1202405116.171547:1202405116.171607],
+	at 544195584.000000 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 10741531908		pm_fea: 0       		pm_ns0: 856     		pm_pco: 1683    		pm_zr5: 428796  		pm_zr6: 224808  		pm_ndi: 35122   		pm_oer: 0       		pm_r0i: 7711    		 pm_h0: 38654   		pm_f1e: 233     		pm_erc: 1071660 		pm_rmv: 13168   		 pm_ot: 0       		pm_csm: 0       		 pm_mm: 0       		pm_snm: 0       		pm_bdl: 0       		pm_bdl2: 0       		pm_erw: 0       		pm_mcal: 6306350 		pm_snl: 1431624 		 pm_h1: 0       		 pm_h2: 0       		 pm_h3: 0       		pm_per: 49327   		pmf_fea: 5947301 		pmf_ns0: 4873575 		pmf_pco: 11040695		pmf_zr5: 56688934		pmf_zr6: 38720604		pmf_ndi: 15498671		
+[done]

@@ -1,0 +1,1699 @@
+    1|       |// 202403041.192520: by dwrr         
+    2|       |//      the prthead  cpu-parellelized version of the srnfgpr.
+    3|       |//
+    4|       |#include <time.h>
+    5|       |#include <string.h>
+    6|       |#include <unistd.h>
+    7|       |#include <fcntl.h>
+    8|       |#include <iso646.h>
+    9|       |#include <stdint.h>
+   10|       |#include <stdio.h>
+   11|       |#include <stdlib.h>
+   12|       |#include <stdatomic.h>
+   13|       |#include <sys/stat.h>
+   14|       |#include <sys/time.h>
+   15|       |#include <sys/types.h>
+   16|       |#include <pthread.h>
+   17|       |
+   18|       |typedef uint8_t byte;
+   19|       |typedef uint64_t nat;
+   20|       |typedef uint32_t u32;
+   21|       |typedef uint16_t u16;
+   22|       |
+   23|       |static const byte D = 0;        // the duplication count (operation_count = 5 + D)
+   24|       |static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
+   25|       |
+   26|       |static const nat job_size = 1000;
+   27|       |static const nat thread_count = 3;
+   28|       |static const nat display_rate = 2;
+   29|       |
+   30|       |enum operations { one, two, three, five, six };
+   31|       |
+   32|       |enum pruning_metrics {
+   33|       |	z_is_good, pm_ga, pm_fea, pm_ns0, 
+   34|       |	pm_pco, pm_zr5, pm_zr6, pm_ndi, 
+   35|       |	pm_oer, pm_r0i, pm_h0, pm_f1e, 
+   36|       |	pm_erc, pm_rmv, pm_ot, pm_csm, 
+   37|       |	pm_mm, pm_snm, pm_bdl, pm_bdl2, 
+   38|       |	pm_erw, pm_mcal, pm_snl, 
+   39|       |	pm_h1, pm_h2, pm_h3, pm_per,
+   40|       |	pmf_fea, pmf_ns0, pmf_pco,
+   41|       |	pmf_zr5, pmf_zr6, pmf_ndi,
+   42|       |	pm_count
+   43|       |};
+   44|       |
+   45|       |static const char* pm_spelling[pm_count] = {
+   46|       |	"z_is_good", "pm_ga", "pm_fea", "pm_ns0", 
+   47|       |	"pm_pco", "pm_zr5", "pm_zr6", "pm_ndi", 
+   48|       |	"pm_oer", "pm_r0i", "pm_h0", "pm_f1e", 
+   49|       |	"pm_erc", "pm_rmv", "pm_ot", "pm_csm", 
+   50|       |	"pm_mm", "pm_snm", "pm_bdl", "pm_bdl2", 
+   51|       |	"pm_erw", "pm_mcal", "pm_snl", 
+   52|       |	"pm_h1", "pm_h2", "pm_h3", "pm_per",
+   53|       |	"pmf_fea", "pmf_ns0", "pmf_pco",
+   54|       |	"pmf_zr5", "pmf_zr6", "pmf_ndi",
+   55|       |};
+   56|       |
+   57|       |static const byte _ = 0;
+   58|       |
+   59|       |static const byte _63R[5 * 4] = {
+   60|       |	0,  1, 4, _,      //        3
+   61|       |	1,  0, _, _,      //     6  7 
+   62|       |	2,  0, _, _,      //    10 11
+   63|       |	3,  _, _, _,      // 13 14 15
+   64|       |	4,  2, 0, _,      //       19
+   65|       |};
+   66|       |
+   67|       |#define _63R_hole_count 9
+   68|       |static const byte _63R_hole_positions[_63R_hole_count] = {3, 6, 7, 10, 11, 13, 14, 15, 19};
+   69|       |
+   70|       |static const byte _36R[5 * 4] = {
+   71|       |	0,  1, 2, _,      //        3
+   72|       |	1,  0, _, _,      //     6  7 
+   73|       |	2,  _, 4, _,      //  9    11
+   74|       |	3,  _, _, _,      // 13 14 15
+   75|       |	4,  0, 0, _,      //       19
+   76|       |};
+   77|       |
+   78|       |#define _36R_hole_count 9
+   79|       |static const byte _36R_hole_positions[_36R_hole_count] = {3, 6, 7, 9, 11, 13, 14, 15, 19};
+   80|       |
+   81|       |static const byte initial = R ? _63R_hole_count : _36R_hole_count;
+   82|       |
+   83|       |static const byte operation_count = 5 + D;
+   84|       |static const byte graph_count = 4 * operation_count;
+   85|       |
+   86|       |static const byte hole_count = initial + 4 * D;
+   87|       |
+   88|       |static const nat fea_execution_limit = 5000;
+   89|       |static const nat execution_limit = 10000000000;
+   90|       |static const nat array_size = 100000;
+   91|       |
+   92|       |static const nat max_er_repetions = 50;
+   93|       |static const nat max_erw_count = 100;
+   94|       |static const nat max_modnat_repetions = 15;
+   95|       |static const nat max_consecutive_s0_incr = 30;
+   96|       |static const nat max_consecutive_small_modnats = 200;
+   97|       |static const nat max_bdl_er_repetions = 25;
+   98|       |static const nat max_sn_loop_iterations = 100 * 2;
+   99|       |static const nat max_consecutive_h0_bouts = 10;
+  100|       |static const nat max_consecutive_h1_bouts = 30;
+  101|       |static const nat max_consecutive_h2_bouts = 30;
+  102|       |static const nat max_consecutive_h3_bouts = 30;
+  103|       |
+  104|       |static const nat expansion_check_timestep = 5000;
+  105|       |static const nat required_er_count = 25;
+  106|       |
+  107|       |static const nat expansion_check_timestep2 = 10000;
+  108|       |static const nat required_s0_increments = 5;
+  109|       |
+  110|       |// runtime constants:
+  111|       |static nat space_size = 0;
+  112|       |static byte* positions = NULL; 
+  113|       |static pthread_t* threads = NULL; 
+  114|       |
+  115|       |// globals:
+  116|       |static _Atomic nat head;
+  117|       |
+  118|      0|static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
+  119|       |
+  120|      0|static void get_graphs_z_value(char string[64], byte* graph) {
+  121|      0|	for (byte i = 0; i < graph_count; i++) string[i] = (char) graph[i] + '0';
+  122|      0|	string[graph_count] = 0;
+  123|      0|}
+  124|       |
+  125|     55|static void get_datetime(char datetime[32]) {
+  126|     55|	struct timeval tv;
+  127|     55|	gettimeofday(&tv, NULL);
+  128|     55|	struct tm* tm_info = localtime(&tv.tv_sec);
+  129|     55|	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
+  130|     55|}
+  131|       |
+  132|  3.65k|static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, nat* timeout) {
+  133|       |
+  134|  3.65k|	const nat n = array_size;
+  135|  3.65k|	array[0] = 0; 
+  136|  3.65k|	array[n] = 0; 
+  137|  3.65k|	memset(timeout, 0, operation_count * sizeof(nat));
+  138|       |
+  139|  3.65k|	byte ip = origin, last_mcal_op = 255, last_op = 0, mcal_path = 0;
+  140|  3.65k|	nat 	e = 0,  xw = 0, 
+  141|  3.65k|		pointer = 0,  er_count = 0, bout_length = 0,
+  142|  3.65k|		walk_ia_counter = 0, ERW_counter = 0, 
+  143|  3.65k|		SNL_counter = 0,   mcal_index = 0,
+  144|  3.65k|	    	OER_er_at = 0,  OER_counter = 0, 
+  145|  3.65k|		BDL_er_at = 0,  BDL_counter = 0, 
+  146|  3.65k|		BDL2_er_at = 0,  BDL2_counter = 0, 
+  147|  3.65k|		R0I_counter = 0, H0_counter = 0, 
+  148|  3.65k|		H1_counter = 0, H2_counter = 0, H3_counter = 0,
+  149|  3.65k|		RMV_counter = 0, RMV_value = 0, CSM_counter = 0;
+  150|       |
+  151|  3.65k|	nat did_ier_at = (nat)~0;
+  152|       |
+  153|   119k|	for (; e < execution_limit; e++) {
+  154|       |
+  155|   119k|		if (e == expansion_check_timestep2) { 
+  156|      0|			for (byte i = 0; i < 5; i++) {
+  157|      0|				if (array[i] < required_s0_increments) return pm_f1e; 
+  158|      0|			}
+  159|      0|		}
+  160|       |
+  161|   119k|		if (e == expansion_check_timestep)  { 
+  162|      0|			if (er_count < required_er_count) return pm_erc; 
+  163|      0|		}
+  164|       |		
+  165|   119k|		const byte I = ip * 4, op = graph[I];
+  166|       |
+  167|   718k|		for (nat i = 0; i < operation_count; i++) {
+  168|   598k|			if (timeout[i] >= execution_limit >> 1) return pm_ot; 
+  169|   598k|			timeout[i]++;
+  170|   598k|		}
+  171|   119k|		timeout[ip] = 0;
+  172|       |
+  173|   119k|		if (op == one) {
+  174|  7.28k|			if (pointer == n) return pm_fea; 
+  175|  7.28k|			if (not array[pointer]) return pm_ns0; 
+  176|       |
+  177|  7.28k|			if (last_mcal_op == one)  H0_counter = 0;
+  178|  7.28k|			if (last_mcal_op == five) R0I_counter = 0;
+  179|       |
+  180|  7.28k|			bout_length++;
+  181|  7.28k|			pointer++;
+  182|       |
+  183|  7.28k|			if (pointer > xw and pointer < n) { 
+  184|  5.81k|				xw = pointer; 
+  185|  5.81k|				array[pointer] = 0; 
+  186|  5.81k|			}
+  187|  7.28k|		}
+  188|       |
+  189|   112k|		else if (op == five) {
+  190|  1.76k|			if (last_mcal_op != three) return pm_pco; 
+  191|  1.76k|			if (not pointer) return pm_zr5; 
+  192|       |			
+  193|  1.76k|			if (	pointer == OER_er_at or 
+  194|  1.76k|				pointer == OER_er_at + 1) OER_counter++;
+  195|    155|			else { OER_er_at = pointer; OER_counter = 0; }
+  196|  1.76k|			if (OER_counter >= max_er_repetions) return pm_oer; 
+  197|       |
+  198|  1.76k|			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
+  199|  1.67k|			else { BDL_er_at = pointer; BDL_counter = 0; }
+  200|  1.76k|			if (BDL_counter >= max_bdl_er_repetions) return pm_bdl; 
+  201|       |
+  202|  1.76k|			if (BDL2_er_at > 1 and pointer == BDL2_er_at - 2) { BDL2_counter++; BDL2_er_at -= 2; }
+  203|  1.76k|			else { BDL2_er_at = pointer; BDL2_counter = 0; }
+  204|  1.76k|			if (BDL2_counter >= max_bdl_er_repetions) return pm_bdl2; 
+  205|       |
+  206|  1.76k|			CSM_counter = 0;
+  207|  1.76k|			RMV_value = (nat) -1;
+  208|  1.76k|			RMV_counter = 0;
+  209|  3.90k|			for (nat i = 0; i < xw; i++) {
+  210|  2.13k|				if (array[i] < 6) CSM_counter++; else CSM_counter = 0;
+  211|  2.13k|				if (CSM_counter > max_consecutive_small_modnats) return pm_csm; 
+  212|  2.13k|				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
+  213|  2.13k|				if (RMV_counter >= max_modnat_repetions) return pm_rmv; 
+  214|  2.13k|			}
+  215|       |
+  216|  1.76k|			if (walk_ia_counter == 1) {
+  217|     88|				ERW_counter++;
+  218|     88|				if (ERW_counter == max_erw_count) return pm_erw;
+  219|  1.67k|			} else ERW_counter = 0;
+  220|       |
+  221|  1.76k|			did_ier_at = pointer;
+  222|  1.76k|			walk_ia_counter = 0;
+  223|  1.76k|			er_count++;
+  224|  1.76k|			pointer = 0;
+  225|  1.76k|		}
+  226|       |
+  227|   110k|		else if (op == two) {
+  228|  52.6k|			if (array[n] >= 65535) return pm_snm; 
+  229|  52.6k|			if (last_op == six) SNL_counter++; else SNL_counter = 0;
+  230|  52.6k|			if (SNL_counter == max_sn_loop_iterations) return pm_snl;
+  231|       |
+  232|  52.1k|			array[n]++;
+  233|  52.1k|		}
+  234|  58.0k|		else if (op == six) {  
+  235|  50.3k|			if (not array[n]) return pm_zr6; 
+  236|  50.3k|			if (last_op == two) SNL_counter++; else SNL_counter = 0;
+  237|  50.3k|			if (SNL_counter == max_sn_loop_iterations) return pm_snl;
+  238|       |
+  239|  50.3k|			array[n] = 0;
+  240|  50.3k|		}
+  241|  8.15k|		else if (op == three) {
+  242|  8.15k|			if (last_mcal_op == three) return pm_ndi; 
+  243|       |
+  244|  8.15k|			if (last_mcal_op == five) {
+  245|    612|				R0I_counter++; 
+  246|    612|				if (R0I_counter >= max_consecutive_s0_incr) return pm_r0i; 
+  247|    612|			}
+  248|       |
+  249|  8.15k|			if (last_mcal_op == one) {
+  250|  3.89k|				H0_counter++;
+  251|  3.89k|				if (H0_counter >= max_consecutive_h0_bouts) return pm_h0; 
+  252|  3.89k|			}
+  253|       |
+  254|  8.15k|			if (bout_length == 1) {
+  255|  3.74k|				H1_counter++;
+  256|  3.74k|				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
+  257|  4.40k|			} else H1_counter = 0;
+  258|       |
+  259|  8.15k|			if (bout_length == 2) {
+  260|     70|				H2_counter++;
+  261|     70|				if (H2_counter >= max_consecutive_h2_bouts) return pm_h2; 
+  262|  8.08k|			} else H2_counter = 0;
+  263|       |
+  264|  8.15k|			if (bout_length == 3) {
+  265|     48|				H3_counter++;
+  266|     48|				if (H3_counter >= max_consecutive_h3_bouts) return pm_h3; 
+  267|  8.10k|			} else H3_counter = 0;
+  268|       |
+  269|  8.15k|			if (did_ier_at != (nat) ~0) {
+  270|    723|				if (pointer >= did_ier_at) return pm_per;
+  271|    699|				did_ier_at = (nat) ~0;
+  272|    699|			}
+  273|       |
+  274|  8.12k|			bout_length = 0;
+  275|  8.12k|			walk_ia_counter++;
+  276|       |
+  277|  8.12k|			if (array[pointer] >= 65535) return pm_mm; 
+  278|  8.12k|			array[pointer]++;
+  279|  8.12k|		}
+  280|       |
+  281|   119k|		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
+  282|   119k|		last_op = op;
+  283|       |
+  284|   119k|		if (mcal_index == 1  and last_mcal_op != three) return pm_mcal; 
+  285|   119k|		if (mcal_index == 2  and last_mcal_op != one) 	return pm_mcal;
+  286|   119k|		if (mcal_index == 3  and last_mcal_op != three) return pm_mcal;
+  287|   119k|		if (mcal_index == 4  and last_mcal_op != five) 	return pm_mcal;
+  288|   117k|		if (mcal_index == 5  and last_mcal_op != three) return pm_mcal;
+  289|   116k|		if (mcal_index == 6  and last_mcal_op != one) 	return pm_mcal;
+  290|       |
+  291|   116k|		if (mcal_index == 7) {
+  292|    539|			if (last_mcal_op == five) return pm_mcal;
+  293|    539|			mcal_path = last_mcal_op == three ? 1 : 2;
+  294|    539|		}
+  295|       |
+  296|   116k|		if (mcal_index == 8 and mcal_path == 1 and last_mcal_op != one)  	return pm_mcal;
+  297|   116k|		if (mcal_index == 8 and mcal_path == 2 and last_mcal_op != three)  	return pm_mcal;
+  298|       |
+  299|   116k|		if (mcal_index == 9 and mcal_path == 1 and last_mcal_op != three)  	return pm_mcal;
+  300|   116k|		if (mcal_index == 9 and mcal_path == 2 and last_mcal_op != five)  	return pm_mcal;
+  301|       |
+  302|   116k|		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return pm_mcal;
+  303|       |
+  304|   116k|		byte state = 0;
+  305|   116k|		if (array[n] < array[pointer]) state = 1;
+  306|   116k|		if (array[n] > array[pointer]) state = 2;
+  307|   116k|		if (array[n] == array[pointer]) state = 3;
+  308|       |		
+  309|   116k|		ip = graph[I + state];
+  310|   116k|	}
+  311|  18.4E|	return z_is_good;
+  312|  3.65k|}
+  313|       |
+  314|  3.65k|static nat execute_graph(byte* graph, nat* array, nat* timeout, byte* origin) {
+  315|  3.65k|	nat pm = 0;
+  316|  21.9k|	for (byte o = 0; o < operation_count; o++) {
+  317|  18.2k|		if (graph[4 * o] != three) continue;
+  318|  3.65k|		pm = execute_graph_starting_at(o, graph, array, timeout);   
+  319|  3.65k|		if (not pm) { *origin = o; return z_is_good; } 
+  320|  3.65k|	}
+  321|  3.65k|	return pm;
+  322|  3.65k|}
+  323|       |
+  324|  64.4k|static nat fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) {
+  325|       |
+  326|  64.4k|	const nat n = 5;
+  327|  64.4k|	array[n] = 0; 
+  328|  64.4k|	array[0] = 0; 
+  329|       |
+  330|  64.4k|	byte ip = origin, last_mcal_op = 0;
+  331|  64.4k|	nat pointer = 0, e = 0, xw = 0;
+  332|       |
+  333|  6.59M|	for (; e < fea_execution_limit; e++) {
+  334|       |
+  335|  6.59M|		const byte I = ip * 4, op = graph[I];
+  336|       |
+  337|  6.59M|		if (op == one) {
+  338|  2.03M|			if (pointer == n) return pmf_fea;
+  339|  2.02M|			if (not array[pointer]) return pmf_ns0;
+  340|  2.02M|			pointer++;
+  341|       |
+  342|  2.02M|			if (pointer > xw and pointer < n) { 
+  343|  41.5k|				xw = pointer; 
+  344|  41.5k|				array[pointer] = 0; 
+  345|  41.5k|			}
+  346|  2.02M|		}
+  347|       |
+  348|  4.56M|		else if (op == five) {
+  349|   978k|			if (last_mcal_op != three) return pmf_pco;
+  350|   973k|			if (not pointer) return pmf_zr5;
+  351|   943k|			pointer = 0;
+  352|   943k|		}
+  353|       |
+  354|  3.58M|		else if (op == two) { array[n]++; }
+  355|  2.12M|		else if (op == six) {  
+  356|  2.12M|			if (not array[n]) return pmf_zr6;
+  357|  2.10M|			array[n] = 0;   
+  358|  2.10M|		}
+  359|       |
+  360|  18.4E|		else if (op == three) {
+  361|  1.85M|			if (last_mcal_op == three) return pmf_ndi;
+  362|  1.85M|			array[pointer]++;
+  363|  1.85M|		}
+  364|       |
+  365|  6.53M|		if (op == three or op == one or op == five) last_mcal_op = op;
+  366|       |
+  367|  6.53M|		byte state = 0;
+  368|  6.53M|		if (array[n] < array[pointer]) state = 1;
+  369|  6.53M|		if (array[n] > array[pointer]) state = 2;
+  370|  6.53M|		if (array[n] == array[pointer]) state = 3;
+  371|  6.53M|		ip = graph[I + state];
+  372|  6.53M|	}
+  373|  3.19k|	return z_is_good; 
+  374|  64.4k|}
+  375|       |
+  376|  64.5k|static nat fea_execute_graph(byte* graph, nat* array) {
+  377|  64.5k|	nat pm = 0;
+  378|   373k|	for (byte o = 0; o < operation_count; o++) {
+  379|   312k|		if (graph[4 * o] != three) continue;
+  380|  64.1k|		pm = fea_execute_graph_starting_at(o, graph, array);
+  381|  64.1k|		if (not pm) return z_is_good;
+  382|  64.1k|	}
+  383|  60.9k|	return pm;
+  384|  64.5k|}
+  385|       |
+  386|      0|static void append_to_file(char* filename, size_t size, byte* graph, byte origin) {
+  387|      0|	char dt[32] = {0};   get_datetime(dt);
+  388|      0|	char z[64] = {0};    get_graphs_z_value(z, graph); 
+  389|      0|	char o[16] = {0};    snprintf(o, sizeof o, "%hhu", origin);
+  390|       |
+  391|      0|	int flags = O_WRONLY | O_APPEND;
+  392|      0|	mode_t permissions = 0;
+  393|       |
+  394|      0|try_open:;
+  395|      0|	const int file = open(filename, flags, permissions);
+  396|      0|	if (file < 0) {
+  397|      0|		if (permissions) {
+  398|      0|			perror("create openat file");
+  399|      0|			printf("[%s]: [z=%s]: failed to create filename = \"%s\"\n", dt, z, filename);
+  400|      0|			fflush(stdout);
+  401|      0|			abort();
+  402|      0|		}
+  403|      0|		snprintf(filename, size, "%s_%08x%08x%08x%08x_z.txt", dt, 
+  404|      0|			rand(), rand(), rand(), rand()
+  405|      0|		);
+  406|      0|		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+  407|      0|		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+  408|      0|		goto try_open;
+  409|      0|	}
+  410|       |
+  411|      0|	write(file, z, strlen(z));
+  412|      0|	write(file, " ", 1);
+  413|      0|	write(file, o, strlen(o));
+  414|      0|	write(file, " ", 1);
+  415|      0|	write(file, dt, strlen(dt));
+  416|      0|	write(file, "\n", 1);
+  417|      0|	close(file);
+  418|       |
+  419|      0|	printf("[%s]: write: %s z = %s to file \"%s\"\n",
+  420|      0|		dt, permissions ? "created" : "wrote", z, filename
+  421|      0|	);
+  422|      0|}
+  423|       |
+  424|      3|static void* worker_thread(void* __attribute__((unused)) _unused_arg) {
+  425|       |
+  426|      3|	char filename[4096] = {0};
+  427|      3|	nat* pms = calloc(pm_count, sizeof(nat));
+  428|      3|	nat* array = calloc(array_size + 1, sizeof(nat));
+  429|      3|	nat* timeout = calloc(operation_count, sizeof(nat));
+  430|      3|	void* raw_graph = calloc(1, graph_count + (8 - (graph_count % 8)) % 8);
+  431|      3|	void* raw_end = calloc(1, graph_count   + (8 - (graph_count % 8)) % 8);
+  432|      3|	byte* graph = raw_graph;
+  433|      3|	byte* end = raw_end;
+  434|      3|	nat* graph_64 = raw_graph;
+  435|      3|	nat* end_64 = raw_end;
+  436|      3|	memcpy(graph, R ? _63R : _36R, 20);
+  437|      3|	memcpy(end, R ? _63R : _36R, 20);
+  438|      3|	byte pointer = 0;
+  439|       |	
+  440|  1.95k|next_job:;
+  441|  1.95k|	const nat h = atomic_fetch_add_explicit(&head, job_size, memory_order_relaxed);
+  442|  1.95k|	if (h >= space_size) goto terminate_thread;
+  443|       |
+  444|  1.95k|	const nat range_begin = h;
+  445|  1.95k|	nat range_end = h + job_size - 1;
+  446|  1.95k|	if (range_end >= space_size) range_end = space_size - 1;
+  447|       |
+  448|  1.95k|	nat p = 1;
+  449|  19.5k|	for (nat i = 0; i < hole_count; i++) {
+  450|  17.5k|		graph[positions[i]] = (byte) ((range_begin / p) % (nat) (positions[i] & 3 ? operation_count : 5));
+  451|  17.5k|		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+  452|  17.5k|	}
+  453|       |
+  454|  1.95k|	p = 1;
+  455|  19.5k|	for (nat i = 0; i < hole_count; i++) {
+  456|  17.5k|		end[positions[i]] = (byte) ((range_end / p) % (nat) (positions[i] & 3 ? operation_count : 5));
+  457|  17.5k|		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+  458|  17.5k|	}
+  459|       |
+  460|  1.95k|	goto init;
+  461|       |
+  462|   440k|loop:	for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+  463|   440k|		if (graph_64[i] < end_64[i]) goto process;
+  464|   233k|		if (graph_64[i] > end_64[i]) goto do_zskip; 
+  465|   233k|	}
+  466|  18.4E|	goto next_job;
+  467|       |
+  468|  18.4E|do_zskip:;
+  469|  1.30k|	goto next_job;
+  470|       |
+  471|   207k|process:
+  472|  18.4E|	if (graph[positions[pointer]] < (positions[pointer] & 3 ? operation_count - 1 : 4)) goto increment;
+  473|  41.2k|	if (pointer < hole_count - 1) goto reset_;
+  474|  18.4E|	goto next_job;
+  475|       |
+  476|  18.4E|increment:
+  477|   165k|	graph[positions[pointer]]++;
+  478|   167k|init:  	pointer = 0;
+  479|   167k|	u16 was_utilized = 0;
+  480|   167k|	byte at = 0;
+  481|       |
+  482|   167k|	for (byte index = 20; index < graph_count - 4; index += 4) {
+  483|      0|		if (graph[index] > graph[index + 4]) { at = index; goto bad; }
+  484|      0|	}
+  485|       |
+  486|   890k|	for (byte index = operation_count; index--;) {
+  487|       |
+  488|   799k|		if (graph[4 * index + 3] == index) {  at = 4 * index + 3; goto bad; }
+  489|   764k|		if (graph[4 * index] == one   and graph[4 * index + 2] == index) {  at = 4 * index; goto bad; }
+  490|   764k|		if (graph[4 * index] == six   and graph[4 * index + 2])          {  at = 4 * index; goto bad; }
+  491|   764k|		if (graph[4 * index] == two   and graph[4 * index + 2] == index) {  at = 4 * index + 2 * (index == two); goto bad; }
+  492|   756k|		if (graph[4 * index] == three and graph[4 * index + 1] == index) {  at = 4 * index + 1 * (index == three); goto bad; }
+  493|       |
+  494|   755k|		if (graph[4 * index] == six and graph[4 * graph[4 * index + 3]] == one) {
+  495|    391|			if (index == six) { at = 4 * index + 3; goto bad; } 
+  496|      0|			const byte tohere = graph[4 * index + 3];
+  497|      0|			if (tohere == one) { at = 4 * index; goto bad; }
+  498|      0|			at = 4 * (index < tohere ? index : tohere); goto bad;
+  499|      0|		}
+  500|       | 
+  501|   755k|		if (graph[4 * index] == six and graph[4 * graph[4 * index + 3]] == five) {
+  502|    392|			if (index == six) { at = 4 * index + 3; goto bad; } 
+  503|      0|			const byte tohere = graph[4 * index + 3];
+  504|      0|			if (tohere == five) { at = 4 * index; goto bad; }
+  505|      0|			at = 4 * (index < tohere ? index : tohere); goto bad; 
+  506|      0|		}
+  507|       | 
+  508|   754k|		const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
+  509|       |
+  510|   754k|		if (graph[4 * index] == one and graph[4 * e] == one) {
+  511|      0|			if (index == one) { at = 4 * index + 3; goto bad; }
+  512|      0|			if (e == one) { at = 4 * index; goto bad; }
+  513|      0|			at = 4 * (index < e ? index : e); goto bad;
+  514|      0|		}
+  515|       |
+  516|   754k|		if (graph[4 * index] == five and l == g and l == e and graph[4 * e] == one) {
+  517|    398|			if (index == five) { at = 4 * index + 1; goto bad; } 
+  518|      0|			if (e == one) { at = 4 * index; goto bad; }
+  519|      0|			at = 4 * (index < e ? index : e); goto bad; 
+  520|      0|		}
+  521|       |
+  522|   754k|		if (graph[4 * index] == five and l == g and l == e and graph[4 * e] == three) {
+  523|      8|			if (index == five) { at = 4 * index + 1; goto bad; } 
+  524|      0|			if (e == three) { at = 4 * index; goto bad; }
+  525|      0|			at = 4 * (index < e ? index : e); goto bad; 
+  526|      0|		}
+  527|       |
+  528|   754k|		if (graph[4 * index] == one)
+  529|   468k|			for (byte offset = 1; offset < 4; offset++) 
+  530|   375k|				if (graph[4 * graph[4 * index + offset]] == five) { 
+  531|  31.6k|					if (index == one) { at = 4 * index + offset; goto bad; } 
+  532|      1|					const byte tohere = graph[4 * index + offset];
+  533|      1|					if (tohere == five) { at = 4 * index; goto bad; }
+  534|      1|					at = 4 * (index < tohere ? index : tohere); goto bad; 
+  535|      1|				}
+  536|       |		
+  537|   722k|		if (graph[4 * index] == five) 
+  538|   662k|			for (byte offset = 1; offset < 4; offset++) 
+  539|   495k|				if (graph[4 * graph[4 * index + offset]] == five) { 
+  540|    290|					if (index == five) { at = 4 * index + offset; goto bad; } 
+  541|      0|					const byte tohere = graph[4 * index + offset];
+  542|      0|					if (tohere == five) { at = 4 * index; goto bad; } 
+  543|      0|					at = 4 * (index < tohere ? index : tohere); goto bad; 
+  544|      0|				}
+  545|       |
+  546|   722k|		if (graph[4 * index] == six) 
+  547|   668k|			for (byte offset = 1; offset < 4; offset++) 
+  548|   501k|				if (graph[4 * graph[4 * index + offset]] == six) { 
+  549|      0|					if (index == six) { at = 4 * index + offset; goto bad; } 
+  550|      0|					const byte tohere = graph[4 * index + offset];
+  551|      0|					if (tohere == six) { at = 4 * index; goto bad; } 
+  552|      0|					at = 4 * (index < tohere ? index : tohere); goto bad; 
+  553|      0|				}
+  554|       |
+  555|   722k|		if (graph[4 * index] == three) 
+  556|   665k|			for (byte offset = 1; offset < 4; offset++) 
+  557|   498k|				if (graph[4 * graph[4 * index + offset]] == three) { 
+  558|      0|					if (index == three) { at = 4 * index + offset; goto bad; } 
+  559|      0|					const byte tohere = graph[4 * index + offset];
+  560|      0|					if (tohere == three) { at = 4 * index; goto bad; } 
+  561|      0|					at = 4 * (index < tohere ? index : tohere); goto bad; 
+  562|      0|				}
+  563|       |		
+  564|   728k|		if (l != index) was_utilized |= 1 << l;
+  565|   728k|		if (g != index) was_utilized |= 1 << g;
+  566|   728k|		if (e != index) was_utilized |= 1 << e;
+  567|   722k|	}
+  568|       |
+  569|   499k|	for (byte index = 0; index < operation_count; index++) 
+  570|   438k|		if (not ((was_utilized >> index) & 1)) goto loop;
+  571|  60.6k|	goto try_executing;
+  572|  76.2k|bad:
+  573|   107k|	for (byte i = 0; i < hole_count; i++) {
+  574|   107k|		if (positions[i] == at) { pointer = i; goto loop; } else graph[positions[i]] = 0;
+  575|   107k|	}
+  576|  18.4E|	abort();
+  577|       |	
+  578|  64.5k|try_executing:;
+  579|  64.5k|	nat pm = fea_execute_graph(graph, array);       if (pm) { pms[pm]++; goto loop; } 
+  580|  4.27k|	byte origin;
+  581|  4.27k|	    pm = execute_graph(graph, array, timeout, &origin);  if (pm) { pms[pm]++; goto loop; } 
+  582|       |
+  583|    616|	pms[z_is_good]++; 
+  584|    616|	append_to_file(filename, sizeof filename, graph, origin);
+  585|       |
+  586|    616|	printf("\n    FOUND:  z = "); 
+  587|    616|	print_graph_raw(graph); 
+  588|    616|	printf("\n"); 
+  589|    616|	fflush(stdout);
+  590|    616|        goto loop;
+  591|       |
+  592|  41.2k|reset_:
+  593|  41.2k|	graph[positions[pointer]] = 0; 
+  594|  41.2k|	pointer++;
+  595|  41.2k|	goto loop;
+  596|       |
+  597|      3|terminate_thread:
+  598|      3|	printf("info: [thread with fileid=\"%s\" terminated]\n", filename);
+  599|      3|	free(raw_graph);
+  600|      3|	free(raw_end);
+  601|      3|	free(array);
+  602|      3|	free(timeout);
+  603|      3|	return pms;
+  604|  4.27k|}
+  605|       |
+  606|      3|static nat expn(nat base, nat exponent) {
+  607|      3|	nat result = 1;
+  608|     15|	for (nat i = 0; i < exponent; i++) result *= base;
+  609|      3|	return result;
+  610|      3|}
+  611|       |
+  612|     55|static void print(char* filename, size_t size, const char* string) {
+  613|     55|	char dt[32] = {0};   get_datetime(dt);
+  614|       |
+  615|     55|	int flags = O_WRONLY | O_APPEND;
+  616|     55|	mode_t permissions = 0;
+  617|     56|try_open:;
+  618|     56|	const int file = open(filename, flags, permissions);
+  619|     56|	if (file < 0) {
+  620|      1|		if (permissions) {
+  621|      0|			perror("create openat file");
+  622|      0|			printf("print: [%s]: failed to create filename = \"%s\"\n", dt, filename);
+  623|      0|			fflush(stdout);
+  624|      0|			abort();
+  625|      0|		}
+  626|      1|		snprintf(filename, size, "%s_D%hhuR%hhu_%08x%08x%08x%08x_output.txt", dt, D, R,
+  627|      1|			rand(), rand(), rand(), rand()
+  628|      1|		);
+  629|      1|		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+  630|      1|		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+  631|      1|		goto try_open;
+  632|      1|	}
+  633|       |
+  634|     55|	write(file, string, strlen(string));
+  635|     55|	close(file);
+  636|     55|	printf("%s", string);
+  637|     55|	fflush(stdout);
+  638|     55|}
+  639|       |
+  640|      1|int main(void) {
+  641|       |
+  642|      1|	static char output_filename[4096] = {0};
+  643|      1|	static char output_string[4096] = {0};
+  644|       |	
+  645|      1|	srand((unsigned)time(0)); rand();
+  646|       |
+  647|      1|	atomic_init(&head, 0);
+  648|      1|	space_size = expn(5 + D, 9) * expn(5 * expn(5 + D, 3), D);
+  649|      1|	positions = calloc(hole_count, 1);
+  650|      1|	threads = calloc(thread_count, sizeof(pthread_t));
+  651|     10|	for (byte i = 0; i < initial; i++) positions[i] = R ? _63R_hole_positions[i] : _36R_hole_positions[i];
+  652|      1|	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i; 
+  653|       |
+  654|      1|	snprintf(output_string, 4096, "SRNFGPR: searching [D=%hhu, R=%hhu] space....\n", D, R);
+  655|      1|	print(output_filename, 4096, output_string);
+  656|       |
+  657|      1|	struct timeval time_begin = {0};
+  658|      1|	gettimeofday(&time_begin, NULL);
+  659|      4|	for (nat i = 0; i < thread_count; i++) pthread_create(threads + i, NULL, worker_thread, NULL);
+  660|       |
+  661|      2|	while (1) {
+  662|      2|		const nat h = atomic_fetch_add_explicit(&head, 0, memory_order_relaxed);
+  663|       |
+  664|      2|		snprintf(output_string, 4096, "%llu .. %lf%%\n", h, (double) h / (double) space_size);
+  665|      2|		print(output_filename, 4096, output_string);
+  666|       |
+  667|      2|		if (h >= space_size) {
+  668|      1|			snprintf(output_string, 4096, "info: [all jobs allocated to threads. waiting for them to finish.]\n");
+  669|      1|			print(output_filename, 4096, output_string);
+  670|      1|			break;
+  671|      1|		}
+  672|      1|		sleep(1 << display_rate);
+  673|      1|	}
+  674|       |
+  675|      1|	nat counts[pm_count] = {0};
+  676|      4|	for (nat i = 0; i < thread_count; i++) {
+  677|      3|		nat* local_counts = NULL;
+  678|      3|		pthread_join(threads[i], (void**) &local_counts);
+  679|    102|		for (nat j = 0; j < pm_count; j++) counts[j] += local_counts[j];
+  680|      3|		free(local_counts);
+  681|      3|	}
+  682|       |
+  683|      1|	nat sum = 0;
+  684|     34|	for (nat i = 0; i < pm_count; i++) sum += counts[i];
+  685|      1|	counts[pm_ga] = space_size - sum;
+  686|       |
+  687|      1|	struct timeval time_end = {0};
+  688|      1|	gettimeofday(&time_end, NULL);
+  689|       |
+  690|      1|	const double seconds = difftime(time_end.tv_sec, time_begin.tv_sec), zthroughput = (double) space_size / seconds;
+  691|      1|	char time_begin_dt[32] = {0}, time_end_dt[32] = {0};
+  692|      1|	strftime(time_end_dt,   32, "1%Y%m%d%u.%H%M%S", localtime(&time_end.tv_sec));
+  693|      1|	strftime(time_begin_dt, 32, "1%Y%m%d%u.%H%M%S", localtime(&time_begin.tv_sec));
+  694|       |
+  695|      1|	snprintf(output_string, 4096, "using [D=%hhu, R=%hhu]:"
+  696|      1|			"\n\tthreadcount=%llu"
+  697|      1|			"\n\tjobsize=%llu"
+  698|      1|			"\n\tspacesize=%llu"
+  699|      1|			"\n\tdisplay_rate=%llu"
+  700|      1|			"\n\tfea_execution_limit=%llu"
+  701|      1|			"\n\texecution_limit=%llu"
+  702|      1|			"\n\tarray_size=%llu"
+  703|      1|			"\n\n"
+  704|      1|			"\n[D=%hhu:R=%hhu]:"
+  705|      1|			"\n\t""searched %llu zvs"
+  706|      1|			"\n\tusing %llu threads"
+  707|      1|			"\n\tin %10.10lfs[%s:%s],"
+  708|      1|			"\n\tat %lf z/s."
+  709|      1|			"\n\n\npm counts:\n", 
+  710|      1|		D, R,  thread_count,  job_size, 
+  711|      1|		space_size, display_rate,
+  712|      1|		fea_execution_limit, execution_limit, array_size, 
+  713|      1|		D, R, space_size, thread_count, seconds, 
+  714|      1|		time_begin_dt, time_end_dt, zthroughput
+  715|      1|	);
+  716|      1|	print(output_filename, 4096, output_string);
+  717|     34|	for (nat i = 0; i < pm_count; i++) {
+  718|     33|		if (i and not (i % 2)) {
+  719|     16|			snprintf(output_string, 4096, "\n");
+  720|     16|			print(output_filename, 4096, output_string);
+  721|     16|		}
+  722|     33|		snprintf(output_string, 4096, "%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
+  723|     33|		print(output_filename, 4096, output_string);
+  724|     33|	}
+  725|      1|	snprintf(output_string, 4096, "\n[done]\n");
+  726|      1|	print(output_filename, 4096, output_string);
+  727|      1|}
+  728|       | 
+  729|       |
+  730|       |
+  731|       |
+  732|       |
+  733|       |
+  734|       |
+  735|       |
+  736|       |
+  737|       |
+  738|       |
+  739|       |
+  740|       |
+  741|       |
+  742|       |
+  743|       |
+  744|       |
+  745|       |
+  746|       |
+  747|       |
+  748|       |
+  749|       |
+  750|       |
+  751|       |
+  752|       |
+  753|       |
+  754|       |
+  755|       |
+  756|       |
+  757|       |
+  758|       |
+  759|       |
+  760|       |
+  761|       |
+  762|       |
+  763|       |
+  764|       |
+  765|       |
+  766|       |
+  767|       |
+  768|       |
+  769|       |
+  770|       |
+  771|       |
+  772|       |
+  773|       |
+  774|       |
+  775|       |
+  776|       |
+  777|       |
+  778|       |
+  779|       |
+  780|       |
+  781|       |
+  782|       |
+  783|       |
+  784|       |
+  785|       |
+  786|       |
+  787|       |
+  788|       |
+  789|       |
+  790|       |
+  791|       |
+  792|       |
+  793|       |
+  794|       |
+  795|       |
+  796|       |
+  797|       |
+  798|       |
+  799|       |
+  800|       |
+  801|       |
+  802|       |
+  803|       |
+  804|       |
+  805|       |
+  806|       |
+  807|       |
+  808|       |
+  809|       |
+  810|       |
+  811|       |
+  812|       |
+  813|       |
+  814|       |
+  815|       |
+  816|       |
+  817|       |
+  818|       |
+  819|       |
+  820|       |
+  821|       |
+  822|       |
+  823|       |
+  824|       |
+  825|       |
+  826|       |
+  827|       |
+  828|       |
+  829|       |
+  830|       |
+  831|       |/*
+  832|       |
+  833|       |
+  834|       |	// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
+  835|       |				// CHANGED:   yup, its correct i think.
+  836|       |
+  837|       |
+  838|       |
+  839|       |
+  840|       |
+  841|       |
+  842|       |
+  843|       |
+  844|       |
+  845|       |
+  846|       |
+  847|       |static nat execute_graph_starting_at(byte origin) {
+  848|       |
+  849|       |
+  850|       |}
+  851|       |
+  852|       |
+  853|       |
+  854|       |
+  855|       |
+  856|       |
+  857|       |
+  858|       |
+  859|       |
+  860|       |
+  861|       |static nat execute_graph(void) {
+  862|       |	
+  863|       |}
+  864|       |
+  865|       |static nat fea_execute_graph_starting_at(byte origin) {
+  866|       |
+  867|       |	
+  868|       |}
+  869|       |
+  870|       |static nat fea_execute_graph(void) {
+  871|       |
+  872|       |}
+  873|       |
+  874|       |
+  875|       |
+  876|       |
+  877|       |
+  878|       |
+  879|       |
+  880|       |
+  881|       |
+  882|       |
+  883|       |
+  884|       |
+  885|       |*/
+  886|       |
+  887|       |
+  888|       |
+  889|       |
+  890|       |
+  891|       |
+  892|       |
+  893|       |
+  894|       |
+  895|       |
+  896|       |
+  897|       |
+  898|       |
+  899|       |
+  900|       |
+  901|       |
+  902|       |
+  903|       |
+  904|       |
+  905|       |
+  906|       |
+  907|       |
+  908|       |
+  909|       |
+  910|       |
+  911|       |			// update progress bar here!!!   // ie, atomic load of "head".
+  912|       |			// (would detect if head is >= spacesize, and then start the joining process, if it is.
+  913|       |
+  914|       |
+  915|       |
+  916|       |
+  917|       |
+  918|       |
+  919|       |
+  920|       |
+  921|       |
+  922|       |
+  923|       |
+  924|       |
+  925|       |
+  926|       |
+  927|       |
+  928|       |
+  929|       |/*
+  930|       |
+  931|       |
+  932|       |
+  933|       |
+  934|       |static void write_graph(nat b, nat e) {
+  935|       |
+  936|       |	get_datetime(buffer[buffer_count].dt);
+  937|       |	get_graphs_z_value(buffer[buffer_count].z);
+  938|       |	buffer_count++;
+  939|       |
+  940|       |	if (buffer_count == max_buffer_count) {
+  941|       |		append_to_file(b, e);
+  942|       |		buffer_count = 0;
+  943|       |	}
+  944|       |}
+  945|       |
+  946|       |
+  947|       |
+  948|       |
+  949|       |
+  950|       |
+  951|       |
+  952|       |
+  953|       |
+  954|       |
+  955|       |	//for (byte i = 0; i < graph_count; i += 4) {
+  956|       |	//
+  957|       |	//	if (	executed[i + 1] < 5 and graph[i + 1] or         // slightly concerning here... think about this more...? 
+  958|       |	//		executed[i + 2] < 5 and graph[i + 2] or 
+  959|       |	//		executed[i + 3] < 5 and graph[i + 3]) { a = pm_eda; goto bad; }
+  960|       |	//}
+  961|       |
+  962|       |
+  963|       |
+  964|       |///////////////
+  965|       |//	if (not (display_counter & ((1 << display_rate) - 1))) { print_graph_raw(); putchar(10); fflush(stdout); }
+  966|       |//	display_counter++;
+  967|       |//	nat zindex = 0;
+  968|       |//	nat p = 1;
+  969|       |//	for (byte i = 0; i < hole_count; i++) {
+  970|       |//		zindex += p * graph[positions[i]];
+  971|       |//		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+  972|       |//	}
+  973|       |////////////////
+  974|       |
+  975|       |
+  976|       |
+  977|       |
+  978|       |
+  979|       |
+  980|       |
+  981|       |
+  982|       |
+  983|       |
+  984|       |x	array = calloc(array_size + 1, sizeof(nat));
+  985|       |x	timeout = calloc(operation_count, sizeof(nat));
+  986|       |
+  987|       |x	positions = calloc(hole_count, 1); 
+  988|       |	void* raw_graph = calloc(1, graph_count + (8 - (graph_count % 8)) % 8);
+  989|       |	void* raw_end = calloc(1, graph_count   + (8 - (graph_count % 8)) % 8);
+  990|       |
+  991|       |	graph = raw_graph;
+  992|       |	end = raw_end;
+  993|       |	uint64_t* graph_64 = raw_graph;
+  994|       |	uint64_t* end_64 = raw_end;
+  995|       |	nat display_counter = 0, found = 0;
+  996|       |	byte pointer = 0;
+  997|       |
+  998|       |	memcpy(graph, R ? _63R : _36R, 20);
+  999|       |	memcpy(end, R ? _63R : _36R, 20);
+ 1000|       |
+ 1001|       |
+ 1002|       |	nat p = 1;
+ 1003|       |	for (nat i = 0; i < hole_count; i++) {
+ 1004|       |		graph[positions[i]] = (byte) ((range_begin / p) % (nat) (positions[i] & 3 ? operation_count : 5));
+ 1005|       |		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+ 1006|       |	}
+ 1007|       |	if (range_begin >= p) { puts("range_begin is too big!"); printf("range_begin = %llu, p = %llu\n", range_begin, p); abort(); }
+ 1008|       |
+ 1009|       |	p = 1;
+ 1010|       |	for (nat i = 0; i < hole_count; i++) {
+ 1011|       |		end[positions[i]] = (byte) ((range_end / p) % (nat) (positions[i] & 3 ? operation_count : 5));
+ 1012|       |		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+ 1013|       |	}
+ 1014|       |	if (range_end >= p) { puts("range_end is too big!"); printf("range_end = %llu, p = %llu\n", range_end, p); abort(); }
+ 1015|       |
+ 1016|       |	
+ 1017|       |	goto init;
+ 1018|       |
+ 1019|       |
+ 1020|       |
+ 1021|       |
+ 1022|       |
+ 1023|       |
+ 1024|       |
+ 1025|       |
+ 1026|       |
+ 1027|       |
+ 1028|       |	if (argc != 2) { printf("./pth-srnfgpr [D=%hhu][R=%hhu] <threadcount:nat>\n", D, R); exit(0); }
+ 1029|       |
+ 1030|       |	char* threadcount_invalid = NULL;
+ 1031|       |	const nat threadcount = strtoull(argv[1], &threadcount_invalid, 10);
+ 1032|       |	if (*threadcount_invalid) {
+ 1033|       |		printf("ERROR: error parsing threadcount near \"%s\" aborting...\n", threadcount_invalid);
+ 1034|       |		abort();
+ 1035|       |	}
+ 1036|       |
+ 1037|       |
+ 1038|       |
+ 1039|       |
+ 1040|       |// printf("sleeping for %5.2lfs until:\n\n\talarm: %s\n\tnow:   %s\n\n", difference, alarm_spelling, now_spelling);
+ 1041|       |
+ 1042|       |
+ 1043|       |
+ 1044|       |
+ 1045|       |
+ 1046|       |static volatile int quit = 0;
+ 1047|       |static noreturn void handler(int __attribute__((unused))_) {
+ 1048|       |	puts("\ncanceled alarm.");
+ 1049|       |	quit = 1;
+ 1050|       |	abort();
+ 1051|       |}
+ 1052|       |
+ 1053|       |
+ 1054|       |
+ 1055|       |int main(int argc, const char** argv) {
+ 1056|       |	if (argc < 2) return puts("usage: ./alarm <string> <datetime:1%Y%m%d%u.%H%M%S>");
+ 1057|       |
+ 1058|       |	struct sigaction action = {.sa_handler = handler}; 
+ 1059|       |	sigaction(SIGINT, &action, NULL);
+ 1060|       |
+ 1061|       |	const char* purpose = argv[1];
+ 1062|       |	const char* alarm_string = argv[2];
+ 1063|       |	char now_spelling[32] = {0};
+ 1064|       |	char alarm_spelling[32] = {0};
+ 1065|       |
+ 1066|       |	struct tm alarm_details = {0};
+ 1067|       |	strptime(alarm_string, "1%Y%m%d%u.%H%M%S", &alarm_details);
+ 1068|       |	struct timeval the_alarm = { .tv_sec = timelocal(&alarm_details), .tv_usec = 0 };
+ 1069|       |	
+ 1070|       |	struct timeval now;
+ 1071|       |	gettimeofday(&now, NULL);
+ 1072|       |	const double difference = difftime(the_alarm.tv_sec, now.tv_sec);
+ 1073|       |
+ 1074|       |	strftime(alarm_spelling, 32, "1%Y%m%d%u.%H%M%S", localtime(&the_alarm.tv_sec));
+ 1075|       |	strftime(  now_spelling, 32, "1%Y%m%d%u.%H%M%S", localtime(&now.tv_sec));
+ 1076|       |	printf("sleeping for %5.2lfs until:\n\n\talarm: %s\n\tnow:   %s\n\n", difference, alarm_spelling, now_spelling);
+ 1077|       |
+ 1078|       |	puts("\tasleep...");
+ 1079|       |	sleep((unsigned) difference);
+ 1080|       |
+ 1081|       |	gettimeofday(&now, NULL);
+ 1082|       |	strftime(now_spelling, 32, "1%Y%m%d%u.%H%M%S", localtime(&now.tv_sec));
+ 1083|       |	printf("\n\n\t\t[ \033[1;31mALARM\033[0m ] : \033[1m %s \033[0m : \033[1m %s \033[0m\n\n", purpose, now_spelling);
+ 1084|       |	while (not quit) { system("afplay bell.wav"); sleep(1); }
+ 1085|       |
+ 1086|       |}
+ 1087|       |
+ 1088|       |
+ 1089|       |
+ 1090|       |
+ 1091|       |
+ 1092|       |
+ 1093|       |
+ 1094|       |
+ 1095|       |
+ 1096|       |
+ 1097|       |
+ 1098|       |
+ 1099|       |
+ 1100|       |typedef long long nat;
+ 1101|       |
+ 1102|       |static nat thread_count = 9;
+ 1103|       |static const nat job_count = 1000000;
+ 1104|       |
+ 1105|       |struct thread_arguments {
+ 1106|       |	nat index;
+ 1107|       |};
+ 1108|       |
+ 1109|       |static pthread_mutex_t input_mutex;
+ 1110|       |static pthread_mutex_t output_mutex;
+ 1111|       |
+ 1112|       |static _Atomic nat output_count = 0;
+ 1113|       |static _Atomic nat input_count = 0;
+ 1114|       |
+ 1115|       |static nat* output = NULL; 
+ 1116|       |static nat* input = NULL;
+ 1117|       |
+ 1118|       |
+ 1119|       |int main(int argc, const char** argv) {
+ 1120|       |	if (argc == 1) return puts("give the thread count as an argument!");
+ 1121|       |
+ 1122|       |	thread_count = atoi(argv[1]);
+ 1123|       |
+ 1124|       |	srand(42);
+ 1125|       |
+ 1126|       |	//clock_t begin = clock();
+ 1127|       |
+ 1128|       |	pthread_mutex_init(&output_mutex, NULL);
+ 1129|       |	pthread_mutex_init(&input_mutex, NULL);
+ 1130|       |
+ 1131|       |	input = calloc(job_count, sizeof(nat));
+ 1132|       |	output = calloc(job_count, sizeof(nat));
+ 1133|       |	
+ 1134|       |	for (nat i = 0; i < job_count; i++) 
+ 1135|       |		input[input_count++] = (nat) (rand() % 400);
+ 1136|       |	
+ 1137|       |	pthread_t* thread = calloc((size_t) thread_count, sizeof(pthread_t));
+ 1138|       |
+ 1139|       |	for (nat i = 0; i < thread_count; i++) {
+ 1140|       |		struct thread_arguments* args = calloc(1, sizeof(struct thread_arguments));
+ 1141|       |		args->index = i;
+ 1142|       |		pthread_create(thread + i, NULL, worker_thread, args);
+ 1143|       |	}
+ 1144|       |
+ 1145|       |	for (nat i = 0; i < thread_count; i++) 
+ 1146|       |		pthread_join(thread[i], NULL);
+ 1147|       |
+ 1148|       |	printf("info: number of jobs completed = %llu\n", output_count);
+ 1149|       |
+ 1150|       |	pthread_mutex_destroy(&output_mutex);
+ 1151|       |	pthread_mutex_destroy(&input_mutex);
+ 1152|       |
+ 1153|       |	free(input);
+ 1154|       |	free(output);
+ 1155|       |
+ 1156|       |	//clock_t end = clock();
+ 1157|       |	//double total_time = (double)(end - begin) / CLOCKS_PER_SEC;
+ 1158|       |	//printf("\t time for %llu threads:   %10.10lfs\n", thread_count, total_time);
+ 1159|       |}
+ 1160|       |
+ 1161|       |
+ 1162|       |
+ 1163|       |
+ 1164|       |
+ 1165|       |
+ 1166|       |
+ 1167|       |
+ 1168|       |// atomic_fetch_add_explicit(&acnt, 1, memory_order_relaxed);
+ 1169|       |
+ 1170|       |
+ 1171|       |
+ 1172|       |
+ 1173|       |
+ 1174|       |
+ 1175|       |
+ 1176|       |
+ 1177|       |
+ 1178|       |
+ 1179|       |
+ 1180|       |
+ 1181|       |
+ 1182|       |
+ 1183|       |
+ 1184|       |
+ 1185|       |
+ 1186|       |
+ 1187|       |
+ 1188|       |
+ 1189|       |
+ 1190|       |
+ 1191|       |
+ 1192|       |
+ 1193|       |
+ 1194|       |
+ 1195|       |
+ 1196|       |
+ 1197|       |
+ 1198|       |
+ 1199|       |
+ 1200|       |
+ 1201|       |
+ 1202|       |
+ 1203|       |
+ 1204|       |
+ 1205|       |
+ 1206|       |
+ 1207|       |
+ 1208|       |
+ 1209|       |
+ 1210|       |
+ 1211|       |static void append_to_file(char* filename, size_t sizeof_filename, byte* graph) {
+ 1212|       |	char dt[32] = {0};   get_datetime(dt);
+ 1213|       |	char z[64] = {0};    get_graphs_z_value(z, graph);
+ 1214|       |	int flags = O_WRONLY | O_APPEND;
+ 1215|       |	mode_t permissions = 0;
+ 1216|       |
+ 1217|       |try_open:;
+ 1218|       |	const int file = open(filename, flags, permissions);
+ 1219|       |	if (file < 0) {
+ 1220|       |		if (permissions) {
+ 1221|       |			perror("create openat file");
+ 1222|       |			printf("filename=%s ", newfilename);
+ 1223|       |			close(dir); 	
+ 1224|       |			123456_ERROR:   DO SOMETHING TO FIX THIS!?!!?!
+ 1225|       |			abort();
+ 1226|       |		}
+ 1227|       |		char created_at[32] = {0};
+ 1228|       |		get_datetime(created_at);
+ 1229|       |		snprintf(filename, sizeof_filename, "%s_%08x%08x_z.txt", 
+ 1230|       |			created_at, arc4random(), arc4random()
+ 1231|       |		);
+ 1232|       |		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+ 1233|       |		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+ 1234|       |		goto try_open;
+ 1235|       |	}
+ 1236|       |
+ 1237|       |	write(file, z, strlen(z));
+ 1238|       |	write(file, " ", 1);
+ 1239|       |	write(file, dt, strlen(dt));
+ 1240|       |	write(file, "\n", 1);
+ 1241|       |	close(file);
+ 1242|       |	printf("[%s]: write: %s z = %s to file \"%s\"\n", 
+ 1243|       |		dt, permission ? "created" : "wrote", z, filename
+ 1244|       |	);
+ 1245|       |}
+ 1246|       |
+ 1247|       |
+ 1248|       |
+ 1249|       |
+ 1250|       |
+ 1251|       |
+ 1252|       |
+ 1253|       |
+ 1254|       |
+ 1255|       |
+ 1256|       |
+ 1257|       |
+ 1258|       |
+ 1259|       |
+ 1260|       |static void write_file(const char* directory, char* name, size_t maxsize) {
+ 1261|       |	int flags = O_WRONLY | O_TRUNC;
+ 1262|       |	mode_t permission = 0;
+ 1263|       |	if (not *name) {
+ 1264|       |		srand((unsigned)time(0)); rand();
+ 1265|       |		char datetime[32] = {0};
+ 1266|       |		struct timeval t = {0};
+ 1267|       |		gettimeofday(&t, NULL);
+ 1268|       |		struct tm* tm = localtime(&t.tv_sec);
+ 1269|       |		strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm);
+ 1270|       |		snprintf(name, maxsize, "%s%s_%08x%08x.txt", directory, datetime, rand(), rand());
+ 1271|       |		flags |= O_CREAT | O_EXCL;
+ 1272|       |		permission = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+ 1273|       |	}
+ 1274|       |	int file = open(name, flags, permission);
+ 1275|       |	if (file < 0) { perror("save: open file"); puts(name); getchar(); }
+ 1276|       |	write(file, text, count);
+ 1277|       |	close(file);
+ 1278|       |}
+ 1279|       |
+ 1280|       |
+ 1281|       |
+ 1282|       |
+ 1283|       |
+ 1284|       |
+ 1285|       |
+ 1286|       |
+ 1287|       |
+ 1288|       |
+ 1289|       |char newfilename[4096] = {0};
+ 1290|       |	strncpy(newfilename, filename, sizeof newfilename);
+ 1291|       |	const int dir = open(directory, O_RDONLY | O_DIRECTORY, 0);
+ 1292|       |	if (dir < 0) { 
+ 1293|       |		perror("write open directory"); 
+ 1294|       |		printf("directory=%s ", directory); 
+ 1295|       |		return; 
+ 1296|       |	}
+ 1297|       |
+ 1298|       |
+ 1299|       |
+ 1300|       |
+ 1301|       |//     srand((unsigned)time(0)); rand();
+ 1302|       |
+ 1303|       |
+ 1304|       |
+ 1305|       |
+ 1306|       |
+ 1307|       |char datetime[32] = {0};
+ 1308|       |		struct timeval t = {0};
+ 1309|       |		gettimeofday(&t, NULL);
+ 1310|       |		struct tm* tm = localtime(&t.tv_sec);
+ 1311|       |		strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm);
+ 1312|       |
+ 1313|       |
+ 1314|       |
+ 1315|       |
+ 1316|       |
+ 1317|       |perror("write openat file");
+ 1318|       |		printf("filename=%s\n", newfilename);
+ 1319|       |
+ 1320|       |
+ 1321|       |
+ 1322|       |
+ 1323|       |
+ 1324|       |
+ 1325|       |	char dt[32] = {0};
+ 1326|       |	get_datetime(dt);
+ 1327|       |	snprintf(newfilename, sizeof newfilename, "%s_%llu_%llu_z.txt", dt, b, e);
+ 1328|       |
+ 1329|       |	if (renameat(dir, filename, dir, newfilename) < 0) {
+ 1330|       |		perror("rename");
+ 1331|       |		printf("filename=%s newfilename=%s", filename, newfilename);
+ 1332|       |		close(dir); return;
+ 1333|       |	}
+ 1334|       |	printf("[\"%s\" renamed to  -->  \"%s\"]\n", filename, newfilename);
+ 1335|       |	strncpy(filename, newfilename, sizeof filename);
+ 1336|       |
+ 1337|       |	close(dir);
+ 1338|       |
+ 1339|       |
+ 1340|       |
+ 1341|       |
+ 1342|       |
+ 1343|       |
+ 1344|       |
+ 1345|       |
+ 1346|       |*/
+ 1347|       |
+ 1348|       |
+ 1349|       |
+ 1350|       |
+ 1351|       |
+ 1352|       |
+ 1353|       |
+ 1354|       |
+ 1355|       |
+ 1356|       |
+ 1357|       |
+ 1358|       |
+ 1359|       |
+ 1360|       |
+ 1361|       |
+ 1362|       |
+ 1363|       |
+ 1364|       |/*static void print_counts(void) {
+ 1365|       |	printf("printing pm counts:\n");
+ 1366|       |	for (nat i = 0; i < PM_count; i++) {
+ 1367|       |		if (i and not (i % 4)) puts("");
+ 1368|       |		printf("%6s: %8llu\t\t", pm_spelling[i], counts[i]);
+ 1369|       |	}
+ 1370|       |	puts("");
+ 1371|       |	puts("[done]");
+ 1372|       |}*/
+ 1373|       |
+ 1374|       |
+ 1375|       |
+ 1376|       |
+ 1377|       |
+ 1378|       |
+ 1379|       |
+ 1380|       |
+ 1381|       |
+ 1382|       |// if (not array[pointer])    { a = PM_ne0; goto bad; }     // delete me!!!!     redundant becuaes of pco.
+ 1383|       |
+ 1384|       |/*
+ 1385|       |
+ 1386|       |
+ 1387|       |
+ 1388|       |
+ 1389|       |
+ 1390|       |
+ 1391|       |
+ 1392|       |
+ 1393|       |
+ 1394|       |
+ 1395|       |for (byte o = 0; o < operation_count; o++) {
+ 1396|       |		if (graph[4 * o] != three) continue;
+ 1397|       |		if (not fea_execute_graph_starting_at(o, graph, array)) return false;
+ 1398|       |	}
+ 1399|       |	return true;
+ 1400|       |
+ 1401|       |
+ 1402|       |
+ 1403|       |
+ 1404|       |
+ 1405|       |
+ 1406|       |
+ 1407|       |
+ 1408|       |
+ 1409|       |
+ 1410|       |
+ 1411|       |
+ 1412|       |
+ 1413|       |
+ 1414|       |
+ 1415|       |
+ 1416|       |	const nat n = array_size;
+ 1417|       |	array[0] = 0; 
+ 1418|       |	array[n] = 0; 
+ 1419|       |	memset(timeout, 0, operation_count * sizeof(nat));
+ 1420|       |
+ 1421|       |	byte ip = origin, last_mcal_op = 0;
+ 1422|       |
+ 1423|       |	nat 	e = 0,  xw = 0,
+ 1424|       |		pointer = 0,  er_count = 0, 
+ 1425|       |	    	OER_er_at = 0,  OER_counter = 0, 
+ 1426|       |		R0I_counter = 0, H_counter = 0,
+ 1427|       |		RMV_counter = 0, RMV_value = 0, CSM_counter = 0;
+ 1428|       |
+ 1429|       |	for (; e < execution_limit; e++) {
+ 1430|       |
+ 1431|       |		if (e == expansion_check_timestep2) { 
+ 1432|       |			for (byte i = 0; i < 5; i++) {
+ 1433|       |				if (array[i] < required_s0_increments) return true; 
+ 1434|       |			}
+ 1435|       |		}
+ 1436|       |
+ 1437|       |		if (e == expansion_check_timestep)  { 
+ 1438|       |			if (er_count < required_er_count) return true; 
+ 1439|       |		}
+ 1440|       |		
+ 1441|       |		const byte I = ip * 4, op = graph[I];
+ 1442|       |
+ 1443|       |		for (nat i = 0; i < operation_count; i++) {
+ 1444|       |			if (timeout[i] >= execution_limit >> 1) return true; 
+ 1445|       |			timeout[i]++;
+ 1446|       |		}
+ 1447|       |		timeout[ip] = 0;
+ 1448|       |
+ 1449|       |		if (op == one) {
+ 1450|       |			if (pointer == n) return true; 
+ 1451|       |			if (not array[pointer]) return true; 
+ 1452|       |
+ 1453|       |			if (last_mcal_op == one) H_counter = 0;
+ 1454|       |			if (last_mcal_op == five) R0I_counter = 0;
+ 1455|       |
+ 1456|       |			pointer++;
+ 1457|       |
+ 1458|       |			if (pointer > xw and pointer < n) {    // <--------- ALSO CHANGED THIS ONE TOO.
+ 1459|       |				xw = pointer; 
+ 1460|       |				array[pointer] = 0; 
+ 1461|       |			}
+ 1462|       |		}
+ 1463|       |
+ 1464|       |		else if (op == five) {
+ 1465|       |			if (last_mcal_op != three) return true; 
+ 1466|       |			if (not pointer) return true; 
+ 1467|       |				
+ 1468|       |			if (	pointer == OER_er_at or 
+ 1469|       |				pointer == OER_er_at + 1) OER_counter++;
+ 1470|       |			else { OER_er_at = pointer; OER_counter = 0; }
+ 1471|       |			if (OER_counter >= max_acceptable_er_repetions) return true; 
+ 1472|       |			
+ 1473|       |			CSM_counter = 0;
+ 1474|       |			RMV_value = (nat) -1;
+ 1475|       |			RMV_counter = 0;
+ 1476|       |			for (nat i = 0; i < xw; i++) {
+ 1477|       |				if (array[i] < 6) CSM_counter++; else CSM_counter = 0;
+ 1478|       |				if (CSM_counter > max_acceptable_consequtive_small_modnats) return true; 
+ 1479|       |				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
+ 1480|       |				if (RMV_counter >= max_acceptable_modnat_repetions) return true; 
+ 1481|       |			}
+ 1482|       |
+ 1483|       |			pointer = 0;
+ 1484|       |			er_count++;
+ 1485|       |		}
+ 1486|       |
+ 1487|       |		else if (op == two) {
+ 1488|       |			array[n]++;
+ 1489|       |			if (array[n] >= 65535) return true; 
+ 1490|       |		}
+ 1491|       |
+ 1492|       |		else if (op == six) {  
+ 1493|       |			if (not array[n]) return true; 
+ 1494|       |			array[n] = 0;   
+ 1495|       |		}
+ 1496|       |
+ 1497|       |		else if (op == three) {
+ 1498|       |			if (last_mcal_op == three) return true; 
+ 1499|       |
+ 1500|       |			if (last_mcal_op == one) {
+ 1501|       |				H_counter++;
+ 1502|       |				if (H_counter >= max_acceptable_run_length) return true; 
+ 1503|       |			}
+ 1504|       |
+ 1505|       |			if (last_mcal_op == five) {
+ 1506|       |				R0I_counter++; 
+ 1507|       |				if (R0I_counter >= max_acceptable_consecutive_s0_incr) return true; 
+ 1508|       |			}
+ 1509|       |
+ 1510|       |			if (array[pointer] >= 65535) return true; 
+ 1511|       |			array[pointer]++;
+ 1512|       |		}
+ 1513|       |
+ 1514|       |		if (op == three or op == one or op == five) last_mcal_op = op;
+ 1515|       |
+ 1516|       |		byte state = 0;
+ 1517|       |		if (array[n] < array[pointer]) state = 1;
+ 1518|       |		if (array[n] > array[pointer]) state = 2;
+ 1519|       |		if (array[n] == array[pointer]) state = 3;
+ 1520|       |		ip = graph[I + state];
+ 1521|       |	}
+ 1522|       |	return false;
+ 1523|       |
+ 1524|       |
+ 1525|       |
+ 1526|       |
+ 1527|       |
+ 1528|       |
+ 1529|       |
+ 1530|       |
+ 1531|       |for (byte o = 0; o < operation_count; o++) {
+ 1532|       |		if (graph[4 * o] != three) continue;
+ 1533|       |		if (not execute_graph_starting_at(o, graph, array, timeout)) return false;
+ 1534|       |	}
+ 1535|       |	return true;
+ 1536|       |
+ 1537|       |
+ 1538|       |
+ 1539|       |
+ 1540|       |
+ 1541|       |
+ 1542|       |
+ 1543|       |
+ 1544|       |
+ 1545|       |
+ 1546|       |
+ 1547|       |
+ 1548|       |
+ 1549|       |
+ 1550|       |	const nat n = 5;
+ 1551|       |	array[n] = 0; 
+ 1552|       |	array[0] = 0; 
+ 1553|       |
+ 1554|       |	byte ip = origin, last_mcal_op = 0;
+ 1555|       |	nat pointer = 0, e = 0, xw = 0;
+ 1556|       |
+ 1557|       |	for (; e < fea_execution_limit; e++) {
+ 1558|       |
+ 1559|       |		const byte I = ip * 4, op = graph[I];
+ 1560|       |
+ 1561|       |		if (op == one) {
+ 1562|       |			if (pointer == n) return true;
+ 1563|       |			if (not array[pointer]) return true;
+ 1564|       |			pointer++;
+ 1565|       |
+ 1566|       |			// new correct lazy zeroing:
+ 1567|       |
+ 1568|       |			if (pointer > xw and pointer < n) { 
+ 1569|       |				xw = pointer; 
+ 1570|       |				array[pointer] = 0; 
+ 1571|       |			}
+ 1572|       |
+ 1573|       |
+ 1574|       |			// WAS:  if (pointer > xw) { xw = pointer; array[pointer] = 0; }   // ERROR HERE!!!!
+ 1575|       |			
+ 1576|       |			
+ 1577|       |
+ 1578|       |			/////////////////////////////////////////////////////////////////////////////////////////
+ 1579|       |			
+ 1580|       |
+ 1581|       |				//  WHAT IF pointer ALIAS's   STAR N!!!!!!!   CRAPPP
+ 1582|       |
+ 1583|       |				// we'll reset it, and thus change the graphs behavior!!!!
+ 1584|       |
+ 1585|       |
+ 1586|       |
+ 1587|       |
+ 1588|       |
+ 1589|       |					// we had added the lazy zeroing opt to the fea pass,  and thus the "i == n" alias condition will occur MUCH more likely!!!
+ 1590|       |
+ 1591|       |			/////////////////////////////////////////////////////////////////////////////////////////
+ 1592|       |
+ 1593|       |
+ 1594|       |
+ 1595|       |
+ 1596|       |		}
+ 1597|       |
+ 1598|       |		else if (op == five) {
+ 1599|       |			if (last_mcal_op != three) return true;
+ 1600|       |			if (not pointer) return true;
+ 1601|       |			pointer = 0;
+ 1602|       |		}
+ 1603|       |
+ 1604|       |		else if (op == two) { array[n]++; }
+ 1605|       |		else if (op == six) {  
+ 1606|       |			if (not array[n]) return true;
+ 1607|       |			array[n] = 0;   
+ 1608|       |		}
+ 1609|       |
+ 1610|       |		else if (op == three) {
+ 1611|       |			if (last_mcal_op == three) return true;
+ 1612|       |			array[pointer]++;
+ 1613|       |		}
+ 1614|       |
+ 1615|       |		if (op == three or op == one or op == five) last_mcal_op = op;
+ 1616|       |
+ 1617|       |		byte state = 0;
+ 1618|       |		if (array[n] < array[pointer]) state = 1;
+ 1619|       |		if (array[n] > array[pointer]) state = 2;
+ 1620|       |		if (array[n] == array[pointer]) state = 3;
+ 1621|       |		ip = graph[I + state];
+ 1622|       |	}
+ 1623|       |	return false; 
+ 1624|       |
+ 1625|       |
+ 1626|       |
+ 1627|       |
+ 1628|       |
+ 1629|       |
+ 1630|       |
+ 1631|       |
+ 1632|       |*/
+ 1633|       |
+ 1634|       |
+ 1635|       |
+ 1636|       |
+ 1637|       |//if (executed[I + state] < 253) executed[I + state]++;
+ 1638|       |
+ 1639|       |
+ 1640|       |
+ 1641|       |
+ 1642|       |
+ 1643|       |
+ 1644|       |
+ 1645|       |// TODO:  use "memory_order_relaxed" !?!?!?!?!?!?!??!?????
+ 1646|       |						// CHANGED: yup, we can just use memory_order_relaxed. 
+ 1647|       |
+ 1648|       |
+ 1649|       |
+ 1650|       |
+ 1651|       |
+ 1652|       |// only open part of the multithreading-zskip solution that we devised:    the sychronization part-
+ 1653|       |// we need this to COME BEFORE the atomic_fetch_add_explicit() call. 
+ 1654|       |// (using better  memory orderings  probably???...)
+ 1655|       |
+ 1656|       |
+ 1657|       |
+ 1658|       |
+ 1659|       |
+ 1660|       |
+ 1661|       |// {0 1 3 [4} ]
+ 1662|       |	// byte previous_op = graph[20];
+ 1663|       |	// make this not use this temporary variable, by using   index and index + 4   
+ 1664|       |	// (except if index+4==graphcount, then we will  just say its index.. yeah)
+ 1665|       |
+ 1666|       |	// constructive GA here
+ 1667|       |
+ 1668|       |
+ 1669|       |
+ 1670|       |
+ 1671|       |
+ 1672|       |     // here, we know we are doing a zskip, becuase we are over the end.
+ 1673|       |
+ 1674|       |
+ 1675|       |
+ 1676|       |
+ 1677|       |/*
+ 1678|       |if (range_begin >= p) { puts("range_begin is too big!"); printf("range_begin = %llu, p = %llu\n", range_begin, p); abort(); } // delete me?
+ 1679|       |	if (range_end >= p) { puts("range_end is too big!"); printf("range_end = %llu, p = %llu\n", range_end, p); abort(); }  // delete me?
+ 1680|       |*/
+ 1681|       |
+ 1682|       |
+ 1683|       |
+ 1684|       |
+ 1685|       |/*	nat zindex = 0;
+ 1686|       |	p = 1;
+ 1687|       |	for (byte i = 0; i < hole_count; i++) {
+ 1688|       |		zindex += p * graph[positions[i]];
+ 1689|       |		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+ 1690|       |	}
+ 1691|       |
+ 1692|       |	atomic_store_explicit(&head, zindex, memory_order_relaxed);
+ 1693|       |*/
+ 1694|       |
+ 1695|       |
+ 1696|       |
+ 1697|       |
+ 1698|       |
+

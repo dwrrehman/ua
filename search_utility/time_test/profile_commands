@@ -1,0 +1,2 @@
+/opt/homebrew/opt/llvm/bin/llvm-profdata merge -output=default.profdata default.profraw -sparse=true
+/opt/homebrew/opt/llvm/bin/llvm-cov show --instr-profile default.profdata ./run

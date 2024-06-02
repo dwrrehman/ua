@@ -67,10 +67,10 @@ enum operations { one, two, three, five, six };
 
 static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 
-static const nat fea_execution_limit = 5000;
-static const nat execution_limit = 10000000;
+static const nat fea_execution_limit = 20000;
+static const nat execution_limit = 1000000000;
 static const nat pre_run_ins = 0;
-static const nat array_size = 100000;
+static const nat array_size = 10000;
 
 enum pruning_metrics {
 	z_is_good, PM_ga, PM_fea, PM_ns0, 

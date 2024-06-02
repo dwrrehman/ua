@@ -20,12 +20,12 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 2;        // the duplication count (operation_count = 5 + D)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat job_size = 1000000;
-static const nat thread_count = 9;
-static const nat display_rate = 3;
+static const nat thread_count = 6;
+static const nat display_rate = 2;
 
 enum operations { one, two, three, five, six };
 
@@ -466,14 +466,6 @@ loop:	for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
 	goto next_job;
 
 do_zskip:;
-	nat zindex = 0;
-	p = 1;
-	for (byte i = 0; i < hole_count; i++) {
-		zindex += p * graph[positions[i]];
-		p *= (nat) (positions[i] & 3 ? operation_count : 5);
-	}
-
-	atomic_store_explicit(&head, zindex, memory_order_relaxed);
 	goto next_job;
 
 process:
@@ -723,7 +715,10 @@ int main(void) {
 	);
 	print(output_filename, 4096, output_string);
 	for (nat i = 0; i < pm_count; i++) {
-		if (i and not (i % 2)) puts("");
+		if (i and not (i % 2)) {
+			snprintf(output_string, 4096, "\n");
+			print(output_filename, 4096, output_string);
+		}
 		snprintf(output_string, 4096, "%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
 		print(output_filename, 4096, output_string);
 	}
@@ -739,7 +734,151 @@ int main(void) {
 
 
 
+/*
+202405293.180937:
 
+implementing the binary space partition (BSP) opt:   a solution to 
+	parellelizing while maining sequential executeion 
+		as much as posisble for z skips. 
+
+
+	the implementation goes as follows:
+
+
+			first partition the space into 64 parts, each one given to a worker thread, 
+
+				run each one using the sr,      supplying it a range_begin and range_end   
+
+					both of which are global and atomic, 
+
+						on initial execution:
+
+						the thread reads the range begin, inits graph to it via a reduce()
+
+
+						the thread reads range_end and inits end[] to it, via a reduce()
+
+					the graph then does the standard loop containing ga, fea execute, and execute, 
+
+
+					every 100th (or so) iteration,   we will "publish the current graph state, 
+
+						via this code:
+
+
+
+
+
+					nat zindex = 0;
+					p = 1;
+					for (byte i = 0; i < hole_count; i++) {
+						zindex += p * graph[positions[i]];
+						p *= (nat) (positions[i] & 3 ? operation_count : 5);
+					}
+					atomic_store_explicit(&range_begin[this_thread], zindex, memory_order_relaxed);
+				
+
+
+				
+
+
+
+				ie, we are doing a unreduce on the graph, to get a zindex  and then we are storing that zi into our thread's global atomic range_begin state.   ie, we loose the original value of range_begin, set by main.  we don't need it anymore. 
+
+				
+
+
+				additionally, after updating  or "publishing"   our progress, via range_begin, 
+
+
+				we update our local copy of    end[]  to reflect the current state of range_end   which might have been edited by other worker threads, from them taking half of our job's z values. 
+
+
+
+				to do this, we just use this code:
+
+
+
+
+
+
+
+
+				const nat range_end = atomic_load_explicit(global__range_end, memory_order_relaxed);
+				p = 1;
+				for (nat i = 0; i < hole_count; i++) {
+					end[positions[i]] = (byte) ((range_end / p) % (nat) (positions[i] & 3 ? operation_count : 5));
+					p *= (nat) (positions[i] & 3 ? operation_count : 5);
+				}
+				
+
+
+
+
+
+
+
+
+				so end    and thus end_64      are now reflecting the true values   
+
+
+					ie     in this case,   the global atomic values     global__range_end, are the master copy, 
+
+
+					but in the case of range_begin,    the local_copies are master copies,   
+
+
+						and synch'ing up again involves ovewrwritting the non-master copy with the master copy, of course
+
+
+					
+				
+
+
+
+		so once all of this in place, 
+
+			now the binary space partitoning part   comes in-
+
+				when a thread finishes, it simply checks the global_range_begin  and global_range_end   arrays, 
+
+
+			and searches it and finds the i such that    global_range_end[i] - global_range_begin[i]   is the largest
+
+
+
+				and then it takes     that difference    divides it in half,   and then subtracts that much from global_range_end[i]
+
+
+
+						this is the thread taking half of the work from the thread that has the least amount done!
+
+
+
+				thus binary partitioning the search space!    pretty cool 
+
+
+
+
+
+		then, the thread continues with this job-  given by simply:    
+
+		local_range_begin = global_range_end[i]     (but after the subtraction was performed)
+		
+		local_range_end = global_range_end[i]       (but BEFORE  the subtraction was performed)
+
+
+		
+
+
+		then the process starts over, using those local range begin and end. 
+
+
+
+
+
+
+*/
 
 
 
@@ -1683,4 +1822,21 @@ for (byte o = 0; o < operation_count; o++) {
 if (range_begin >= p) { puts("range_begin is too big!"); printf("range_begin = %llu, p = %llu\n", range_begin, p); abort(); } // delete me?
 	if (range_end >= p) { puts("range_end is too big!"); printf("range_end = %llu, p = %llu\n", range_end, p); abort(); }  // delete me?
 */
+
+
+
+
+/*	nat zindex = 0;
+	p = 1;
+	for (byte i = 0; i < hole_count; i++) {
+		zindex += p * graph[positions[i]];
+		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+	}
+
+	atomic_store_explicit(&head, zindex, memory_order_relaxed);
+*/
+
+
+
+
 

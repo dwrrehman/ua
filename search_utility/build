@@ -3,6 +3,10 @@
 if [ "release" = "$1" ]; then
 	clang -std=c11 -Ofast c.c -o run -mcpu=apple-m1
 
+
+elif [ "profile" = "$1" ]; then
+	/opt/homebrew/opt/llvm/bin/clang -g -std=c11 -Ofast c.c -o run -fcoverage-mapping -fprofile-instr-generate
+
 elif [ "general_release" = "$1" ]; then
 	clang -std=c11 -Ofast c.c -o run
 
