@@ -99,8 +99,14 @@ static void generate_lifetime(struct z_value* z) {
 	z->lifetime[0] = calloc(width * lifetime_length, 4);
 	z->lifetime[1] = calloc(width * lifetime_length, 4);
 
-	while (1) {
+	const nat execution_limit = 10000000;
+
+	for (nat e = 0; e < execution_limit; e++) {
+
+		// printf("executing instructions...\n");
+
 		const byte I = ip * 4, op = graph[I];
+
 		if (op == one) { 
 			if (pointer == n) { puts("fea pointer overflow"); abort(); } 
 			pointer++; 
@@ -138,7 +144,7 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 	char buffer[1024] = {0};
 	while (fgets(buffer, sizeof buffer, file)) {
 		char* zend = strchr(buffer, ' ');
-		if (not zend) abort();
+		if (not zend) { puts("zend: could not z value..."); abort(); }
 		buffer[zend - buffer] = 0;
 		if (graph_count != strlen(buffer)) { puts("graph count or duplication_count mismatch!"); abort(); }
 		init_graph_from_string(buffer);
@@ -146,7 +152,7 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 		memcpy(g, graph, graph_count);
 
 		char* oend = strchr(zend + 1, ' ');
-		if (not oend) abort();
+		if (not oend) { puts("oend: could not origin..."); abort(); }
 		buffer[oend - buffer] = 0;
 		const byte o = (byte) atoi(zend + 1);
 		

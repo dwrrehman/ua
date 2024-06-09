@@ -1,0 +1,242 @@
+list of acronyms used in the ua project:
+===================================================
+
+UA . . . . . . universe algorithm.
+
+UAJ . . . . . universe algorithm video journal (UA journal)
+
+iter . . . . . itenerary, list of things to talk about in a UAJ
+
+1 . . . . . . pointer (i) increment-by-1 operation          i++;
+
+2 . . . . . . comparator (*n) increment-by-1 operation          (*n)++;
+
+3 . . . . . . modnat (*i, deferenced pointer) increment-by-1 operation     (*i)++;
+
+5 . . . . . . pointer (i) set-to-zero operation            i = 0;
+
+6 . . . . . . comparator (*n) set-to-zero operation        *n = 0;
+
+7 . . . . . . modnat (*i, deferenced pointer) set-to-zero operation       *i = 0;
+
+9 . . . . . . equal branch between i and n
+
+B . . . . . . equal branch between *i and m
+
+C . . . . . . equal branch between *n and *i         if (*n == *i) goto ... else goto ...
+
+E . . . . . . less than branch between *n and *i      if (*n < *i) goto ... else goto ...
+
+F . . . . . . greater than branch between *n and *i      if (*n > *i) goto ... else goto ...
+
+N . . . . . . numerus, second parameter to UA, one less than the number of cells in the UA array. (location of last cell)
+
+M . . . . . . modulus, first parameter to UA, one less than the number of states per cell. (value of largest cell state)
+
+ISA . . . . . instruction set architecture (instruction set)
+
+RHS . . . . . right hand side
+
+LHS . . . . . left hand side
+
+LRS . . . . . least residue system (e.g., the LRS(5) is the set {0, 1, 2, 3, 4}.)
+
+c . . . . . . characteristic of a computational system
+
+CFG . . . . . control flow graph, (a piece of code)
+
+XFG . . . . . (m=infinity,n=infinity) XP-formulation CFG
+
+XP . . . . . . expansion pattern
+
+XPC . . . . . expansion pattern check PM
+
+R . . . . . . RRXFG
+
+RRXFG . . . . reduced reduced XFG
+
+RXFG . . . . . reduced XFG
+
+NF . . . . . . nested for-loop algorithm 
+
+SRNFGPR . . . . segmented-range  nested for-loop  generate-pruned  with RMV
+
+IP . . . . . . iterative pruning utility
+
+MTRC . . . . . mode trichotomy correspondence
+
+RMTRC . . . . . revised mode trichotomy correspondence
+
+COTB . . . . . combined operation ternary-branch instruction model
+
+ERW . . . . . ER walk PM
+
+XW . . . . . expansion width
+
+PRT . . . . . pre-run timestep count
+
+EL . . . . . execution limit (instruction count)
+
+LE . . . . . leading expansion edge
+
+PPR . . . . . positional unary pointer register
+
+CMC . . . . . cardinal unary memory cell
+
+PCO . . . . pointer COI optimization constraint/principle
+
+COI . . . . change of information  over time
+
+ZR5 . . . . zero resets using 5 principle
+
+ZR6 . . . . zero resets using 6 principle
+
+H . . . . . horizontal line PM
+
+H1 . . . . . horizontal line 1 PM
+
+H2 . . . . . horizontal line 2 PM
+
+FEA . . . . finite end of the array PM
+
+PM . . . . . pruning metric
+
+NSVLPM . . . . nonsimplified vertical line PM
+
+SVL . . . . . simplified vertical line PM
+
+NS0 . . . . no-skip over zero modnats PM
+
+R0I . . . . repetitive *0 increment PM
+
+RMV . . . . repeated modnat value PM
+
+DOL . . . . duplicate operation list
+
+NDH . . . . . nested DOL hypothesis
+
+ZV . . . . . Z value
+
+ZI . . . . . Z index
+
+Z . . . . . CFG definition
+
+D . . . . . duplicate operation count, aka duplication count
+
+0-sp . . . . D = 0 search space
+
+1-sp . . . . D = 1 search space
+
+2-sp . . . . D = 2 search space
+
+3-sp . . . . D = 3 search space
+
+CSM . . . . consecutive small modnat PM
+
+OT . . . . . operation timeout PM
+
+SG . . . . . synthesize graph utility
+
+viz . . . . visualization utility
+
+DT . . . . . date time (eg, 1202405083.161656)
+
+TB . . . . . thought bin document
+
+BDL . . . . . backwards diagonal line
+
+BDL2 . . . . . backwards diagonal line 2
+
+OER . . . . . oscilatory ER
+
+RER . . . . . repetitive ER
+
+ER . . . . . . early return 
+
+OC . . . . . . operation count
+
+IA . . . . . . increment and advance
+
+MCAL . . . . . . modnat COI abstract lifetime PM
+
+NDI . . . . . . no double incrementing principle
+
+F1E . . . . . . first 1 expansion (*0 = 1) PM
+
+ERC . . . . . . ER required count PM
+
+MM . . . . . .  modnat at maximum PM
+
+SNM . . . . . . *n at maximum PM
+
+SNL . . . . . . *n infinite loop PM
+
+GA . . . . . .  graph analysis pruning stage
+
+VL . . . . . . vertical line
+
+VLI . . . . . . VL inverse precession speed
+
+TS . . . . . . timesteps
+
+COI-LE-TS . . . displaying the state of the array every time 5 is executed.
+
+COI-TS . . . displaying the state of the array on every instruction that is executed.
+
+MPP . . . . middle portion percentage
+
+MFEA . . . . multi-FEA PM
+
+BT . . . . . backtrack
+
+BLT . . . . branch if less than
+
+BNE . . . . branch if not equal
+
+BEQ . . . . branch if equal
+
+BNZ . . . . branch if non-zero
+
+BZ . . . . branch if zero
+
+BGE . . . . branch if greater than or equal
+
+PER . . . . pointless ER PM  (formerly parsimonious COI constraint PM)
+
+36R . . . . . RRXFG which has 3 going unconditionally to 6   (R = 0)
+
+63R . . . . . RRXFG which has 6 going unconditionally to 3   (R = 1)
+
+FDL . . . . . forward diagonal line PM
+
+PA . . . . . physical address in a graph
+
+EDA . . . . empirical deadstop analysis PM
+
+De-Dup . . . de-duplication of lifetime's of z values, ie uniquifying the z list.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
