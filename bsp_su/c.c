@@ -26,12 +26,12 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 2;        // the duplication count (operation_count = 5 + D)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
-static const nat range_update_frequency = 10;
-static const nat minimum_split_size = 10;
-static const nat thread_count = 6;
+static const nat range_update_frequency = 0;
+static const nat minimum_split_size = 2;
+static const nat thread_count = 10;
 static const nat display_rate = 1;
 
 enum operations { one, two, three, five, six };
@@ -144,12 +144,12 @@ static void get_datetime(char datetime[32]) {
 	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
 }
 
-static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, nat* timeout) {
+static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 	const nat n = array_size;
 	array[0] = 0; 
 	array[n] = 0; 
-	memset(timeout, 0, operation_count * sizeof(nat));
+	// memset(timeout, 0, operation_count * sizeof(nat));
 
 	nat 	e = 0,  xw = 0,  pointer = 0,  
 		er_count = 0, 
@@ -333,11 +333,11 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, nat* 
 	return z_is_good;
 }
 
-static nat execute_graph(byte* graph, nat* array, nat* timeout, byte* origin) {
+static nat execute_graph(byte* graph, nat* array, byte* origin) {
 	nat pm = 0;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
-		pm = execute_graph_starting_at(o, graph, array, timeout);   
+		pm = execute_graph_starting_at(o, graph, array);   
 		if (not pm) { *origin = o; return z_is_good; } 
 	}
 	return pm;
@@ -471,13 +471,14 @@ try_open:;
 	);
 }
 
-
 static void* worker_thread(void* raw_argument) {
 
 	char filename[4096] = {0};
 	nat* pms = calloc(pm_count, sizeof(nat));
 	nat* array = calloc(array_size + 1, sizeof(nat));
-	nat* timeout = calloc(operation_count, sizeof(nat));
+
+	// nat* timeout = calloc(operation_count, sizeof(nat));
+
 	void* raw_graph = calloc(1, graph_count + (8 - (graph_count % 8)) % 8);
 	void* raw_end = calloc(1, graph_count   + (8 - (graph_count % 8)) % 8);
 	byte* graph = raw_graph;
@@ -691,7 +692,7 @@ bad:
 try_executing:;
 	nat pm = fea_execute_graph(graph, array);       if (pm) { pms[pm]++; goto loop; } 
 	byte origin;
-	    pm = execute_graph(graph, array, timeout, &origin);  if (pm) { pms[pm]++; goto loop; } 
+	    pm = execute_graph(graph, array, &origin);  if (pm) { pms[pm]++; goto loop; } 
 
 	pms[z_is_good]++; 
 	append_to_file(filename, sizeof filename, graph, origin);
@@ -718,7 +719,6 @@ terminate_thread:
 	free(raw_graph);
 	free(raw_end);
 	free(array);
-	free(timeout);
 	return pms;
 }
 

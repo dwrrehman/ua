@@ -1,0 +1,4 @@
+/opt/homebrew/opt/llvm/bin/clang -g -O0 -Weverything c.c -fprofile-instr-generate -fcoverage-mapping -o run
+
+
+

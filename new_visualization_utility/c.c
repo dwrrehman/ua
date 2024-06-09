@@ -24,7 +24,7 @@ static const byte D = 2;        // the duplication count (operation_count = 5 + 
 
 enum operations { one, two, three, five, six };
 
-static const bool should_deduplicate_z_list = false;
+static const bool should_deduplicate_z_list = true;
 
 static const size_t max_height = 4096, max_width = 4096;
 static const int delay_ms_per_frame = 16;
