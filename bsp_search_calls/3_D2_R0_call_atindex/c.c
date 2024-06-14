@@ -26,7 +26,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 0;        // the duplication count (operation_count = 5 + D)
+static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat range_update_frequency = 0;
@@ -592,8 +592,10 @@ init:  	pointer = 0;
 
 
 	for (byte index = 20; index < graph_count - 4; index += 4) {
-		if (graph[index] > graph[index + 4]) { at = index + 4; goto bad; } // WRONG: was     at = index   which is incorrect. 
+		if (graph[index] > graph[index + 4]) { at = index; goto bad; } // WRONG: was     at = index   which is incorrect. 
 	}                                                                      //       don't edit this to get the original semantics.
+
+		//////////////////////////////////// THE ABOVE LINE CHANGED:   ITS NOW:   at = index;     instead of the correct setting: at = index + 4; testing purposes only. 
 
 
 	for (byte index = operation_count; index--;) {

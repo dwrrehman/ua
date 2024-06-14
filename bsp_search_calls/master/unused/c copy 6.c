@@ -26,13 +26,13 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 0;        // the duplication count (operation_count = 5 + D)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat range_update_frequency = 0;
 static const nat minimum_split_size = 6;
 static const nat thread_count = 64;
-static const nat display_rate = 3;
+static const nat display_rate = 2;
 
 enum operations { one, two, three, five, six };
 
@@ -110,6 +110,7 @@ static const byte max_consecutive_h2_bouts = 30;
 static const byte max_consecutive_h3_bouts = 30;
 
 // static const byte max_consecutive_h1_bouts = 30;
+
 
 static const nat expansion_check_timestep = 5000;
 static const nat required_er_count = 25;
@@ -769,6 +770,7 @@ int main(void) {
 	snprintf(output_string, 4096, "SRNFGPR: searching [D=%hhu, R=%hhu] space....\n", D, R);
 	print(output_filename, 4096, output_string);
 
+	
 	global_range_begin = calloc(thread_count,sizeof(_Atomic nat));
 	global_range_end = calloc(thread_count,sizeof(_Atomic nat));
 
@@ -842,7 +844,7 @@ int main(void) {
 			print(output_filename, 4096, output_string);
 			
 		}
-		snprintf(output_string, 4096, "\n");
+		snprintf(output_string, 4096, "\n\n");
 		print(output_filename, 4096, output_string);
 
 		if (not largest_remaining) break;
