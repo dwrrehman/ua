@@ -840,7 +840,7 @@ int main(void) {
 				snprintf(output_string, 4096, "#");
 				print(output_filename, 4096, output_string);
 			}
-			snprintf(output_string, 4096, "\n\n");
+			snprintf(output_string, 4096, "\n");
 			print(output_filename, 4096, output_string);
 			
 		}
