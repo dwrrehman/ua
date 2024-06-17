@@ -26,7 +26,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 1;        // the duplication count (operation_count = 5 + D)
+static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat range_update_frequency = 0;
@@ -695,6 +695,15 @@ init:  	pointer = 0;
 					if (tohere == three) { at = 4 * index; goto bad; } 
 					at = 4 * (index < tohere ? index : tohere); goto bad; 
 				}
+
+
+
+
+		if (graph[4 * index] == six and graph[4 * l] == two and graph[4 * l + 1] == index) { 
+			at = 4 * l; goto bad; 
+		}
+
+
 		
 		if (l != index) was_utilized |= 1 << l;
 		if (g != index) was_utilized |= 1 << g;
@@ -742,6 +751,65 @@ terminate_thread:
 	free(array);
 	return pms;
 }
+
+
+
+
+
+		/*
+
+
+				*n = 0
+				*i = 4
+				(*n)++;  -----[*n < *i]----->    *n = 0;   ------[*n < *i]----->   (*n)++;
+
+
+
+
+				*n = 0
+				*i = 1
+				(*n)++;  -----[*n == *i]----->    *n = 0;   ------[*n < *i]----->   (*n)++;
+
+
+
+				*n = 0
+				*i = 0
+				(*n)++;  -----[*n > *i]----->    *n = 0;   ------[*n == *i]----->   (*n)++;
+
+
+
+
+
+
+
+
+
+
+
+
+			LA:		5		              6		                  7
+--------------------------------------------------------------------------------------------------------------------------
+
+
+		 ......	     DOL = {    1 : { .l=7 .g=X .e=X }       4 : { .l=X .g=X .e=X }      4 : { .l=5 .g=X .e=X }      }
+
+
+
+
+
+
+				*n = 0
+				*i = 4
+				(*n)++;  -----[*n < *i]----->    *n = 0;   ------[*n < *i]----->   (*n)++;
+
+		*/
+
+
+
+
+
+
+
 
 static nat expn(nat base, nat exponent) {
 	nat result = 1;
