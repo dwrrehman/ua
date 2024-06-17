@@ -99,7 +99,7 @@ static void generate_lifetime(struct z_value* z) {
 	z->lifetime[0] = calloc(width * lifetime_length, 4);
 	z->lifetime[1] = calloc(width * lifetime_length, 4);
 
-	const nat execution_limit = 10000000;
+	const nat execution_limit = 1000000000;
 
 	for (nat e = 0; e < execution_limit; e++) {
 

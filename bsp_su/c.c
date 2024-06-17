@@ -26,41 +26,75 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 0;        // the duplication count (operation_count = 5 + D)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat range_update_frequency = 0;
 static const nat minimum_split_size = 6;
-static const nat thread_count = 64;
-static const nat display_rate = 3;
+static const nat thread_count = 6;
+static const nat display_rate = 0;
 
 enum operations { one, two, three, five, six };
 
 enum pruning_metrics {
-	z_is_good, pm_ga, pm_fea, pm_ns0, 
-	pm_pco, pm_zr5, pm_zr6, pm_ndi, 
-	pm_oer, pm_r0i, pm_h0, pm_f1e, 
-	pm_erc, pm_rmv, pm_ot, pm_csm, 
-	pm_mm, pm_snm, pm_bdl, pm_bdl2, 
-	pm_erw, pm_mcal, pm_snl, 
-	pm_h1, pm_h2, pm_h3, pm_per,
-	pmf_fea, pmf_ns0, pmf_pco,
-	pmf_zr5, pmf_zr6, pmf_ndi,
-	pmf_per, pmf_mcal,
+	z_is_good, pm_ga, 
+	pm_fea, pm_ns0, 
+
+	pm_pco, pm_zr5, 
+	pm_zr6, pm_ndi, 
+
+	pm_oer, pm_r0i, 
+	pm_h0, pm_f1e, 
+
+	pm_erc, pm_rmv, 
+	pm_ot, pm_csm, 
+
+	pm_mm, pm_snm, 
+	pm_bdl, pm_bdl2, 
+
+	pm_erw, pm_mcal, 
+	pm_snl, pm_h1, 
+
+	pm_h2, pm_h3, 
+	pm_per, pmf_fea, 
+
+	pmf_ns0, pmf_pco,
+	pmf_zr5, pmf_zr6, 
+
+	pmf_ndi, pmf_per, 
+	pmf_mcal,
+
 	pm_count
 };
 
 static const char* pm_spelling[pm_count] = {
-	"z_is_good", "pm_ga", "pm_fea", "pm_ns0", 
-	"pm_pco", "pm_zr5", "pm_zr6", "pm_ndi", 
-	"pm_oer", "pm_r0i", "pm_h0", "pm_f1e", 
-	"pm_erc", "pm_rmv", "pm_ot", "pm_csm", 
-	"pm_mm", "pm_snm", "pm_bdl", "pm_bdl2", 
-	"pm_erw", "pm_mcal", "pm_snl", 
-	"pm_h1", "pm_h2", "pm_h3", "pm_per",
-	"pmf_fea", "pmf_ns0", "pmf_pco",
-	"pmf_zr5", "pmf_zr6", "pmf_ndi",
-	"pmf_per", "pmf_mcal",
+	"z_is_good", "pm_ga", 
+	"pm_fea", "pm_ns0", 
+	
+	"pm_pco", "pm_zr5", 
+	"pm_zr6", "pm_ndi", 
+
+	"pm_oer", "pm_r0i", 
+	"pm_h0", "pm_f1e", 
+
+	"pm_erc", "pm_rmv", 
+	"pm_ot", "pm_csm", 
+
+	"pm_mm", "pm_snm", 
+	"pm_bdl", "pm_bdl2", 
+
+	"pm_erw", "pm_mcal", 
+	"pm_snl", "pm_h1", 
+
+	"pm_h2", "pm_h3", 
+	"pm_per", "pmf_fea", 
+
+	"pmf_ns0", "pmf_pco",
+	"pmf_zr5", "pmf_zr6", 
+
+	"pmf_ndi", "pmf_per", 
+	"pmf_mcal",
+
 };
 
 static const byte _ = 0;
@@ -147,8 +181,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 	const nat n = array_size;
 	array[0] = 0; 
-	array[n] = 0; 
-	// memset(timeout, 0, operation_count * sizeof(nat));
+	array[n] = 0;
 
 	nat 	e = 0,  xw = 0,  pointer = 0,  
 		er_count = 0, 
@@ -163,7 +196,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 	byte 	mcal_path = 0,
 		ERW_counter = 0, SNL_counter = 0,  OER_counter = 0,  BDL_counter = 0, 
 		BDL2_counter = 0,  R0I_counter = 0, 
-		H0_counter = 0, H2_counter = 0, H3_counter = 0,                 // H1_counter = 0, 
+		H0_counter = 0, H2_counter = 0, H3_counter = 0, 
 		RMV_counter = 0, CSM_counter = 0;
 
 	byte ip = origin;
@@ -183,12 +216,6 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		}
 		
 		const byte I = ip * 4, op = graph[I];
-
-		/*for (nat i = 0; i < operation_count; i++) {
-			if (timeout[i] >= execution_limit >> 1) return pm_ot; 
-			timeout[i]++;
-		}
-		timeout[ip] = 0;*/
 
 		if (op == one) {
 			if (pointer == n) return pm_fea; 
@@ -246,14 +273,18 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 		else if (op == two) {
 			if (array[n] >= 65535) return pm_snm; 
-			if (last_op == six) SNL_counter++; else SNL_counter = 0;
+
+			if (last_op == six) SNL_counter++; 
+			else if (last_op != two) SNL_counter = 0;
 			if (SNL_counter >= max_sn_loop_iterations) return pm_snl;
 
 			array[n]++;
 		}
 		else if (op == six) {  
 			if (not array[n]) return pm_zr6; 
-			if (last_op == two) SNL_counter++; else SNL_counter = 0;
+
+			if (last_op == two) SNL_counter++; 
+			else SNL_counter = 0;
 			if (SNL_counter >= max_sn_loop_iterations) return pm_snl;
 
 			array[n] = 0;
@@ -270,12 +301,6 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 				H0_counter++;
 				if (H0_counter >= max_consecutive_h0_bouts) return pm_h0; 
 			}
-
-			/*if (bout_length == 1) {
-				H1_counter++;
-				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
-			} else H1_counter = 0;*/
-
 
 			if (bout_length == 2) {
 				H2_counter++;
@@ -302,7 +327,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
 		last_op = op;
 
-		if (mcal_index == 1  and last_mcal_op != three) return pm_mcal; 
+		if (mcal_index == 1  and last_mcal_op != three) return pm_mcal;
 		if (mcal_index == 2  and last_mcal_op != one) 	return pm_mcal;
 		if (mcal_index == 3  and last_mcal_op != three) return pm_mcal;
 		if (mcal_index == 4  and last_mcal_op != five) 	return pm_mcal;
@@ -475,9 +500,6 @@ static void* worker_thread(void* raw_argument) {
 	char filename[4096] = {0};
 	nat* pms = calloc(pm_count, sizeof(nat));
 	nat* array = calloc(array_size + 1, sizeof(nat));
-
-	// nat* timeout = calloc(operation_count, sizeof(nat));
-
 	void* raw_graph = calloc(1, graph_count + (8 - (graph_count % 8)) % 8);
 	void* raw_end = calloc(1, graph_count   + (8 - (graph_count % 8)) % 8);
 	byte* graph = raw_graph;
@@ -791,10 +813,10 @@ int main(void) {
 		pthread_create(threads + i, NULL, worker_thread, thread_index);
 	}
 
-	while (1) {
+	nat* local_begin = calloc(thread_count, sizeof(nat));
+	nat* local_end = calloc(thread_count, sizeof(nat));
 
-		nat* local_begin = calloc(thread_count, sizeof(nat));
-		nat* local_end = calloc(thread_count, sizeof(nat));
+	while (1) {
 
 		for (nat i = 0; i < thread_count; i++) {
 			local_begin[i] = atomic_load_explicit(global_range_begin + i, memory_order_relaxed);
@@ -847,9 +869,7 @@ int main(void) {
 
 		if (not largest_remaining) break;
 		sleep(1 << display_rate);
-		// usleep(300000);
 	}
-
 
 	nat counts[pm_count] = {0};
 	for (nat i = 0; i < thread_count; i++) {
@@ -2229,6 +2249,20 @@ if (h >= space_size) {
 */
 
 
+// memset(timeout, 0, operation_count * sizeof(nat));
 
 
+
+		/*for (nat i = 0; i < operation_count; i++) {
+			if (timeout[i] >= execution_limit >> 1) return pm_ot; 
+			timeout[i]++;
+		}
+		timeout[ip] = 0;*/
+
+
+
+			/*if (bout_length == 1) {
+				H1_counter++;
+				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
+			} else H1_counter = 0;*/
 
