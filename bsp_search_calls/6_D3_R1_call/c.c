@@ -31,7 +31,7 @@ static const byte R = 1;   	// which partial graph we are using. (1 means 63R, 0
 
 static const nat range_update_frequency = 0;
 static const nat minimum_split_size = 6;
-static const nat thread_count = 6;
+static const nat thread_count = 64;
 static const nat display_rate = 5;
 
 enum operations { one, two, three, five, six };
