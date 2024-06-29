@@ -26,12 +26,13 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 2;        // the duplication count (operation_count = 5 + D)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat range_update_frequency = 0;
 static const nat minimum_split_size = 6;
-static const nat thread_count = 6;
+
+static const nat thread_count = 10;
 static const nat display_rate = 0;
 
 enum operations { one, two, three, five, six };
@@ -514,7 +515,7 @@ static void* worker_thread(void* raw_argument) {
 	const nat thread_index = *(nat*) raw_argument;
 	free(raw_argument);
 
-	nat range_begin = atomic_load_explicit(global_range_begin + 8 * thread_index, memory_order_relaxed);
+	nat range_begin = atomic_load_explicit(global_range_begin + 1 * thread_index, memory_order_relaxed);
 	nat range_end = atomic_load_explicit(global_range_end + thread_index, memory_order_relaxed);
 
 	//printf("worker_thread[%llu]: starting with job:  [range_begin=%llu, range_end=%llu]\n", thread_index, range_begin, range_end);
@@ -545,7 +546,7 @@ done:
 	nat largest_remaining = 0, chosen_thread = 0;
 
 	for (nat thread = 0; thread < thread_count; thread++) {
-		const nat b = atomic_load_explicit(global_range_begin + 8 * thread, memory_order_relaxed);
+		const nat b = atomic_load_explicit(global_range_begin + 1 * thread, memory_order_relaxed);
 		const nat e = atomic_load_explicit(global_range_end + thread, memory_order_relaxed);
 		const nat size =  e >= b ? e - b : 0;
 		if (size > largest_remaining) { largest_remaining = size; chosen_thread = thread; }
@@ -565,7 +566,7 @@ done:
 	range_begin = job_ends_at - subtract_off_amount;
 	range_end = job_ends_at;
 
-	atomic_store_explicit(global_range_begin + 8 * thread_index, range_begin, memory_order_relaxed);
+	atomic_store_explicit(global_range_begin + 1 * thread_index, range_begin, memory_order_relaxed);
 	atomic_store_explicit(global_range_end + thread_index, range_end, memory_order_relaxed);
 
 	pthread_mutex_unlock(&mutex);
@@ -600,7 +601,7 @@ init:  	pointer = 0;
 			zindex += p * graph[positions[i]];
 			p *= (nat) (positions[i] & 3 ? operation_count : 5);
 		}
-		atomic_store_explicit(global_range_begin + 8 * thread_index, zindex, memory_order_relaxed);
+		atomic_store_explicit(global_range_begin + 1 * thread_index, zindex, memory_order_relaxed);
 
 		
 		//printf("worker_thread[%llu]: updating begin and end,   pulled range_end=%llu, published range_begin=%llu]\n", thread_index, local_range_end, zindex);
@@ -741,7 +742,7 @@ reset_:
 terminate_thread:
 
 	pthread_mutex_lock(&mutex);
-	atomic_store_explicit(global_range_begin + 8 * thread_index, 0, memory_order_relaxed);
+	atomic_store_explicit(global_range_begin + 1 * thread_index, 0, memory_order_relaxed);
 	atomic_store_explicit(global_range_end   + thread_index, 0, memory_order_relaxed);
 	pthread_mutex_unlock(&mutex);
 
@@ -859,7 +860,7 @@ int main(void) {
 	snprintf(output_string, 4096, "SRNFGPR: searching [D=%hhu, R=%hhu] space....\n", D, R);
 	print(output_filename, 4096, output_string);
 
-	global_range_begin = calloc(8 * thread_count, sizeof(_Atomic nat));
+	global_range_begin = calloc(1 * thread_count, sizeof(_Atomic nat));
 	global_range_end = calloc(thread_count, sizeof(_Atomic nat));
 
 	pthread_mutex_init(&mutex, NULL);
@@ -867,7 +868,7 @@ int main(void) {
 	const nat width = space_size / thread_count;
 	nat begin = 0;
 	for (nat i = 0; i < thread_count; i++) {
-		atomic_init(global_range_begin + 8 * i, begin);
+		atomic_init(global_range_begin + 1 * i, begin);
 		atomic_init(global_range_end + i, i < thread_count - 1 ? begin + width - 1 : space_size - 1);
 		begin += width;
 	}
@@ -887,7 +888,7 @@ int main(void) {
 	while (1) {
 
 		for (nat i = 0; i < thread_count; i++) {
-			local_begin[i] = atomic_load_explicit(global_range_begin + 8 * i, memory_order_relaxed);
+			local_begin[i] = atomic_load_explicit(global_range_begin + 1 * i, memory_order_relaxed);
 			local_end[i] = atomic_load_explicit(global_range_end + i, memory_order_relaxed);
 		}
 		
