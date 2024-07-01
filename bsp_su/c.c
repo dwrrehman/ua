@@ -12,6 +12,43 @@
 
 /*
 
+
+
+
+
+
+
+
+
+
+
+
+notes
+
+
+uaj iter add    profile bsp
+
+
+
+
+0 ohm jumper  in pencil for 2d wiring
+wire mount for pencil pcb
+
+
+
+
+   loop unrolling is just cte
+
+
+x    remove printing from output file
+
+
+
+
+
+
+
+
 	*0    *1    *2    *3    *4    *5   ... 
 	
 	[ ]   [x]   [ ]   [ ]   [ ]   [ ]  
