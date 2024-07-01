@@ -944,7 +944,11 @@ int main(void) {
 	nat* local_begin = calloc(thread_count, sizeof(nat));
 	nat* local_end = calloc(thread_count, sizeof(nat));
 
+	nat resolution = 360;
+
 	while (1) {
+
+		byte printed_one_char = 0;
 
 		for (nat i = 0; i < thread_count; i++) {
 			local_begin[i] = atomic_load_explicit(global_range_begin + cache_line_size * i, memory_order_relaxed);
@@ -981,17 +985,21 @@ int main(void) {
 			printf("%s", output_string);
 
 			const nat diff = local_end[i] - local_begin[i];
-			const nat zs_per_char = space_size / 360;
+			const nat zs_per_char = space_size / resolution;
 			const nat amount = diff / zs_per_char;
 
 			for (nat j = 0; j < amount; j++) {
 				snprintf(output_string, 4096, "#");
 				printf("%s", output_string);
+				printed_one_char = 1;
 			}
 			snprintf(output_string, 4096, "\n");
 			printf("%s", output_string);
-			
 		}
+
+		if (not printed_one_char) resolution *= 1024;
+		if (resolution > space_size) resolution = space_size;
+		
 		snprintf(output_string, 4096, "\n");
 		printf("%s", output_string);
 
