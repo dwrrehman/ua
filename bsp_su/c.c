@@ -81,7 +81,8 @@ typedef uint16_t u16;
 static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
-static const nat range_update_frequency = 0;
+// static const nat range_update_frequency = 0;
+
 static const nat minimum_split_size = 6;
 
 static const nat thread_count = 6;
@@ -644,7 +645,7 @@ static void* worker_thread(void* raw_argument) {
 	memcpy(graph, R ? _63R : _36R, 20);
 	memcpy(end, R ? _63R : _36R, 20);
 	byte pointer = 0;
-	nat publish_counter = 0;
+	// nat publish_counter = 0;
 
 	const nat thread_index = *(nat*) raw_argument;
 	free(raw_argument);
@@ -718,48 +719,72 @@ increment:
 	graph[positions[pointer]]++;
 init:  	pointer = 0;
 
-	if (publish_counter >= range_update_frequency) {
+	//if (publish_counter >= range_update_frequency) {
+		
+	const nat local_range_end = atomic_load_explicit(global_range_end + thread_index, memory_order_relaxed);
+	p = 1;
+	for (nat i = 0; i < hole_count; i++) {
+		end[positions[i]] = (byte) ((local_range_end / p) % (nat) (positions[i] & 3 ? operation_count : 5));
+		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+	}
+
+
+	nat zindex = 0;
+	p = 1;
+	for (byte i = 0; i < hole_count; i++) {
+		zindex += p * graph[positions[i]];
+		p *= (nat) (positions[i] & 3 ? operation_count : 5);
+	}
+	atomic_store_explicit(global_range_begin + cache_line_size * thread_index, zindex, memory_order_relaxed);
 
 		
-		const nat local_range_end = atomic_load_explicit(global_range_end + thread_index, memory_order_relaxed);
-		p = 1;
-		for (nat i = 0; i < hole_count; i++) {
-			end[positions[i]] = (byte) ((local_range_end / p) % (nat) (positions[i] & 3 ? operation_count : 5));
-			p *= (nat) (positions[i] & 3 ? operation_count : 5);
-		}
+	// printf("worker_thread[%llu]: updating begin and end,   pulled range_end=%llu, 
+	// published range_begin=%llu]\n", thread_index, local_range_end, zindex);
+	//	publish_counter = 0;
+	//} else publish_counter++;
 
-
-		nat zindex = 0;
-		p = 1;
-		for (byte i = 0; i < hole_count; i++) {
-			zindex += p * graph[positions[i]];
-			p *= (nat) (positions[i] & 3 ? operation_count : 5);
-		}
-		atomic_store_explicit(global_range_begin + cache_line_size * thread_index, zindex, memory_order_relaxed);
-
-		
-		//printf("worker_thread[%llu]: updating begin and end,   pulled range_end=%llu, published range_begin=%llu]\n", thread_index, local_range_end, zindex);
-
-		publish_counter = 0;
-
-	} else publish_counter++;
 
 	u16 was_utilized = 0;
 	byte at = 0;
 
 
 	for (byte index = 20; index < graph_count - 4; index += 4) {
-		if (graph[index] > graph[index + 4]) { at = index + 4; goto bad; } // WRONG: was     at = index   which is incorrect. 
-	}                                                                      //       don't edit this to get the original semantics.
-
+		if (graph[index] > graph[index + 4]) { at = index + 4; goto bad; } 
+	}
 
 	for (byte index = operation_count; index--;) {
 
-		if (graph[4 * index + 3] == index) {  at = 4 * index + 3; goto bad; }
-		if (graph[4 * index] == one   and graph[4 * index + 2] == index) {  at = 4 * index; goto bad; }
-		if (graph[4 * index] == six   and graph[4 * index + 2])          {  at = 4 * index; goto bad; }
-		if (graph[4 * index] == two   and graph[4 * index + 2] == index) {  at = 4 * index + 2 * (index == two); goto bad; }
-		if (graph[4 * index] == three and graph[4 * index + 1] == index) {  at = 4 * index + 1 * (index == three); goto bad; }
+
+		
+		
+
+		
+
+		
+
+		
+
+
+
+		if (graph[4 * index + 3] == index) {  
+			at = 4 * index + 3; goto bad; 
+		}
+		if (graph[4 * index] == one   and graph[4 * index + 2] == index) {  
+			at = 4 * index; goto bad; 
+		}
+		if (graph[4 * index] == six   and graph[4 * index + 2]) {  
+			at = 4 * index; goto bad; 
+		}
+		if (graph[4 * index] == two   and graph[4 * index + 2] == index) {  
+			at = 4 * index + 2 * (index == two); goto bad; 
+		}
+		if (graph[4 * index] == three and graph[4 * index + 1] == index) {  
+			at = 4 * index + 1 * (index == three); goto bad; 
+		}
+		
+	//	if (graph[4 * index] == six and graph[4 * l] == two and graph[4 * l + 1] == index) { 
+	//		at = 4 * l; goto bad; 
+	//	}    // redundant, to the 2->6 GA check that we just added just now. 202406307.182147
 
 		if (graph[4 * index] == six and graph[4 * graph[4 * index + 3]] == one) {
 			if (index == six) { at = 4 * index + 3; goto bad; } 
@@ -795,6 +820,15 @@ init:  	pointer = 0;
 			at = 4 * (index < e ? index : e); goto bad; 
 		}
 
+		if (graph[4 * index] == two)
+			for (byte offset = 1; offset < 4; offset++) 
+				if (graph[4 * graph[4 * index + offset]] == six) {
+					if (index == two) { at = 4 * index + offset; goto bad; } 
+					const byte tohere = graph[4 * index + offset];
+					if (tohere == six) { at = 4 * index; goto bad; }
+					at = 4 * (index < tohere ? index : tohere); goto bad; 
+				}
+	
 		if (graph[4 * index] == one)
 			for (byte offset = 1; offset < 4; offset++) 
 				if (graph[4 * graph[4 * index + offset]] == five) { 
@@ -830,14 +864,6 @@ init:  	pointer = 0;
 					if (tohere == three) { at = 4 * index; goto bad; } 
 					at = 4 * (index < tohere ? index : tohere); goto bad; 
 				}
-
-
-
-
-		if (graph[4 * index] == six and graph[4 * l] == two and graph[4 * l + 1] == index) { 
-			at = 4 * l; goto bad; 
-		}
-
 
 		
 		if (l != index) was_utilized |= 1 << l;
@@ -1099,7 +1125,7 @@ int main(void) {
 			"\n\tthread_count=%llu"
 			"\n\tcache_line_size=%llu"
 			"\n\tminimum_split_size=%llu"
-			"\n\trange_update_frequency=%llu"
+			// "\n\trange_update_frequency=%llu"
 			"\n\tdisplay_rate=%llu"
 			"\n\tfea_execution_limit=%llu"
 			"\n\texecution_limit=%llu"
@@ -1112,7 +1138,7 @@ int main(void) {
 			"\n\n\npm counts:\n", 
 
 			D, R,   space_size,  thread_count,   cache_line_size,
-			minimum_split_size,  range_update_frequency, display_rate,
+			minimum_split_size,  display_rate,
 			fea_execution_limit,  execution_limit,  array_size,  space_size, 
 			thread_count,  seconds,  time_begin_dt,  time_end_dt,  zthroughput
 	);
@@ -2470,3 +2496,10 @@ if (h >= space_size) {
 				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
 			} else H1_counter = 0;*/
 
+
+
+/*
+// WRONG: was     at = index   which is incorrect. 
+	}                                                                      //       don't edit this to get the original semantics.
+
+*/
