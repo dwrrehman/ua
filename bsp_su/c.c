@@ -997,7 +997,7 @@ int main(void) {
 			printf("%s", output_string);
 		}
 
-		if (not printed_one_char) resolution *= 1024;
+		if (not printed_one_char) resolution *= 512;
 		if (resolution > space_size) resolution = space_size;
 		
 		snprintf(output_string, 4096, "\n");
