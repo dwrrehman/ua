@@ -1,0 +1,79 @@
+SRNFGPR: searching [D=1, R=0] space....
+
+	0.0010809639%
+
+
+	0.3592501793%
+
+
+	0.5121633516%
+
+
+	0.5490177283%
+
+
+	0.5635996206%
+
+
+	0.5756156379%
+
+
+	0.5865031496%
+
+
+	0.6597539919%
+
+
+	0.7283062751%
+
+
+	0.7978443996%
+
+
+	0.8748536476%
+
+
+	0.9972617479%
+
+
+	1.0000000000%
+
+using [D=1, R=0]:
+	space_size=10883911680
+	thread_count=5
+	cache_line_size=8
+	minimum_split_size=6
+	range_update_frequency=0
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 10883911680 zvs
+	using 5 threads
+	in      12.00s [1202406307.171830:1202406307.171842],
+	at 906992640.00 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 10741531908		
+pm_fea: 0       		pm_ns0: 0       		
+pm_pco: 48      		pm_zr5: 12063   		
+pm_zr6: 8358    		pm_ndi: 0       		
+pm_oer: 0       		pm_r0i: 6485    		
+ pm_h0: 25067   		pm_f1e: 66      		
+pm_erc: 619020  		pm_rmv: 0       		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 1830    		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 0       		 pm_h3: 0       		
+pm_per: 426     		pmf_fea: 0       		
+pmf_ns0: 14163   		pmf_pco: 2823644 		
+pmf_zr5: 4931408 		pmf_zr6: 55997506		
+pmf_ndi: 35001822		pmf_per: 12242412		
+pmf_mcal: 26927   		(null): 17533207		
+(null): 13135320		
+[done]

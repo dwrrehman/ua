@@ -7,6 +7,58 @@
 // old 202403041.192520: by dwrr         
 //      the prthead  cpu-parellelized version of the srnfgpr.
 //
+
+/*
+
+
+
+1067/60  17.7833333333
+
+000000000000 : 00000000000000000000 :: 
+
+using [D=2, R=0]:
+        space_size=118689037748575
+        thread_count=64
+        minimum_split_size=6
+        range_update_frequency=0
+        display_rate=3
+        fea_execution_limit=5000
+        execution_limit=10000000000
+        array_size=100000
+
+
+        searched 118689037748575 zvs
+        using 64 threads
+        in    1067.00s [1202406296.041605:1202406296.043352],
+        at 111236211573.17 z/s.
+
+
+pm counts:
+z_is_good: 0                     pm_ga: 118673515889217 
+pm_fea: 0                       pm_ns0: 91740   
+pm_pco: 197031                  pm_zr5: 12574641
+pm_zr6: 13909703                pm_ndi: 950355  
+pm_oer: 21708                   pm_r0i: 669957  
+ pm_h0: 2047223                 pm_f1e: 5954    
+pm_erc: 34413942                pm_rmv: 956741  
+ pm_ot: 0                       pm_csm: 0       
+ pm_mm: 18                      pm_snm: 18      
+pm_bdl: 720                     pm_bdl2: 0       
+pm_erw: 0                       pm_mcal: 1474341 
+pm_snl: 346981997                pm_h1: 0       
+ pm_h2: 1014                     pm_h3: 12      
+pm_per: 220234                  pmf_fea: 1840527 
+pmf_ns0: 271515602              pmf_pco: 390249243
+pmf_zr5: 4979848460             pmf_zr6: 6560756663
+pmf_ndi: 1091898281             pmf_per: 5315232 
+pmf_mcal: 1805918001
+[done]
+
+*/
+
+
+
+
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
@@ -26,16 +78,16 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 1;        // the duplication count (operation_count = 5 + D)
+static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 static const nat range_update_frequency = 0;
 static const nat minimum_split_size = 6;
 
-static const nat thread_count = 10;
+static const nat thread_count = 6;
 static const nat display_rate = 0;
 
-static const nat cache_line_size = 1;
+static const nat cache_line_size = 16;
 
 enum operations { one, two, three, five, six };
 
@@ -59,13 +111,16 @@ enum pruning_metrics {
 	pm_snl, pm_h1, 
 
 	pm_h2, pm_h3, 
-	pm_per, pmf_fea, 
+	pm_per, pm_snco,
 
-	pmf_ns0, pmf_pco,
-	pmf_zr5, pmf_zr6, 
 
-	pmf_ndi, pmf_per, 
-	pmf_mcal,
+	pmf_fea, pmf_ns0, 
+	pmf_pco, pmf_zr5, 
+
+	pmf_zr6, pmf_ndi, 
+	pmf_per, pmf_mcal, 
+
+	pmf_snco,
 
 	pm_count
 };
@@ -164,6 +219,71 @@ static pthread_t* threads = NULL;
 static _Atomic nat* global_range_begin = NULL;
 static _Atomic nat* global_range_end = NULL;
 static pthread_mutex_t mutex;
+
+
+
+
+
+
+
+
+/*
+(MCALOP) [2]... 6 [2]... (MCAL_OP) [2]... 6 [2]... (MCALOP) [2]... 6 [2]...
+
+(MCALOP) [2]... 6 [2]... 6 [2]... (MCALOP) [2]... (MCALOP) [2] [2] [2] [2] [2] 6 [2]...
+
+const nat op = ...
+
+if (six) {
+	if (bit) return pm_snco;
+	bit = 1;
+
+} else if (two) {
+	...
+}
+
+...
+
+if (op == one or three or five) {
+	last_mcal_op = op;
+	mcal_index++;
+	bit = 0;
+}
+
+last_op = op;
+///////////////////////////////////////
+
+implementation:
+
+
+const nat op = ...
+
+if (op == six) {
+	if (	last_op != one and 
+		last_op != three and 
+		last_op != five
+	) return pm_snco;
+	...
+}
+
+
+
+
+
+
+////////////////////////
+
+
+
+
+
+
+*/
+
+
+
+
+
 
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
@@ -284,7 +404,11 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 			array[n]++;
 		}
 		else if (op == six) {  
-			if (not array[n]) return pm_zr6; 
+			if (not array[n]) return pm_zr6;
+			if (	last_op != one and 
+				last_op != three and 
+				last_op != five
+			) return pm_snco;
 
 			if (last_op == two) SNL_counter++; 
 			else SNL_counter = 0;
@@ -375,7 +499,7 @@ static nat fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 	const nat n = 5;
 	array[n] = 0; 
 	array[0] = 0; 
-	byte ip = origin, last_mcal_op = 255, mcal_path = 0;
+	byte ip = origin, last_mcal_op = 255, mcal_path = 0, last_op = 255;
 	nat pointer = 0, e = 0, xw = 0, mcal_index = 0;
 	nat did_ier_at = (nat)~0;
 
@@ -405,6 +529,12 @@ static nat fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		else if (op == two) { array[n]++; }
 		else if (op == six) {  
 			if (not array[n]) return pmf_zr6;
+
+			if (	last_op != one and 
+				last_op != three and 
+				last_op != five
+			) return pmf_snco;
+
 			array[n] = 0;   
 		}
 
@@ -420,6 +550,7 @@ static nat fea_execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		}
 
 		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
+		last_op = op;
 
 		if (mcal_index == 1  and last_mcal_op != three) return pmf_mcal; 
 		if (mcal_index == 2  and last_mcal_op != one) 	return pmf_mcal;
@@ -903,10 +1034,10 @@ int main(void) {
 		}
 
 		snprintf(output_string, 4096, "\033[H\033[2J");
-		print(output_filename, 4096, output_string);
+		printf("%s", output_string);
 
 		snprintf(output_string, 4096, "\n-----------------printing current job allocations (largest_remaining: %llu)-------------------\n", largest_remaining);
-		print(output_filename, 4096, output_string);
+		printf("%s", output_string);
 
 		nat sum = 0;
 
@@ -921,7 +1052,7 @@ int main(void) {
 		for (nat i = 0; i < thread_count; i++) { 
 
 			snprintf(output_string, 4096, "  %c %020llu : %020llu :: ", i == chosen_thread ? '*' : ' ', local_begin[i], local_end[i]);
-			print(output_filename, 4096, output_string);
+			printf("%s", output_string);
 
 			const nat diff = local_end[i] - local_begin[i];
 			const nat zs_per_char = space_size / 360;
@@ -929,14 +1060,14 @@ int main(void) {
 
 			for (nat j = 0; j < amount; j++) {
 				snprintf(output_string, 4096, "#");
-				print(output_filename, 4096, output_string);
+				printf("%s", output_string);
 			}
 			snprintf(output_string, 4096, "\n");
-			print(output_filename, 4096, output_string);
+			printf("%s", output_string);
 			
 		}
 		snprintf(output_string, 4096, "\n");
-		print(output_filename, 4096, output_string);
+		printf("%s", output_string);
 
 		if (not largest_remaining) break;
 		sleep(1 << display_rate);
@@ -965,6 +1096,7 @@ int main(void) {
 	snprintf(output_string, 4096, "using [D=%hhu, R=%hhu]:"
 			"\n\tspace_size=%llu"
 			"\n\tthread_count=%llu"
+			"\n\tcache_line_size=%llu"
 			"\n\tminimum_split_size=%llu"
 			"\n\trange_update_frequency=%llu"
 			"\n\tdisplay_rate=%llu"
@@ -978,7 +1110,7 @@ int main(void) {
 			"\n\tat %10.2lf z/s."
 			"\n\n\npm counts:\n", 
 
-			D, R,   space_size,  thread_count,  
+			D, R,   space_size,  thread_count,   cache_line_size,
 			minimum_split_size,  range_update_frequency, display_rate,
 			fea_execution_limit,  execution_limit,  array_size,  space_size, 
 			thread_count,  seconds,  time_begin_dt,  time_end_dt,  zthroughput
