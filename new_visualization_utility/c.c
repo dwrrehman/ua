@@ -34,7 +34,7 @@ static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
 static const nat array_size = 10000;
-static const nat lifetime_length = 1000;
+static const nat lifetime_length = 10000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;

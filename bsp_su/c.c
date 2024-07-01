@@ -8,56 +8,74 @@
 //      the prthead  cpu-parellelized version of the srnfgpr.
 //
 
+
+
 /*
 
+	*0    *1    *2    *3    *4    *5   ... 
+	
+	[ ]   [x]   [ ]   [ ]   [ ]   [ ]  
+	[ ]   [x]   [x]   [ ]   [1]   [ ]                 ...   ER(3;5)
+	[ ]   [x]   [ ]   [ ]   [ ]   [ ]     <----
+	[ ]   [x]   [ ]   [ ]   [ ]   [ ]  
+	[ ]   [x]   [ ]   [ ]   [ ]   [ ]  
+	[ ]   [x]   [ ]   [ ]   [ ]   [ ]  
+	      .....
+	[ ]   [x]   [ ]   [ ]   [ ]   [ ]  
 
 
-1067/60  17.7833333333
-
-000000000000 : 00000000000000000000 :: 
-
-using [D=2, R=0]:
-        space_size=118689037748575
-        thread_count=64
-        minimum_split_size=6
-        range_update_frequency=0
-        display_rate=3
-        fea_execution_limit=5000
-        execution_limit=10000000000
-        array_size=100000
 
 
-        searched 118689037748575 zvs
-        using 64 threads
-        in    1067.00s [1202406296.041605:1202406296.043352],
-        at 111236211573.17 z/s.
+one:
+	if (pointer == 1) {
+
+		if ((last_mcal_op == three) {
+
+			counter++;
+			if (counter >= stuff) return pm;
+		}
+
+		else last_mcal_op == one) counter = 0;
+
+	}
 
 
-pm counts:
-z_is_good: 0                     pm_ga: 118673515889217 
-pm_fea: 0                       pm_ns0: 91740   
-pm_pco: 197031                  pm_zr5: 12574641
-pm_zr6: 13909703                pm_ndi: 950355  
-pm_oer: 21708                   pm_r0i: 669957  
- pm_h0: 2047223                 pm_f1e: 5954    
-pm_erc: 34413942                pm_rmv: 956741  
- pm_ot: 0                       pm_csm: 0       
- pm_mm: 18                      pm_snm: 18      
-pm_bdl: 720                     pm_bdl2: 0       
-pm_erw: 0                       pm_mcal: 1474341 
-pm_snl: 346981997                pm_h1: 0       
- pm_h2: 1014                     pm_h3: 12      
-pm_per: 220234                  pmf_fea: 1840527 
-pmf_ns0: 271515602              pmf_pco: 390249243
-pmf_zr5: 4979848460             pmf_zr6: 6560756663
-pmf_ndi: 1091898281             pmf_per: 5315232 
-pmf_mcal: 1805918001
-[done]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+a
+	op = 3
+	last_mcal_op = 1
+	last_last_mcal_op = 5
+
+
+	op = 1
+	last_mcal_op = 1
+	last_last_mcal_op = 5
+	
+
+	
+
+
+
+
+
+
 
 */
-
-
-
 
 #include <time.h>
 #include <string.h>
@@ -120,7 +138,7 @@ enum pruning_metrics {
 	pmf_zr6, pmf_ndi, 
 	pmf_per, pmf_mcal, 
 
-	pmf_snco,
+	pmf_snco, pm_r1i,
 
 	pm_count
 };
@@ -153,7 +171,7 @@ static const char* pm_spelling[pm_count] = {
 	"pmf_zr6", "pmf_ndi", 
 	"pmf_per", "pmf_mcal", 
 
-	"pmf_snco",
+	"pmf_snco", "pm_r1i",
 };
 
 
@@ -196,6 +214,7 @@ static const byte max_er_repetions = 50;
 static const byte max_erw_count = 100;
 static const byte max_modnat_repetions = 15;
 static const byte max_consecutive_s0_incr = 30;
+static const byte max_consecutive_s1_incr = 30;
 static const byte max_consecutive_small_modnats = 200;
 static const byte max_bdl_er_repetions = 25;
 static const byte max_sn_loop_iterations = 100 * 2;
@@ -216,76 +235,10 @@ static nat space_size = 0;
 static byte* positions = NULL; 
 static pthread_t* threads = NULL; 
 
-
 // runtime variables:
 static _Atomic nat* global_range_begin = NULL;
 static _Atomic nat* global_range_end = NULL;
 static pthread_mutex_t mutex;
-
-
-
-
-
-
-
-
-/*
-(MCALOP) [2]... 6 [2]... (MCAL_OP) [2]... 6 [2]... (MCALOP) [2]... 6 [2]...
-
-(MCALOP) [2]... 6 [2]... 6 [2]... (MCALOP) [2]... (MCALOP) [2] [2] [2] [2] [2] 6 [2]...
-
-const nat op = ...
-
-if (six) {
-	if (bit) return pm_snco;
-	bit = 1;
-
-} else if (two) {
-	...
-}
-
-...
-
-if (op == one or three or five) {
-	last_mcal_op = op;
-	mcal_index++;
-	bit = 0;
-}
-
-last_op = op;
-///////////////////////////////////////
-
-implementation:
-
-
-const nat op = ...
-
-if (op == six) {
-	if (	last_op != one and 
-		last_op != three and 
-		last_op != five
-	) return pm_snco;
-	...
-}
-
-
-
-
-
-
-////////////////////////
-
-
-
-
-
-
-*/
-
-
-
-
-
 
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
@@ -318,7 +271,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		BDL_er_at = 0,
 		BDL2_er_at = 0;
 
-	byte 	mcal_path = 0,
+	byte 	mcal_path = 0, R1I_counter = 0,
 		ERW_counter = 0, SNL_counter = 0,  OER_counter = 0,  BDL_counter = 0, 
 		BDL2_counter = 0,  R0I_counter = 0, 
 		H0_counter = 0, H2_counter = 0, H3_counter = 0, 
@@ -332,22 +285,29 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 		if (e == expansion_check_timestep2) { 
 			for (byte i = 0; i < 5; i++) {
-				if (array[i] < required_s0_increments) return pm_f1e; 
+				if (array[i] < required_s0_increments) return pm_f1e;
 			}
 		}
 
 		if (e == expansion_check_timestep)  { 
-			if (er_count < required_er_count) return pm_erc; 
+			if (er_count < required_er_count) return pm_erc;
 		}
 		
 		const byte I = ip * 4, op = graph[I];
 
 		if (op == one) {
-			if (pointer == n) return pm_fea; 
+			if (pointer == n) return pm_fea;
 			if (not array[pointer]) return pm_ns0; 
 
 			if (last_mcal_op == one)  H0_counter = 0;
 			if (last_mcal_op == five) R0I_counter = 0;
+			
+			if (pointer == 1) {
+				if (last_mcal_op == three) {
+					R1I_counter++;
+					if (R1I_counter >= max_consecutive_s1_incr) return pm_r1i;
+				} else R1I_counter = 0;
+			}
 
 			bout_length++;
 			pointer++;
@@ -359,30 +319,30 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		}
 
 		else if (op == five) {
-			if (last_mcal_op != three) return pm_pco; 
+			if (last_mcal_op != three) return pm_pco;
 			if (not pointer) return pm_zr5; 
 			
 			if (	pointer == OER_er_at or 
 				pointer == OER_er_at + 1) OER_counter++;
 			else { OER_er_at = pointer; OER_counter = 0; }
-			if (OER_counter >= max_er_repetions) return pm_oer; 
+			if (OER_counter >= max_er_repetions) return pm_oer;
 
 			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
 			else { BDL_er_at = pointer; BDL_counter = 0; }
-			if (BDL_counter >= max_bdl_er_repetions) return pm_bdl; 
+			if (BDL_counter >= max_bdl_er_repetions)  return pm_bdl;
 
 			if (BDL2_er_at > 1 and pointer == BDL2_er_at - 2) { BDL2_counter++; BDL2_er_at -= 2; }
 			else { BDL2_er_at = pointer; BDL2_counter = 0; }
-			if (BDL2_counter >= max_bdl_er_repetions) return pm_bdl2; 
+			if (BDL2_counter >= max_bdl_er_repetions) return pm_bdl2;
 
 			CSM_counter = 0;
 			RMV_value = (nat) -1;
 			RMV_counter = 0;
 			for (nat i = 0; i < xw; i++) {
 				if (array[i] < 6) CSM_counter++; else CSM_counter = 0;
-				if (CSM_counter > max_consecutive_small_modnats) return pm_csm; 
+				if (CSM_counter > max_consecutive_small_modnats) return pm_csm;
 				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
-				if (RMV_counter >= max_modnat_repetions) return pm_rmv; 
+				if (RMV_counter >= max_modnat_repetions) return pm_rmv;
 			}
 
 			if (walk_ia_counter == 1) {
@@ -397,7 +357,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		}
 
 		else if (op == two) {
-			if (array[n] >= 65535) return pm_snm; 
+			// if (array[n] >= 65535) { *out_e = e; return pm_snm; }
 
 			if (last_op == six) SNL_counter++; 
 			else if (last_op != two) SNL_counter = 0;
@@ -419,10 +379,10 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 			array[n] = 0;
 		}
 		else if (op == three) {
-			if (last_mcal_op == three) return pm_ndi; 
+			if (last_mcal_op == three)  return pm_ndi;
 
 			if (last_mcal_op == five) {
-				R0I_counter++; 
+				R0I_counter++;
 				if (R0I_counter >= max_consecutive_s0_incr) return pm_r0i; 
 			}
 
@@ -442,14 +402,19 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 			} else H3_counter = 0;
 
 			if (did_ier_at != (nat) ~0) {
-				if (pointer >= did_ier_at) return pm_per;
+				if (pointer >= did_ier_at) return pm_per; 
 				did_ier_at = (nat) ~0;
 			}
+
+		//	if (pointer == 1) {
+		//		incr++;
+		//	}
 
 			bout_length = 0;
 			walk_ia_counter++;
 
-			if (array[pointer] >= 65535) return pm_mm; 
+			// if (array[pointer] >= 65535) { *out_e = e; return pm_mm; }
+
 			array[pointer]++;
 		}
 
@@ -480,9 +445,11 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
-		
 		ip = graph[I + state];
 	}
+	// *out_e = e; 
+
+
 	return z_is_good;
 }
 
@@ -490,7 +457,9 @@ static nat execute_graph(byte* graph, nat* array, byte* origin) {
 	nat pm = 0;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
-		pm = execute_graph_starting_at(o, graph, array);   
+		//nat e = 0;
+		pm = execute_graph_starting_at(o, graph, array);
+		//if (e > max_e[pm]) max_e[pm] = e;
 		if (not pm) { *origin = o; return z_is_good; } 
 	}
 	return pm;
@@ -728,7 +697,6 @@ init:  	pointer = 0;
 		p *= (nat) (positions[i] & 3 ? operation_count : 5);
 	}
 
-
 	nat zindex = 0;
 	p = 1;
 	for (byte i = 0; i < hole_count; i++) {
@@ -753,18 +721,6 @@ init:  	pointer = 0;
 	}
 
 	for (byte index = operation_count; index--;) {
-
-
-		
-		
-
-		
-
-		
-
-		
-
-
 
 		if (graph[4 * index + 3] == index) {  
 			at = 4 * index + 3; goto bad; 
@@ -881,9 +837,11 @@ bad:
 	abort();
 	
 try_executing:;
-	nat pm = fea_execute_graph(graph, array);       if (pm) { pms[pm]++; goto loop; } 
+	nat pm = fea_execute_graph(graph, array);
+	if (pm) { pms[pm]++; goto loop; } 
 	byte origin;
-	    pm = execute_graph(graph, array, &origin);  if (pm) { pms[pm]++; goto loop; } 
+	pm = execute_graph(graph, array, &origin);
+	if (pm) { pms[pm]++; goto loop; } 
 
 	pms[z_is_good]++; 
 	append_to_file(filename, sizeof filename, graph, origin);
@@ -900,7 +858,6 @@ reset_:
 	goto loop;
 
 terminate_thread:
-
 	pthread_mutex_lock(&mutex);
 	atomic_store_explicit(global_range_begin + cache_line_size * thread_index, 0, memory_order_relaxed);
 	atomic_store_explicit(global_range_end   + thread_index, 0, memory_order_relaxed);
@@ -912,64 +869,6 @@ terminate_thread:
 	free(array);
 	return pms;
 }
-
-
-
-
-
-		/*
-
-
-				*n = 0
-				*i = 4
-				(*n)++;  -----[*n < *i]----->    *n = 0;   ------[*n < *i]----->   (*n)++;
-
-
-
-
-				*n = 0
-				*i = 1
-				(*n)++;  -----[*n == *i]----->    *n = 0;   ------[*n < *i]----->   (*n)++;
-
-
-
-				*n = 0
-				*i = 0
-				(*n)++;  -----[*n > *i]----->    *n = 0;   ------[*n == *i]----->   (*n)++;
-
-
-
-
-
-
-
-
-
-
-
-
-			LA:		5		              6		                  7
---------------------------------------------------------------------------------------------------------------------------
-
-
-		 ......	     DOL = {    1 : { .l=7 .g=X .e=X }       4 : { .l=X .g=X .e=X }      4 : { .l=5 .g=X .e=X }      }
-
-
-
-
-
-
-				*n = 0
-				*i = 4
-				(*n)++;  -----[*n < *i]----->    *n = 0;   ------[*n < *i]----->   (*n)++;
-
-		*/
-
-
-
-
-
-
 
 
 static nat expn(nat base, nat exponent) {
@@ -1101,10 +1000,22 @@ int main(void) {
 	}
 
 	nat counts[pm_count] = {0};
+	//nat max_e[pm_count] = {0};
+
 	for (nat i = 0; i < thread_count; i++) {
+
 		nat* local_counts = NULL;
 		pthread_join(threads[i], (void**) &local_counts);
-		for (nat j = 0; j < pm_count; j++) counts[j] += local_counts[j];
+
+		for (nat j = 0; j < pm_count; j++) {
+			counts[j] += local_counts[j];
+		}
+
+		//for (nat j = 0; j < pm_count; j++) {
+		//	if (local_counts[j + pm_count] > max_e[j]) 
+		//		max_e[j] = local_counts[j + pm_count];
+		//}
+
 		free(local_counts);
 	}
 
@@ -1135,14 +1046,16 @@ int main(void) {
 			"\n\tusing %llu threads"
 			"\n\tin %10.2lfs [%s:%s],"
 			"\n\tat %10.2lf z/s."
-			"\n\n\npm counts:\n", 
+			"\n\n", 
 
 			D, R,   space_size,  thread_count,   cache_line_size,
 			minimum_split_size,  display_rate,
 			fea_execution_limit,  execution_limit,  array_size,  space_size, 
 			thread_count,  seconds,  time_begin_dt,  time_end_dt,  zthroughput
 	);
+	print(output_filename, 4096, output_string);
 
+	snprintf(output_string, 4096, "\npm counts:\n");
 	print(output_filename, 4096, output_string);
 	for (nat i = 0; i < pm_count; i++) {
 		if (i and not (i % 2)) {
@@ -1152,8 +1065,23 @@ int main(void) {
 		snprintf(output_string, 4096, "%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
 		print(output_filename, 4096, output_string);
 	}
-	snprintf(output_string, 4096, "\n[done]\n");
+	snprintf(output_string, 4096, "\n[done_pm]\n");
 	print(output_filename, 4096, output_string);
+
+/*	snprintf(output_string, 4096, "\nmax execution time till prune:\n");
+	print(output_filename, 4096, output_string);
+	for (nat i = 0; i < pm_count; i++) {
+		if (i and not (i % 2)) {
+			snprintf(output_string, 4096, "\n");
+			print(output_filename, 4096, output_string);
+		}
+		snprintf(output_string, 4096, "%6s: %-8lld\t\t", pm_spelling[i], max_e[i]);
+		print(output_filename, 4096, output_string);
+	}
+	snprintf(output_string, 4096, "\n[done_max_e]\n");
+	print(output_filename, 4096, output_string);*/
+
+
 }
  
 
@@ -1174,6 +1102,59 @@ int main(void) {
 
 
 
+
+
+
+
+
+
+		/*
+
+
+				*n = 0
+				*i = 4
+				(*n)++;  -----[*n < *i]----->    *n = 0;   ------[*n < *i]----->   (*n)++;
+
+
+
+
+				*n = 0
+				*i = 1
+				(*n)++;  -----[*n == *i]----->    *n = 0;   ------[*n < *i]----->   (*n)++;
+
+
+
+				*n = 0
+				*i = 0
+				(*n)++;  -----[*n > *i]----->    *n = 0;   ------[*n == *i]----->   (*n)++;
+
+
+
+
+
+
+
+
+
+
+
+
+			LA:		5		              6		                  7
+--------------------------------------------------------------------------------------------------------------------------
+
+
+		 ......	     DOL = {    1 : { .l=7 .g=X .e=X }       4 : { .l=X .g=X .e=X }      4 : { .l=5 .g=X .e=X }      }
+
+
+
+
+
+
+				*n = 0
+				*i = 4
+				(*n)++;  -----[*n < *i]----->    *n = 0;   ------[*n < *i]----->   (*n)++;
+
+		*/
 
 
 
@@ -2503,3 +2484,116 @@ if (h >= space_size) {
 	}                                                                      //       don't edit this to get the original semantics.
 
 */
+
+
+
+
+
+/*
+(MCALOP) [2]... 6 [2]... (MCAL_OP) [2]... 6 [2]... (MCALOP) [2]... 6 [2]...
+
+(MCALOP) [2]... 6 [2]... 6 [2]... (MCALOP) [2]... (MCALOP) [2] [2] [2] [2] [2] 6 [2]...
+
+const nat op = ...
+
+if (six) {
+	if (bit) return pm_snco;
+	bit = 1;
+
+} else if (two) {
+	...
+}
+
+...
+
+if (op == one or three or five) {
+	last_mcal_op = op;
+	mcal_index++;
+	bit = 0;
+}
+
+last_op = op;
+///////////////////////////////////////
+
+implementation:
+
+
+const nat op = ...
+
+if (op == six) {
+	if (	last_op != one and 
+		last_op != three and 
+		last_op != five
+	) return pm_snco;
+	...
+}
+
+
+
+
+
+
+////////////////////////
+
+
+
+
+
+
+*/
+
+
+
+
+/*
+
+
+
+1067/60  17.7833333333
+
+000000000000 : 00000000000000000000 :: 
+
+using [D=2, R=0]:
+        space_size=118689037748575
+        thread_count=64
+        minimum_split_size=6
+        range_update_frequency=0
+        display_rate=3
+        fea_execution_limit=5000
+        execution_limit=10000000000
+        array_size=100000
+
+
+        searched 118689037748575 zvs
+        using 64 threads
+        in    1067.00s [1202406296.041605:1202406296.043352],
+        at 111236211573.17 z/s.
+
+
+pm counts:
+z_is_good: 0                     pm_ga: 118673515889217 
+pm_fea: 0                       pm_ns0: 91740   
+pm_pco: 197031                  pm_zr5: 12574641
+pm_zr6: 13909703                pm_ndi: 950355  
+pm_oer: 21708                   pm_r0i: 669957  
+ pm_h0: 2047223                 pm_f1e: 5954    
+pm_erc: 34413942                pm_rmv: 956741  
+ pm_ot: 0                       pm_csm: 0       
+ pm_mm: 18                      pm_snm: 18      
+pm_bdl: 720                     pm_bdl2: 0       
+pm_erw: 0                       pm_mcal: 1474341 
+pm_snl: 346981997                pm_h1: 0       
+ pm_h2: 1014                     pm_h3: 12      
+pm_per: 220234                  pmf_fea: 1840527 
+pmf_ns0: 271515602              pmf_pco: 390249243
+pmf_zr5: 4979848460             pmf_zr6: 6560756663
+pmf_ndi: 1091898281             pmf_per: 5315232 
+pmf_mcal: 1805918001
+[done]
+
+*/
+
+
+
+
+

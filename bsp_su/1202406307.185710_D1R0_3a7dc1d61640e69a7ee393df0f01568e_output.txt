@@ -1,0 +1,82 @@
+SRNFGPR: searching [D=1, R=0] space....
+
+	0.0000000006%
+
+
+	0.4544457932%
+
+
+	0.7885559509%
+
+
+	0.8929210419%
+
+
+	0.9345058310%
+
+
+	0.9929682351%
+
+
+	1.0000000000%
+
+using [D=1, R=0]:
+	space_size=10883911680
+	thread_count=6
+	cache_line_size=16
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 10883911680 zvs
+	using 6 threads
+	in       6.00s [1202406307.185710:1202406307.185716],
+	at 1813985280.00 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 10817125368		
+pm_fea: 0       		pm_ns0: 0       		
+pm_pco: 48      		pm_zr5: 9759    		
+pm_zr6: 7146    		pm_ndi: 0       		
+pm_oer: 0       		pm_r0i: 5282    		
+ pm_h0: 19681   		pm_f1e: 66      		
+pm_erc: 413664  		pm_rmv: 0       		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 1542    		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 0       		 pm_h3: 0       		
+pm_per: 327     		pm_snco: 0       		
+pmf_fea: 11693   		pmf_ns0: 1739834 		
+pmf_pco: 2801502 		pmf_zr5: 27083461		
+pmf_zr6: 17340914		pmf_ndi: 7308150 		
+pmf_per: 21174   		pmf_mcal: 10022069		
+pmf_snco: 0       		
+[done_pm]
+
+[done_pm]
+z_is_good: 0       		 pm_ga: 0       		
+pm_fea: 0       		pm_ns0: 0       		
+pm_pco: 3       		pm_zr5: 618     		
+pm_zr6: 0       		pm_ndi: 618     		
+pm_oer: 0       		pm_r0i: 1257    		
+ pm_h0: 3455    		pm_f1e: 10000   		
+pm_erc: 5000    		pm_rmv: 0       		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 0       		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 0       		 pm_h3: 0       		
+pm_per: 8450    		pm_snco: 0       		
+pmf_fea: 0       		pmf_ns0: 0       		
+pmf_pco: 0       		pmf_zr5: 0       		
+pmf_zr6: 0       		pmf_ndi: 0       		
+pmf_per: 0       		pmf_mcal: 0       		
+pmf_snco: 0       		
+[done_max_e]
