@@ -113,7 +113,6 @@ enum pruning_metrics {
 	pm_h2, pm_h3, 
 	pm_per, pm_snco,
 
-
 	pmf_fea, pmf_ns0, 
 	pmf_pco, pmf_zr5, 
 
@@ -128,7 +127,7 @@ enum pruning_metrics {
 static const char* pm_spelling[pm_count] = {
 	"z_is_good", "pm_ga", 
 	"pm_fea", "pm_ns0", 
-	
+
 	"pm_pco", "pm_zr5", 
 	"pm_zr6", "pm_ndi", 
 
@@ -145,15 +144,17 @@ static const char* pm_spelling[pm_count] = {
 	"pm_snl", "pm_h1", 
 
 	"pm_h2", "pm_h3", 
-	"pm_per", "pmf_fea", 
+	"pm_per", "pm_snco",
 
-	"pmf_ns0", "pmf_pco",
-	"pmf_zr5", "pmf_zr6", 
+	"pmf_fea", "pmf_ns0", 
+	"pmf_pco", "pmf_zr5", 
 
-	"pmf_ndi", "pmf_per", 
-	"pmf_mcal",
+	"pmf_zr6", "pmf_ndi", 
+	"pmf_per", "pmf_mcal", 
 
+	"pmf_snco",
 };
+
 
 static const byte _ = 0;
 
