@@ -16,6 +16,183 @@
 
 
 
+202407011.083111:
+
+
+	the 3,0 call we started in the video:
+
+
+
+...
+
+using [D=3, R=0]:
+        space_size=2251799813685248000
+        thread_count=64
+        cache_line_size=8
+        minimum_split_size=6
+        display_rate=0
+        fea_execution_limit=5000
+        execution_limit=10000000000
+        array_size=100000
+
+
+        searched 2251799813685248000 zvs
+        using 64 threads
+        in    7295.00s [1202406307.214536:1202406307.234711],
+        at 308677150607984.62 z/s.
+
+
+pm counts:
+z_is_good: 0                     pm_ga: 2251799624808126246
+pm_fea: 0                       pm_ns0: 223012
+pm_pco: 143969                  pm_zr5: 14074631
+pm_zr6: 14376165                pm_ndi: 768996
+pm_oer: 481071                  pm_r0i: 7108731
+ pm_h0: 26759558                pm_f1e: 20945
+pm_erc: 191110021               pm_rmv: 928853
+ pm_ot: 0                       pm_csm: 0
+ pm_mm: 0                       pm_snm: 0
+pm_bdl: 0                       pm_bdl2: 0
+pm_erw: 0                       pm_mcal: 4431836
+pm_snl: 0                        pm_h1: 0
+ pm_h2: 56                       pm_h3: 32
+pm_per: 33519                   pm_snco: 0
+pmf_fea: 23808093               pmf_ns0: 2637069555
+pmf_pco: 2861076452             pmf_zr5: 45932147442
+pmf_zr6: 105849276783           pmf_ndi: 12858316008
+pmf_per: 47465655               pmf_mcal: 18407494899
+pmf_snco: 0                     pm_r1i: 5472
+[done_pm]
+bsp_su: 
+
+
+
+
+
+
+
+
+
+
+
+
+202407011.083111:
+
+when we had run 3,1 the first time, call number 6:
+
+
+....
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+
+using [D=3, R=1]:
+        space_size=2251799813685248000
+        thread_count=64
+        minimum_split_size=6
+        range_update_frequency=0
+        display_rate=5
+        fea_execution_limit=5000
+        execution_limit=10000000000
+        array_size=100000
+
+
+        searched 2251799813685248000 zvs
+        using 64 threads
+        in  165857.00s [1202406226.175653:1202406241.160110],
+        at 13576754756719.63 z/s.
+
+
+pm counts:
+z_is_good: 0                     pm_ga: 2251798731928012790
+pm_fea: 0                       pm_ns0: 16122643
+pm_pco: 9618402                 pm_zr5: 2095135937
+pm_zr6: 3194124287              pm_ndi: 471017394
+pm_oer: 0                       pm_r0i: 216772087
+ pm_h0: 96179642                pm_f1e: 22798540
+pm_erc: 3084645930              pm_rmv: 43274999
+ pm_ot: 0                       pm_csm: 0       
+ pm_mm: 1760                    pm_snm: 32      
+pm_bdl: 0                       pm_bdl2: 0       
+pm_erw: 0                       pm_mcal: 78770346
+pm_snl: 58833603278              pm_h1: 0       
+ pm_h2: 91828                    pm_h3: 0       
+pm_per: 31754609                pmf_fea: 154657405
+pmf_ns0: 63816927559            pmf_pco: 55718697783
+pmf_zr5: 75134928080            pmf_zr6: 584800879956   
+pmf_ndi: 37422343619            pmf_per: 409296364
+pmf_mcal: 196105592730  
+[done]
+6_D3_R1_call: 
+
+
+
+
+
+
+
+
+
+
+and then heres also the 3,0 output the first time we searched 3,0:
+
+
+
+
+
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+
+using [D=3, R=0]:
+        space_size=2251799813685248000
+        thread_count=64
+        minimum_split_size=6
+        range_update_frequency=0
+        display_rate=3
+        fea_execution_limit=5000
+        execution_limit=10000000000
+        array_size=100000
+
+
+        searched 2251799813685248000 zvs
+        using 64 threads
+        in  117571.00s [1202406145.012212:1202406156.100143],
+        at 19152680624348.25 z/s.
+
+
+pm counts:
+z_is_good: 240                   pm_ga: 2251798695353080354
+pm_fea: 0                       pm_ns0: 10171957
+pm_pco: 14235301                pm_zr5: 988729591
+pm_zr6: 1906588863              pm_ndi: 64010438
+pm_oer: 706734                  pm_r0i: 31549582
+ pm_h0: 76781722                pm_f1e: 541489  
+pm_erc: 4133477717              pm_rmv: 44540790
+ pm_ot: 0                       pm_csm: 0       
+ pm_mm: 172                     pm_snm: 162     
+pm_bdl: 19536                   pm_bdl2: 0       
+pm_erw: 0                       pm_mcal: 118230867
+pm_snl: 25203840280              pm_h1: 0       
+ pm_h2: 28352                    pm_h3: 372     
+pm_per: 7040647                 pmf_fea: 100965901
+pmf_ns0: 12778474385            pmf_pco: 15412494376
+pmf_zr5: 291036707345           pmf_zr6: 607513521202
+pmf_ndi: 64284941527            pmf_per: 266841885
+pmf_mcal: 94337726213
+[done]
+
+
+
+
+
+
+117571 / 7295 ---> 16 times speed up for 3,0
+
+
+
+
+
+
+
 
 
 
