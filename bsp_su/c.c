@@ -289,6 +289,176 @@ a
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using [D=2, R=0]:
+	space_size=118689037748575
+	thread_count=10
+	cache_line_size=100           <------------------- here!!
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 118689037748575 zvs
+	using 10 threads
+	in     192.00s [1202407022.222308:1202407022.222620],
+	at 618172071607.16 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 118684826926031		
+pm_fea: 0       		pm_ns0: 3576    		
+pm_pco: 4194    		pm_zr5: 451374  		
+pm_zr6: 366533  		pm_ndi: 15604   		
+pm_oer: 17280   		pm_r0i: 251054  		
+ pm_h0: 855817  		pm_f1e: 1301    		
+pm_erc: 11215047		pm_rmv: 5795    		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 129164  		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 0       		 pm_h3: 0       		
+pm_per: 3723    		pm_snco: 0       		
+pmf_fea: 582491  		pmf_ns0: 84187522		
+pmf_pco: 101168869		pmf_zr5: 1318887193		
+pmf_zr6: 1816994126		pmf_ndi: 353989121		
+pmf_per: 1180252 		pmf_mcal: 520512346		
+pmf_snco: 0       		pm_r1i: 162     		
+[done_pm]
+bsp_su: 
+
+
+
+
+
+
+
+
+
+
+
+
+
+using [D=2, R=0]:
+	space_size=118689037748575
+	thread_count=10
+	cache_line_size=1             <----------------------- and here!!
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 118689037748575 zvs
+	using 10 threads
+	in     213.00s [1202407022.222656:1202407022.223029],
+	at 557225529336.03 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 118684828703799		
+pm_fea: 0       		pm_ns0: 3576    		
+pm_pco: 4194    		pm_zr5: 451374  		
+pm_zr6: 367589  		pm_ndi: 15604   		
+pm_oer: 17280   		pm_r0i: 251054  		
+ pm_h0: 855886  		pm_f1e: 1301    		
+pm_erc: 11215047		pm_rmv: 5795    		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 129164  		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 0       		 pm_h3: 0       		
+pm_per: 3723    		pm_snco: 0       		
+pmf_fea: 582502  		pmf_ns0: 84094233		
+pmf_pco: 101047911		pmf_zr5: 1317528532		
+pmf_zr6: 1817565481		pmf_ndi: 353475392		
+pmf_per: 1180242 		pmf_mcal: 520248734		
+pmf_snco: 0       		pm_r1i: 162     		
+[done_pm]
+bsp_su: 
+
+
+
+
+
+
+and the other half:
+
+
+using [D=2, R=1]:
+	space_size=118689037748575
+	thread_count=10
+	cache_line_size=100        <----------
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 118689037748575 zvs
+	using 10 threads
+	in     357.00s [1202407022.223155:1202407022.223752],
+	at 332462290612.25 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 118684830666219		
+pm_fea: 0       		pm_ns0: 3562    		
+pm_pco: 109     		pm_zr5: 2606250 		
+pm_zr6: 190868  		pm_ndi: 41398   		
+pm_oer: 0       		pm_r0i: 355498  		
+ pm_h0: 514646  		pm_f1e: 8466    		
+pm_erc: 29332544		pm_rmv: 10021   		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 14912   		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 288     		 pm_h3: 0       		
+pm_per: 4525    		pm_snco: 0       		
+pmf_fea: 1437745 		pmf_ns0: 382194912		
+pmf_pco: 341146696		pmf_zr5: 521612409		
+pmf_zr6: 1885026337		pmf_ndi: 250073141		
+pmf_per: 889176  		pmf_mcal: 791617297		
+pmf_snco: 0       		pm_r1i: 1556    		
+[done_pm]
+bsp_su: o
+
+
+
+
+
 */
 
 #include <time.h>
@@ -311,16 +481,16 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 
 static const byte D = 2;        // the duplication count (operation_count = 5 + D)
-static const byte R = 0;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
+static const byte R = 1;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 // static const nat range_update_frequency = 0;
 
 static const nat minimum_split_size = 6;
 
-static const nat thread_count = 6;
+static const nat thread_count = 10;
 static const nat display_rate = 0;
 
-static const nat cache_line_size = 16;
+static const nat cache_line_size = 100;
 
 enum operations { one, two, three, five, six };
 
