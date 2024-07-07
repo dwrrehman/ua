@@ -1,0 +1,62 @@
+trying to figure out how to output gpio pin states from the riscv computer cpu, to by pass the pcie controller!
+
+
+1202407044.234109
+
+commands that are used in order to probe gpio pins on the riscv computer:
+
+
+
+	first, you must export the gpio pin, to make it accessible:
+
+
+		sudo -i      // become root first. 
+
+
+		echo 447 > /sys/class/gpio/export       // exporting gpio pin 447 for example. 
+
+
+
+	setting the pin to high or low:
+
+		cat /sys/class/gpio/gpio447/direction
+
+		echo out > /sys/class/gpio/gpio447/direction
+
+		echo 1 > /sys/class/gpio/gpio447/value
+
+		echo 0 > /sys/class/gpio/gpio447/value
+
+
+
+	reading the value of the pin:
+
+
+		echo in > /sys/class/gpio/gpio447/direction
+
+		cat /sys/class/gpio/gpio447/value
+		
+
+
+
+
+	when you are done with it, please unexport the pin:
+
+
+		echo 447 > /sys/class/gpio/unexport
+
+
+
+
+
+
+thats it, i think. 
+
+yay
+
+
+dwrr
+
+
+
+
