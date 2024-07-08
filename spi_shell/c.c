@@ -80,10 +80,54 @@ static int gpio_pin_inaccessible(void) {
 
 
 
+static void create_process(char** args) {
+
+
+
+	pid_t pid = fork();
+	if (pid < 0) { perror("fork"); getchar(); return; }
+
+
+	if (not pid) {
+		if (execve(*args, args, environ) < 0) { perror("execve"); exit(1); }
+	} 
+
+	int status = 0;
+	if ((pid = wait(&status)) == -1) { perror("wait"); getchar(); return; }
 
 
 
 
+
+
+//    ---------------------------  do this at process termination, saying the status and pid and dt. ----------------------------------
+	//char dt[32] = {0};
+	//struct timeval t = {0};
+	//gettimeofday(&t, NULL);
+	//struct tm* tm = localtime(&t.tv_sec);
+	//strftime(dt, 32, "1%Y%m%d%u.%H%M%S", tm);
+	//if (WIFEXITED(status)) 		{}//printf("[%s:(%d) exited with code %d]\n", dt, pid, WEXITSTATUS(status));
+	//else if (WIFSIGNALED(status)) 	{}//printf("[%s:(%d) was terminated by signal %s]\n", dt, pid, strsignal(WTERMSIG(status)));
+	//else if (WIFSTOPPED(status)) 	{}//printf("[%s:(%d) was stopped by signal %s]\n", 	dt, pid, strsignal(WSTOPSIG(status)));
+	//else 				{}//printf("[%s:(%d) terminated for an unknown reason]\n", dt, pid);
+	//fflush(stdout);
+	// return status;
+
+// -------------------------------------------------------------------------------------------------------------------------------------
+
+
+}
+
+static void raw_say(const char* text) { create_process((char*[]) {strdup("/usr/bin/say"), strdup(text), 0}); }
+
+static void input_off(void) { 
+	create_process((char*[]) {
+		strdup("/bin/bash"), 
+		strdup("-c"), 
+		strdup("echo 'actions'"), 
+		0
+	});
+}
 
 int main(void) {
 	export_pin();
