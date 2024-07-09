@@ -58,14 +58,40 @@ static int gpio_pin_inaccessible(void) {
 	return access("/sys/class/gpio/gpio505", F_OK);
 }
 
-int main(void) {
-	export_pin();
 
-	if (gpio_pin_inaccessible()) {
-		printf("error: program does not have access to gpio505 (gpio pin 25)\n");
-		exit(1);
+// x is a unsigned byte value: 0 through 255.
+static void transmit(int x) {
+	direction_output();
+
+	set_data_1();
+	sleep_1();
+	set_data_0();
+	sleep_1(); sleep_1(); sleep_1(); sleep_1();
+
+	for (int _ = 0; _ < 3; _++) {
+		for (int i = 0; i < 8; i++) {
+			set_data_1();
+			sleep_1();
+			set_data_0();
+			if ((x >> i) & 1) { sleep_1(); sleep_1(); sleep_1(); }
+			sleep_1();
+		}
 	}
 
+	set_data_1();
+	sleep_1();
+	set_data_0();
+	sleep_1();
+	set_data_1();
+	sleep_1();
+	set_data_0();
+	sleep_1();
+
+	direction_input();
+}
+
+
+static int receive(void) {
 	int counts[128] = {0};
 	int bits[128] = {0};
 	int bit_count = 0;
@@ -81,7 +107,7 @@ int main(void) {
 		
 		if (not last_state and not bit) counts[bit_count]++;
 		if (not last_state and     bit) { }
-		if (    last_state and not bit) { bit_count++; }
+		if (    last_state and not bit) { printf("%u ", bit_count); fflush(stdout); bit_count++; }
 		if (    last_state and     bit) { }
 
 		nanosleep((const struct timespec[]){{0, 300000000L}}, NULL);
@@ -113,9 +139,7 @@ int main(void) {
 	}
 	puts("[bits done]");
 	
-
 	int data = 0;
-
 	for (int i = 0; i < 8; i++) {
 		const int a = bits[i + 0];
 		const int b = bits[i + 8];
@@ -128,8 +152,52 @@ int main(void) {
 		
 		data |= x << i;
 	}
-	printf("\n\n\t\treceived: 0x%02x\n\n", data);
+	return data;
+}
 
+
+
+int main(void) {
+	export_pin();
+
+	if (gpio_pin_inaccessible()) {
+		printf("error: program does not have access to gpio505 (gpio pin 25)\n");
+		exit(1);
+	}
+
+	for (int i = 0; i < 5; i++) {
+		int data_bytes[4096] = {0};
+		int data_count = 0;
+	
+		while (1) {
+			puts("receiving pair of bytes..");
+
+			const int control = receive();
+			const int data = receive();
+
+			data_bytes[data_count++] = data;
+	
+			printf("\n\n\t\treceived: data = 0x%02X, control = 0x%02X\n\n", data, control);
+		
+			if (control == 0xCA) {
+				puts("control transfer successful, breaking...");
+				break;
+			}
+		}
+		
+		printf("received: (%u) {", data_count);
+		for (int d = 0; d < data_count; d++) printf("0x%02X, ", data_bytes[d]);
+		puts("}");
+
+		sleep_1(); sleep_1(); sleep_1();
+
+		transmit(0x00); transmit(0xDE);
+		transmit(0x00); transmit(0xAD);
+		transmit(0x00); transmit(0xFA);
+		transmit(0xCA); transmit(0xCE);
+	}
+
+	direction_input();
 	unexport_pin();
 }
 
