@@ -12,6 +12,1038 @@
 
 /*
 
+202407184.193355:
+
+	 we want/required in the su:
+
+
+	x	- zero synchronization between workker threads
+
+			- - we need to find some alternative to bsp, which uses a lottt of synchronization!
+
+
+
+
+	x	- low memory usage 
+
+			- - no writing millions of z values to a file or to a memory array
+
+		
+
+
+
+	x	- no z indicies, or 128 or 64bit math     (64bit is fine for pm counts or something not that important lol)
+
+		 	 - - use nf increments on the MSB bits     to      "modulo partition"   the space    
+					and then give each subspace to a worker_thread / core   to process.
+
+
+
+
+	x	- more efficient application of GA across all NF increments, 
+
+			- - make GA and NF completely intermingled and completely merged, so there is no distinctifying them. 
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+generate():
+
+	GA and NF 
+
+
+   
+ |
+ |  <------- this pipe to outptu all of the generated z values would result in a large memory consumption. 
+ v
+
+
+prune():
+
+	execute_graph(....);
+
+
+
+
+
+
+
+
+-----------------printing current job allocations (largest_remaining: 0)-------------------
+
+	1.0000000000%
+
+  * 00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+
+using [D=2, R=0]:
+	space_size=118689037748575
+	thread_count=6
+	cache_line_size=100
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 118689037748575 zvs
+	using 6 threads
+	in     183.00s [1202407184.190108:1202407184.190411],
+	at 648573976768.17 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 118684831586913		
+pm_fea: 0       		pm_ns0: 83983170		
+pm_pco: 100828958		pm_zr5: 1317245335		
+pm_zr6: 1816477735		pm_ndi: 353148163		
+pm_oer: 17280   		pm_r0i: 646753  		
+ pm_h0: 1085966 		pm_f1e: 41668   		
+pm_erc: 11215047		pm_rmv: 36132   		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 1980    		pm_bdl2: 144     		
+pm_erw: 0       		pm_mcal: 520119953		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 12      		 pm_h3: 0       		
+pm_per: 1312160 		pm_snco: 0       		
+pmf_fea: 0       		pmf_ns0: 0       		
+pmf_pco: 0       		pmf_zr5: 0       		
+pmf_zr6: 0       		pmf_ndi: 0       		
+pmf_per: 0       		pmf_mcal: 0       		
+pmf_snco: 0       		pm_r1i: 1206    		
+[done_pm]
+bsp_su: b release
+bsp_su: ./run
+SRNFGPR: searching [D=1, R=0] space....
+
+
+
+
+
+
+
+
+
+
+
+
+
+  * 00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+
+using [D=1, R=0]:
+	space_size=10883911680
+	thread_count=6
+	cache_line_size=100
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 10883911680 zvs
+	using 6 threads
+	in       4.00s [1202407184.190436:1202407184.190440],
+	at 2720977920.00 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 10817125368		
+pm_fea: 0       		pm_ns0: 1739834 		
+pm_pco: 2800900 		pm_zr5: 27093079		
+pm_zr6: 17348752		pm_ndi: 7306120 		
+pm_oer: 0       		pm_r0i: 7363    		
+ pm_h0: 24241   		pm_f1e: 696     		
+pm_erc: 413664  		pm_rmv: 20      		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 10023611		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 0       		 pm_h3: 0       		
+pm_per: 28030   		pm_snco: 0       		
+pmf_fea: 0       		pmf_ns0: 0       		
+pmf_pco: 0       		pmf_zr5: 0       		
+pmf_zr6: 0       		pmf_ndi: 0       		
+pmf_per: 0       		pmf_mcal: 0       		
+pmf_snco: 0       		pm_r1i: 2       		
+[done_pm]
+bsp_su: b
+c.c:950:12: warning: unused function 'fea_execute_graph' [-Wunused-function]
+static nat fea_execute_graph(byte* graph, nat* array) {
+           ^
+1 warning generat
+
+
+
+
+
+
+-----------------printing current job allocations (largest_remaining: 0)-------------------
+
+	1.0000000000%
+
+  * 00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+
+using [D=1, R=1]:
+	space_size=10883911680
+	thread_count=6
+	cache_line_size=100
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 10883911680 zvs
+	using 6 threads
+	in       8.00s [1202407184.190511:1202407184.190519],
+	at 1360488960.00 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 10817125368		
+pm_fea: 0       		pm_ns0: 7098282 		
+pm_pco: 9566443 		pm_zr5: 6985124 		
+pm_zr6: 18479970		pm_ndi: 5149376 		
+pm_oer: 0       		pm_r0i: 30606   		
+ pm_h0: 31407   		pm_f1e: 2868    		
+pm_erc: 1050912 		pm_rmv: 380     		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 10      		
+pm_erw: 0       		pm_mcal: 18360851		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 25      		 pm_h3: 0       		
+pm_per: 29401   		pm_snco: 0       		
+pmf_fea: 0       		pmf_ns0: 0       		
+pmf_pco: 0       		pmf_zr5: 0       		
+pmf_zr6: 0       		pmf_ndi: 0       		
+pmf_per: 0       		pmf_mcal: 0       		
+pmf_snco: 0       		pm_r1i: 657     		
+[done_pm]
+bsp_su: b release
+bsp_su: ./run
+SRNFGPR: searching [D=2, R=1] space....
+
+
+
+
+
+
+
+
+
+
+
+
+
+00000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+
+using [D=2, R=1]:
+	space_size=118689037748575
+	thread_count=6
+	cache_line_size=100
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 118689037748575 zvs
+	using 6 threads
+	in     308.00s [1202407184.190714:1202407184.191222],
+	at 385354018664.20 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 118684830226071		
+pm_fea: 0       		pm_ns0: 382081582		
+pm_pco: 341374227		pm_zr5: 524205356		
+pm_zr6: 1885368617		pm_ndi: 249703893		
+pm_oer: 0       		pm_r0i: 1571759 		
+ pm_h0: 906382  		pm_f1e: 196013  		
+pm_erc: 29332544		pm_rmv: 40183   		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 116     		
+pm_erw: 0       		pm_mcal: 791652761		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 1286    		 pm_h3: 0       		
+pm_per: 1074691 		pm_snco: 0       		
+pmf_fea: 0       		pmf_ns0: 0       		
+pmf_pco: 0       		pmf_zr5: 0       		
+pmf_zr6: 0       		pmf_ndi: 0       		
+pmf_per: 0       		pmf_mcal: 0       		
+pmf_snco: 0       		pm_r1i: 13094   		
+[done_pm]
+bsp_su:  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+new su structure    nf ga gp    no zi    execute stage  gpu
+
+	--->
+
+
+
+
+
+			the     no zi      is related to the parrelization over all the cores- 
+
+
+						if we could figure out some way to distribute zv over the cores, in a way that uses all cores for the full su call,
+
+
+										then that would be the solution, 
+
+
+
+
+
+
+
+			heres a z value (zv):
+
+
+					0122105021433161400115264505
+
+					
+					0122 1050 2143 3161 4001 1526 450[5]     <---- bracketed digit is the msb digit, which we would use  in   "no zi"'s partition of the space, to 
+
+
+					in actuality, what we'll do, because some subsearch spaces   will be immediately pruned by ga,
+
+
+							so we wanto evaluate GA on the msb   (or however many msb's we are using to do the modulo parition (mp))
+
+
+									we want to run the GA passes for the positions of the msb digits we are using in the mp
+		
+							
+
+					
+
+
+202407184.195949:
+	fundemental requirements:
+
+		the mmount that execute_graph (exg)  is pruning makes it so that we fundemental cannot simply output z values to a file,
+
+			if they just simply pass ga, 
+
+				we need to be the doing the quite parts of exg    ie, a low el,   to lower    in some way    the amount of zv  that we output to the file/memory array
+
+
+
+
+				
+
+
+		--> so one possible solution is to basically have the el  be small during generate()    but then    a large el  (which will maybe cause the most nonlinearaity wrt the zi / timetillprune plot)
+
+
+					the large el causes    some z values to take 30 seconds, with others to take 30 years           we don't like that 
+
+									at all thats bad,  for parel.
+
+
+
+						instead, we want to randomize/mp   the zv bag that is ooutput by generate(),     and so prune will take on average,  (because of the randomization/mp)   it will take thte same amount of time per core, and thus require zero synchronization, and use our full parel. factor. 
+
+
+
+
+												this is good 
+
+
+
+
+
+
+			but the main problem now, is that   we need to have the   generate() have of the search call     take as little as possible,
+
+
+						because parallelzing generate()                 MUST involve the bsp machinery,   because things are just highly nonlinear   when it comes to GA pruning 
+
+
+
+
+
+
+
+				note:
+						this is a problem becuase one tihng i definitely don't want is for bsp to make global_range_begin/end   a  zv   as opposed to a zi, 
+
+						because then memory atomicity becomes           much more complicated 
+
+
+							and much more expensive
+
+	
+
+			lukcily  GA     is      at least,   in theory,  fast       so       like,   in theory we could do         stage 1     ie generate()
+ 						single threaded 
+
+							or, like, just perform a simple        no zi      partitioning of the space    in  main()    
+
+
+					and then do   generate()  parel   over   all the cores that we have.
+
+
+
+			that could work 
+
+				we just, wouldnt be using our full parelelization factor   ie number of cores,   because some would finsh their subsearchspace  early... 
+
+
+				because GA is just highly nonlinear 
+
+
+
+
+
+
+
+simplest possible approach taht would  ALMOST   just about solve this prolbem    quite well:   (possiblyyyyyy   possibly not lol)
+
+
+
+	step 1. make main start up 10 search calls, 
+
+			each saerch call has      range_begin   range_end    
+
+			and,  range_begin   is a zv
+
+			and,   range_end is a zv. 
+
+
+	step 2. in the generate() worker thread function       "thread_instance_for_generate(rb, re)"
+
+
+		we do  something like the current nf and ga sitaution   in bsp, 
+
+				but we merge nf and ga completely   so that its wayyy more efficient in how it traverses and checks the space. 
+
+
+	step 3.      inside of this thread_instance_for_generate function,   we must MUST   run exg  substage    "execute_graph(zv)" (exg).
+
+				we can give a quiteeee low EL   for this, however,   its just simply an explicit trade off of how much memory we want to allocate, 
+				to the pipe/buffer    that is allowing the output of stage1, "generate()"   to go into   stage2,  "prune()".
+
+						this buffer transfers the zv list output from generate   into prune. its required. 
+
+
+					by giving a higher EL  to stage1's exg,    you make the required size of the buffer    smaller. 
+
+
+							giving a lower   El   to stage1 exg   will cause more output z values    from generate()   to emmited.. 
+
+
+	note about step 3: 
+
+					we are having an explicit trade off between "nonlinear behavior of zv's causing our pf to effectively decrease"  and memory consumtpion. 
+
+						note:  pf = parelelization factor
+
+							
+
+
+					ie, if you want lower memory consutpion,    then you need a worse  (on average)   pf  to happen.  during stage 1. 
+
+						and then theres less for stage2,  prune(),    to do, basically. 
+
+
+					but if you want a better pf,     then you needddd to output more zv, and thus use more memory
+
+
+
+
+
+
+
+
+
+
+		
+
+
+okay waittt
+
+
+	this idea mightt solve this and allow us to have only one stage1. heres basically the idea:
+
+
+			so 
+
+				wait 
+						so the reason why we have eveng having tow stages to begin with, is because we want some kind of guarantee that    MOST of the searchcall's time will spent  USING all the cores.    we want a guareantee that this is the case.  to maximize out searching hardware efficiency. (effective pf (epf))
+
+
+					to get this guarantee         WITOUTH   anyyyyyy sychronizatoin of any kind,    we need to somehow give        similar typesss of jobs   to each  core, 
+
+
+							ie,  each   bag of work    we give to each core, should    in theory   be     similarly sized,  and take a similar amount of time to complete, 
+
+
+							thast the only way-     i don't think theres another way to get   this guarentee about our epf   without doign any synchr. 
+
+
+
+					
+
+
+		okay,s o we need to give a similar bag of work   to each core!    how do we do that??
+
+
+			IFFFF the total search space     has the property that zv close to each other IN ZI space   will    
+
+								on average   
+											be similar  in their  "time-till-prune" value    ish             mostly.  ish. ... kinda.. 
+
+
+
+
+			thennnnn
+
+
+
+					welll a modulo partition    is the way to        split up the search space's work   into    equally sized parts  each of which       take the same amount of time to complete for any given core. (which im just going to call, the equialization requirement of our job partitioning (or, eq req for short))
+
+
+
+							
+						
+						buttt! we can go even further tahn this, to try to guarantee    the  eq req           and thats  to actually give a sequecne of jobs to each core, 
+
+					which are spread out over the entire search space. 
+
+
+
+							
+					
+
+
+
+
+		basically,  
+
+					mp to get good pf during stage1:
+
+							ss = pf * njobspercore * sizeofeachjob
+
+
+
+202407184.203059:
+lets say this was our search space:
+
+
+
+		|		|		|		|		|		|		|
+		[========================================================================================================]
+
+		^													 ^
+		zi=0													zi = 118 trillion ish
+
+
+
+
+
+
+
+
+
+
+
+
+
+note:
+
+
+
+
+	it would be really nice if we could somehow statically partition this space (in main(), before we spin up any worker thread) 
+
+				in a way      that gives us    ROUGHLY SPEAKING   the    eq  req. 
+
+
+					
+
+
+	note:
+
+			RUNNING GRAPHS    FOR A LONG EL during generate()              IS        HORRIBLE   for our chances of maintaining the eq req during generate(). 
+
+
+
+							we want to minimize the amount of nonlinaeratiy taht could happen during the call. 
+
+
+
+										so that any particular z value really doesnt take drastically longer than any other one. 
+
+
+											thast the goal. 
+
+
+
+
+
+						
+
+
+				A               B
+		|		|		|		|		|		|		|        |
+		[========================================================================================================]
+
+		^													 ^
+		zi=0													zi = 118 trillion ish
+
+
+							ie, i divided the full search space into 7 parts. 
+
+
+
+
+
+
+
+so, 
+
+		now, lets zoom into one section, say the section  between A and B.           ie one of the 7 parts:
+
+
+
+
+
+
+
+
+				A	|	 |       |       |       |       |       |  B
+				|===========================================================|
+
+				^~~~~~~~ ^~~~~~~ ^~~~~~~ ^~~~~~~ ^~~~~~~ ^~~~~~~ ^~~~~~~ ^~~~
+				core 0    core 1  core 2  core 3   ...                    core 9
+
+
+						here, we actually want to divide this sub portion of the search space     into      CORE_COUNT   or thread_count      number of picees. 
+
+
+
+
+						we then want to name each piece                [subrange_begin::subrange_end]       and then push this    to  the element #CORE_INDEX in the array   core_jobs
+
+
+
+				ie,      core_jobs[CORE_INDEX].jobs[core_jobs[CORE_INDEX].job_count++] = (struct job) { .subrange_begin = ..zv.., subrange_end = ..zv.. };
+
+
+						so this push  idiom   instance          is basically just giving mulitple jobs to a core        but where the distribution of these  jobs is across the entire search space, 
+
+
+				
+
+
+
+		so like, the portion between A and B    contains     10   (if we have 10 cores lets say)        jobs   each of which is given toa different core. 
+
+
+				
+
+
+
+				each core will end up with 7 jobs!         but in diffferent parts of the search space!
+
+
+
+
+	and hopefullyyyy
+
+
+
+
+	because each part is like... similar to the parts arround it, 
+
+
+			we will like   on average  maintain a good          epf    the for the whole call,   without doing any synchronization!
+
+
+
+						
+
+
+
+			
+
+
+						
+		
+so basically, this is getting to the actual equaation i gave earlier, 
+
+
+	which is of course:
+
+
+
+		
+							ss = pf * njobspercore * sizeofeachjob
+
+
+
+
+
+			the search_space_size =   core_count    *    number_of_jobs_per_core    *   number_of_zv_per_job;
+
+
+
+			
+
+
+
+	bsp    is essentially the algohithm that maximizes        TO THE MAX    the  epf     
+
+
+
+			i think we just need to comprimise on this- 
+
+			using ALL the cores  ALLLLLL the time    for the full search call 		is maybe good, but not required, 
+
+
+
+				if comprimising on this causes us to not have any synchreonoization requirements,   AND allows us to use MORE than just the cpu cores,  than it might be WAYYYYY  WAYYY worth it   to comprimise on  maximing epf. 
+
+
+
+						core count is kind of more important technically, assuming we have more cores we can run this on,
+
+
+								which like,  the gpu exists-     and is quite useful for this-   as is  any other machine we want to runthis algorithm on lol 
+
+
+
+													and not requiring sych of any kind  is HUGEEE for allowing all of those cores to be used  
+
+																for a single su call. 
+
+
+
+
+
+
+
+								
+
+
+so wait 
+
+
+	so thats the other part of this revision to the search utility:
+
+
+
+				we want to actually somehow divde the search space into     10   or 70 parts   like i described above, using   the whole    pictures and   A-B thingy 
+
+
+
+					like using a modulo partition   and a number of jobs to allocate per core ,
+
+
+						we need to use          the NF!!!!      to do this partitioning. 
+
+
+
+								which             is the hard part. 
+
+
+
+
+
+		so note, 
+
+						we need to compute the  zv   that corresponds to point A         thats the problem that is maybe a little bit nonobvious how oyu would do that 
+
+
+					because lkie, without using      any z indicies  its quite difficult lol 
+
+
+			buttt
+
+
+						if we were to use z indicies JUST   for determining the     subrange_begin_zv = ....     and subrange_end_zv = ...
+
+
+
+								and then use z indicies for no other part of the program!
+
+
+								thennnn that would be fine, becuase the job allocation stage (stage0)   happening single threaded   at the start of main, 
+
+
+									is not time sensitive, we can take however long we want to determine that, and theres problems with using zi, there 
+
+
+
+
+				so yeah, we'll probably use like      256 or 512 bit    zi indicies     to numerically represent what zv      we are loooking at,
+
+					becuase of course zi's   you can do math on them, which is super useful if you are trying to arithemetically partition the space into a bunch of equal sized chunks,
+
+
+												nice!!!
+
+
+
+						cool 
+
+
+
+
+	
+
+
+
+
+
+	quick note:
+
+		params to this revision of the su:
+
+			param0:  cc
+
+				core count
+
+
+			param1:  jcpc
+
+				job count per core
+
+
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+202407184.211422:
+
+
+so wait 
+
+
+
+		is this a two stage algorithm anymore???
+
+
+
+						should make the exg   stage          into its own seperate stage,    ie
+
+
+	
+
+
+
+
+
+
+
+	okay actually wait 
+
+
+			i think it actually makes sense      to NOT      make this a two stage algortihm,  and to actually just tick down our  el a tonnn becuase basically, the root of this, is that     liek, 
+
+					ideally, GA would prunue everything - or close to           and  like we'll get there eventually, but for now,  it makes sense to give a low EL 
+
+							and then have a ton of z values  (not too many, but more than 0 ...)
+
+
+
+									output      to   a file    or multiple (for each core of course)
+
+
+
+									BUTTTT    we can run     the iterative pruning utility (ip)      on that list!
+
+
+								and that ISSSSS OUR STAGE 2 
+
+
+							ANDDDD  we can GUARANTEEE  out epf  in that sort of situation!   theres no mystery about the distribution of z values, kinad of, 
+
+
+										our epf is much more determined, kinda    than the epf  during generate()
+
+
+
+
+														or should i say generate_prune()   because stage1 does actually run exg
+
+													its just, not for a very long el  to maximise our epf
+
+
+
+
+							
+
+					gp (generate_prune()) is like the hard   situation    to maximize your epf  in      
+
+
+						but doing so   in ip     isnt taht bad       quite easy actually 
+
+
+
+					and so basically the limiting factor, really is just the pipeline/buffer    that connects the su  and ip  
+
+
+							we don't want to use a tonnn of memory or filessystem space      to store all the zv that are in  the pipeline/buffer   after we finish stage1
+
+
+							so yeah, 
+
+
+								we need  a   decent ishhhh      el      in      the su    gp     exg 
+
+
+
+
+							but it can't be crazy,    lest we risk loosing   epf a little bit    or alot,  depending on the effect that increasing our el will have on the call. 
+
+
+
+
+
+			
+						
+	
+
+
+
+		
+
+
+note:
+
+
+		i thik it will actually make sense to     do a  seperate little       prune()  stage2    after   gp     (which is stage1) 
+
+
+				basically, so tha twe don't have to offset all of this work to   the ip utiltiy, directly,     where the pipeline taht we will be using   to transfer this zv data   is of course, files, lol. 
+
+
+
+					so like, while its still in memory,   it makes sense to try to run graphs for a billion timesteps or so,       BECAUSEEEE
+
+								we can still maintain a good epf     even if we do that,    BECAUSE we have an explicit list of z values. 
+
+
+									and we definitely didnt before,  in stage1.    so yeah, we can run a large EL  now,   in stage2. 
+
+							with    very little risk at loosing  our epf   or making   lower
+
+
+
+
+
+
+				thennnn the zv   taht are output    from  prune()      WILLLL actually be writte to a file. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+things todo:
+
+	- max pointer     <-------    relevant  for when we implement stage 2. 
+
+	- lower el
+
+	- 
+
+
+
+
+x ripping out fea ex    start call 
+
+x go over search calls
+
+
+
+
+
+
 
 
 
@@ -459,6 +1491,118 @@ bsp_su: o
 
 
 
+
+
+
+
+
+
+
+
+
+
+-----------------printing current job allocations (largest_remaining: 0)-------------------
+
+	1.0000000000%
+
+  * 00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+    00000000000000000000 : 00000000000000000000 :: 
+
+using [D=0, R=0]:
+	space_size=1953125
+	thread_count=6
+	cache_line_size=100
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 1953125 zvs
+	using 6 threads
+	in       1.00s [1202407184.193547:1202407184.193548],
+	at 1953125.00 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 1912949 		
+pm_fea: 0       		pm_ns0: 744     		
+pm_pco: 1680    		pm_zr5: 18138   		
+pm_zr6: 11904   		pm_ndi: 2356    		
+pm_oer: 0       		pm_r0i: 0       		
+ pm_h0: 0       		pm_f1e: 0       		
+pm_erc: 0       		pm_rmv: 0       		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 5354    		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 0       		 pm_h3: 0       		
+pm_per: 0       		pm_snco: 0       		
+pmf_fea: 0       		pmf_ns0: 0       		
+pmf_pco: 0       		pmf_zr5: 0       		
+pmf_zr6: 0       		pmf_ndi: 0       		
+pmf_per: 0       		pmf_mcal: 0       		
+pmf_snco: 0       		pm_r1i: 0       		
+[done_pm]
+bsp_su: sub c.c
+bsp_su: b release
+bsp_su: ./run
+
+
+
+
+
+
+
+using [D=0, R=1]:
+	space_size=1953125
+	thread_count=6
+	cache_line_size=100
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 1953125 zvs
+	using 6 threads
+	in       1.00s [1202407184.193609:1202407184.193610],
+	at 1953125.00 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 1912949 		
+pm_fea: 0       		pm_ns0: 3720    		
+pm_pco: 6080    		pm_zr5: 399     		
+pm_zr6: 13392   		pm_ndi: 1494    		
+pm_oer: 0       		pm_r0i: 32      		
+ pm_h0: 37      		pm_f1e: 0       		
+pm_erc: 0       		pm_rmv: 0       		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 14984   		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 0       		 pm_h3: 0       		
+pm_per: 38      		pm_snco: 0       		
+pmf_fea: 0       		pmf_ns0: 0       		
+pmf_pco: 0       		pmf_zr5: 0       		
+pmf_zr6: 0       		pmf_ndi: 0       		
+pmf_per: 0       		pmf_mcal: 0       		
+pmf_snco: 0       		pm_r1i: 0       		
+[done_pm]
+bsp_su: 
+
+
+
+
 */
 
 #include <time.h>
@@ -480,14 +1624,14 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 2;        // the duplication count (operation_count = 5 + D)
+static const byte D = 0;        // the duplication count (operation_count = 5 + D)
 static const byte R = 1;   	// which partial graph we are using. (1 means 63R, 0 means 36R.)
 
 // static const nat range_update_frequency = 0;
 
 static const nat minimum_split_size = 6;
 
-static const nat thread_count = 10;
+static const nat thread_count = 6;
 static const nat display_rate = 0;
 
 static const nat cache_line_size = 100;
@@ -1221,10 +2365,10 @@ bad:
 	abort();
 	
 try_executing:;
-	nat pm = fea_execute_graph(graph, array);
-	if (pm) { pms[pm]++; goto loop; } 
+	//nat pm = fea_execute_graph(graph, array);
+	//if (pm) { pms[pm]++; goto loop; } 
 	byte origin;
-	pm = execute_graph(graph, array, &origin);
+	nat pm = execute_graph(graph, array, &origin);
 	if (pm) { pms[pm]++; goto loop; } 
 
 	pms[z_is_good]++; 

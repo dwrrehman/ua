@@ -58,6 +58,9 @@ static int gpio_pin_inaccessible(void) {
 	return access("/sys/class/gpio/gpio505", F_OK);
 }
 
+static void sleep_1(void) {
+	sleep(1);
+}
 
 // x is a unsigned byte value: 0 through 255.
 static void transmit(int x) {
@@ -103,7 +106,7 @@ static int receive(void) {
 	while (bit_count < 27) {
 
 		int bit = get_data();
-		if (bit) puts("1"); else puts("0");
+		// if (bit) puts("1"); else puts("0");
 		
 		if (not last_state and not bit) counts[bit_count]++;
 		if (not last_state and     bit) { }

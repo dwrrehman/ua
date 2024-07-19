@@ -1,0 +1,45 @@
+SRNFGPR: searching [D=0, R=1] space....
+
+	0.0000030720%
+
+
+	1.0000000000%
+
+using [D=0, R=1]:
+	space_size=1953125
+	thread_count=6
+	cache_line_size=100
+	minimum_split_size=6
+	display_rate=0
+	fea_execution_limit=5000
+	execution_limit=10000000000
+	array_size=100000
+
+
+	searched 1953125 zvs
+	using 6 threads
+	in       1.00s [1202407184.193609:1202407184.193610],
+	at 1953125.00 z/s.
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 1912949 		
+pm_fea: 0       		pm_ns0: 3720    		
+pm_pco: 6080    		pm_zr5: 399     		
+pm_zr6: 13392   		pm_ndi: 1494    		
+pm_oer: 0       		pm_r0i: 32      		
+ pm_h0: 37      		pm_f1e: 0       		
+pm_erc: 0       		pm_rmv: 0       		
+ pm_ot: 0       		pm_csm: 0       		
+ pm_mm: 0       		pm_snm: 0       		
+pm_bdl: 0       		pm_bdl2: 0       		
+pm_erw: 0       		pm_mcal: 14984   		
+pm_snl: 0       		 pm_h1: 0       		
+ pm_h2: 0       		 pm_h3: 0       		
+pm_per: 38      		pm_snco: 0       		
+pmf_fea: 0       		pmf_ns0: 0       		
+pmf_pco: 0       		pmf_zr5: 0       		
+pmf_zr6: 0       		pmf_ndi: 0       		
+pmf_per: 0       		pmf_mcal: 0       		
+pmf_snco: 0       		pm_r1i: 0       		
+[done_pm]

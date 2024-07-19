@@ -108,7 +108,7 @@ static int receive(void) {
 	while (bit_count < 27) {
 
 		int bit = get_data();
-		if (bit) puts("1"); else puts("0");
+		// if (bit) puts("1"); else puts("0");
 		
 		if (not last_state and not bit) counts[bit_count]++;
 		if (not last_state and     bit) { }
@@ -159,6 +159,7 @@ static int receive(void) {
 	}
 	return data;
 }
+
 
 int main(void) {
 	export_pin();
