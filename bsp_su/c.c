@@ -828,7 +828,7 @@ so wait
 								thennnn that would be fine, becuase the job allocation stage (stage0)   happening single threaded   at the start of main, 
 
 
-									is not time sensitive, we can take however long we want to determine that, and theres problems with using zi, there 
+									is not time sensitive, we can take however long we want to determine that, and theres no problems with using zi there, 
 
 
 
