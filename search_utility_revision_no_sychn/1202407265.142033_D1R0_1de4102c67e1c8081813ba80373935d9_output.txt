@@ -1,0 +1,11 @@
+SU: partitioning jobs from space....
+SU: searching [D=1, R=0] space....
+
+	0.0000000000%
+
+
+	0.0163333333%
+
+
+	0.0311666667%
+
