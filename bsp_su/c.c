@@ -1735,7 +1735,7 @@ static const byte graph_count = 4 * operation_count;
 static const byte hole_count = initial + 4 * D;
 
 static const nat fea_execution_limit = 5000;
-static const nat execution_limit = 10000000000;
+static const nat execution_limit = 10000000;
 static const nat array_size = 100000;
 
 static const byte max_er_repetions = 50;
@@ -1808,6 +1808,23 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, nat* 
 	byte ip = origin;
 	byte last_op = 255, last_mcal_op = 255;
 	nat did_ier_at = (nat)~0;
+
+
+
+/*	
+	char string[64] = {0};
+	get_graphs_z_value(string, graph);
+
+
+
+	if (not strcmp(string, "0122105025433156400510102455")) {
+		puts("found the errant z value!");
+		abort();
+	}
+
+*/
+
+	
 
 	for (; e < execution_limit; e++) {
 
@@ -2131,6 +2148,59 @@ try_open:;
 }
 
 static void* worker_thread(void* raw_argument) {
+
+
+	/********************************************
+
+
+
+	note:
+
+		202408084.172117: i found out that there is a bug with this code, somewhere.
+				not sure where, 
+
+				but we know that this  bsp su is not processing the following z value,
+
+
+
+  0  1  2  2  				this z value should have been output    but  was not (it was usin the no-synch utility though! nice)
+
+  1  0  5  0
+
+  2  1  4  3
+
+  3  1  1  6
+
+  4  0  0  1
+
+
+  1  1  1  1
+
+  2  4  1  0
+
+
+			which i have checked and   found it shouldnt be pruned by GA, or execute(), 
+
+			
+				and thus we should have output it   but        bsp did not output it, 
+
+				so we are skipping over this z value,   ie, theres a bug with how we are partitioning the search space up 
+
+				amoungst all the cores, via the bsp job-split machinery, and the sychr and other stuff like that. 
+
+
+			so yeah. keep this bug in mind, if you want to try to use this thing again ...  maybe solve this bug first lol 
+
+
+
+
+
+
+
+	*********************************/
+
+
+
 
 	char filename[4096] = {0};
 	nat* pms = calloc(pm_count, sizeof(nat));

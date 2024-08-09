@@ -33,6 +33,7 @@ static const int display_rate = 1;
 static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
+static const nat execution_limit = 2000000;
 static const nat array_size = 10000;
 static const nat lifetime_length = 10000;
 
@@ -98,8 +99,6 @@ static void generate_lifetime(struct z_value* z) {
 	z->lifetime = calloc(2, sizeof(uint32_t*));
 	z->lifetime[0] = calloc(width * lifetime_length, 4);
 	z->lifetime[1] = calloc(width * lifetime_length, 4);
-
-	const nat execution_limit = 1000000;
 
 	for (nat e = 0; e < execution_limit; e++) {
 

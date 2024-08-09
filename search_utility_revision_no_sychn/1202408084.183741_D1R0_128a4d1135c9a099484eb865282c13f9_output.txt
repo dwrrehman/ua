@@ -1,0 +1,49 @@
+SU: partitioning jobs from space....
+SU: searching [D=1, R=0] space....
+
+	0.0000000000%
+
+
+	0.2208333333%
+
+
+	0.4750000000%
+
+
+	0.6958333333%
+
+
+	0.7583333333%
+
+
+	0.9750000000%
+
+using [D=1, R=0]:
+	thread_count=6
+	job_count_per_core=40
+	display_rate=0
+	stage1_execution_limit=10000000
+	stage2_execution_limit=0
+	array_size=100000
+
+
+	searched [1:0] zvs
+	using 6 threads, each with 40 jobs
+	in       5.00s [1202408084.183741:1202408084.183746],
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 0       		
+pm_fea: 0       		pm_ns0: 1950968 		
+pm_pco: 3158344 		pm_zr5: 33663175		
+pm_zr6: 22902544		pm_ndi: 9719386 		
+pm_oer: 0       		pm_r0i: 14107   		
+ pm_h0: 40009   		pm_f1e: 852     		
+pm_erc: 413664  		pm_rmv: 35      		
+pm_csm: 0       		pm_bdl: 0       		
+pm_bdl2: 0       		pm_erw: 0       		
+pm_mcal: 12598601		 pm_h2: 0       		
+ pm_h3: 0       		pm_per: 42265   		
+pm_snco: 0       		pm_r1i: 2       		
+ pm_pt: 0       		
+[done_pm]
