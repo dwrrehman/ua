@@ -12,6 +12,11 @@
 // general formula:
 //       ((5 + D) ^ 9) * ((5 * ((5 + D) ^ 3)) ^ D)
 
+
+
+// todo:                      reset the pruning metric counts!
+
+
 #include <time.h>
 #include <math.h>
 #include <string.h>
