@@ -1,0 +1,1 @@
+clang -Weverything c.c -ferror-limit=1 -fsanitize=address,undefined

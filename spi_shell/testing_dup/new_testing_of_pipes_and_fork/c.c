@@ -200,26 +200,31 @@ int main(void) {
 	int rfd[2];
 	pipe(rfd);
 
+	int fdm[2];
+	pipe(fdm);
+
+
 	if (fork() == 0) {
 		close(fd[0]);
 		dup2(fd[1], 1);
 		close(fd[1]);
 
+		close(fdm[0]);
+		dup2(fdm[1], 2);
+		close(fdm[1]);
+
 		close(rfd[1]);
 		dup2(rfd[0], 0);
 		close(rfd[0]);
 
-		execlp("./my_program", "./my_program", 0);
+		execlp("../program/list_stuff", "../program/list_stuff", 0);
+
+		//execlp("clang", "clang", 0);
 
 	} else {
-
 		close(fd[1]);
-		//dup2(fd[0], 0);
-		//close(fd[0]);
-
+		close(fdm[1]);
 		close(rfd[0]);
-		//dup2(rfd[1], 1);
-		//close(rfd[1]);
 
 			/*	char buffer[1280] = {0};
 
@@ -289,7 +294,7 @@ int main(void) {
 
 			if (input[0] == 'r') {
 
-				char buffer[128] = {0};
+				char buffer[12800] = {0};
 
 				puts("reading from process..");
 
@@ -299,10 +304,10 @@ int main(void) {
 					ssize_t nbytes = read(fd[0], buffer, sizeof buffer);
 					printf("n = %ld\n", nbytes);
 					if (nbytes <= 0) {
-						printf("CHILD ERROR read(). \n");
+						printf("CHILD ERROR stdout read(). \n");
 						printf("error: %s\n", strerror(errno));
 					} else {
-						printf("child says: \"");
+						printf("child stdout says: \"");
 						fwrite(buffer, 1, (size_t) nbytes, stdout);
 						puts("\"");
 					}
@@ -310,18 +315,47 @@ int main(void) {
 				} else {
 					printf("nothing to read at the moment.\n");
 				}
+
+				if (poll(&(struct pollfd){ 
+				.fd = fdm[0], .events = POLLIN }, 1, 0) == 1) {
+			
+					ssize_t nbytes = read(fdm[0], buffer, sizeof buffer);
+					printf("n = %ld\n", nbytes);
+					if (nbytes <= 0) {
+						printf("CHILD ERROR stderr read(). \n");
+						printf("error: %s\n", strerror(errno));
+					} else {
+						printf("child stderr: \"");
+						fwrite(buffer, 1, (size_t) nbytes, stdout);
+						puts("\"");
+					}
+
+				} else {
+					printf("nothing to read from stderr at the moment.\n");
+				}
 				fflush(stdout);
 
 			} else if (input[0] == 'w') {
 
+			char input[4096] = {0};
+			printf(":writedata: ");
+			fflush(stdout);
+			ssize_t n = read(0, input, sizeof input);
+			if (n <= 0) {
+				quit = 1;
+				puts("ERROR: read(0) could not return, command mode failed.");
+				printf("error: %s\n", strerror(errno));
+			}
+
 				puts("sending ACK to child...");
-				ssize_t nbytes = write(rfd[1], "ACK\n", 4);
+				ssize_t nbytes = write(rfd[1], input, n);
 				printf("n = %ld\n", nbytes);
 				if (nbytes <= 0) {
 					printf("CHILD ERROR read(). \n");
 					printf("error: %s\n", strerror(errno));
 				} else {
-					puts("successfully sent ack.");
+					printf("write: successfully sent %ld bytes.\n", n);
+					printf("wrote: <<<%.*s>>>\n", (int) n, input);
 				}
 
 				fflush(stdout);
@@ -333,7 +367,7 @@ int main(void) {
 			} else {
 				printf("error: command not found: %d...\n", input[0]);
 			}
-			usleep(1000000);
+			usleep(10000);
 		}
 
 		
