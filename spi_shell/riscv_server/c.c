@@ -71,7 +71,7 @@ static int gpio_pin_inaccessible(void) {
 }
 
 static void sleep_1(void) {
-	nanosleep((const struct timespec[]){{0, 1000000000L}}, NULL);
+	nanosleep((const struct timespec[]){{1, 0}}, NULL);
 }
 
 static void sleep_third(void) {

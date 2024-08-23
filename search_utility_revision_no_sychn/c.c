@@ -11,6 +11,79 @@
 
 
 
+using [D=2, R=0]:
+        thread_count=64
+        job_count_per_core=500
+        display_rate=0
+        stage1_execution_limit=4000000
+        stage2_execution_limit=0
+        array_size=100000
+
+
+        searched [2:0] zvs
+        using 64 threads, each with 500 jobs
+        in     337.00s [1202408154.025326:1202408154.025903],
+
+
+pm counts:
+z_is_good: 413                   pm_ga: 0       
+pm_fea: 0                       pm_ns0: 244608270
+pm_pco: 284646514               pm_zr5: 3596835413
+pm_zr6: 3668556628              pm_ndi: 1219471168
+pm_oer: 51317                   pm_r0i: 1980562 
+ pm_h0: 4090448                 pm_f1e: 98995   
+pm_erc: 66410951                pm_rmv: 150596  
+pm_csm: 0                       pm_bdl: 1980    
+pm_bdl2: 433                    pm_erw: 0       
+pm_mcal: 1408554354              pm_h2: 167     
+ pm_h3: 0                       pm_per: 4064505 
+pm_snco: 0                      pm_r1i: 2437    
+ pm_pt: 428     
+[done_pm]
+xfg_search: ls
+
+
+
+
+
+
+
+using [D=2, R=0]:
+        thread_count=64
+        job_count_per_core=10
+        display_rate=1
+        stage1_execution_limit=10000000
+        stage2_execution_limit=0
+        array_size=100000
+
+
+        searched [2:0] zvs
+        using 64 threads, each with 10 jobs
+        in     260.00s [1202408154.030232:1202408154.030652],
+
+
+pm counts:
+z_is_good: 0                     pm_ga: 0       
+pm_fea: 0                       pm_ns0: 110644606
+pm_pco: 132123966               pm_zr5: 1912664887
+pm_zr6: 2705267450              pm_ndi: 556286658
+pm_oer: 18692                   pm_r0i: 1253304 
+ pm_h0: 2227862                 pm_f1e: 59865   
+pm_erc: 11973422                pm_rmv: 54351   
+pm_csm: 0                       pm_bdl: 1980    
+pm_bdl2: 144                    pm_erw: 0       
+pm_mcal: 760017712               pm_h2: 12      
+ pm_h3: 0                       pm_per: 2283564 
+pm_snco: 0                      pm_r1i: 1231    
+ pm_pt: 16      
+[done_pm]
+
+
+
+
+
+
+
 
 snco ? 
 erw ? 

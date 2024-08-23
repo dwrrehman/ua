@@ -62,7 +62,7 @@ static int gpio_pin_inaccessible(void) {
 }
 
 static void sleep_1(void) {
-	nanosleep((const struct timespec[]){{0, 1000000000L}}, NULL);
+	nanosleep((const struct timespec[]){{1, 0}}, NULL);
 }
 
 static void sleep_third(void) {
@@ -115,7 +115,7 @@ static void transmit_packet(int address, int data) {
 	set_data_0();
 	sleep_1();
 	direction_input();
-	sleep_1(); sleep_1(); sleep_1(); sleep_1();
+	sleep_1(); sleep_1(); sleep_1(); sleep_1();  // is this neccessary?..
 }
 
 // returns a byte.

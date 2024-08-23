@@ -1,0 +1,689 @@
+/*
+
+
+
+
+using [D=2, R=0]:
+        thread_count=64
+        job_count_per_core=500
+        display_rate=0
+        stage1_execution_limit=4000000
+        stage2_execution_limit=0
+        array_size=100000
+
+
+        searched [2:0] zvs
+        using 64 threads, each with 500 jobs
+        in     337.00s [1202408154.025326:1202408154.025903],
+
+
+pm counts:
+z_is_good: 413                   pm_ga: 0       
+pm_fea: 0                       pm_ns0: 244608270
+pm_pco: 284646514               pm_zr5: 3596835413
+pm_zr6: 3668556628              pm_ndi: 1219471168
+pm_oer: 51317                   pm_r0i: 1980562 
+ pm_h0: 4090448                 pm_f1e: 98995   
+pm_erc: 66410951                pm_rmv: 150596  
+pm_csm: 0                       pm_bdl: 1980    
+pm_bdl2: 433                    pm_erw: 0       
+pm_mcal: 1408554354              pm_h2: 167     
+ pm_h3: 0                       pm_per: 4064505 
+pm_snco: 0                      pm_r1i: 2437    
+ pm_pt: 428     
+[done_pm]
+xfg_search: ls
+
+
+
+
+
+
+
+using [D=2, R=0]:
+        thread_count=64
+        job_count_per_core=10
+        display_rate=1
+        stage1_execution_limit=10000000
+        stage2_execution_limit=0
+        array_size=100000
+
+
+        searched [2:0] zvs
+        using 64 threads, each with 10 jobs
+        in     260.00s [1202408154.030232:1202408154.030652],
+
+
+pm counts:
+z_is_good: 0                     pm_ga: 0       
+pm_fea: 0                       pm_ns0: 110644606
+pm_pco: 132123966               pm_zr5: 1912664887
+pm_zr6: 2705267450              pm_ndi: 556286658
+pm_oer: 18692                   pm_r0i: 1253304 
+ pm_h0: 2227862                 pm_f1e: 59865   
+pm_erc: 11973422                pm_rmv: 54351   
+pm_csm: 0                       pm_bdl: 1980    
+pm_bdl2: 144                    pm_erw: 0       
+pm_mcal: 760017712               pm_h2: 12      
+ pm_h3: 0                       pm_per: 2283564 
+pm_snco: 0                      pm_r1i: 1231    
+ pm_pt: 16      
+[done_pm]
+
+
+
+
+
+
+
+
+snco ? 
+erw ? 
+csm ? 
+h3 ? 
+
+*/
+
+
+
+
+
+
+static _Atomic nat* global_progress = NULL;
+
+static const nat job_count = thread_count * job_count_per_core;
+
+
+
+static pthread_t* threads = NULL; 
+
+
+
+
+struct job {
+	byte* begin;
+	byte* end;
+};
+
+struct joblist {
+	struct job* jobs;
+	nat job_count;
+	nat thread_index;
+};
+
+
+
+
+// static void print_graph(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
+
+
+
+
+		if (not (display_counter & ((1 << update_rate) - 1))) {
+			display_counter = 0;
+			//printf("worker[%llu]: processing  %llu / %llu \n", 
+			//	thread_index, job_index, count
+			//);
+			atomic_store_explicit(global_progress + thread_index, job_index, memory_order_relaxed);
+			
+		} else display_counter++;
+
+
+
+
+for (nat job_index = 0; job_index < count; job_index++) {
+
+
+
+
+
+const struct joblist list = *(struct joblist*) raw_argument;
+	const nat thread_index = list.thread_index;
+	const nat count = list.job_count;
+	const struct job* jobs = list.jobs;
+
+
+
+
+next_job:
+	continue;
+}
+
+
+
+
+printf("worker_thread[%llu]: terminating thread!\n", thread_index);
+
+
+
+
+
+
+
+
+	const nat K = expn(5 + D, 3);
+	nat total[chunk_count] = {0};
+	total[0] = expn(5 + D, 9);
+
+	for (nat _i = 0; _i < D; _i++) {
+		mul_small(total, 5);
+		mul_small(total, K);
+	}
+
+	debug_zi("space_size", total);
+
+	nat divisor[chunk_count] = { [0] = job_count };
+	nat q[chunk_count] = {0};
+	nat r[chunk_count] = {0};
+	divide(q, r, total, divisor);
+
+	nat n1[chunk_count] = {0};
+	bitwise_invert(n1);
+	nat width[chunk_count] = {0};
+	memcpy(width, q, chunk_count * sizeof(nat));
+	nat width_m1[chunk_count] = {0};
+	memcpy(width_m1, width, chunk_count * sizeof(nat));
+	adc(width_m1, n1, 0);
+	nat last_zi[chunk_count] = {0};
+	memcpy(last_zi, total, chunk_count * sizeof(nat));
+	adc(last_zi, n1, 0);
+
+	nat begin[chunk_count] = {0};
+
+	struct joblist* cores = calloc(thread_count, sizeof(struct joblist));
+	for (nat core = 0; core < thread_count; core++) {
+		cores[core].jobs = calloc(job_count_per_core, sizeof(struct job));
+		cores[core].thread_index = core;
+	}
+
+	snprintf(output_string, 4096, "SU: partitioning jobs from space....\n");
+	print(output_filename, 4096, output_string);
+
+	for (nat job = 0; job < job_count; job++) {
+
+		nat range_begin[chunk_count] = {0};
+		memcpy(range_begin, begin, sizeof(nat) * chunk_count);
+
+		nat sum[chunk_count] = {0};
+		memcpy(sum, begin, chunk_count * sizeof(nat));
+		adc(sum, width_m1, 0);
+
+		nat range_end[chunk_count] = {0};
+		memcpy(range_end, job < job_count - 1 ? sum : last_zi, sizeof(nat) * chunk_count);
+
+		adc(begin, width, 0);
+
+		byte* begin_zv = calloc(graph_count, 1);
+		memcpy(begin_zv, R ? _63R : _36R, 20);
+
+		nat p_begin[chunk_count] = { [0] = 1 };
+		for (nat i = 0; i < hole_count; i++) {
+			const nat radix = (nat) (positions[i] & 3 ? operation_count : 5);
+			nat radix_mp[chunk_count] = { [0] = radix };
+			nat div1[chunk_count] = {0};
+			nat rem2[chunk_count] = {0};
+			divide(div1, r, range_begin, p_begin);
+			divide(q, rem2, div1, radix_mp);
+			begin_zv[positions[i]] = (byte) *rem2;
+			mul_small(p_begin, radix);
+		}
+
+		byte* end_zv = calloc(graph_count, 1);
+		memcpy(end_zv, R ? _63R : _36R, 20);
+
+		nat p_end[chunk_count] = { [0] = 1 };
+		for (nat i = 0; i < hole_count; i++) {
+			const nat radix = (nat) (positions[i] & 3 ? operation_count : 5);
+			nat radix_mp[chunk_count] = { [0] = radix };
+			nat div1[chunk_count] = {0};
+			nat rem2[chunk_count] = {0};
+			divide(div1, r, range_end, p_end);
+			divide(q, rem2, div1, radix_mp);
+			end_zv[positions[i]] = (byte) *rem2;
+			mul_small(p_end, radix);
+		}
+
+		const nat ti = job % thread_count;
+		cores[ti].jobs[cores[ti].job_count++] = (struct job) { .begin = begin_zv, .end = end_zv };
+	}
+
+	for (nat i = 0; i < thread_count; i++) {
+		printf("core #%llu job list: (%llu jobs): \n", i, cores[i].job_count);
+		for (nat j = 0; j < cores[i].job_count; j++) {
+			printf("[%llu] = (", j);
+			print_graph_raw(cores[i].jobs[j].begin);
+			printf(" ... ");
+			print_graph_raw(cores[i].jobs[j].end);
+			puts(")");
+		}
+	}
+	
+
+
+
+
+
+
+
+
+
+
+
+/*
+static void print(char* filename, size_t size, const char* string) {
+	char dt[32] = {0};   get_datetime(dt);
+
+	int flags = O_WRONLY | O_APPEND;
+	mode_t permissions = 0;
+try_open:;
+	const int file = open(filename, flags, permissions);
+	if (file < 0) {
+		if (permissions) {
+			perror("create openat file");
+			printf("print: [%s]: failed to create filename = \"%s\"\n", dt, filename);
+			fflush(stdout);
+			abort();
+		}
+		snprintf(filename, size, "%s_D%hhuR%hhu_%08x%08x%08x%08x_output.txt", dt, D, R,
+			rand(), rand(), rand(), rand()
+		);
+		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		goto try_open;
+	}
+
+	write(file, string, strlen(string));
+	close(file);
+	printf("%s", string);
+	fflush(stdout);
+}
+
+
+
+static nat adc_raw(nat* d, nat s) {
+	*d += s;
+	return *d < s;
+}
+
+static nat adc_chunk(nat* d, nat s, nat cin) {
+	nat cout = adc_raw(d, s) | adc_raw(d, cin);
+	return cout;
+}
+
+static nat adc(chunk* d, chunk* s, nat cin) {
+	nat c = cin;
+	for (nat i = 0; i < chunk_count; i++) {
+		c = adc_chunk(d + i, s[i], c);
+	}
+	return c;
+}
+
+static void mul_small(chunk* d, nat s) {
+	nat copy[chunk_count] = {0};
+	memcpy(copy, d, chunk_count * sizeof(nat));
+	for (nat i = 0; i < s - 1; i++)  adc(d, copy, 0);
+}
+
+static nat shift_left(chunk* d) {
+	nat c = 0;
+	for (nat i = 0; i < chunk_count; i++) {
+		const nat save_c = !!(d[i] & 0x8000000000000000);
+		d[i] = (d[i] << 1) | c;
+		c = save_c;
+	}
+	return c;
+}
+
+static void bitwise_invert(chunk* d) {
+	for (nat i = 0; i < chunk_count; i++) 
+		d[i] = ~(d[i]);
+}
+
+static nat get_bit(chunk* a, nat i) {
+	const nat chunk = i / 64LLU;
+	const nat bit_in_chunk = i % 64LLU;
+	return (a[chunk] >> bit_in_chunk) & 1LLU;
+}
+
+static void set_bit(chunk* a, nat i) {
+	const nat chunk = i / 64LLU;
+	const nat bit_in_chunk = i % 64LLU;
+	a[chunk] |= 1LLU << bit_in_chunk;
+}
+
+static void print_binary64(nat x) {
+	for (nat i = 0; i < 64; i++) 
+		printf("%llu", (x >> i) & 1);
+}
+
+static void debug_zi(const char* s, chunk* number) {
+	printf("%s = {\n", s);
+	for (nat i = 0; i < chunk_count; i++) {
+		printf("[%llu]: ", i);
+		print_binary64(number[i]); 
+		printf("  (dec %llu)\n", number[i]);
+	}
+	puts("} ");
+}
+
+static nat expn(nat base, nat exponent) {
+	nat result = 1;
+	for (nat i = 0; i < exponent; i++) result *= base;
+	return result;
+}
+
+static nat ge_r_s(nat* r, nat* s) {
+	nat copy[chunk_count] = {0};
+	memcpy(copy, s, chunk_count * sizeof(nat));
+	bitwise_invert(copy);
+	return adc(copy, r, 1);
+}
+
+// computes total / divisor
+static void divide(chunk* q, chunk* r, chunk* total, chunk* divisor) {
+
+	memset(q, 0, sizeof(nat) * chunk_count);
+	memset(r, 0, sizeof(nat) * chunk_count);
+
+	nat negative_divisor[chunk_count] = {0};
+	memcpy(negative_divisor, divisor, chunk_count * sizeof(nat)); 
+	bitwise_invert(negative_divisor);
+	adc(negative_divisor, r, 1);
+
+	for (nat i = 64 * chunk_count; i--;) {
+		shift_left(r);
+		*r |= get_bit(total, i);
+		if (ge_r_s(r, divisor)) {
+			adc(r, negative_divisor, 0);
+			set_bit(q, i);
+		}
+	}
+}
+*/
+
+
+
+
+
+
+
+
+
+
+
+	//void* raw_graph = calloc(1, graph_count + (8 - (graph_count % 8)) % 8);
+	//void* raw_end = calloc(1, graph_count   + (8 - (graph_count % 8)) % 8);
+	// nat display_counter = 0;
+	//memcpy(graph, jobs[job_index].begin, graph_count);
+	//memcpy(end, jobs[job_index].end, graph_count);
+	
+	// byte* end = raw_end;
+	//nat* graph_64 = raw_graph;
+	//nat* end_64 = raw_end;
+
+
+
+
+
+// nat* pms = calloc(pm_count, sizeof(nat));
+
+
+
+
+
+threads = calloc(thread_count, sizeof(pthread_t));
+
+
+
+
+global_progress = calloc(1, thread_count * sizeof(_Atomic nat));
+	for (nat i = 0; i < thread_count; i++)  atomic_init(global_progress + i, 0);
+
+
+
+
+
+char output_filename[4096] = {0};
+	char output_string[4096] = {0};
+
+
+
+
+
+
+for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+		if (graph_64[i] < end_64[i]) goto process;
+		if (graph_64[i] > end_64[i]) break;
+	}
+	goto next_job;
+
+
+
+
+
+
+snprintf(output_string, 4096, "SU: searching [D=%hhu, R=%hhu] space....\n", D, R);
+	print(output_filename, 4096, output_string);
+
+
+
+
+
+
+
+
+
+
+	for (nat i = 0; i < thread_count; i++) {
+		pthread_create(threads + i, NULL, worker_thread, cores + i);
+	}
+
+	nat resolution = job_count_per_core / 80;
+	if (resolution == 0) resolution = 1;
+
+
+	while (1) {
+		// byte printed_one_char = 0;
+
+		nat sum = 0;
+
+		// nat largest_remaining = 0, chosen_thread = 0;
+
+		for (nat i = 0; i < thread_count; i++) {
+			const nat size = atomic_load_explicit(global_progress + i, memory_order_relaxed);
+			// if (size > largest_remaining) { largest_remaining = size; chosen_thread = i; }
+			sum += size;
+		}
+
+		printf("\033[H\033[2J");
+		snprintf(output_string, 4096, "\n-----------------current jobs (jcpc=%llu)-------------------\n",
+			 job_count_per_core // largest_remaining
+		);
+		printf("%s", output_string);
+
+		snprintf(output_string, 4096, "\n\t%1.10lf%%\n\n", (double) (sum) / (double) job_count);
+		print(output_filename, 4096, output_string);
+
+		for (nat i = 0; i < thread_count; i++) { 
+
+			const nat size = atomic_load_explicit(global_progress + i, memory_order_relaxed);
+
+			snprintf(output_string, 4096, "  %c %020llu :: ", 
+				i == (nat) -1 ? '*' : ' ', size
+			);
+			printf("%s", output_string);
+
+			const nat amount = size / resolution;
+
+			for (nat j = 0; j < amount; j++) {
+				snprintf(output_string, 4096, "#");
+				printf("%s", output_string);
+			}
+			snprintf(output_string, 4096, "\n");
+			printf("%s", output_string);
+		}
+
+		// if (not printed_one_char) resolution *= 2;
+		
+		snprintf(output_string, 4096, "\n");
+		printf("%s", output_string);
+
+		for (nat i = 0; i < thread_count; i++) {
+			const nat size = atomic_load_explicit(global_progress + i, memory_order_relaxed);
+			if (size < job_count_per_core - 1) goto next;
+		}
+		break;
+	next:
+		// if (not largest_remaining) break;
+		sleep(1 << display_rate);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+	nat counts[pm_count] = {0};
+
+	for (nat i = 0; i < thread_count; i++) {
+		nat* local_counts = NULL;
+		pthread_join(threads[i], (void**) &local_counts);
+		for (nat j = 0; j < pm_count; j++) counts[j] += local_counts[j];
+		free(local_counts);
+	}
+
+
+
+
+
+
+
+
+
+
+snprintf(output_string, 4096, "\npm counts:\n");
+	print(output_filename, 4096, output_string);
+	for (nat i = 0; i < pm_count; i++) {
+		if (i and not (i % 2)) {
+			snprintf(output_string, 4096, "\n");
+			print(output_filename, 4096, output_string);
+		}
+		snprintf(output_string, 4096, "%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
+		print(output_filename, 4096, output_string);
+	}
+	snprintf(output_string, 4096, "\n[done_pm]\n");
+	print(output_filename, 4096, output_string);
+
+
+
+
+
+
+
+
+
+snprintf(output_string, 4096,
+		"using [D=%hhu, R=%hhu]:"
+		"\n\tthread_count=%llu"
+		"\n\tjob_count_per_core=%llu"		
+		"\n\tdisplay_rate=%llu"
+		"\n\tstage1_execution_limit=%llu"
+		"\n\tstage2_execution_limit=%llu"
+		"\n\tarray_size=%llu"
+		"\n\n"
+		"\n\t""searched [%hhu:%hhu] zvs"
+		"\n\tusing %llu threads, each with %llu jobs"
+		"\n\tin %10.2lfs [%s:%s],"	
+		"\n\n", 
+
+		D, R, 0, 0, 
+		display_rate, 0,
+		0,   array_size, 
+		D, R, 0,  0, 
+		seconds,  time_begin_dt,  time_end_dt
+	);
+
+	print(output_filename, 4096, output_string);
+
+
+
+
+
+
+typedef uint64_t chunk;
+#define chunk_count 2
+
+
+
+
+
+
+
+enum pruning_metrics {
+	z_is_good, pm_ga, 
+	pm_fea, pm_ns0, 
+
+	pm_pco, pm_zr5, 
+	pm_zr6, pm_ndi, 
+
+	pm_oer, pm_r0i, 
+	pm_h0, pm_f1e, 
+
+	pm_erc, pm_rmv, 
+	pm_csm, 
+
+	pm_bdl, pm_bdl2, 
+	pm_erw, pm_mcal, 
+	
+	pm_h2, pm_h3, 
+	pm_per, pm_snco,
+
+	pm_r1i,
+	pm_pt,
+
+	pm_count
+};
+
+static const char* pm_spelling[pm_count] = {
+	"z_is_good", "pm_ga", 
+	"pm_fea", "pm_ns0", 
+
+	"pm_pco", "pm_zr5", 
+	"pm_zr6", "pm_ndi", 
+
+	"pm_oer", "pm_r0i", 
+	"pm_h0", "pm_f1e", 
+
+	"pm_erc", "pm_rmv", 
+	"pm_csm", 
+
+	"pm_bdl", "pm_bdl2", 
+	"pm_erw", "pm_mcal", 
+	
+	"pm_h2", "pm_h3", 
+	"pm_per", "pm_snco",
+
+	 "pm_r1i",
+	"pm_pt",
+};
+
+
+
+
+
+
+
+
+
+static const nat thread_count = 6;
+static const nat job_count_per_core = 30;
+
+static const nat stage1_execution_limit = 100000; // 1 million
+
+
