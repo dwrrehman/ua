@@ -4,103 +4,6 @@
 // written on 202408224.204643: by dwrr 
 //
 
-
-
-/*
-NED:  z = 01241072264337524007100010001766    was pruned by:  { (pm_mcal:9) }
-PRUNED:  z = 01241065214335624007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01271063254734724007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01221037254130044007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01251055274337144007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01221037254335244007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01241002274335744007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01211073254332054007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01241037254536054007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01221073254437254007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01251037254632454007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01221056264332554007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01271020254330654007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01221073254534654007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01261037254737654007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01211003264134754007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01241073254630164007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01271037254035164007100010001766    was pruned by:  { (pm_mcal:4) }
-PRUNED:  z = 01221075214336264007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01211030254531464007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01241073254735464007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01221003264435564007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01221030254636664007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01261073254032764007100010001766    was pruned by:  { (pm_mcal:4) }
-PRUNED:  z = 01241003264531074007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01241030254732174007100010001766    was pruned by:  { (pm_mcal:6) }
-PRUNED:  z = 01271073254137174007100010001766    was pruned by:  { (pm_mcal:7) }
-PRUNED:  z = 01251003264636274007100010001766    was pruned by:  { (pm_mcal:5) }
-PRUNED:  z = 01241030254030574007100010001766    was pruned by:  { (pm_mcal:4) }
-PRUNED:  z = 01261073254334574007100010001766    was pruned by:  { (pm_mcal:7) }
-PRUNED:  z = 01271037204535674007100010001766    was pruned by:  { (pm_ns0:4) }
-PRUNED:  z = 01251030254135774007100010001766    was pruned by:  { (pm_mcal:8) }
-su: found  1383457067 zv / 25478631319 zv  in (3,0) search space!
- in   13645.00s [1202408235.003532:1202408235.042257].
-     0 :       0 : 
-     1 :   13252399259 : ########################################################################################################################
-     2 :   2974803091 : ##########################
-     3 :   871902597 : #######
-     4 :   5978507822 : ######################################################
-     5 :   10683321378 : ################################################################################################
-     6 :   7409723487 : ###################################################################
-     7 :   2214153731 : ####################
-     8 :   653544567 : #####
-     9 :   2396549931 : #####################
-    10 :       0 : 
-two_stage_search_utility: 
-
-13645 / 3600 = 3.7902777778
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-			paste the results here plz lol 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*/
-
-
-
-
-
-
-
-
-
-
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
@@ -123,10 +26,10 @@ typedef uint16_t u16;
 static const byte D = 3;
 static const byte R = 0;
 
-static const nat stage0_execution_limit = 10;
-static const nat stage0_array_size = 100;
+// static const nat stage0_execution_limit = 5;
+// static const nat stage0_array_size = 100;
 
-static const nat display_rate = 18;
+static const nat display_rate = 21;
 
 enum operations { one, two, three, five, six };
 
@@ -227,15 +130,12 @@ static const nat required_er_count = 25;
 static const nat expansion_check_timestep2 = 10000;
 static const nat required_s0_increments = 5;*/
 
-
 static byte* positions = NULL; 
-
 
 struct prune_info {
 	nat pm;
 	nat ttp;
 };
-
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
 
@@ -249,119 +149,6 @@ static void get_datetime(char datetime[32]) {
 	gettimeofday(&tv, NULL);
 	struct tm* tm_info = localtime(&tv.tv_sec);
 	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
-}
-
-
-static byte execute_graph_starting_at(byte origin, byte* graph, byte* array, byte* zskip_at) {
-
-	const nat n = stage0_array_size;
-	array[0] = 0; 
-	array[n] = 0;
-
-	nat 	xw = 0, pointer = 0, mcal_index = 0;
-	byte 	mcal_path = 0;
-
-	byte ip = origin;
-	byte last_op = 255, last_mcal_op = 255;
-	nat did_ier_at = (nat)~0;
-
-	for (nat e = 0; e < stage0_execution_limit; e++) {
-
-		const byte I = ip * 4, op = graph[I];
-
-		if (op == one) {
-			if (pointer == n) abort();
-			if (not array[pointer]) return pm_ns0; 
-			pointer++;
-
-			if (pointer > xw and pointer < n) { 
-				xw = pointer; 
-				array[pointer] = 0; 
-			}
-		}
-
-		else if (op == five) {
-			if (last_mcal_op != three) return pm_pco;
-			if (not pointer) return pm_zr5; 
-	
-			did_ier_at = pointer;
-			pointer = 0;
-		}
-
-		else if (op == two) {
-		
-			array[n]++;
-		}
-		else if (op == six) {  
-			if (not array[n]) return pm_zr6;
-
-			if (	last_op != one and 
-				last_op != three and 
-				last_op != five
-			) return pm_snco;
-
-			array[n] = 0;
-		}
-		else if (op == three) {
-			if (last_mcal_op == three)  return pm_ndi;
-
-			if (did_ier_at != (nat) ~0) {
-				if (pointer >= did_ier_at) return pm_per; 
-				did_ier_at = (nat) ~0;
-			}
-
-			array[pointer]++;
-		}
-
-		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
-		last_op = op;
-
-		if (mcal_index == 1  and last_mcal_op != three) return pm_mcal;
-		if (mcal_index == 2  and last_mcal_op != one) 	return pm_mcal;
-		if (mcal_index == 3  and last_mcal_op != three) return pm_mcal;
-		if (mcal_index == 4  and last_mcal_op != five) 	return pm_mcal;
-		if (mcal_index == 5  and last_mcal_op != three) return pm_mcal;
-		if (mcal_index == 6  and last_mcal_op != one) 	return pm_mcal;
-
-		if (mcal_index == 7) {
-			if (last_mcal_op == five) return pm_mcal;
-			mcal_path = last_mcal_op == three ? 1 : 2;
-		}
-
-		if (mcal_index == 8 and mcal_path == 1 and last_mcal_op != one)  	return pm_mcal;
-		if (mcal_index == 8 and mcal_path == 2 and last_mcal_op != three)  	return pm_mcal;
-
-		if (mcal_index == 9 and mcal_path == 1 and last_mcal_op != three)  	return pm_mcal;
-		if (mcal_index == 9 and mcal_path == 2 and last_mcal_op != five)  	return pm_mcal;
-
-		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return pm_mcal;
-
-		byte state = 0;
-		if (array[n] < array[pointer]) state = 1;
-		if (array[n] > array[pointer]) state = 2;
-		if (array[n] == array[pointer]) state = 3;
-
-		if (*zskip_at > 3) {
-			byte found_at = 0;
-			for (nat i = 0; i < hole_count; i++) {
-				if (I + state == positions[i]) { found_at = 1; break; }      /// change this to not be so crappy lol. 
-			}
-
-			if (*zskip_at > I + state and found_at) *zskip_at = I + state;
-		}
-		ip = graph[I + state];
-	}
-	return z_is_good;
-}
-
-static byte execute_graph(byte* graph, byte* array, byte* origin) {
-	byte zskip_at = 255;
-	for (byte o = 0; o < operation_count; o++) {
-		if (graph[4 * o] != three) continue;
-		const nat pm = execute_graph_starting_at(o, graph, array, &zskip_at);
-		if (not pm) { *origin = o; return 0; } 
-	}
-	return zskip_at;
 }
 
 static void append_to_file(char* filename, size_t size, byte* graph, byte origin) {
@@ -410,16 +197,14 @@ int main(void) {
 	for (byte i = 0; i < 4 * D; i++) positions[initial + i] = 20 + i; 
 
 	// char filename[4096] = {0};
-	byte* array = calloc(stage0_array_size + 1, sizeof(byte));
+	// byte* array = calloc(stage0_array_size + 1, sizeof(byte));
 
 	byte* graph = calloc(1, graph_count);
 	memcpy(graph, R ? _63R : _36R, 20);
 	byte pointer = 0;
 	nat display_counter = 0, good_count = 0, bad_count = 0;
 
-
-	nat* histogram = calloc(100 + 1, sizeof(nat));
-
+	nat* histogram = calloc(40 + 1, sizeof(nat));
 
 	struct timeval time_begin = {0};
 	gettimeofday(&time_begin, NULL);
@@ -548,6 +333,17 @@ init:  	pointer = 0;
 		if (not ((was_utilized >> index) & 1)) goto loop;
 
 
+	for (byte i = 4 * (operation_count - 1); i >= 20; i -= 4) {
+		for (byte j = 0; j < i; j += 4) {
+			if (not memcmp(graph + i, graph + j, 4)) {
+				if (j >= 20) { at = j; goto bad; } 
+				for (byte h = 0; h < initial; h++) 
+					if (positions[h] >= j) { at = positions[h]; goto bad; }
+			}
+		}
+	}
+
+	
 	at = 255;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three) continue;
@@ -560,8 +356,8 @@ init:  	pointer = 0;
 		const byte eq_case = graph[4 * graph[4 * o + 1] + 3];
 
 		if (graph[4 * graph[4 * o + 1]] == one) {
-			if (at > 4 * graph[4 * o + 1] + 3) at = 4 * graph[4 * o + 1] + 3;
-
+			if (at > 4 * graph[4 * o + 1] + 3) { at = 4 * graph[4 * o + 1] + 3; if (at == 3) goto exit_ega; }
+			
 			if (graph[4 * eq_case] == six) continue;
 
 			if (graph[4 * eq_case] == two) {
@@ -583,7 +379,7 @@ init:  	pointer = 0;
 			if (graph[4 * eq_case] == three) continue;
 
 			if (graph[4 * eq_case] == one) {
-				if (at > 4 * eq_case + 2) at = 4 * eq_case + 2;
+				if (at > 4 * eq_case + 2) { at = 4 * eq_case + 2; if (at == 3) goto exit_ega; }
 				if (graph[4 * graph[4 * eq_case + 2]] == one) continue;
 			}
 
@@ -593,15 +389,13 @@ init:  	pointer = 0;
 				if (graph[4 * graph[4 * eq_case + 2]] == five) continue;
 			}
 		}
-		goto run_graph_ega;
+		goto exit_ega;
 	}	
 	goto bad;
 
+exit_ega:;
 
-run_graph_ega:;
-	byte origin;
-	at = execute_graph(graph, array, &origin);
-
+	at = 0;
 	if (not (display_counter & ((1 << display_rate) - 1))) {
 		printf("\033[%dm%s:  z = ", at ? 31 : 32, at ? "PRUNED" : " FOUND"); 
 		print_graph_raw(graph); 
@@ -610,19 +404,32 @@ run_graph_ega:;
 		display_counter = 1;
 	} else display_counter++;
 
+
 	if (not at) {
 		// TODO:   push this good z value to a candidates buffer, for stage2 to process later. 
 		// append_to_file(filename, sizeof filename, graph, origin);
 		good_count++;
 		goto loop;
 	} else bad_count++;
+
+
+
 	histogram[at]++;
-	// goto loop;
+
 
 bad:
+	
+	///////////////////////////////////////////////////// this code can be so much better. just realize that if at >= 20 then we know that the value of at setting was valid, and we can just do simple arith  to turn that into a pointer value ("pointer = i" code would be replaced with simple arith) ANDDD if its NOT geq 20 then we can just do a for loop like the below code, butttt nottttt going over all holes,   just the ones part of the 0sp partial graph.  not the dol. 
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////
 	for (byte i = 0; i < hole_count; i++) {
 		if (positions[i] == at) { pointer = i; goto loop; } else graph[positions[i]] = 0;
 	}
+	//////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 	printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
 	abort();
 
@@ -645,13 +452,14 @@ done:;
 
 	const nat screen_width = 120;
 	nat max_tally = 0;
-	for (nat i = 0; i < 100 + 1; i++) {
+	for (nat i = 0; i < 40 + 1; i++) {
 		if (histogram[i] > max_tally) max_tally = histogram[i];
 	}
 
-	const nat tallys_per_char = max_tally / screen_width;
+	nat tallys_per_char = max_tally / screen_width;
+	if (tallys_per_char == 0) tallys_per_char = 1;
 
-	for (nat i = 0; i < 100 + 1; i++) {
+	for (nat i = 0; i < 40 + 1; i++) {
 
 		nat value = histogram[i];
 		value /= tallys_per_char;
@@ -727,6 +535,139 @@ done:;
 
 
 
+	//puts("done");
+	//abort();
+
+			//printf("info: trying double combination PA @ i = %hhu, PA @ j = %hhu\n", i, j);
+			//getchar();
+			
+
+
+
+	/*
+	for (byte i = 20; i < 4 * operation_count; i += 4) 
+		for (byte j = 20; j < i; j += 4) 
+			if (not memcmp(graph + i, graph + j, 4)) { at = j; goto bad; } 
+		
+	*/
+
+
+
+
+/*
+static byte execute_graph_starting_at(byte origin, byte* graph, byte* array, byte* zskip_at) {
+
+	const nat n = stage0_array_size;
+	array[0] = 0; 
+	array[n] = 0;
+
+	nat 	xw = 0, pointer = 0, mcal_index = 0;
+	byte 	mcal_path = 0;
+
+	byte ip = origin;
+	byte last_op = 255, last_mcal_op = 255;
+	nat did_ier_at = (nat)~0;
+
+	for (nat e = 0; e < stage0_execution_limit; e++) {
+
+		const byte I = ip * 4, op = graph[I];
+
+		if (op == one) {
+			if (pointer == n) abort();
+			if (not array[pointer]) return pm_ns0; 
+			pointer++;
+
+			if (pointer > xw and pointer < n) { 
+				xw = pointer; 
+				array[pointer] = 0; 
+			}
+		}
+
+		else if (op == five) {
+			if (last_mcal_op != three) return pm_pco;
+			if (not pointer) return pm_zr5; 
+	
+			did_ier_at = pointer;
+			pointer = 0;
+		}
+
+		else if (op == two) {
+		
+			array[n]++;
+		}
+		else if (op == six) {  
+			if (not array[n]) return pm_zr6;
+
+			if (	last_op != one and 
+				last_op != three and 
+				last_op != five
+			) return pm_snco;
+
+			array[n] = 0;
+		}
+		else if (op == three) {
+			if (last_mcal_op == three)  return pm_ndi;
+
+			if (did_ier_at != (nat) ~0) {
+				if (pointer >= did_ier_at) return pm_per; 
+				did_ier_at = (nat) ~0;
+			}
+
+			array[pointer]++;
+		}
+
+		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
+		last_op = op;
+
+		if (mcal_index == 1  and last_mcal_op != three) return pm_mcal;
+		if (mcal_index == 2  and last_mcal_op != one) 	return pm_mcal;
+		if (mcal_index == 3  and last_mcal_op != three) return pm_mcal;
+		if (mcal_index == 4  and last_mcal_op != five) 	return pm_mcal;
+		if (mcal_index == 5  and last_mcal_op != three) return pm_mcal;
+		if (mcal_index == 6  and last_mcal_op != one) 	return pm_mcal;
+
+		if (mcal_index == 7) {
+			if (last_mcal_op == five) return pm_mcal;
+			mcal_path = last_mcal_op == three ? 1 : 2;
+		}
+
+		if (mcal_index == 8 and mcal_path == 1 and last_mcal_op != one)  	return pm_mcal;
+		if (mcal_index == 8 and mcal_path == 2 and last_mcal_op != three)  	return pm_mcal;
+
+		if (mcal_index == 9 and mcal_path == 1 and last_mcal_op != three)  	return pm_mcal;
+		if (mcal_index == 9 and mcal_path == 2 and last_mcal_op != five)  	return pm_mcal;
+
+		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return pm_mcal;
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+
+		if (*zskip_at > 3) {
+			byte found_at = 0;
+			for (nat i = 0; i < hole_count; i++) {
+				if (I + state == positions[i]) { found_at = 1; break; }      /// change this to not be so crappy lol. 
+			}
+
+			if (*zskip_at > I + state and found_at) *zskip_at = I + state;
+		}
+		ip = graph[I + state];
+	}
+	return z_is_good;
+}
+
+static byte execute_graph(byte* graph, byte* array, byte* origin) {
+	byte zskip_at = 255;
+	for (byte o = 0; o < operation_count; o++) {
+		if (graph[4 * o] != three) continue;
+		const nat pm = execute_graph_starting_at(o, graph, array, &zskip_at);
+		if (not pm) { *origin = o; return 0; } 
+	}
+	return zskip_at;
+}
+
+*/
 
 
 
@@ -735,6 +676,144 @@ done:;
 
 
 
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+	//puts("done");
+
+
+
+
+
+
+printf("\033[%dm%s:  z = ", at ? 31 : 32, at ? "PRUNED" : " FOUND"); 
+	print_graph_raw(graph); 
+	printf("    was pruned at = %hhu\033[0m\n", at);
+	fflush(stdout); 
+
+
+
+
+
+
+
+
+
+puts("entering loop");
+	
+	printf("operation_count = %hhu\n", operation_count);
+
+
+
+
+//printf("info: trying double combination PA @ i = %hhu, PA @ j = %hhu\n", i, j);
+			//getchar();
+//printf("i = %hhu\n", i);
+		//printf("operation_count = %hhu\n", operation_count);
+
+		//puts("");
+
+		//printf("info: trying first combination PA @ i = %hhu\n", i);
+		//getchar();
+
+
+3sp
+
+	
+	0127 1000 2843 3650 4002    1000 2000 2100 4001
+
+	0128 1076 2543 3100 4001    1000 2000 2100 4001
+
+	0128 1076 2543 3100 4001    1000 1000 1000 1000
+
+	0121 1053 2440 3405 4005  { 2044 3245 4124 }   D
+
+
+	                            ^    ^    ^                i 
+
+
+	^    ^    ^    ^    ^       ^    ^    ^                j
+
+
+	(i < D):
+		(j < i) :
+			if (not memcmp(graph + i, graph + j)) {
+				// set the value of at to SOMETHINGGGG?!?!
+			}	
+	
+	
+*/
+
+/*
+	at = 255;
+	for (byte o = 0; o < operation_count; o++) {
+		if (graph[4 * o] != three) continue;
+
+		if (at > 4 * o + 1) at = 4 * o + 1;
+
+		if (graph[4 * graph[4 * o + 1]] == five) continue;
+		if (graph[4 * graph[4 * o + 1]] == six) continue;
+
+		const byte eq_case = graph[4 * graph[4 * o + 1] + 3];
+
+		if (graph[4 * graph[4 * o + 1]] == one) {
+			if (at > 4 * graph[4 * o + 1] + 3) at = 4 * graph[4 * o + 1] + 3;
+
+			if (graph[4 * eq_case] == six) continue;
+
+			if (graph[4 * eq_case] == two) {
+				if (at > 4 * eq_case + 2) at = 4 * eq_case + 2;
+				if (graph[4 * graph[4 * eq_case + 2]] == one) continue;
+				if (graph[4 * graph[4 * eq_case + 2]] == five) continue;
+			}
+
+			if (graph[4 * eq_case] == three) {
+				if (at > 4 * eq_case + 1) at = 4 * eq_case + 1;
+				if (graph[4 * graph[4 * eq_case + 1]] == six) continue;
+				if (graph[4 * graph[4 * eq_case + 1]] == one) continue;
+			}
+	
+		} else if (graph[4 * graph[4 * o + 1]] == two) {
+			if (at > 4 * graph[4 * o + 1] + 3) at = 4 * graph[4 * o + 1] + 3;
+
+			if (graph[4 * eq_case] == five) continue; 
+			if (graph[4 * eq_case] == three) continue;
+
+			if (graph[4 * eq_case] == one) {
+				if (at > 4 * eq_case + 2) at = 4 * eq_case + 2;
+				if (graph[4 * graph[4 * eq_case + 2]] == one) continue;
+			}
+
+			if (graph[4 * eq_case] == two) {
+				if (at > 4 * eq_case + 2) at = 4 * eq_case + 2;
+				if (graph[4 * graph[4 * eq_case + 2]] == three) continue;
+				if (graph[4 * graph[4 * eq_case + 2]] == five) continue;
+			}
+		}
+		goto run_graph_ega;
+	}	
+	goto bad;
+*/
+
+
+
+
+
+
+//run_graph_ega:;
+//	byte origin;
+//	at = execute_graph(graph, array, &origin);
 
 
 
@@ -772,6 +851,17 @@ done:;
 		}
 		puts("");
 	}
+
+
+
+printf("info: redundant original operation at j: "
+					"PA @ i = %hhu, PA @ j = %hhu\n", i, j
+				);
+
+
+
+
+
 */
 
 
@@ -2397,6 +2487,255 @@ static nat execute_graph(byte* graph, nat* array, byte* origin, struct prune_inf
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+NED:  z = 01241072264337524007100010001766    was pruned by:  { (pm_mcal:9) }
+PRUNED:  z = 01241065214335624007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01271063254734724007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01221037254130044007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01251055274337144007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01221037254335244007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01241002274335744007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01211073254332054007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01241037254536054007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01221073254437254007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01251037254632454007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01221056264332554007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01271020254330654007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01221073254534654007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01261037254737654007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01211003264134754007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01241073254630164007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01271037254035164007100010001766    was pruned by:  { (pm_mcal:4) }
+PRUNED:  z = 01221075214336264007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01211030254531464007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01241073254735464007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01221003264435564007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01221030254636664007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01261073254032764007100010001766    was pruned by:  { (pm_mcal:4) }
+PRUNED:  z = 01241003264531074007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01241030254732174007100010001766    was pruned by:  { (pm_mcal:6) }
+PRUNED:  z = 01271073254137174007100010001766    was pruned by:  { (pm_mcal:7) }
+PRUNED:  z = 01251003264636274007100010001766    was pruned by:  { (pm_mcal:5) }
+PRUNED:  z = 01241030254030574007100010001766    was pruned by:  { (pm_mcal:4) }
+PRUNED:  z = 01261073254334574007100010001766    was pruned by:  { (pm_mcal:7) }
+PRUNED:  z = 01271037204535674007100010001766    was pruned by:  { (pm_ns0:4) }
+PRUNED:  z = 01251030254135774007100010001766    was pruned by:  { (pm_mcal:8) }
+su: found  1383457067 zv / 25478631319 zv  in (3,0) search space!
+ in   13645.00s [1202408235.003532:1202408235.042257].
+     0 :       0 : 
+     1 :   13252399259 : ########################################################################################################################
+     2 :   2974803091 : ##########################
+     3 :   871902597 : #######
+     4 :   5978507822 : ######################################################
+     5 :   10683321378 : ################################################################################################
+     6 :   7409723487 : ###################################################################
+     7 :   2214153731 : ####################
+     8 :   653544567 : #####
+     9 :   2396549931 : #####################
+    10 :       0 : 
+two_stage_search_utility: 
+
+13645 / 3600 = 3.7902777778
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			paste the results here plz lol 
+
+
+ z = 01211030214735444002100010003566    was pruned at = 7
+PRUNED:  z = 01221073214331044005100020003566    was pruned at = 3
+PRUNED:  z = 01211023274130664002200020003566    was pruned at = 3
+PRUNED:  z = 01271053204536154005100010001666    was pruned at = 3
+PRUNED:  z = 01261037204035204002100010002666    was pruned at = 3
+PRUNED:  z = 01211037204634564005100010002666    was pruned at = 3
+PRUNED:  z = 01251032204536244007100010002666    was pruned at = 3
+PRUNED:  z = 01211005214337054005100010001766    was pruned at = 7
+su: found  1383457067 zv / 9850859938 zv  in (3,0) search space!
+ in   13674.00s [1202409113.202417:1202409124.001211].
+     0 :       0 : 
+     1 :       0 : 
+     2 :       0 : 
+     3 :   7716408329 : ########################################################################################################################
+     4 :       0 : 
+     5 :       0 : 
+     6 :   1187355494 : ##################
+     7 :   830035868 : ############
+     8 :       0 : 
+     9 :   117060247 : #
+    10 :       0 : 
+    11 :       0 : 
+    12 :       0 : 
+    13 :       0 : 
+    14 :       0 : 
+    15 :       0 : 
+
+
+13674 / 3600 = 3.7983333333
+
+
+
+nice lol
+
+same amount of time 
+
+
+
+
+
+
+
+
+
+
+
+
+PRUNED:  z = 01251032204536244007100010002666    was pruned at = 3
+PRUNED:  z = 01211005214337054005100010001766    was pruned at = 7
+su: found  1383457067 zv / 9850859938 zv  in (3,0) search space!
+ in   13674.00s [1202409113.202417:1202409124.001211].
+     0 :       0 : 
+     1 :       0 : 
+     2 :       0 : 
+     3 :   7716408329 : ########################################################################################################################
+     4 :       0 : 
+     5 :       0 : 
+     6 :   1187355494 : ##################
+     7 :   830035868 : ############
+     8 :       0 : 
+     9 :   117060247 : #
+    10 :       0 : 
+    11 :       0 : 
+    12 :       0 : 
+    13 :       0 : 
+    14 :       0 : 
+    15 :       0 : 
+    16 :       0 : 
+    17 :       0 : 
+    18 :       0 : 
+    19 :       0 : 
+    20 :       0 : 
+    21 :       0 : 
+    22 :       0 : 
+    23 :       0 : 
+    24 :       0 : 
+    25 :       0 : 
+    26 :       0 : 
+    27 :       0 : 
+    28 :       0 : 
+    29 :       0 : 
+    30 :       0 : 
+    31 :       0 : 
+    32 :       0 : 
+    33 :       0 : 
+    34 :       0 : 
+    35 :       0 : 
+    36 :       0 : 
+    37 :       0 : 
+    38 :       0 : 
+    39 :       0 : 
+    40 :       0 : 
+    41 :       0 : 
+    42 :       0 : 
+    43 :       0 : 
+    44 :       0 : 
+    45 :       0 : 
+    46 :       0 : 
+    47 :       0 : 
+    48 :       0 : 
+    49 :       0 : 
+    50 :       0 : 
+    51 :       0 : 
+    52 :       0 : 
+    53 :       0 : 
+    54 :       0 : 
+    55 :       0 : 
+    56 :       0 : 
+    57 :       0 : 
+    58 :       0 : 
+    59 :       0 : 
+    60 :       0 : 
+    61 :       0 : 
+    62 :       0 : 
+    63 :       0 : 
+    64 :       0 : 
+    65 :       0 : 
+    66 :       0 : 
+    67 :       0 : 
+    68 :       0 : 
+    69 :       0 : 
+    70 :       0 : 
+    71 :       0 : 
+    72 :       0 : 
+    73 :       0 : 
+    74 :       0 : 
+    75 :       0 : 
+    76 :       0 : 
+    77 :       0 : 
+    78 :       0 : 
+    79 :       0 : 
+    80 :       0 : 
+    81 :       0 : 
+    82 :       0 : 
+    83 :       0 : 
+    84 :       0 : 
+    85 :       0 : 
+    86 :       0 : 
+    87 :       0 : 
+    88 :       0 : 
+    89 :       0 : 
+    90 :       0 : 
+    91 :       0 : 
+    92 :       0 : 
+    93 :       0 : 
+    94 :       0 : 
+    95 :       0 : 
+    96 :       0 : 
+    97 :       0 : 
+    98 :       0 : 
+    99 :       0 : 
+   100 :       0 : 
+
+
+
+
+*/
 
 
 

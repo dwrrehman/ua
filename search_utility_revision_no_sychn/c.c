@@ -219,7 +219,7 @@ static const byte hole_count = initial + 4 * D;
 
 static const byte max_er_repetions = 50;
 static const byte max_erw_count = 100;
-static const byte max_modnat_repetions = 15;
+static const byte max_modnat_repetions = 15;            // increase this to 20 plz... kinda too small lol... 
 static const byte max_consecutive_s0_incr = 30;
 static const byte max_consecutive_s1_incr = 30;
 static const byte max_consecutive_small_modnats = 200;
@@ -340,7 +340,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 			if (	pointer == OER_er_at or 
 				pointer == OER_er_at + 1) OER_counter++;
 			else { OER_er_at = pointer; OER_counter = 0; }
-			if (OER_counter >= max_er_repetions) return pm_oer;
+			if (OER_counter >= max_er_repetions) return pm_oer;  // to edit: do this check only after the increment, its only relevant there lol.
+
 
 			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
 			else { BDL_er_at = pointer; BDL_counter = 0; }
@@ -360,7 +361,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 				if (RMV_counter >= max_modnat_repetions) return pm_rmv;
 			}
 
-			if (walk_ia_counter == 1) {
+			if (walk_ia_counter == 1) {     // can we change    walk_ia_counter == 1   to    walk_ia_counter < 3     (ie, values 1 and 2)
 				ERW_counter++;
 				if (ERW_counter >= max_erw_count) return pm_erw;
 			} else ERW_counter = 0;

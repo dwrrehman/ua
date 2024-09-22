@@ -1,0 +1,762 @@
+ratioale for each pruning metric:
+=======================================
+202409216.191924:
+
+202409216.223125: dwrr
+
+
+
+
+
+
+
+
+	we are assuming that the xfg    has this sort of   perfect nesting requirement-
+
+		ie, that all finite cases of the ua,  are actaully verbatim in  the xfg's lifetime,  nested,   all starting from the beginning *0 increment,
+
+			and then having everything in common up until a certain point, which is different from each ua case,
+
+				this point is the point in which the ua case triggers the limit checks,    i < n    and *i < m
+
+						at this point, the lifetimes will diverge, and  they will no longer nest.   but up until that point, they should nest perfectly. 
+
+
+										at least, thats the assumption. 
+
+
+
+
+			so yeah, imporatant to state this. 
+
+
+
+
+												whichhhhh
+
+
+										actaully, whats underpining this assumption,  is that we are assuming that the limit checks don't play into the modes that we do,  so that   upon removing the limit checks from the ua,   we get an xfg graph  which still is able to perform all the computtion neccessary to do all the sequence of modes we wish to do, to fufill the perfect nesting requirement!
+
+
+
+
+								we are also assuming that the limit checks are used up by the halt check    and/or    the NF algorithm, 
+
+											which is a subset of the UA, (potentially, thats the hypothesis)  where sn is completely deleted from ua, by makintg it always equal to *i, basically. 
+
+
+
+									...we are also assuming (kind of) that there are not multiple limit checks present in the algorithm. technically this is an assumption. 
+
+
+									
+
+NF:
+
+
+loop:
+	if (*i < m) goto increment
+	if (i < n) goto reset
+	HALT
+
+increment:
+	array[pointer]++;
+	pointer = 0;
+	goto loop;
+reset:
+	array[pointer] = 0;
+	pointer++;
+	goto loop;
+
+
+
+
+
+				we are i think assuming that the NF might be part of the ua in some way...    this needs to be logically neccessitated. so yeah. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	pm_zr5
+	-------------------
+
+		zero reset from saying 5,    don't reset something thats already 0, it does nothing, and was completely pointless to do lol.
+
+
+
+
+
+        pm_zr6
+	-----------------------
+
+
+		zero reset from saying 6,    don't reset something thats already 0, it does nothing, and was completely pointless to do lol.
+
+
+
+
+	pm_mcal 
+	-----------------------	
+
+		modnat coi abstract lifetime of    3 1 3 5 3 1  3 1 3 5
+
+					or	   3 1 3 5 3 1    1 3 5 
+
+			are the only two ways to do the first two walks.
+
+				ie
+
+					##             walk #0
+					# #             walk #1
+
+				or
+					##
+					###
+
+
+				for teh first, the first *0 incr on the first walk is the initial instruction 3, (origin) 
+					
+					then, to avoid zr5, we must do an IER at *1,  and going any further on walk 0 doesnt make much sense.
+											because of the inductory nature of the xfg lifetime, and how it needs to apply for all n and m ua cases.
+
+				then, doing an increment at walk 1 is required becuase if we can't extend our walk, 
+						and we can't double increment *1, as we ier'd there,  then we can only increment *0. skippping over it would result in either ndi, or per being violated. 
+
+					then from there, we can either choose to increment or not skip over *1, (not quite sure what the right answer there is)
+
+						and then we MUST  do an ier at *2,  due to the inductory nature of the xfg lifetime, and how it needs to apply to all value of n and m. basically, its very weird and unlikely for the walk #1 to have a muchhh longer length than the walk #0.  we don't have many constants to play with, in the graph. we only have the constants 0 and 1, basically. which means its difficult or impossible to have a longerrr but still finite walk at walk #1 all of a sudden, as we would need a constant of that sort (or to construct it, which is also difficult) to know exactly when to stop. this would be done using *n, and there mostly isnt thattttt many *n increments being done in these first couple of walks, to just happen to tell us to do a walk of length 4 or 5, for example. 
+
+
+					the fact that all zeros part of the void   are kind of equivalent, and we can't use them for determining whent o stop our expansion into the void, means that we need some other  "limiting variable"  (which has a larger kind of value), to tell us  when to stop expanding into the space, ie, the length of our walk, on that walk #. so yeah. because of this expanding into the space   by more than one cell, is actually really difficult,  
+			
+									EXCEPTTTTT      if you have duplicate operations.      ah.    crap.
+
+
+
+									hmm                     this seems ulikely   unless we have a very large value of D where there are lots of 3's and 1's, though... 
+
+
+
+
+				
+
+
+
+        pm_pco 
+	------------------
+
+		pointer coi optimization constraint/principle,
+
+			requires   the pointer   to be minimallly edited in order to acheive a given IA sequence for a given walk. if you know the last cell you want to ia on on a given walk is X, then you shouldnt make the pointer have any higher value than X, before ER'ing. ie, you must IER  (ie, IA and ER) right ATTT the last cell that you plan to increment on this walk. theres no reason to go anyfurther, youre wasting pointer increments / effort  by doing that. 
+	
+			(we are assuming that its possible to know the future history of what modnat increments you wish to do, for this walk, and even future walks. this is valid, becuase we can simply constrain the graph to always obey pco, thus, we don't need to have that future knowledge/information at all. rather our behavior is just always optimal, no matter what we choose to do. 
+
+
+			in code, this looks as simply:        else if (op == five) {   if (last_mcal_op != three) return pm_pco; ... } 
+
+
+									becuase we are requiring that we had done a modnat increment before saying ER, as opossed to saying 1 before saying 5, which would violate this efficiency requirement.
+			
+
+
+
+
+
+	pm_per
+	-----------------------
+
+		pointless ER principle, 
+
+			requires that you do NOT do an ER when you know the next modnat increment 
+				you wish to do   COULD BE     ON the SAME WALK, if you HAD NOT done that ER. 
+
+	
+					ie, if two walks can be compressed into the same walk, they should be. and saying 5 in the middle of this one single walk, would be pointless. and just make it so that more needless pointer coi must happen in order to get back to the cell that you were next goig to increment. 
+
+						example:
+
+						#   # #     #
+						             #    # ##     #
+               
+						             ^  <-------- an ER happened here, which was pointless. we could have easily done the rest of the increments for the next walk, on the same walk that we were on. 
+
+
+
+
+
+
+	
+
+
+
+	pm_ndi           ////////////////////// DUBIOUS /////////////////////////
+	-------------------------
+
+			no double increment,     requires that   when deciding to increment a given modnat, 
+
+					if you had previously decided  to increment this modnat    ON THE SAME WALK YOU ARE STILL ON
+
+						(ie, you havent said 1   or  5    since the last time you had incremented this cell, on this walk)
+
+
+						then you SHOULD NOT    increment this modnat again. 
+
+						doing so would not meaningfully advance the modnat in its ring  at all, 
+
+						
+
+						//////////////////// W I P ///////////////////////////
+
+
+
+			((((
+				motivating example:
+
+					if you were to start an xfg lifetime   by exactly doing:
+
+						*0++    *0++     *0++
+
+
+					then that would be equivlent to just               a single     *0++
+
+
+							becuase the amount the modnat has moved long in the ring doesnt really matter, 
+
+							we define the successor function, and the less operator, and the equality operator, and the reset function, 
+
+								we literally define all mathematical relationships ever in the xfg lifetime, 
+
+								ANDD
+
+
+									we NEED    (ALWAYS)     to settle on the defintion of the successor function and reset function and less than  and equality relations, 
+
+										which are MOST minimal to describe what happened    or       the simplest possible definition of the succ()  reset()  and <   and =   operators            we need the simplest possible def  of these   that is still consistent with the computation that we had done. 
+
+
+
+									and if you increment one cell multiple times, that wont really cause anything to change about how it relates to other cells,
+
+									//////////////////// W I P ///////////////////////////
+
+
+
+
+			))))
+
+
+
+
+
+
+
+	pm_ns0
+        --------------------------------
+
+
+		no skip over 0 modnats, 
+
+				requires that when you skip or advance over a cell, ie, saying 1,   
+				that you ever skip over a zero modnat, (in the xfg, at least.. this only applies to the xfg of course)
+				this is because of the fact that 
+
+						1. all zero's in any xfg lifetime are art of the  "void" or ie, after the body  of the xfg's lifetime, 
+								ie, after the LE. or XW.    they are ones we havent incremented ever,
+
+						2. if we were to allow for saying 1 when we are looking at a 0 modnat,
+								then after doing that 1, we will be positioned at a cell which is ALSO 0. 
+									via the above statement, item #1. 
+
+								this cell will be identical in every way to the previous one we were looking, 
+									and our trichotomy outcomes will go on an identical side, we will do an identical decision on this new second zero that we found in the void.  nothing has really changed by looking at this other zero. its functioality identical to the first one we were looking at. 
+
+
+
+
+							thus, there is no reason to look at the second one, becuase what ever we wanted to do to the second zero, we could have done to the first one!  and via this constraint, all zero modnats's in the xfg lifetime will be only part of the void,  and all nonzero modnats, will be part of the body. 
+
+
+
+				...another arguments is that given any arbitrary sequence of modnat increments  
+						(ie, a modnat increment seuqence, MIS, of the form, eg, { 0 1 2 1 4 7 2 5 7 8 2 4 1 8 ... } 
+								ie, some sequence of nats, each a cell position to modnat-increment on. this is an MIS)
+
+					you can always flip  or exchange  a modnat increment which is far out in the void,   with one which is right nexttt to the previous XW/LE.
+						you can do this, becuase where a modnat resides  doesnt change anything about the MIS, 
+								thats just pointer logic, and we literally define the successor and reset functions on the pointer.
+									we define that mapping, and thus its a degree of freedom that we can change, witohut affecitng the actual MIS itself. the MIS exists seperately from the pointer, in a sense. the poniter is just a tool to create the MIS. thus relocations of modnat increments, or more specifically swaps of two given equivlent cells is totally, becuase we do'nt care about the position of things at all. (for the MIS)
+
+										and its the MIS which determines what is existented, and thus what we are creating. we are not creating something via the pointer. the pointer is just a tool to create the MIS. 
+
+
+
+
+	
+
+
+
+
+	pm_snco           ////////////////////// DUBIOUS /////////////////////////
+	-------------------------
+
+
+		star-n  ("*n")  coi optimziation constraint/principle, 
+
+					this requires that      between a 2 and a 6, mustttt be    at least one mcal operation. 
+
+							this guarnaetees   that   the value of sn   after doing  a 2    will be utilized, ie, read, 
+
+							and used for the purposes of doing actual useful work,  ie, mcal operations. 1, 3, or 5. 
+
+								then, we are free to reset it. 
+
+									but if the last thing we had done before resetting the comparator, was simply incrementing the comparator,   then we didnt really utiltize the fact that we had done that comparator increment. its kind of pointless to do so. 
+
+
+											(this is analagous to pco, but just dealing with sn, instead of the pointer.)
+
+
+
+
+
+
+
+	
+
+
+
+        pm_erw
+	-------------------
+
+
+		early return walk   pm  
+
+			requires that the graph does not say too many IER-only-walks,   which are walks of the form:
+
+
+						skip skip skip skip skip skip ..... IER
+
+
+				in terms of their sequence of modes  that are said along that walk. obviously all walks terminate with an IER
+					if the only increment we had done on this walk is the one at the IER, that  means 
+							this walk   was an    "IER-only-walk" or simply an "ER walk"
+
+				if the graph does X ER walks  in a row,  we prune it.
+						for us, X is  100.  we must see 100 consequtive IER-only-walks to prune it. 
+							heres what that woudl look like:
+
+
+									                           #
+											        #
+											#
+										     #
+										    #
+									   #
+								      #
+								   #
+								#
+
+
+								ie, all future ier-only-walks    have a ier done at a less than 
+									or equal to positon from the previous er-walk.
+
+											otherwise,  PER would be able to compress the lifetime, or ie prune the graph.
+
+
+								this pattern is a problem because it would result in such a low density of IA/IER's being done  in the lifetime, 
+
+									that creating an interesting dimentionality structure would be difficult, 
+
+										especially becuase all the increments are monotoically decreaseing in their 
+											position, which doesnt lend it self to creating very 
+											intersetnig things, in general. even if this is only done 
+												for like 100 walks. thast still too much.
+
+
+
+
+
+
+						
+
+	
+
+
+
+
+
+
+
+
+	pm_f1e                         <--------------- [ CONSIDER REMOVING THIS ONE ]
+	----------------------
+
+
+		first one expansion pm     requires that on a certain timestep,   the array  doesnt have any BEGINNING cells with a value less than some required number of increments.
+
+							a cell is "at the beginning"   if it has a position ("*4" has position 4) less than 5. 
+
+							
+
+						in our case, we require that these beginning cells    have at least 5 increments done to them,   
+						
+								and we ensure that these beginning cells have these 5 increments done to them, 
+
+									when at     the 10,000th   instruction that we execute. 
+
+
+										this gives plenty of time for the graph to have incremented these begininng cells, a lot more than 5 times, for all 5 cells. 
+
+
+										if the graph does not obey this constraint, the only possible explanation is that they are physically in capable of incrementing these beginning cells anymore, for some reason. 
+
+
+
+
+
+
+
+
+
+	pm_erc                        <--------------- [ CONSIDER REMOVING THIS ONE ]
+	----------------------
+
+		ER required count  pruning metric
+			
+			requires that minimum number of ERs are done, by a certain timestep. 
+
+
+				in our caes, we require that     25 ER's    are done      by the 5000th  instruction/coi-timestep. 
+
+				this is valid, becuase 
+
+					##
+					###
+					#####
+					######
+					########
+					#########
+					#########
+					##########
+					##########
+					###########
+					###########
+					###########
+					############
+					############
+					############
+					#############
+					#############
+					##############
+					################
+					################
+					##################
+
+
+				above, is what 25 ERs looks like. 
+
+					if you count the number of operations, (1's, 3's, and 5's)   that was said to acheive something like that, 
+						and then maybe multiply it by two or 3 to factor in the fact that we need to do *n operations as well, which arent pictured, 
+							then you arrive at a number MUCHHH less than 5000.   thus this pm is safe, and correct. 
+
+
+
+								the graphs which don't obey this pm   will generally be ones which lost their ability to ER, 
+									very early on,      and thus cannot meet this  baseline requirement on the number of ERs.
+
+
+									
+
+
+	pm_h0 
+	----------------------
+
+		horizontal line pruning metric      ("Of Zero Skips In Between IAs")    ("h0_bouts") 
+
+
+
+			requires that the lifetime does not ever contain  
+
+					#########     <------- we need to see 10 of these IAs in a row, back to back, with no gaps, or ERs. 
+
+			these are simplistic patterns, that we don't want in the xfg lifetime at all. the arent useful for creating arbitrary dimensioality structure.
+
+
+
+
+
+        pm_h2,
+	----------------------
+
+
+		horizontal line pruning metric      ("Of One Skip In Between IAs")    ("h2_bouts") 
+
+			requires that the lifetime does not ever contain  
+
+					# # # # # # # # ... #    
+							 ^
+							 we need to see 30 of these kind of h2_bouts in a row, to prune it. 
+
+			these are simplistic patterns, that we don't want in the xfg lifetime at all. the arent useful for creating arbitrary dimensioality structure.
+
+
+
+
+
+
+	pm_h3,                  <--------------- [ CONSIDER REMOVING THIS ONE ]
+	----------------------
+
+		horizontal line pruning metric    ("Of Two Skips In Between IAs")    ("h3_bouts") 
+
+
+			  requires that the lifetime does not ever contain  
+
+					#  #  #  #  #  #  #  #  # ... #       
+                   						   ^
+								   we need to see 30 of these kind of h2_bouts in a row, to prune it. 
+
+
+			these are simplistic patterns, that we don't want in the xfg lifetime at all. the arent useful for creating arbitrary dimensioality structure.
+
+
+
+
+	pm_rmv
+	-------------------------
+
+		repitive modnat value pm 
+
+			is a repalacement for vertical line pm,    and requires that:
+
+
+							after saying 5,        the array state for the graph  at that point,
+
+
+									does not contain a consequctive string of 15 modnats, all with the exact same value.
+
+						
+
+							if a consequctive string of 15 modnats all having the same modnat value  is found,   after saying 5,   the graph is pruned. 
+
+
+							
+
+									the reason why this is valid is that 
+
+										the array should do increments on cells,   in a very sporadic, hard to predict manner,  that in general, will not allow for sequences that are so regular to persist in the array state like this.   rather,  given a correct xfg lifetime, a more uniform distribution of modnat values, (when looking across the array, at a certain point in time)   should be expected instead.  this is becuase....
+
+
+											we should expect the modnat values to be more uniformly distributed , 
+													becauseeeeeee 
+
+
+
+
+											the brief version is that the xfg lifetime is representing all possible cases of n and m, and thus, singling out any particular natural number value  (any given modnat value)   is not sensical for ALL ua casese. and thus the xfg wont do it. 
+
+											(also theres somehting else about how the xfg is similar to a psrng kinda,  which maybe isnt as relevant for this pm rationale lol)
+
+											///////////////////////// WIP //////////////////////////
+
+													note: the modnats dont need to be EXACTLY unfor. distr, 
+													but they should be roughlyyyy close to being that way. 
+
+														there can be very localized smalll deviations from this uniform distrubution of the modnat values. 
+	
+
+
+
+
+
+        pm_oer
+	-----------------------
+
+		oscilatory ER pm
+
+					requires that the graph does not ER    at  a particular position (or the postiion next to it) 
+
+							for  50 times     ie, 50 walks    all had   roughlyyy speaking   (within  +/-  1)
+
+
+								the exact same cell position   that they chose to ER at!
+
+
+									this is prunable, because it means that we arent following a very varied MIS, and thus the xfg would never do IERs of that sort, becuase its MIS is exteremely varied, and has modnat increments done scattered throughout the entire XW, and often the ER point is actually wayy closer to the beginnig of the array, than the LE/XW.   thus we will basically never see the xfg ER'ing in the same general spot  like 50 times in a row. 
+
+
+
+
+
+	
+
+
+	pm_r0i
+	-------------------------
+
+		
+		repetitive star 0 ("*0") increment pm 
+
+			requires that the graph does not do       30 walks, all containing an IA on *0.      if this happens, the graph gets pruned.
+
+				this is correct becuase       the xfg lifetime doesnt have any preference for incrementing any particular cell, over and over again each walk... 
+
+								the xfg tries to distribute its increments evenly roughly speaking   over the entire array, and thus it will never be in a situatino where it increments one cell 30 times in a row, across 30 consecutive walks!!
+														so yeah, just similar reasoning to oer, and h, really. 
+
+
+
+
+
+        pm_r1i,
+	---------------------------
+	
+		repetitive star 1 ("*1") increment pm 
+
+			requires that the graph does not do       30 walks, all containing an IA on *1.      if this happens, the graph gets pruned.
+
+				this is correct becuase       the xfg lifetime doesnt have any preference for incrementing any particular cell, over and over again each walk... 
+
+								the xfg tries to distribute its increments evenly roughly speaking   over the entire array, and thus it will never be in a situatino where it increments one cell 30 times in a row, across 30 consecutive walks!!
+														so yeah, just similar reasoning to oer, and h, really. 
+
+
+
+	
+
+
+	
+
+	
+        pm_pt
+	----------------------
+
+
+		pointer timeout pm 
+
+				requires that the graph does not do X number of sn inrcements before saying a 1.  X is   stage1_execution_limit / 4
+
+													ie, the limit scales based on our EL. but generally is very very very large. we should not need to do that many sn increments (or sn resets, but see snco why we arent considering executin of the instruction 6   in our codes's logic.)
+
+						
+						ie,
+							there should be no complicated machinery to determine what mode to do. 
+
+								the mechanism that determines what mode to do is simply the simple relationships between *n operations, *i operations, the trichotomy outcomes, and the pointer coi,  ie, just the graph itself really.    the graph and array state determines the sequence of modes we will end up doing. we don't need any other more complex computaional machinery to figure out what mode to do. those complex decisions are made rather emergently, utilitizing complex information/state that was created on previous modes that we had done. (ie, previous ia's, er's, or sn increments that we did)  this past state informs us of what new mode we choose, instead of some complex machinery which involves executing MANY instructions. (instructions, which are   not 1, 3, or 5 though,   which only leaves 2 and 6 to be used lol).
+										
+
+
+
+
+
+
+
+
+        pm_csm                  <--------------- [ CONSIDER REMOVING THIS ONE ]
+	----------------------
+
+		consecuquitive  small modnats pm 
+
+			requires that there is never a consecutive sequecne of "small" modnats  in the array, for 200 modnats long. 
+
+						"small" is defined by    a modnat value being less than 6.   ie,  1 through 5 in value. 
+
+
+			this pruning metric will probably be removed, as its not veryyyy effective/frequent 
+							in pruning, mildly expensive, and not neccessarily completely sound. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------- probably deleted ---------------------------------------------
+
+
+
+
+
+
+        pm_bdl                <--------------- [ CONSIDER REMOVING THIS ONE ]
+	pm_bdl2              <--------------- [ CONSIDER REMOVING THIS ONE ]
+	-----------------
+
+			
+
+
+
+
+
+
+	pm_sndi       [NEW, uncreated]
+	----------------------
+
+		...????
+
+
+
+
+
+
+
+
+
+
