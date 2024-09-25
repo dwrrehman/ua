@@ -4,6 +4,133 @@
 // written on 202408224.204643: by dwrr 
 //
 
+
+
+					full 4 space call finished!
+
+
+
+
+  
+        0.9640625000%
+        
+  
+        0.9640625000%
+        
+   
+        0.9640625000%
+        
+   
+        0.9666666667%
+        
+using [D=4, R=0]:
+        thread_count=64
+        job_count_per_core=30
+        display_rate=3
+        stage1_execution_limit=1000000000
+        stage2_execution_limit=0
+        array_size=100000
+   
+        
+        searched [4:0] zvs
+        using 64 threads, each with 30 jobs
+        in  924833.00s [1202409113.155549:1202409227.084942],
+   
+   
+pm counts:
+z_is_good: 0                     pm_ga: 0       
+pm_fea: 0                       pm_ns0: 133836098983
+pm_pco: 131120959256            pm_zr5: 2297531025964
+pm_zr6: 8110965615844           pm_ndi: 758477043621
+pm_oer: 10667388                pm_r0i: 1599035573
+ pm_h0: 2625486870              pm_f1e: 63574150
+pm_erc: 2362536824              pm_rmv: 945159231
+pm_csm: 0                       pm_bdl: 176496  
+pm_bdl2: 2400                   pm_erw: 0       
+pm_mcal: 1098513102605           pm_h2: 9216    
+ pm_h3: 288                     pm_per: 3260049141
+pm_snco: 0                      pm_r1i: 248208  
+ pm_pt: 0       
+[done_pm]
+
+
+924833 / 3600 = 256.8980555556 hours
+
+256.8980555556 hours / 24 = 10.7040856482 days
+
+
+
+
+
+
+
+
+3sp new GA only  call finished:
+
+
+
+
+
+
+ FOUND:  z = 01241073274735054002100020003066    was pruned at = 0
+ FOUND:  z = 01221033274434404005100020003266    was pruned at = 0
+ FOUND:  z = 01211037274335064002100020003566    was pruned at = 0
+su: found  54866370894 zv / 0 zv  in (3,0) search space!
+ in    9351.00s [1202409216.191436:1202409216.215027].
+     0 :       0 : 
+     1 :       0 : 
+     2 :       0 : 
+     3 :       0 : 
+     4 :       0 : 
+     5 :       0 : 
+     6 :       0 : 
+     7 :       0 : 
+     8 :       0 : 
+     9 :       0 : 
+    10 :       0 : 
+    11 :       0 : 
+    12 :       0 : 
+    13 :       0 : 
+    14 :       0 : 
+    15 :       0 : 
+    16 :       0 : 
+    17 :       0 : 
+    18 :       0 : 
+    19 :       0 : 
+    20 :       0 : 
+    21 :       0 : 
+    22 :       0 : 
+    23 :       0 : 
+    24 :       0 : 
+    25 :       0 : 
+    26 :       0 : 
+    27 :       0 : 
+    28 :       0 : 
+    29 :       0 : 
+    30 :       0 : 
+    31 :       0 : 
+    32 :       0 : 
+    33 :       0 : 
+    34 :       0 : 
+    35 :       0 : 
+    36 :       0 : 
+    37 :       0 : 
+    38 :       0 : 
+    39 :       0 : 
+    40 :       0 : 
+two_stage_search_utility: 
+
+9351 / 3600 = 
+2.5975
+
+
+
+
+
+
+
+
+
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
