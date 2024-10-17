@@ -70,7 +70,7 @@ typedef uint16_t u16;
 
 enum operations { one, two, three, five, six };
 
-static const byte D = 2;        // the duplication count (operation_count = 5 + D)
+static const byte D = 0;        // the duplication count (operation_count = 5 + D)
 
 static const nat stage1_execution_limit = 4000000;
 static const nat execution_limit = stage1_execution_limit;
@@ -531,7 +531,7 @@ try_open:;
 	);
 }
 
-static nat print_lifetime(byte* graph, nat* array, byte origin, nat print_count, nat er_count, nat pre_run_count) {
+static nat print_lifetime(bool print_os, byte* graph, nat* array, byte origin, nat print_count, nat er_count, nat pre_run_count) {
 	nat n = array_size;
 	bool* modes = calloc(n + 1, sizeof(bool));
 
@@ -541,15 +541,13 @@ static nat print_lifetime(byte* graph, nat* array, byte origin, nat print_count,
 	if (print_count) puts("[starting lifetime...]");
 	nat e = 0;
 
+	memset(array, 0, (array_size + 1) * sizeof(nat));
+
 	for (; e < print_count + pre_run_count; e++) {
 
 		const byte I = ip * 4, op = graph[I];
 
-		//printf("op = %hhu\n", op); getchar();
-		//if (op == two) { putchar('.'); fflush(stdout); } 
-		//else if (op == six) { putchar('/'); fflush(stdout); } 
-		//else {  } 
-
+		if (print_os) { printf("op = %hhu\n", op); getchar(); } 
 
 		if (op == one) { 
 			if (pointer == n) { puts("fea pointer overflow"); abort(); } 
@@ -728,7 +726,7 @@ static void find_major_groups(byte* graph, struct zlist list) {
 }
 
 
-static void visualize(byte* graph, nat* array, char* string) {
+static void visualize(bool b, byte* graph, nat* array, char* string) {
 
 	init_graph_from_string(graph, string);
 
@@ -736,7 +734,7 @@ static void visualize(byte* graph, nat* array, char* string) {
 	printf("give the origin: ");
 	fgets(buffer, sizeof buffer, stdin);
 	byte o = (byte) atoi(buffer);
-	print_lifetime(graph, array, o, execution_limit, row_count, pre_run_ins);
+	print_lifetime(b, graph, array, o, execution_limit, row_count, pre_run_ins);
 	printf("\nz = %.*s\n", (int) graph_count, string);
 	print_bytes(graph, graph_count); 
 	print_graph_as_adj(graph);
@@ -825,7 +823,8 @@ loop:
 	else if (not strcmp(input, "clear\n")) printf("\033[H\033[2J");
 	else if (not strcmp(input, "help\n")) print_help();
 	else if (not strcmp(input, "list\n")) print_zlist(graph, "current z list", 0, zlist);
-	else if (not strncmp(input, "viz ", 4)) visualize(graph, array, input + 4);
+	else if (not strncmp(input, "viz ", 4)) visualize(0, graph, array, input + 4);
+	else if (not strncmp(input, "os ", 3)) visualize(1, graph, array, input + 3);
 	else if (not strcmp(input, "synthesize graph\n") or not strcmp(input, "sg\n")) find_major_groups(graph, zlist);
 	else if (not strcmp(input, "machine prune\n") or not strcmp(input, "m\n")) machine_prune(graph, array, zlist);
 	else printf("unknown command %s\n", input);

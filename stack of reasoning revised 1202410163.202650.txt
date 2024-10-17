@@ -1,0 +1,243 @@
+STACK OF REASONING   for the universe algorithm theory.
+===============================================================
+written on 202408202.151750 by dwrr
+
+
+
+
+	0. we want to make art, the most complex beautiful artwork imaginable.
+
+	1. we have a limited amount of energy, time, machinery, and space to be able to make this art. 
+		we can't make this piece of art ourselves, because we'll die befoer we can finish it. 
+		we must make a machine that makes the piece of art, and thus we must write a computer program to make the piece of art for us. 
+		also we cannot store the information for the artwork as is in the program- it must be information compressible.
+
+
+
+	2. also we can formulate the art that we want to make as pure information. 
+
+	3. everything about this whole artwork and everything related to it    must be     fully finite, discrete, and detrministic. 
+
+
+
+
+
+
+	4. we are given a "canvas" that we want to make this art on, and we actually want to be able to 
+				make multiple pieces of art, each with a different sized canvas. 
+				basically, we want to adjust our art to take into account the size of the canvas.
+
+	5. the size of the canvas we are given has dimensions  n (n pieces of information (each a "cell") we can change) 
+							and m (number of states (each a "state") per piece of information)
+
+
+
+
+
+
+	6. we can and need to use   the increment and setzero operations to traverse through the states. 
+		simplest possible way that scales for all canvases, treating each canvas's n or m as a natural number. 
+
+	7. when we are at the last possible defined state, we must say setzero, 
+			else we should just say increment, to change the information in some way.
+			also we need a decision point of  *i == m    of some kind. 
+
+	8. to detect change of information some how, we need the notion of equality. two pieces of info being equal or not. 
+
+	9. we also need the notion of time,   information changing over time. 
+
+
+	10. we don't care about how we change the information technically speaking, because of the fact that 
+		change of information causes  UF flashes,  (unit flashes of existence)  and its these UFs that 
+			we are using to construct the artwork. thats the constituents of our artwork. 
+
+							
+
+
+
+
+
+					((((((( we should explicitly state that we are hypothesizing that 
+						a maximally complex piece of art is isomorphic to our universe ))))))
+
+
+
+
+
+
+
+
+	11. the piece of code that does a modulo increment on a cell, incrementing while cell state is not equal to the last state, and setzeroing if it is,   is called the modulo increment. used later on. 
+
+	
+
+
+
+	
+
+	12. we can and need to use   the increment and setzero operations to traverse through the cells.
+		simplest possible way that scales for all canvases, treating each canvas's n or m as a natural number. 
+
+	13. when we are at the last cell, we need to go back to the first cell, using the pointer setzero operation,
+					otherwise we can either say the increment pointer op,  or go back to the first cell using the setzero pointer op, (however, we can't say the setzero operation on the pointer if we are already attt the last cell.)
+
+			also we need a decision point of  i == n    of some kind. 
+
+
+
+
+		
+			(((((((  we should allow for setzeroing  even when we are not at the last cell.   )))))))
+
+
+
+	14. we need to move to any given cell in the most efficient way possible.  use only the minimal number of pointer increments and setzeros to get to the cell you wish to change  in some way (using the modulo increment of course lol)
+
+	15. we don't need multiple pointers because that just increases our parrelelism at which we can do the computation, and is not neccessary.
+
+
+
+
+
+
+
+	16. we need to figure out which cell to change, and thus we need a decision point that involves two variables, so that we can make interesting decisions about what cell we want to change. we need to compare two things, but we only have two things in the system that cant be changed,  *i, and i,  and comparing those would be nonsensical for any arbitrary n and m. thus we need a new element in the system, call it the comparator ("*n")
+
+
+	17. we need operations on the comparator, well use   the    increment and setzero we used for the modnats and pointer. (*i and i)
+
+	
+	18. we can only compare the comparator with either *i    or    i       not both.    
+
+		18.1 choosing   *n compared with i     results in a bad situation where you are comparing a variable with effectively a constant, for any given cell. we want a var-var comparison, for more complexity in the checks behavior, thus we  cannot use this case.
+
+		18.2 choosing   *n compared with *i   is valid and sensical, and as the modnats increase in size, we can make more and more interesting decisions. both *n and *i need to be modulus related (ie, having m+1 states)   so yeah. 
+
+
+
+	19. we need more than equality. *n == *i  is fine and useful,  but scales poorly as you increase the modulus becuase the check becomes less and less frequent that it goes on true. usually goes on false as numbers get larger. thus, we need a type of check that does scale well as the modulus gets larger.   the less than,  <,  operator is perfect for this, and solves this problem. we need  *n < *i  ...whatevere you wouldd define would be isomorphic to the less than operator. 
+
+
+	20. lets assume that numbers can only ever be ==, < or >.  thus, once we have == and <, we technically have the > as well, and thus we have a full trichotomy at our disposal to make decisions with. nice. 
+
+
+
+
+
+
+
+	21. we can formulate the modnat increments we choose to do   as a system of  bouts, walks,  IAs, skips, and IERs. 
+		ie, modnat increments that can be done on the same walk  are done on the same walk,  and the space between them is a bout. 
+			and walks are always seperated by a pointer setzero, 
+			and we always need to do a modnat increment before doing a pointer setzero.
+
+	22. now, we know the three possible "modes" that we might choose to do when 
+			the pointer is at a particular location in the canvas (aka "array")
+
+			-	modulo increment and increment pointer to advance to next cell (IA, increment and advance)    
+
+			-	increment pointer and dontttt increment the modnat  (skip)
+	
+			-	modulo increment and setzero the pointer to return to beginning of array. (IER, increment and early return)
+
+
+	23. there is actually a frequency ordering of these modes. 
+
+		-	skip must be done most frequently, becuase for an arbitrarily dimensional creation, 
+				our modnat increments might be very specific and require large gaps between cells 
+				to jump to correct cell to increment next.
+			
+		- 	IA must be done second most frequently, as we do multiple per walk, usually.
+
+		- 	IER's must be done most seldomly, becuase they happen once at the end of a walk.
+	
+
+
+
+					(((( write out why IER is more seldom than IA.  
+	
+
+									becuase of the fact that becuase muliple bouts 
+										happen per walk, becuase you can compress the modnat 
+												increment sequence when two neighboring 
+								increments are sequential in space (cell position  AND  in  time (timestep).
+
+					))))
+
+
+
+
+
+
+----------------------------------- NOTE: everything from here down is not bullet-proof: the logic might not be sound ------------------------------
+
+
+
+
+
+
+
+
+	24. it makes sense for equality to be the thing associated with IER's, because that happens most infrequently... i think..
+
+
+
+	25. it makes sense for less-than (*n < *i) to happen most frequently, thus associate  with skip,
+
+					      IFFF for some reason, the comparator was "limited" by the modnat somehow...
+							but i don't know why or how that would work.
+
+
+
+
+	26. that leaves greater than for IA, basically.  this then, is the whole MTRC:   "mode trichotomy correspondence".
+
+
+	
+	27. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
