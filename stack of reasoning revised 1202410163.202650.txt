@@ -3,18 +3,43 @@ STACK OF REASONING   for the universe algorithm theory.
 written on 202408202.151750 by dwrr
 
 
+CORE ASSUMPTIONS:
+------------------
 
 
-	0. we want to make art, the most complex beautiful artwork imaginable.
+	0. we want to make art, the most complex beautiful artwork imaginable, the maximal amount of complexity as possible.  
+		this is sometimes refered to as simply the "ua" (universe algorithm)... the etemology is kinda complicated lolllll 
+
 
 	1. we have a limited amount of energy, time, machinery, and space to be able to make this art. 
-		we can't make this piece of art ourselves, because we'll die befoer we can finish it. 
+
+		we can't make this piece of art ourselves, because we'll die before we can finish it. 
 		we must make a machine that makes the piece of art, and thus we must write a computer program to make the piece of art for us. 
 		also we cannot store the information for the artwork as is in the program- it must be information compressible.
 
 
 
-	2. also we can formulate the art that we want to make as pure information. 
+
+
+
+
+
+
+
+CANVASES:
+----------
+
+
+
+	2. also we can formulate the art that we want to make as pure information.
+			related assumtpion:
+
+						changing information   is itself    the artwork 
+
+										(computation  is existence-   the central axiom      of course.) 
+
+
+
 
 	3. everything about this whole artwork and everything related to it    must be     fully finite, discrete, and detrministic. 
 
@@ -27,12 +52,45 @@ written on 202408202.151750 by dwrr
 				make multiple pieces of art, each with a different sized canvas. 
 				basically, we want to adjust our art to take into account the size of the canvas.
 
+
+							we don't know the size of the canvas we are given, we need to take that in  as a paramter. 
+								so that we can cope with any possible value of for it. 
+										and in general, we shouldnt so sensisitev to the size of the canvas. we should be able to make beautiful regardless of the size. as beautiful as possible, given those limited amount of resources.
+
+
+
+
+
+
+
+				((((NOTE: i think a prereq for this below item  in the stack    is that we need to have the notion of numbers,   and equality bteween numwres,  (ie, we need the succesor function, AT LEAST)  in order to formulate the below item at all, and have n and m be numbers.)))
+
 	5. the size of the canvas we are given has dimensions  n (n pieces of information (each a "cell") we can change) 
 							and m (number of states (each a "state") per piece of information)
 
+					the notion of a limited resource is intrisisicly tied to the notion of   n and m being natural numbers.
+
+					there is no real other way    to concretize n and m    to concretely know the difference betewen resources given by two different canvases, otherrrrr than using numbers to tell the difference. ie, numbers of states, or number of cels, being different between the two canvases.
+
+					i think at this point, we actaully need equality at already, kinda,  but we'll save that till later, 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+STATES:
+---------
 
 
 	6. we can and need to use   the increment and setzero operations to traverse through the states. 
@@ -40,25 +98,58 @@ written on 202408202.151750 by dwrr
 
 	7. when we are at the last possible defined state, we must say setzero, 
 			else we should just say increment, to change the information in some way.
-			also we need a decision point of  *i == m    of some kind. 
+			also we need a decision point of  *i == m    of some kind.  in order to know when we are at the last state to NOT do an incr. 
+
+
+								TODO: we need to state why its enough or desirable to just have the additive modnat ring happening for each modnat, as its coi. 
+
+								i thinkkkkk its because,   (as just like, an axiom) 
+
+											we don't care about how the information is changed, in our artwork,
+													for any paricular piece of information 
+												we just care about the sequence. THATTTT is our art.
+
+
+
+
+
+												ill have to think about this more though.....
+
+										(////////////// WIP /////////////)
+
+
+
+
+
+
+
+
+
+
 
 	8. to detect change of information some how, we need the notion of equality. two pieces of info being equal or not. 
+					((((NOPE:  move this one up please. its relevant WAYYY higher upppp))))
 
 	9. we also need the notion of time,   information changing over time. 
+				((((NOPE:  move this one up please. its relevant WAYYY higher upppp))))
 
 
+
+
+
+
+DELETE THIS: ////////////////////////////////////////////////////////////////////////////////////////////////////
 	10. we don't care about how we change the information technically speaking, because of the fact that 
 		change of information causes  UF flashes,  (unit flashes of existence)  and its these UFs that 
 			we are using to construct the artwork. thats the constituents of our artwork. 
 
 							
-
-
-
-
-
 					((((((( we should explicitly state that we are hypothesizing that 
 						a maximally complex piece of art is isomorphic to our universe ))))))
+
+END OF DELETE: ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 
 
@@ -73,7 +164,21 @@ written on 202408202.151750 by dwrr
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 	
+CELLS:
+---------
 
 	12. we can and need to use   the increment and setzero operations to traverse through the cells.
 		simplest possible way that scales for all canvases, treating each canvas's n or m as a natural number. 
@@ -84,9 +189,6 @@ written on 202408202.151750 by dwrr
 			also we need a decision point of  i == n    of some kind. 
 
 
-
-
-		
 			(((((((  we should allow for setzeroing  even when we are not at the last cell.   )))))))
 
 
@@ -101,29 +203,188 @@ written on 202408202.151750 by dwrr
 
 
 
+
+
+
+MIS:
+---------
+
+
+
 	16. we need to figure out which cell to change, and thus we need a decision point that involves two variables, so that we can make interesting decisions about what cell we want to change. we need to compare two things, but we only have two things in the system that cant be changed,  *i, and i,  and comparing those would be nonsensical for any arbitrary n and m. thus we need a new element in the system, call it the comparator ("*n")
+
+				*i and i are of different magnitudes, in general,   and thus its meaningless   and not helpful for decision making,  to compare them.
+
 
 
 	17. we need operations on the comparator, well use   the    increment and setzero we used for the modnats and pointer. (*i and i)
 
+					this is becuase of the transitive nature of comparison- we are comparing  n/m   with *i/i  so *i/i are numbers, and we are comparing *n with *i xor i and thus *n is a number. increment and setzero are the simplest way to modfify a number, in a deterministic finite defined way.
+
 	
-	18. we can only compare the comparator with either *i    or    i       not both.    
+	18. we can only compare the comparator with either *i    xor    i       ie,   not both.    
 
-		18.1 choosing   *n compared with i     results in a bad situation where you are comparing a variable with effectively a constant, for any given cell. we want a var-var comparison, for more complexity in the checks behavior, thus we  cannot use this case.
+		19. choosing   *n compared with i     results in a bad situation where you are comparing a variable with effectively a constant, for any given cell. we want a var-var comparison, for more complexity in the checks behavior, thus we  cannot use this case.
 
-		18.2 choosing   *n compared with *i   is valid and sensical, and as the modnats increase in size, we can make more and more interesting decisions. both *n and *i need to be modulus related (ie, having m+1 states)   so yeah. 
-
-
-
-	19. we need more than equality. *n == *i  is fine and useful,  but scales poorly as you increase the modulus becuase the check becomes less and less frequent that it goes on true. usually goes on false as numbers get larger. thus, we need a type of check that does scale well as the modulus gets larger.   the less than,  <,  operator is perfect for this, and solves this problem. we need  *n < *i  ...whatevere you wouldd define would be isomorphic to the less than operator. 
+		20. choosing   *n compared with *i   is valid and sensical, and as the modnats increase in size, we can make more and more interesting decisions. both *n and *i need to be modulus related (ie, having m+1 states)   so yeah. 
 
 
-	20. lets assume that numbers can only ever be ==, < or >.  thus, once we have == and <, we technically have the > as well, and thus we have a full trichotomy at our disposal to make decisions with. nice. 
+	21. we need more than equality. *n == *i  is fine and useful,  but scales poorly as you increase the modulus becuase the check becomes less and less frequent that it goes on true. usually goes on false as numbers get larger. thus, we need a type of check that does scale well as the modulus gets larger.   the less than,  <,  operator is perfect for this, and solves this problem. we need  *n < *i  ...whatever you wouldd define would be isomorphic to the less than operator. 
 
+
+	22. lets assume that numbers can only ever be ==, < or >.  thus, once we have == and <, we technically have the > as well, and thus we have a full trichotomy at our disposal to make decisions with. nice. 
 
 
 
 
+
+	23. so we have the operations, which are:
+		
+			(*i)++;      called "3"
+			(*i) = 0;    called "7"
+
+			i++;	     called "1"
+			i = 0;       called "5"
+			
+			(*n)++;	     called "2"
+			(*n) = 0;    called "6"
+
+
+		ANDDD we have the notion of a   trichotomy  between     *n and *i, so 
+
+			[*n < *i]
+
+			[*n > *i]
+
+			[*n == *i]
+
+
+		
+		ANDDDD we have the checks/decisions:
+
+	
+			*i == m      called "B"
+
+			i == n       called "9"
+
+
+
+
+		we now have the full ISA, and DS, with the exception of the fact that *n is not located at the end of the array. 
+
+							currently, its just not in the array at all. 
+		
+
+
+		so,  
+
+			we know that  in order to create our art,  we must have a sequence of 1's, 2's, 3's, 5's, 6's, and 7's 
+						that are said,   in some exact sequence   to get the piece of art that we want to make. 
+
+								this is known as the "operation sequence". 
+
+
+
+	24. for the ua, it should be possible to compress its operation sequence  to something which is muchhh smaller, 
+			and we are interested in finding the smallest most compressed representation of the ua's behavior. 
+					as this compressed form is  the smallest simplest object / machinery  that can still create our art for us.
+	
+
+	25. we thus need to have some way of compressing a raw operation sequence into a     "control flow graph",  (cfg)
+
+					which is a construct which uses the notion of execution (and also "decision points")  to create emergently the exact 
+							operation sequence associated with a given n and m setting. 
+
+
+			note: we are interesetd in the compressed form rather than the opoeration sequence itself, becuase of the fact we have a limited amount of resorces, to store the machinry that creates the art.  so yeah. thats enough to want to compress information for the machinery  as much as possible. we want to do it as much as possible, lets say, just as an axiom. we do. 
+
+
+
+
+	26. to allow a control graph to use execution to create this operation sequence (os)  we need the notion of branches aka decision points. 
+
+		a decision point     redirects computation to be done    starting from another existing operation   in cfg.
+
+				however, we need a condition  to know where to branch to.   ie, which operation to redirect to.     otherwise we are stuck with just an operation sequence still lol. 
+
+
+
+
+	27. the only decisions we have   are    9,  B,  and the trichotomy between *n and *i.   so our decisions that we have to redirect us to a new operation need to be one of those always. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+REDUCTION TO THE XFG:
+------------------
+
+
+
+	28. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+OLD:       (trash)      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+LIFETIME BEHAVIOR:
+------------------------------
 
 
 	21. we can formulate the modnat increments we choose to do   as a system of  bouts, walks,  IAs, skips, and IERs. 
