@@ -70,7 +70,7 @@ typedef uint16_t u16;
 
 enum operations { one, two, three, five, six };
 
-static const byte D = 0;        // the duplication count (operation_count = 5 + D)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 
 static const nat stage1_execution_limit = 4000000;
 static const nat execution_limit = stage1_execution_limit;

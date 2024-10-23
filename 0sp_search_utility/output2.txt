@@ -1,0 +1,33 @@
+34444302
+PRUNED:  origin = 0, z = 02141132240434444302
+PRUNED:  origin = 0, z = 00021412211434444302
+PRUNED:  origin = 0, z = 00011010231434444302
+PRUNED:  origin = 0, z = 00041004241434444302
+PRUNED:  origin = 0, z = 00241314212434444302
+PRUNED:  origin = 0, z = 02111242242434444302
+PRUNED:  origin = 0, z = 00211004213434444302
+PRUNED:  origin = 0, z = 02211312243434444302
+PRUNED:  origin = 0, z = 00221133214434444302
+PRUNED:  origin = 0, z = 02411430244434444302
+su: 0 space:
+	 good    130 zv
+	 bad     84370293 zv
+	 exg_bad 178014446 zv
+	 execution_limit = 10000000000
+	 array_size = 1000000
+	 in   36285.00s [1202410174.172428:1202410185.032913]
+
+
+pm counts:
+z_is_good: 130     		 pm_ga: 0       		
+pm_zr5: 78850098		pm_zr6: 230792993		
+pm_pco: 224975735		pm_per: 1201452 		
+pm_ns0: 217838372		pm_oer: 258     		
+pm_r0i: 36342   		pm_r1i: 816     		
+ pm_h0: 23652520		 pm_h1: 76      		
+pm_erw: 6253    		pm_rmv: 6540    		
+ pm_pt: 112711027		[done]
+0sp_search_utility: 
+
+
+

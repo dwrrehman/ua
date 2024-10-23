@@ -296,13 +296,16 @@ init:  	pointer = 1;
 	for (byte index = operation_count; index--;) {
 
 		if (graph[4 * index + 3] == index) {  
-			at = 4 * index + 3; goto bad; 
+			at = 4 * index +  3; goto bad; 
 		}
-		if (graph[4 * index] == one   and graph[4 * index + 2] == index) {  
-			at = 4 * index + 2; goto bad; 
-		}
-		if (graph[4 * index] == six   and graph[4 * index + 2]) {  
-			at = 4 * index; goto bad; 
+
+		//if (graph[4 * index] == one and graph[4 * index + 2] == index) {       // removed this ga pm too.
+		//	at = 4 * index + 2; goto bad; 
+		//}
+
+
+		if (graph[4 * index] == six and graph[4 * index + 2]) {  
+			at = 4 * index + 2; goto bad;                      /// 202410174.165412: was    "at = 4 * index".   changed in order to run the call! 
 		}
 
 		const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];

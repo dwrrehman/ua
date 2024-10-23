@@ -3,6 +3,72 @@
 // for the ega checks in the actual search utility.
 // written on 2409113.171734 by dwrr.
 
+
+/*
+
+
+202410222.190015:
+
+		using this tree    for writing the updated ct-ega ga pm  for the 0sp-like su, 
+		that has no partial graph, no ndi, no snco, no mcal, and a couple of other things that we changed. 
+				
+
+	[1]                                   ..... [pm_ns0]
+	2 >     [1]                           ..... [pm_ns0]
+	2 >     2 >     [1]                   ..... [pm_ns0]
+	2 >     2 >     2 >     [1]           ..... [pm_ns0]
+	2 >     2 >     2 >     [5]           ..... [pm_pco]
+	2 >     2 >     3 >     [5]           ..... [pm_zr5]
+	2 >     2 >     [5]                   ..... [pm_pco]
+	2 >     2 >     6 =     [1]           ..... [pm_ns0]
+	2 >     2 >     6 =     [5]           ..... [pm_pco]
+	2 >     2 >     6 =     [6]           ..... [pm_zr6]
+	2 >     3 =     1 >     [1]           ..... [pm_ns0]
+	2 >     3 =     1 >     [5]           ..... [pm_pco]
+	2 >     3 =     2 >     [5]           ..... [pm_zr5]
+	2 >     3 =     3 <     [5]           ..... [pm_zr5]
+	2 >     3 =     [5]                   ..... [pm_zr5]
+	2 >     3 =     6 <     [5]           ..... [pm_zr5]
+	2 >     3 =     6 <     [6]           ..... [pm_zr6]
+	2 >     [5]                           ..... [pm_pco]
+	2 >     6 =     [1]                   ..... [pm_ns0]
+	2 >     6 =     2 >     [1]           ..... [pm_ns0]
+	2 >     6 =     2 >     [5]           ..... [pm_pco]
+	2 >     6 =     3 <     [5]           ..... [pm_zr5]
+	2 >     6 =     3 <     [6]           ..... [pm_zr6]
+	2 >     6 =     [5]                   ..... [pm_pco]
+	2 >     6 =     [6]                   ..... [pm_zr6]
+	3 <     1 =     [1]                   ..... [pm_ns0]
+	3 <     1 =     2 >     [1]           ..... [pm_ns0]
+	3 <     1 =     2 >     [5]           ..... [pm_pco]
+	3 <     1 =     3 <     [6]           ..... [pm_zr6]
+	3 <     1 =     [5]                   ..... [pm_pco]
+	3 <     1 =     [6]                   ..... [pm_zr6]
+	3 <     2 =     1 >     [1]           ..... [pm_ns0]
+	3 <     2 =     1 >     [5]           ..... [pm_pco]
+	3 <     2 =     2 >     [5]           ..... [pm_zr5]
+	3 <     2 =     3 <     [5]           ..... [pm_zr5]
+	3 <     2 =     [5]                   ..... [pm_zr5]
+	3 <     2 =     6 <     [5]           ..... [pm_zr5]
+	3 <     2 =     6 <     [6]           ..... [pm_zr6]
+	3 <     3 <     1 =     [1]           ..... [pm_ns0]
+	3 <     3 <     1 =     [5]           ..... [pm_pco]
+	3 <     3 <     1 =     [6]           ..... [pm_zr6]
+	3 <     3 <     2 <     [5]           ..... [pm_zr5]
+	3 <     3 <     3 <     [5]           ..... [pm_zr5]
+	3 <     3 <     3 <     [6]           ..... [pm_zr6]
+	3 <     3 <     [5]                   ..... [pm_zr5]
+	3 <     3 <     [6]                   ..... [pm_zr6]
+	3 <     [5]                           ..... [pm_zr5]
+	3 <     [6]                           ..... [pm_zr6]
+	[5]                                   ..... [pm_pco]
+	[6]                                   ..... [pm_zr6]
+
+
+*/
+
+
+
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
@@ -22,8 +88,8 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const nat execution_limit = 5;   // max ttp.
-static const nat array_size = 1000;
+static const nat execution_limit = 4;   // max ttp.
+static const nat array_size = 10000;
 
 enum operations { one, two, three, five, six };
 static const char* trichotomy_outcome_spelling[4] = { " ", "<", ">", "=", };
@@ -81,19 +147,17 @@ static nat execute_operation_sequence(byte* os, nat* ttp, byte* trichotomy_outco
 
 	const nat n = array_size;
 	nat* array = calloc(n + 1, sizeof(nat));
-	nat pointer = 0, mcal_index = 0;
-	byte mcal_path = 0;
-
-	byte last_op = 255, last_mcal_op = 255;
+	nat pointer = 0;
+	byte last_mcal_op = 255;
 	nat did_ier_at = (nat)~0;
 
-	for (nat e = execution_limit + 1; e--;) {
+	for (nat e = execution_limit; e--;) {
 
 		const byte op = os[e];
 		*ttp = e;
 
 		if (op == one) {
-			if (pointer == n) return pm_fea;
+			if (pointer == n) abort();
 			if (not array[pointer]) return pm_ns0;
 			pointer++;
 		}
@@ -106,34 +170,14 @@ static nat execute_operation_sequence(byte* os, nat* ttp, byte* trichotomy_outco
 		}
 
 		else if (op == two) {
-
-
-			//   todo:     determine if this piece of code is sensical to have in the utility...  plz
-
-
-			// 			if (last_op == two) return pm_sndi;
-
-
-
-
-
-
-
-
 			array[n]++;
 		}
 		else if (op == six) {  
 			if (not array[n]) return pm_zr6;
 
-			if (	last_op != one and 
-				last_op != three and 
-				last_op != five
-			) return pm_snco;
-
 			array[n] = 0;
 		}
 		else if (op == three) {
-			if (last_mcal_op == three)  return pm_ndi;
 
 			if (did_ier_at != (nat) ~0) {
 				if (pointer >= did_ier_at) return pm_per; 
@@ -143,28 +187,7 @@ static nat execute_operation_sequence(byte* os, nat* ttp, byte* trichotomy_outco
 			array[pointer]++;
 		}
 
-		if (op == three or op == one or op == five) { last_mcal_op = op; mcal_index++; }
-		last_op = op;
-
-		if (mcal_index == 1  and last_mcal_op != three) return pm_mcal;
-		if (mcal_index == 2  and last_mcal_op != one) 	return pm_mcal;
-		if (mcal_index == 3  and last_mcal_op != three) return pm_mcal;
-		if (mcal_index == 4  and last_mcal_op != five) 	return pm_mcal;
-		if (mcal_index == 5  and last_mcal_op != three) return pm_mcal;
-		if (mcal_index == 6  and last_mcal_op != one) 	return pm_mcal;
-
-		if (mcal_index == 7) {
-			if (last_mcal_op == five) return pm_mcal;
-			mcal_path = last_mcal_op == three ? 1 : 2;
-		}
-
-		if (mcal_index == 8 and mcal_path == 1 and last_mcal_op != one)  	return pm_mcal;
-		if (mcal_index == 8 and mcal_path == 2 and last_mcal_op != three)  	return pm_mcal;
-
-		if (mcal_index == 9 and mcal_path == 1 and last_mcal_op != three)  	return pm_mcal;
-		if (mcal_index == 9 and mcal_path == 2 and last_mcal_op != five)  	return pm_mcal;
-
-		if (mcal_index == 10 and mcal_path == 1 and last_mcal_op != five)  	return pm_mcal;
+		if (op == three or op == one or op == five) last_mcal_op = op;
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -177,20 +200,24 @@ static nat execute_operation_sequence(byte* os, nat* ttp, byte* trichotomy_outco
 
 
 
-int main(void) {
-	/*puts("");
-	puts("");
-	puts("\tat = 255;");
-	puts("\tfor (byte o = 0; o < operation_count; o++) {");
-	puts("\t\tif (graph[4 * o] != three) continue;");
-	puts("\t\tif (at > 4 * o + 1) at = 4 * o + 1;");
 
-	puts("\n\n\n");*/
+
+			//   todo:     determine if this piece of code is sensical to have in the utility...  plz
+
+			// 			if (last_op == two) return pm_sndi;
+
+
+
+
+
+
+
+int main(void) {
+
 
 	nat pointer = 0;
-	byte* array = calloc(execution_limit + 1, 1);
-	array[execution_limit] = 2;
-	byte* trichotomy_outcomes = calloc(execution_limit + 1, 1);
+	byte* array = calloc(execution_limit, 1);
+	byte* trichotomy_outcomes = calloc(execution_limit, 1);
 	goto init;
 loop:
 	if (array[pointer] < 5 - 1) goto increment;
@@ -202,20 +229,20 @@ increment:
 init:;
 	nat at = (nat) -1;
 	const nat pm = execute_operation_sequence(array, &at, trichotomy_outcomes);
-if (pm) {
-	printf("\t"); 
-	for (nat i = execution_limit + 1; i--;) {
-		if (i == at) {
-			printf("[%s]  ", operation_numeric_spelling[array[i]]); 
-		} else if (i < at) {
-			printf("   "); 
-		} else {
-			printf("%s %s", operation_numeric_spelling[array[i]], trichotomy_outcome_spelling[trichotomy_outcomes[i]]); 
+	if (pm) {
+		printf("\t"); 
+		for (nat i = execution_limit; i--;) {
+			if (i == at) {
+				printf("[%s]  ", operation_numeric_spelling[array[i]]); 
+			} else if (i < at) {
+				printf("   "); 
+			} else {
+				printf("%s %s", operation_numeric_spelling[array[i]], trichotomy_outcome_spelling[trichotomy_outcomes[i]]); 
+			}
+			printf("     ");
 		}
-		printf("     ");
+		printf("    ..... [%s]\n", pm_spelling[pm]);
 	}
-	printf("    ..... [%s]\n", pm_spelling[pm]);
-}
 	if (not pm) goto loop; 
 
 	for (nat i = 0; i < at; i++) array[i] = 0;
@@ -227,14 +254,6 @@ reset_:
 	goto loop;
 done:;
 
-
-	/*puts("\n\n\n");
-	puts("\t\tgoto check_if_all_ops_are_used;");
-	puts("\t}");
-	puts("\tgoto bad;");
-	puts("check_if_all_ops_are_used:");
-	puts("");
-	puts("");*/
 }
 
 
@@ -250,6 +269,13 @@ done:;
 
 
 
+	/*puts("");
+	puts("");
+	puts("\tat = 255;");
+	puts("\tfor (byte o = 0; o < operation_count; o++) {");
+	puts("\t\tif (graph[4 * o] != three) continue;");
+	puts("\t\tif (at > 4 * o + 1) at = 4 * o + 1;");
+puts("\n\n\n");*/
 
 
 
@@ -263,7 +289,13 @@ done:;
 
 
 
-
+	/*puts("\n\n\n");
+	puts("\t\tgoto check_if_all_ops_are_used;");
+	puts("\t}");
+	puts("\tgoto bad;");
+	puts("check_if_all_ops_are_used:");
+	puts("");
+	puts("");*/
 
 
 
@@ -1062,6 +1094,175 @@ GA:
 
 
 
+
+
+
+
+
+
+
+static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
+
+	const nat n = array_size;
+	array[0] = 0; 
+	array[n] = 0;
+
+	nat 	xw = 0,  pointer = 0,  
+		bout_length = 0, 
+		RMV_value = 0, 
+		IMV_value = 0,
+		OER_er_at = 0,
+		pointer_incr_timeout = 0,
+		ERW_counter = 0,
+		walk_ia_counter = 0;
+
+	byte 	R0I_counter = 0, R1I_counter = 0, 
+		 H0_counter = 0,  H1_counter = 0, 
+		OER_counter = 0, RMV_counter = 0, 
+		IMV_counter = 0;
+	
+	byte ip = origin;
+	byte last_mcal_op = 255;
+	nat did_ier_at = (nat)~0;
+
+	for (nat e = 0; e < execution_limit; e++) {
+
+		if (e == 100000000) {
+			printf("taking a significant amount of time on origin = %hhu, z = ", origin); print_graph_raw(graph); puts(""); 
+		}
+
+		const byte I = ip * 4, op = graph[I];
+
+		if (op == one) {
+			if (pointer == n) { 
+				puts("FEA condition violated by a z value: "); 
+				print_graph_raw(graph); 
+				puts(""); 
+				abort(); 
+			}
+  
+			if (not array[pointer]) return pm_ns0; 
+
+			if (last_mcal_op == one)  H0_counter = 0;
+			if (last_mcal_op == five) R0I_counter = 0;
+			
+			if (pointer == 1) {
+				if (last_mcal_op == three) {
+					R1I_counter++;
+					if (R1I_counter >= max_consecutive_s1_incr) return pm_r1i;
+				} else R1I_counter = 0;
+			}
+
+			pointer_incr_timeout = 0;
+			bout_length++;
+			pointer++;
+
+			if (pointer > xw and pointer < n) { 
+				xw = pointer; 
+				array[pointer] = 0; 
+			}
+
+			
+		}
+
+		else if (op == five) {
+			if (last_mcal_op != three) return pm_pco;
+			if (not pointer) return pm_zr5; 
+			
+			if (pointer == OER_er_at or pointer == OER_er_at + 1) {
+				OER_counter++;
+				if (OER_counter >= max_oer_repetions) return pm_oer;
+			} else { OER_er_at = pointer; OER_counter = 0; }
+			
+			RMV_value = (nat) -1;
+			RMV_counter = 0;
+			for (nat i = 0; i < xw; i++) {
+				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
+				if (RMV_counter >= max_rmv_modnat_repetions) return pm_rmv;
+			}
+
+			IMV_value = (nat) -1;
+			IMV_counter = 0;
+			for (nat i = 0; i < xw; i++) {
+				if (array[i] == IMV_value + 1) { IMV_counter++; IMV_value++; } else { IMV_value = array[i]; IMV_counter = 0; }
+				if (IMV_counter >= max_imv_modnat_repetions) return pm_imv;
+			}
+
+			if (walk_ia_counter < 3) {
+				ERW_counter++;
+				if (ERW_counter >= max_erw_count) return pm_erw;
+			} else ERW_counter = 0;
+			walk_ia_counter = 0;
+
+			did_ier_at = pointer;
+			pointer = 0;
+		}
+
+		else if (op == two) {
+			if (pointer_incr_timeout >= 100000) return pm_pt;
+			else pointer_incr_timeout++;
+
+			array[n]++;
+		}
+
+		else if (op == six) {  
+			if (not array[n]) return pm_zr6;
+
+			array[n] = 0;
+		}
+		else if (op == three) {
+
+			if (pointer_incr_timeout >= 100000) return pm_pt;
+			else pointer_incr_timeout++;
+
+			if (last_mcal_op == five) {
+				R0I_counter++;
+				if (R0I_counter >= max_consecutive_s0_incr) return pm_r0i; 
+			}
+
+			if (last_mcal_op == one) {
+				H0_counter++;
+				if (H0_counter >= max_consecutive_h0_bouts) return pm_h0; 
+			}
+
+			if (bout_length == 2) {
+				H1_counter++;
+				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
+			} else H1_counter = 0;
+
+			if (did_ier_at != (nat) ~0) {
+				if (pointer >= did_ier_at) return pm_per; 
+				did_ier_at = (nat) ~0;
+			}
+
+			walk_ia_counter++;
+			bout_length = 0;
+			array[pointer]++;
+		}
+
+		if (op == three or op == one or op == five) last_mcal_op = op;
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		if (*zskip_at > I + state) *zskip_at = I + state;
+		ip = graph[I + state];
+	}
+	return z_is_good;
+}
+
+static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
+
+	byte at = 255;
+	for (byte o = 0; o < operation_count; o++) {
+		if (graph[4 * o] != three and graph[4 * o] != two) continue;
+		const nat pm = execute_graph_starting_at(o, graph, array, &at);
+		counts[pm]++;
+		if (not pm) { *origin = o; return 0; }
+	}
+	return at;
+}
 
 
 */

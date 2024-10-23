@@ -1,0 +1,624 @@
+REDUCTION TO THE XFG   SUB-STACK OF REASONING 
+=========================
+dwrr 202410222.204650: 
+
+
+	just from the two assumptions, 
+
+			[assumption 1]. i  (the pointer)  is multiplicative,    as an axiom.		this means it is reset before its limit, "n". 
+
+			[assumption 2].   *i  (the currently pointed to cell)   is additive,         this means is it NOT reset before it limit, "m"
+							ie, it must always be reset ATTTT its limit,  "m". 
+
+
+
+
+
+
+
+
+
+
+also there might a third assumption, that is the halt check. this would tell us that the xfg's lifetime is infinite, 
+
+
+	
+see the below addendum:
+
+
+--------------------
+
+
+
+
+we will say, 
+
+
+	1. the finite UA (FUA)  HAS SOMEEEEE halt check of some sort. 
+					not an assumption. 
+
+	2. we then must assumeeee   that its halt check  involves    either          9     or  B           (ie, on false side, is required for halting)								(note 9 and B are != checks of course lol)
+
+					we need this, i don't see any other way to do things, without having this....
+
+
+	3. from these two items, we know that   as m and n both scale up towards infinity, we know the algorithm will take longer to halt.
+			until when m and n are actaully infinite,   the algorithm will not halt. 
+
+						ie, the xfg's lifetime must be infinite
+
+
+
+
+--------------------
+	
+	
+
+
+
+
+
+
+so anyways, ignoring that above third assumption for a moment:
+
+
+
+
+	now, 
+
+		scale up the algorithm, like crazy.    as m and n get closer and closer to infinity, what does the behavoir of things look like?
+
+
+
+
+
+
+
+
+
+
+			as m and n tend to infinity, 
+
+
+
+
+
+
+				1. the additive ring structure  from     [assumption 2],    will turn into a 1 directional line, 
+
+							(ie,     they are never reset)
+
+						where modnats are only incremented, and not reset,   and they just increment   forever, 
+
+								no maximum value,     and no end to their incrementing, 
+
+							(assuming the third assumption, which results in the xfg's lifetime being infinite lol) 
+
+
+
+
+
+				2. the multiplicative structure    from [assumption 1]     would not really be affected at all, in any drastic way. 
+
+						this is the critical part. 
+
+
+								because it is reset beforeeee its limit, however it was working before,   it stilllll works now  in that exact same wayyyyy
+
+
+
+
+									critically, here, the computatioal condition for saying the instruction 5,  (i = 0) DOES NOT INVOLVE       N        in anyway. thats the critical thing. 
+
+
+
+
+									we don't exactly have log necc'd   what that comp cond would beeee  but we know it doesnt involve i being compared with n.   the insturction 9. 
+
+
+
+
+
+
+
+
+		now, i think it follows that 
+
+			the way   that the pointer    is manipulatedddd   is completely same  
+
+
+								(when looking at the first  100 instrucitons we execute,)
+
+
+				when comparing the two UA cases,        for {   N = 10000000000, M = some extremely large value   }      ("UA case A")
+
+							and             for  {  N = 10000000001, M = some extremely large value    }      ("UA case B")
+			
+
+
+
+							because M is also extremely large, 
+
+
+								for the first 100 instructions,   we simply will never  need to consider our B check. 
+
+
+											its just not relevant. the only way it could be relevant is if we had a modnat that was on par with   that kind of value    something at least kinda of close     then we would need to consider the B check. 
+
+
+
+											butttt becuase of the fact taht everything is 0 when starting out the FUA,   (which is an assumption, but not contraversial at all, i think) ((((basically  to say that an initial value for a cell is nonzero, would presume that WEEEEEE ourveslevs had incremented it. we speifically. what is the case is what we are defining our art to be. we construt everything, even the initial values of the cells. so becuase we hadnt done anythinggggg yet  (by definiition, we are starting out the FUA, we didnt perform any increments so far becuase we havent started,) thusss we cannot presume any cell to have a nonzero value, because we hadnt done it ourselves. basically)))))
+
+
+
+
+											so yeah anyways becuase of fact that everything is zero when starting out the ua,  we know that B will never be relevant  during the first 100 instructions.  therefore,   we know we never reset a modnat! in the xfg.  we know this becuase of [assumption 2] saying that we use B to say 7 to construct the additive ring structure. thats the simplest  way to make a ring. is to use     "if (*i != m) (*i)++; else *i = 0;"   that c code lol. theres nothing else that is required to get an additive ring.  i think. 
+
+								so! we only ever say     3     when changing modnats. 
+
+
+									thast known now. 
+
+
+						now, 
+
+							if thats the case,    then we really just need to pin down whether the pointer coi is different between UA case A and UA case B
+
+							and because of the fact that   i       is multiplicative,  
+
+
+								i think that alone tells us that the pointer coi would have to be 
+										the same between case A and case B. 
+
+
+								
+
+
+
+				therefore,    case A and case B           MUST    have the EXACT SAME     MODNAT COI ABSTRACT LIFETIME (mcal)
+
+
+								at least  for the first 100 instructions. 
+
+
+						there cannot be any differences, becuase the pointer is dependant on the modnats in the same way, (doesnt scale with n)   and the modnats are incremented   in the same way,  (just a single inrcement, no resetting ever) between the two casese,
+
+
+							and thusss
+
+
+
+
+								the lifetimes needd to be identical. 
+
+
+
+
+-------
+
+CRAP
+
+
+	sn would also come into this picture- it will need its own seperate axiom,   (assumption 4, or smoething)
+
+
+		that says that *n is multiplicative. no other way to log necc it, i think. 
+
+
+GAH    	
+
+		we will handle this case later, not as relevant right now lol 
+
+
+
+-------
+
+
+
+
+
+
+
+
+
+
+
+
+	that is, 
+
+
+	with the exception of     sn 
+
+
+				i don't know how fit that into this lol 
+
+
+
+
+
+
+
+
+
+
+
+
+
+so yeah, with the exception   of   
+
+	sn 
+
+
+
+				i think everything else about  case A   and    case B      MUSTTT be the same
+
+
+
+
+							theres no way for them to be different, (excluding sn)     if the cells, ie the elements in the array, (*i) are additive, and the pointer (i) is multiplicative. 
+
+
+
+
+
+
+						
+okay so, just as a first stab at it, 
+
+
+
+
+
+
+	lets say that  we actually had    THREEEEEEE assumptions, 
+
+
+
+			[assumption 1].    i  (the pointer)  is multiplicative,    as an axiom.    (this means it is reset before its limit, "n".)
+
+			[assumption 2].   *i  (the currently pointed to cell)   is additive,         this means is it NOT reset before it limit, "m"
+							ie, it must always be reset ATTTT its limit,  "m". 
+
+			[assumption 3].   *n   (the comparator)  is multiplicative    as an axiom.   (this means it is reset before its limit, "m".)
+
+
+
+		
+
+
+NOWWWWW
+
+
+	i think its possible that we could actually   concretely say    
+			
+
+		that  the first 100 instructions     between case A   and case  B         MUSTTTT be identical.  with out any exceptions.
+
+
+
+
+
+
+
+
+								
+	
+
+
+
+
+
+
+
+
+
+
+i think we need      as an assumption   that      assum. 1        doesnt involve      the B check,  for deciding when to say 1 or 5. 
+		ie,  neither the 
+
+
+its not that we are assuming        Bf / 9f      can't be involved in decidnig to say  1 or 5  (Which is true, but )
+
+		but its that        we sayyyy   5     before            i      is at its limit. 
+
+
+			thats i thinkkk the only required part.
+
+
+			and if thats the case, we evidently don't care about 9f   (9 on false) for saying 5. 
+
+
+					buttttt i think what i realized is that we need to ALSOOO say that  we don't care about    Bf  (B on false)  saying 5 eitherrrrr
+
+
+								i think thats required too. 
+
+
+						to neither M nor N     affect when we say   1 or 5. 
+
+
+
+
+
+
+yeah actually i think 
+
+
+		the statement   "Bf / 9f     cannot be a neccessary precondition for saying 5."        (CORE AXIOM 1)
+
+
+
+				that statement is a neccessary and sufficient replacement for  [assumption 1].  i think so, at least. 
+
+
+
+	
+		the statement   "Bf     MUST BE a neccessary precondition for saying 7."		(CORE AXIOM 2)
+
+
+
+				this above statement is a neccessary and sufficient replacement for  [assumption 2].  i think so, at least. 
+
+
+and finally, 
+
+
+		the statement   "Bf     cannot be a neccessary precondition for saying 6."		(CORE AXIOM 3)
+
+
+				this statement is a neccessary and sufficient replacement for  [assumption 3].  i think so, at least.  
+
+
+
+
+
+
+
+
+
+so its actually those three specific statements   that are underlying those 3 core assumptions  
+
+	and its those three core ones  that we are assuming   in order to get          case A  having the same 100 first instructions as case B, (which we will just call, the "perfect nesting requirement"!!!!! YAYYYY)
+
+
+
+
+
+
+
+
+
+OH CRAPP     NOTEEE
+
+		towards the smaller  N and M cases     this logic  does not apply at all.  
+
+
+				the xfg  is dealing with cases where N and M are both huge.  if any one of them  is small, then all these assumptions and their conclusions go out the window.  so yeah. 
+
+
+		just note that 
+
+
+
+
+
+
+
+
+also note though 
+
+
+	that 
+
+			we only really  truly care   about the large cases  of the FUA
+
+
+				becuase we are interesetd in maximizing our computation / beauty / complexity. 
+
+						and thus we will need a large canvas to do so.   or, like, you have a fundenmentally higher capacitiy for beauty and complexity with a large canvas as opposed to a small one. 
+
+
+
+			thast why we are even interested in looking at the XFG   reduction   becuase   
+
+
+				1. its still something we care about,  (in fact as N and M get bigger, we care about it even more!!!)
+
+
+				2. the xfg is simpler than the FUA, becuase we don't need to figure out the way that 9 and B are used in this context, becauseee they turn into unconditional branches as M and N tend to infinity. 
+
+
+			thats why we would want to try to find the "XFG version" of the FUA   where   M and N are infinity, becuase it would still be doing the core of the algorhtim-  the core   of these really large m and n cases. the bulk of the logic in those large m and n cases would be represented via the xfg's lifetime!!!
+						VIAAAA the   perfect nesting requirement, of course
+
+
+
+
+				and thus, we want to firstttt find the xfg's algorthihm,      thenn try to add back in the logic for 9 and B (however many of those checks there are).
+
+
+
+(note: we arent assuming that there are only one 9 and one B instruction in the FUA,   
+
+	i think because   yeah, the CORE AXIOMS  outlined earlier,  just state a dependence or  lack thereof  of these two types of branches, we arent saying how many there are, or how else they are used at all. just these specific requirements related to how we use the reset operators, 5, 6, and 7. 
+
+)
+
+
+
+
+			
+	so yeah  		we have arrived at the xfg context-   we are looking for not, the FUA first,   but the XFG's CFG instead. 
+
+
+
+				aka we are in the "xfg context" lol
+
+
+
+
+
+
+from here, 
+
+
+	i think we just continue logically neccessitating our      instruction model   
+
+		which of course heavily relies on the xfg context.
+
+
+
+
+			note, in the xfg context,    7  is not said ever,  (via CORE AXIOM 2)
+
+
+
+			and 9 and B    both reduce to being  just  unconditioal branches, and thus are completely invisible. so we don't need to consedire them at all lol. 
+
+
+
+
+...
+
+
+
+goto ins_model_reasoning;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TRASH:
+
+--------------------------------------------------------------------
+
+
+
+
+			like, the way that the pointer is manipulated during those two UA lifetimes, 
+
+				is the same    at least for like   the first 100 instructions, 
+
+
+
+
+
+
+
+					at least, 
+
+						it ISSS     IFFFFF   you not only increase  N      but   ALSO     M
+
+						both need to tend towards infinity. 
+
+
+							that way,    there MUST be some convergence of 
+
+
+								the various cases  of the FUA algorithm  
+
+
+
+								to a particular    sequence of coi    on the pointer.
+
+
+
+						
+		
+
+
+
+			
+						
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			
