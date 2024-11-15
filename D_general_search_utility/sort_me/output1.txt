@@ -1,0 +1,25 @@
+PRUNED:  origin = 0, z = 00111240211434444302 ... at = 2
+PRUNED:  origin = 0, z = 00111040213434444302 ... at = 2
+su: 0 space:
+	 good    50 zv
+	 bad     17948095 zv
+	 exg_bad 6510145 zv
+	 execution_limit = 10000000000
+	 array_size = 1000000
+	 in    2973.00s [1202410222.183934:1202410222.192907]
+
+
+pm counts:
+z_is_good: 50      		 pm_ga: 0       		
+pm_zr5: 2164468 		pm_zr6: 1842803 		
+pm_pco: 2022018 		pm_per: 521677  		
+pm_ns0: 2283862 		pm_oer: 258     		
+pm_r0i: 34582   		pm_r1i: 816     		
+ pm_h0: 2838664 		 pm_h1: 76      		
+pm_erw: 6229    		pm_rmv: 6112    		
+pm_imv: 286     		 pm_pt: 1298489 		[done]
+D_general_search_utility: 
+D_general_search_utility: 
+
+
+

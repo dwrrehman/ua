@@ -1,0 +1,50 @@
+taking a significant amount of time on z = 0001103100020021303230032123
+  ---> GOOD: z = 0001103100020021303230032123
+[1202411096.061340]: write: wrote z = 0001103100020021303230032123 to file "1202411074.202935_612d63816adfdbfe0ee4378328f88118_z.txt"
+taking a significant amount of time on z = 0001103100020022303230032123
+taking a significant amount of time on z = 0001103100020022303230032123
+taking a significant amount of time on z = 0001103100020022303230032123
+  ---> GOOD: z = 0001103100020022303230032123
+[1202411096.061346]: write: wrote z = 0001103100020022303230032123 to file "1202411074.202935_612d63816adfdbfe0ee4378328f88118_z.txt"
+PRUNED:  z = 0002311102201222323210132123 ... pm = pm_zr5
+PRUNED:  z = 0000310102101222001010100323 ... pm = pm_zr5
+PRUNED:  z = 0001311112020222300000110323 ... pm = pm_zr5
+PRUNED:  z = 0002000122202222011030030323 ... pm = pm_zr6
+PRUNED:  z = 0000020102022222311030001323 ... pm = pm_zr5
+PRUNED:  z = 0001000103020022311010011323 ... pm = pm_ns0
+PRUNED:  z = 0002111103020022311000031323 ... pm = pm_ns0
+PRUNED:  z = 0000100100231220320100002323 ... pm = pm_zr6
+PRUNED:  z = 0001111112200021011130202323 ... pm = pm_zr5
+PRUNED:  z = 0002323113002221123010212323 ... pm = pm_zr6
+PRUNED:  z = 0000111123221322023010232323 ... pm = pm_zr6
+su: 0 space:
+	 good    11410 zv
+	 bad     40095169598 zv
+	 exg_bad 21956539115 zv
+	 execution_limit = 1000000000
+	 array_size = 1000000
+	 in  121545.00s [1202411074.202842:1202411096.061427]
+
+
+pm counts:
+z_is_good: 11410   		 pm_ga: 0       		
+pm_zr5: 7112430796		pm_zr6: 8873833200		
+pm_ndi: 0       		pm_pco: 0       		
+pm_per: 344702849		pm_ns0: 4418905189		
+pm_oer: 86574   		pm_r0i: 30222574		
+pm_r1i: 1275813 		pm_r2i: 55422   		
+pm_r3i: 11671   		 pm_h0: 1172081221		
+ pm_h1: 123600  		pm_erw: 730315  		
+pm_rmv: 1696852 		pm_imv: 383039  		
+ pm_pt: 0       		[done]
+cmotbscim_search_utility: 
+
+
+121545  / 3600 = 33.7625
+
+
+
+1 space call!!!
+
+
+

@@ -1,0 +1,58 @@
+su: 0 space:
+	 good    5 zv
+	 bad     12093230 zv
+	 exg_bad 8522734 zv
+	 execution_limit = 10000000
+	 array_size = 1000000
+	 in      16.00s [1202411074.183549:1202411074.183605]
+
+
+pm counts:
+z_is_good: 5       		 pm_ga: 0       		
+pm_zr5: 3279978 		pm_zr6: 3386752 		
+pm_ndi: 0       		pm_pco: 0       		
+pm_per: 161729  		pm_ns0: 1078695 		
+pm_oer: 0       		pm_r0i: 18857   		
+pm_r1i: 1014    		 pm_h0: 593270  		
+ pm_h1: 76      		pm_erw: 970     		
+pm_rmv: 1300    		pm_imv: 93      		
+ pm_pt: 0       		[done]
+cmotbscim_search_utility: 
+
+
+
+
+
+
+taking a significant amount of time on origin = 1, z = 010111110012002102121
+  ---> GOOD: z = 010111110012002102121
+[1202411074.184159]: write: wrote z = 010111110012002102121 to file "1202411074.184157_5ac2cc3e2aef28ff3b6c935e553f1ecc_z.txt"
+PRUNED:  z = 021000010200202202121 ... at = 1
+PRUNED:  z = 010002110020222212121 ... at = 1
+su: 0 space:
+	 good    5 zv
+	 bad     12093230 zv
+	 exg_bad 8522734 zv
+	 execution_limit = 10000000
+	 array_size = 1000000
+	 in       2.00s [1202411074.184157:1202411074.184159]
+
+
+pm counts:
+z_is_good: 5       		 pm_ga: 0       		
+pm_zr5: 3279978 		pm_zr6: 3386752 		
+pm_ndi: 0       		pm_pco: 0       		
+pm_per: 161729  		pm_ns0: 1078695 		
+pm_oer: 0       		pm_r0i: 18857   		
+pm_r1i: 1014    		 pm_h0: 593270  		
+ pm_h1: 76      		pm_erw: 970     		
+pm_rmv: 1300    		pm_imv: 93      		
+ pm_pt: 0       		[done]
+cmotbscim_search_utility: touch output_example_D0.txt 
+
+
+
+
+
+
+
