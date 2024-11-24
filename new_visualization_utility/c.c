@@ -33,9 +33,9 @@ static const int display_rate = 1;
 static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
-static const nat execution_limit = 400000;
-static const nat array_size = 20000;
-static const nat lifetime_length = 20000;
+static const nat execution_limit = 1000000;
+static const nat array_size = 1000;
+static const nat lifetime_length = 8000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;

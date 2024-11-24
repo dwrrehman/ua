@@ -29,7 +29,7 @@ typedef uint16_t u16;
 
 #define execution_limit		1000000000LLU
 #define array_size 		1000000LLU
-#define display_rate 		24
+#define display_rate 		20
 
 enum operations { one, two, three, five, six };
 
@@ -37,7 +37,7 @@ enum pruning_metrics {
 	z_is_good,
 	pm_zr5, pm_zr6, pm_ndi,
 	pm_pco, pm_per, pm_ns0,
-	pm_oer, pm_r0i, pm_r1i,
+	pm_oer, pm_rsi,
 	pm_h0, pm_h1, pm_erw,
 	pm_rmv, pm_imv, pm_csm,
 
@@ -58,7 +58,7 @@ static const char* pm_spelling[pm_count] = {
 	"z_is_good",
 	"pm_zr5", "pm_zr6", "pm_ndi",
 	"pm_pco", "pm_per", "pm_ns0",
-	"pm_oer", "pm_r0i", "pm_r1i",
+	"pm_oer", "pm_rsi", 
 	"pm_h0", "pm_h1", "pm_erw",
 	"pm_rmv", "pm_imv", "pm_csm",
 
@@ -78,9 +78,8 @@ static const char* pm_spelling[pm_count] = {
 #define max_oer_repetions 50
 #define max_rmv_modnat_repetions 30
 #define max_imv_modnat_repetions 80
-#define max_consecutive_small_modnats 200
+#define max_consecutive_small_modnats 230
 #define max_consecutive_s0_incr 30
-#define max_consecutive_s1_incr 30
 #define max_consecutive_h0_bouts 12
 #define max_consecutive_h1_bouts 24
 #define max_erw_count 100
@@ -151,14 +150,17 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		ERW_counter = 0,
 		walk_ia_counter = 0;
 
-	byte 	R0I_counter = 0, R1I_counter = 0, 
-		 H0_counter = 0,  H1_counter = 0, 
+	byte	H0_counter = 0,  H1_counter = 0, 
 		OER_counter = 0, RMV_counter = 0, 
 		IMV_counter = 0, CSM_counter = 0;
 	
 	byte ip = origin;
 	byte last_mcal_op = 255;
 	nat did_ier_at = (nat)~0;
+
+#define max_rsi_count 20
+	byte rsi_counter[max_rsi_count] = {0};
+
 
 	for (nat e = 0; e < execution_limit; e++) {
 
@@ -178,18 +180,15 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			}
   
 			if (not array[pointer]) return pm_ns0; 
-
 			if (last_mcal_op == one)  H0_counter = 0;
-			if (last_mcal_op == five) R0I_counter = 0;
-			
-			if (pointer == 1) {
+
+			if (pointer < max_rsi_count) { 
 				if (last_mcal_op == three) {
-					R1I_counter++;
-					if (R1I_counter >= max_consecutive_s1_incr) return pm_r1i;
-				} else R1I_counter = 0;
+					rsi_counter[pointer]++;
+					if (rsi_counter[pointer] >= max_consecutive_s0_incr) return pm_rsi;
+				} else rsi_counter[pointer] = 0;
 			}
 
-			// pointer_incr_timeout = 0;
 			bout_length++;
 			pointer++;
 
@@ -212,7 +211,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			RMV_value = (nat) -1;
 			RMV_counter = 0;
 			for (nat i = 0; i < xw; i++) {
-				if (array[i] < 6) CSM_counter++; else CSM_counter = 0;
+				if (array[i] < 8) CSM_counter++; else CSM_counter = 0;
 				if (CSM_counter > max_consecutive_small_modnats) return pm_csm;
 				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
 				if (RMV_counter >= max_rmv_modnat_repetions) return pm_rmv;
@@ -223,6 +222,13 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			for (nat i = 0; i < xw; i++) {
 				if (array[i] == IMV_value + 1) { IMV_counter++; IMV_value++; } else { IMV_value = array[i]; IMV_counter = 0; }
 				if (IMV_counter >= max_imv_modnat_repetions) return pm_imv;
+			}
+
+			IMV_value = (nat) -1;
+			IMV_counter = 0;
+			for (nat i = 0; i < xw; i += 2) { // note the "i += 2".
+				if (array[i] == IMV_value + 1) { IMV_counter++; IMV_value++; } else { IMV_value = array[i]; IMV_counter = 0; }
+				if (IMV_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
 			}
 
 			if (walk_ia_counter < 3) {
@@ -245,11 +251,6 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		}
 		else if (op == three) {
 			if (last_mcal_op == three) return pm_ndi;
-
-			if (last_mcal_op == five) {
-				R0I_counter++;
-				if (R0I_counter >= max_consecutive_s0_incr) return pm_r0i; 
-			}
 
 			if (last_mcal_op == one) {
 				H0_counter++;
@@ -292,6 +293,10 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	return at;
 }
 
+static byte noneditable(byte pa) { return (pa < 20 and pa % 4 == 0) or pa == 18; }
+static byte editable(byte pa) { return not noneditable(pa); }
+
+
 int main(void) {
 	srand((unsigned) time(0));
 
@@ -300,17 +305,17 @@ int main(void) {
 	nat* counts = calloc(pm_count, sizeof(nat));
 	
 	byte partial_graph[20] = {
-		0,  1, 0, 0, 
+		0,  0, 0, 0, 
 		1,  0, 0, 0, 
 		2,  0, 0, 0, 
 		3,  0, 0, 0, 
-		4,  0, 0, 0, 
+		4,  0, 4, 0,
 	};
 
 	byte graph[graph_count] = {0};
 	memcpy(graph, partial_graph, sizeof partial_graph);
 	
-	byte pointer = 2;
+	byte pointer = 1;
 	nat good_count = 0, bad_count = 0, exg_bad_count = 0, display_counter = 0;
 
 	struct timeval time_begin = {0};
@@ -324,21 +329,20 @@ loop:
 
 increment:
 	graph[pointer]++;
-init:  	pointer = 2;
+init:  	pointer = 1;
 
 	u16 was_utilized = 0;
-	byte at = 2;
+	byte at = 1;
 
-	if (not (display_counter & ((1 << display_rate) - 1))) {
-		printf("\033[%dm%s:  origin = %hhu, z = ", at ? 31 : 32, at ? "PRUNED" : " FOUND", at); 
-		print_graph_raw(graph); 
-		printf(" ... at = %hhu\033[0m\n", at);
-		fflush(stdout);
+	const byte debug = not (display_counter & ((1 << display_rate) - 1));
+	if (debug) display_counter = 1; else display_counter++;
+
+	if (debug) {
+		printf("GA trying: z = "); print_graph_raw(graph); puts(""); fflush(stdout);
 		display_counter = 1;
-	} else display_counter++;
+	}
 
-	for (byte index = 20; index < graph_count; index += 4) {
-		
+	for (byte index = 20; index < graph_count; index += 4) {	
 		if (index < graph_count - 4 and graph[index] > graph[index + 4]) { 
 			at = index + 4; 
 			counts[pm_ga_sdol]++; 
@@ -351,17 +355,11 @@ init:  	pointer = 2;
 
 		const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
 
-		if (graph[4 * index] == six and g) {  
-			counts[pm_ga_6g]++;
-			// puts(pm_spelling[pm_ga_6g]);
-			at = 4 * index + 2 * (index == six); goto bad;
-		}
-
 		if (graph[4 * index] == six and graph[4 * e] == one) {
 			at = graph_count;
-			if (4 * index < 20 and at > 4 * index + 3) at = 4 * index + 3;
-			if (4 * index >= 20 and at > 4 * index) at = 4 * index;
-			if (4 * e >= 20 and at > 4 * e) at = 4 * e;
+			if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
+			if (editable(4 * index) and at > 4 * index) at = 4 * index;
+			if (editable(4 * e) and at > 4 * e) at = 4 * e;
 			counts[pm_ga_ns0]++;
 			//puts(pm_spelling[pm_ga_ns0]);
 			goto bad;
@@ -369,19 +367,9 @@ init:  	pointer = 2;
  
 		if (graph[4 * index] == six and graph[4 * e] == five) {
 			at = graph_count;
-			if (4 * index < 20 and at > 4 * index + 3) at = 4 * index + 3;
-			if (4 * index >= 20 and at > 4 * index) at = 4 * index;
-			if (4 * e >= 20 and at > 4 * e) at = 4 * e;
-			counts[pm_ga_ns0]++;
-			//puts(pm_spelling[pm_ga_ns0]);
-			goto bad;
-		}
-
-		if (graph[4 * index] == one and l == g and g == e and graph[4 * l] == one) {
-			at = graph_count;
-			if (4 * index < 20 and at > 4 * index + 1) at = 4 * index + 1;
-			if (4 * index >= 20 and at > 4 * index) at = 4 * index;
-			if (4 * l >= 20 and at > 4 * l) at = 4 * l;
+			if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
+			if (editable(4 * index) and at > 4 * index) at = 4 * index;
+			if (editable(4 * e) and at > 4 * e) at = 4 * e;
 			counts[pm_ga_ns0]++;
 			//puts(pm_spelling[pm_ga_ns0]);
 			goto bad;
@@ -397,7 +385,6 @@ init:  	pointer = 2;
 			two, six, pm_ga_sn1,
 			six, two, pm_ga_snco,
 		};
-
 		for (nat i = 0; i < 7 * 3; i += 3) {
 			const byte source = pairs[i + 1], destination = pairs[i + 0];
 			if (graph[4 * index] == source) {
@@ -405,52 +392,23 @@ init:  	pointer = 2;
 					const byte dest = graph[4 * index + offset];
 					if (graph[4 * dest] != destination) continue;
 					at = graph_count;
-					if (4 * index < 20 and at > 4 * index + offset) at = 4 * index + offset;
-					if (4 * index >= 20 and at > 4 * index) at = 4 * index;
-					if (4 * dest >= 20 and at > 4 * dest) at = 4 * dest;
+					if (editable(4 * index + offset) and at > 4 * index + offset) at = 4 * index + offset;
+					if (editable(4 * index) and at > 4 * index) at = 4 * index;
+					if (editable(4 * dest) and at > 4 * dest) at = 4 * dest;
+					if (at == graph_count) continue;
 					counts[pairs[i + 2]]++;
 					//puts(pm_spelling[pairs[i + 2]]);
 					goto bad;
 				}
 			} 
 		}}
-
-
-		{const byte pairs[3 * 3] = {
-			three, three, pm_ga_ndi,
-			five, one, pm_ga_pco,
-			five, five, pm_ga_zr5,
-		};
-
-		for (nat i = 0; i < 3 * 3; i += 3) {
-			const byte source = pairs[i + 1], destination = pairs[i + 0];
-			if (graph[4 * index] == source) {
-				for (byte offset = 1; offset < 4; offset++) {
-					const byte middle = graph[4 * index + offset];
-					if (graph[4 * middle] != two and graph[4 * middle] != six) continue;
-					for (byte offset2 = 1; offset2 < 4; offset2++) {
-						const byte dest = graph[4 * middle + offset2];
-						if (graph[4 * dest] != destination) continue;
-						at = graph_count;
-						if (4 * index < 20 and at > 4 * index + offset) at = 4 * index + offset;
-						if (4 * middle < 20 and at > 4 * middle + offset2) at = 4 * middle + offset2;
-						if (4 * index >= 20 and at > 4 * index) at = 4 * index;
-						if (4 * middle >= 20 and at > 4 * middle) at = 4 * middle;
-						if (4 * dest >= 20 and at > 4 * dest) at = 4 * dest;
-						counts[pairs[i + 2]]++;
-						// puts(pm_spelling[pairs[i + 2]]);
-						goto bad;
-					}
-				}
-			} 
-		} }
-
+	
 		if (l != index) was_utilized |= 1 << l;
 		if (g != index) was_utilized |= 1 << g;
 		if (e != index) was_utilized |= 1 << e;
 
-		for (byte i = graph_count - 4; i >= 20 and 4 * index < i; i -= 4) {
-			const byte j = 4 * index;
+		const byte j = 4 * index;
+		for (byte i = graph_count - 4; i >= 20 and j < i; i -= 4) {
 			if (not memcmp(graph + i, graph + j, 4)) { 
 				at = j + (j < 20); 
 				counts[pm_ga_rdo]++; 
@@ -462,9 +420,9 @@ init:  	pointer = 2;
 
 	for (byte index = 0; index < operation_count; index++) {
 		if (not ((was_utilized >> index) & 1)) { 
-			at = 2; 
+			at = 1;
 			counts[pm_ga_uo]++; 
-			// puts("pm_ga_uo"); 
+			//puts("pm_ga_uo"); 
 			goto bad; 
 		} 
 	}
@@ -472,13 +430,13 @@ init:  	pointer = 2;
 	byte origin = 0;
 	at = execute_graph(graph, array, &origin, counts);
 
-	if (not (display_counter & ((1 << display_rate) - 1))) {
+	if (debug) {
 		printf("\033[%dm%s:  origin = %hhu, z = ", at ? 31 : 32, at ? "PRUNED" : " FOUND", at); 
 		print_graph_raw(graph); 
 		printf(" ... at = %hhu\033[0m\n", at);
 		fflush(stdout);
 		display_counter = 1;
-	} else display_counter++;
+	}
 
 	if (not at) {
 		printf("\033[32m  ---> GOOD: origin = %hhu, z = ", origin); 
@@ -491,19 +449,17 @@ init:  	pointer = 2;
 		good_count++;
 		goto loop;
 	} else exg_bad_count++;
-bad:	
 
-	// if (at == graph_count - 1) getchar();
-	bad_count++;
-	while ((at < 20 and at % 4 == 0) or at == 5 or at == 1) at++;
-	for (nat i = 2; i < at; i++) {
-		if ((i < 20 and i % 4 == 0) or i == 5 or i == 1) continue;
-		else graph[i] = 0;
+bad:	bad_count++;
+	if (noneditable(at)) {
+		printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
+		abort();
 	}
+	for (byte i = 1; i < at; i++) if (editable(i)) graph[i] = 0;
 	pointer = at; goto loop;
 reset_:
 	graph[pointer] = 0; 
-	do pointer++; while ((pointer < 20 and pointer % 4 == 0) or pointer == 5 or pointer == 1);
+	do pointer++; while (noneditable(pointer));
 	goto loop;
 done:;
 	struct timeval time_end = {0};
@@ -1223,7 +1179,156 @@ if ((at < 20 and at % 4 == 0) or at == 5 or at == 1) {
 
 
 
+
+
+
+
+
+
+
+
+	{const byte pairs[3 * 3] = {
+			three, three, pm_ga_ndi,
+			five, one, pm_ga_pco,
+			five, five, pm_ga_zr5,
+		};
+
+		for (nat i = 0; i < 3 * 3; i += 3) {
+			const byte source = pairs[i + 1], destination = pairs[i + 0];
+			if (graph[4 * index] == source) {
+				for (byte offset = 1; offset < 4; offset++) {
+					const byte middle = graph[4 * index + offset];
+					if (graph[4 * middle] != two and graph[4 * middle] != six) continue;
+					for (byte offset2 = 1; offset2 < 4; offset2++) {
+						const byte dest = graph[4 * middle + offset2];
+						if (graph[4 * dest] != destination) continue;
+						at = graph_count;
+						if (4 * index < 20 and at > 4 * index + offset) at = 4 * index + offset;
+						if (4 * middle < 20 and at > 4 * middle + offset2) at = 4 * middle + offset2;
+						if (4 * index >= 20 and at > 4 * index) at = 4 * index;
+						if (4 * middle >= 20 and at > 4 * middle) at = 4 * middle;
+						if (4 * dest >= 20 and at > 4 * dest) at = 4 * dest;
+						counts[pairs[i + 2]]++;
+						// puts(pm_spelling[pairs[i + 2]]);
+						goto bad;
+					}
+				}
+			} 
+		} }
+
+
+
+
+
+
+
+
 */
+
+
+/*
+
+
+		if (graph[4 * index] == one and l == g and g == e and graph[4 * l] == one) {
+			at = graph_count;
+			if (index < 5 and at > 4 * index + 1) at = 4 * index + 1;
+			if (index >= 5 and at > 4 * index) at = 4 * index;
+			if (l >= 5 and at > 4 * l) at = 4 * l;
+			counts[pm_ga_ns0]++;
+			//puts(pm_spelling[pm_ga_ns0]);
+			goto bad;
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+if (pointer == 1) {
+				if (last_mcal_op == three) {
+					R1I_counter++;
+					if (R1I_counter >= max_consecutive_s0_incr) return pm_r1i;
+				} else R1I_counter = 0;
+			}
+
+			if (pointer == 2) {
+				if (last_mcal_op == three) {
+					R2I_counter++;
+					if (R2I_counter >= max_consecutive_s0_incr) return pm_r2i;
+				} else R2I_counter = 0;
+			}
+
+			if (pointer == 3) {
+				if (last_mcal_op == three) {
+					R3I_counter++;
+					if (R3I_counter >= max_consecutive_s0_incr) return pm_r3i;
+				} else R3I_counter = 0;
+			}
+
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+/*
+			if (pointer == 1) {
+				if (last_mcal_op == three) {
+					R1I_counter++;
+					if (R1I_counter >= max_consecutive_s0_incr) return pm_r1i;
+				} else R1I_counter = 0;
+			}
+
+			if (pointer == 2) {
+				if (last_mcal_op == three) {
+					R2I_counter++;
+					if (R2I_counter >= max_consecutive_s0_incr) return pm_r2i;
+				} else R2I_counter = 0;
+			}
+
+			if (pointer == 3) {
+				if (last_mcal_op == three) {
+					R3I_counter++;
+					if (R3I_counter >= max_consecutive_s0_incr) return pm_r3i;
+				} else R3I_counter = 0;
+			}
+*/
+
+
+
+
+
+
+
+
+
+
+
+/*if (graph[4 * index] == six and l != g) { //  
+			counts[pm_ga_6g]++;
+			// puts(pm_spelling[pm_ga_6g]);
+			at = 4 * index + 2 * (index == six); goto bad;
+		}*/
+
+
 
 
 
