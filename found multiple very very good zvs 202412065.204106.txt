@@ -1,0 +1,157 @@
+202412065.192311:
+found this 
+
+	012115252033300442420040 2 1202412065.185404             in the ip output zv file  lol
+
+
+	012115252033300442420040 2 1202411247.005514              in the SU  (search utility) output zv file. 
+
+
+in the 1sp output, a 1sp call that i started in the previous video, 
+in a uaj now, 
+and im gunna write out the graph of this zv:
+
+	012115252033300442420040
+	012115252033300442420040
+
+
+was found on:
+	origin = 2
+
+
+and its lifetime..
+						has no patterns.     that i can see, currently. 
+
+
+
+
+
+...
+trying to investigate whether or not it is the xfg or not... 
+
+	GAHH GBN:ARUWGNPRWUGP ATDNLWGPUARNWt
+
+anyways
+
+
+0121 1525 2033 3004 4242 0040
+
+
+
+
+
+
+
+
+
+
+
+202412065.203539:
+
+ALSO!!
+
+	i am going through via viz the 1300 zvs and found this zv as well, that seems to be extremely good, and lacking obvious patterns, as well!! important to write it down too:
+
+	z  = 012115252033310442420040
+
+
+
+	0121 1525 2033 3104 4242 0040
+
+
+
+			ip found on:
+
+				012115252033310442420040 2 1202412065.185404
+
+			su found on:
+
+				012115252033310442420040 2 1202411247.005519
+
+
+
+
+	going to write out its graph as well, on paper,   to see how it works, it seems like its only changing the less than side (l) of 5, 
+
+				which of course,   5 is very infrequently executed, so it makes sense that its the one to change, i guess 
+
+
+				i think 
+
+
+
+
+
+
+	
+
+
+
+
+
+202412065.221617:
+
+i also found 10 other zvs, which were also reallyyyyyy reallyyyyy good like those two,  so 12 in total, 
+
+	im going to try to find the common substructure of these 12 zv,   and make it into a sort of partial graph  (1sp partial graph!!)
+
+
+		and then 
+
+
+
+			i think the best way to proceed to 2sp    is to   change up our search method to a sort of ... 
+
+
+						edit distance,    where we actually use the common substructure (1sp partial graph)
+
+								as the basis for the zv, and just editing particular PA's   so that 
+
+
+								we minimize how many various types of zv's we are trying,  to just the ones which are mostlyyyy in common with these realllyyy reallyyyy good zv's.  thats the general idea. 
+
+
+
+
+
+so thats how we are going to search 2sp, and (if we need to)    3sp as well. 
+
+
+
+
+so yeah!
+	just writing this in a uaj right now lol 
+
+
+
+talk to you later lol
+
+
+dwrr
+
+
+
+ 
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

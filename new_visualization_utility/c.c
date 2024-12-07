@@ -33,9 +33,9 @@ static const int display_rate = 1;
 static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
-static const nat execution_limit = 1000000;
-static const nat array_size = 1000;
-static const nat lifetime_length = 8000;
+static const nat execution_limit = 500000;
+static const nat array_size = 3000;
+static const nat lifetime_length = 2000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -272,8 +272,14 @@ int main(int argc, const char** argv) {
 		uint32_t start = SDL_GetTicks();
 
 		if (not (counter & ((1 << display_rate) - 1))) {
-			if (lifetime_length < height) abort(); //  todo: do something to make it so that the view can be larger than the image... somehow... (fill the larger image in  with zeros maybe?...)
-			if (array_size + 1 < width) abort();
+			if (lifetime_length < height) {
+				printf("lifetime length ERROR ERROR ERROR\n");
+				height = lifetime_length - 1;
+			} 
+			if (array_size + 1 < width) {
+				printf("array size ERROR ERROR ERROR\n");
+				width = array_size;
+			}
 
 			if ((int64_t) initial_y > (int64_t) lifetime_length - (int64_t) height) initial_y = lifetime_length - height;
 			if ((int64_t) initial_x > (int64_t) array_size + 1 - (int64_t) width) initial_x = array_size + 1 - width;
@@ -860,5 +866,13 @@ static void print_unique_list(struct z_value* list, nat count) {
 
 
 // 0122 1025 2143 3062 4001 0661 4201
+
+
+
+
+
+//  todo: do something to make it so that the view can be larger than the image... somehow... (fill the larger image in  with zeros maybe?...)
+
+
 
 
