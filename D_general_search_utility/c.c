@@ -29,7 +29,7 @@ typedef uint16_t u16;
 
 #define execution_limit		1000000000LLU
 #define array_size 		1000000LLU
-#define display_rate 		20
+#define display_rate 		27
 
 enum operations { one, two, three, five, six };
 
@@ -402,55 +402,6 @@ init:  	pointer = 1;
 				}
 			} 
 		}}
-
-
-
-
-
-
-
-
-
-
-
-		/*
-
-		{const byte pairs[3 * 3] = {
-			three, three, pm_ga_ndi,
-			five, one, pm_ga_pco,
-			five, five, pm_ga_zr5,
-		};
-
-		for (nat i = 0; i < 3 * 3; i += 3) {
-			const byte source = pairs[i + 1], destination = pairs[i + 0];
-			if (graph[4 * index] == source) {
-				for (byte offset = 1; offset < 4; offset++) {
-					const byte middle = graph[4 * index + offset];
-					if (graph[4 * middle] != two and graph[4 * middle] != six) continue;
-					for (byte offset2 = 1; offset2 < 4; offset2++) {
-						const byte dest = graph[4 * middle + offset2];
-						if (graph[4 * dest] != destination) continue;
-						at = graph_count;
-						if (4 * index < 20 and at > 4 * index + offset) at = 4 * index + offset;
-						if (4 * middle < 20 and at > 4 * middle + offset2) at = 4 * middle + offset2;
-						if (4 * index >= 20 and at > 4 * index) at = 4 * index;
-						if (4 * middle >= 20 and at > 4 * middle) at = 4 * middle;
-						if (4 * dest >= 20 and at > 4 * dest) at = 4 * dest;
-						counts[pairs[i + 2]]++;
-						// puts(pm_spelling[pairs[i + 2]]);
-						goto bad;
-					}
-				}
-			} 
-		} }
-		*/
-
-
-
-
-
-
-
 	
 		if (l != index) was_utilized |= 1 << l;
 		if (g != index) was_utilized |= 1 << g;
@@ -1539,3 +1490,47 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 
 
 */
+
+
+
+
+
+
+
+		/*
+
+		{const byte pairs[3 * 3] = {
+			three, three, pm_ga_ndi,
+			five, one, pm_ga_pco,
+			five, five, pm_ga_zr5,
+		};
+
+		for (nat i = 0; i < 3 * 3; i += 3) {
+			const byte source = pairs[i + 1], destination = pairs[i + 0];
+			if (graph[4 * index] == source) {
+				for (byte offset = 1; offset < 4; offset++) {
+					const byte middle = graph[4 * index + offset];
+					if (graph[4 * middle] != two and graph[4 * middle] != six) continue;
+					for (byte offset2 = 1; offset2 < 4; offset2++) {
+						const byte dest = graph[4 * middle + offset2];
+						if (graph[4 * dest] != destination) continue;
+						at = graph_count;
+						if (4 * index < 20 and at > 4 * index + offset) at = 4 * index + offset;
+						if (4 * middle < 20 and at > 4 * middle + offset2) at = 4 * middle + offset2;
+						if (4 * index >= 20 and at > 4 * index) at = 4 * index;
+						if (4 * middle >= 20 and at > 4 * middle) at = 4 * middle;
+						if (4 * dest >= 20 and at > 4 * dest) at = 4 * dest;
+						counts[pairs[i + 2]]++;
+						// puts(pm_spelling[pairs[i + 2]]);
+						goto bad;
+					}
+				}
+			} 
+		} }
+		*/
+
+
+
+
+
+

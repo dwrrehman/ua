@@ -33,9 +33,9 @@ static const int display_rate = 1;
 static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
-static const nat execution_limit = 500000;
-static const nat array_size = 3000;
-static const nat lifetime_length = 2000;
+static const nat execution_limit = 100000000;
+static const nat array_size = 10000;
+static const nat lifetime_length = 100000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -272,14 +272,34 @@ int main(int argc, const char** argv) {
 		uint32_t start = SDL_GetTicks();
 
 		if (not (counter & ((1 << display_rate) - 1))) {
-			if (lifetime_length < height) {
-				printf("lifetime length ERROR ERROR ERROR\n");
-				height = lifetime_length - 1;
+			if (lifetime_length < height or array_size + 1 < width) {
+				height = default_window_size_height >> 1;
+				width = default_window_size_width >> 1;
+
+				while (width > 1 and height > 1 and (lifetime_length < height or array_size + 1 < width)) {
+					width >>= 1;
+					height >>= 1;
+				}
+
+				screen_size = width * height * 4;
+				screen = realloc(screen, screen_size);
+				memset(screen, 0x00, screen_size);
+				SDL_DestroyTexture(texture);
+
+				texture = SDL_CreateTexture(renderer, 
+						SDL_PIXELFORMAT_ARGB8888, 
+						SDL_TEXTUREACCESS_STREAMING, 
+						(int) width, (int) height);
+
+				printf("width = %lu, height = %lu\n", width, height);
+
+
+
+
+
+
 			} 
-			if (array_size + 1 < width) {
-				printf("array size ERROR ERROR ERROR\n");
-				width = array_size;
-			}
+			
 
 			if ((int64_t) initial_y > (int64_t) lifetime_length - (int64_t) height) initial_y = lifetime_length - height;
 			if ((int64_t) initial_x > (int64_t) array_size + 1 - (int64_t) width) initial_x = array_size + 1 - width;
