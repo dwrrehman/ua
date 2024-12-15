@@ -1,0 +1,46 @@
+taking a significant amount of time on e = 536870912, z = 0144152521333104424206220000
+taking a significant amount of time on e = 805306368, z = 0144152521333104424206220000
+  ---> GOOD: origin = 2, z = 0144152521333104424206220000
+[1202412146.223857]: write: wrote z = 0144152521333104424206220000 to file "1202412146.210502_65d034354813b7cb068795652f611d3c_z.txt"
+GA trying: z = 0144152521333104424200230241
+GA trying: z = 0144152521333104424202252443
+GA trying: z = 0144152521333104424206240145
+PRUNED:  at = 21, z = 0144152521333104424206240145 ... at = 21
+trying combination index = 152 / 153 : { 22 23 }
+GA trying: z = 0144152521333104424200000000
+GA trying: z = 0144152521333104424200030241
+GA trying: z = 0144152521333104424200252443
+GA trying: z = 0144152521333104424200640145
+PRUNED:  at = 22, z = 0144152521333104424200640145 ... at = 22
+finished trying zv 3...
+
+su: D = 2 space:
+	 good    149 zv
+	 bad     3836543 zv
+	 exg_bad 690929 zv
+	 execution_limit = 1000000000
+	 array_size = 1000000
+	 in   10993.00s [1202412146.210439:1202412157.000752]
+
+
+pm counts:
+z_is_good: 149     		pm_zr5: 385033  		
+pm_zr6: 145068  		pm_ndi: 106524  		
+pm_pco: 414502  		pm_per: 150840  		
+pm_ns0: 225195  		pm_oer: 464     		
+pm_rsi: 19589   		 pm_h0: 144148  		
+ pm_h1: 2323    		pm_erw: 30860   		
+pm_rmv: 14042   		pm_imv: 259     		
+pm_csm: 3479    		pm_ga_dummy: 0       		
+pm_ga_26dol: 0       		pm_ga_sdol: 11696   		
+pm_ga_6g: 25704   		pm_ga_ns0: 91617   		
+pm_ga_zr5: 133966  		pm_ga_pco: 276486  		
+pm_ga_ndi: 175894  		pm_ga_sndi: 186995  		
+pm_ga_snco: 159495  		pm_ga_sn1: 47740   		
+pm_ga_zr6: 61002   		pm_ga_rdo: 0       		
+pm_ga_uo: 1975019 		[done]
+edit_distance_search_utility: 
+
+
+
+

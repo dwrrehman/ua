@@ -50,7 +50,7 @@ static void combination(
 	int r = 0, i = 0;
 	while (r >= 0) {	
 		if (i <= (N + (r - k))) {
-			pointers[r] = i;	
+			pointers[r] = i;
 			if (r == k - 1) {
 				print_state(pointers, elements, N, r, i, k);
 				count++;
@@ -62,7 +62,7 @@ static void combination(
 		} else {
 			r--;
 			if (r >= 0) i = pointers[r] + 1;			
-		}			
+		}
 	}
 	printf("--> n choose k = %u\n", count);
 }
@@ -71,24 +71,24 @@ static void combination(
 
 
 
-static void index_combination(int n, int k) {	
+static void index_combination(int n, int k) {
 	if (not k) return;
 	int* pointers = calloc(k, sizeof(int));	
 	int count = 0, r = 0, i = 0;
-	while (r >= 0) {	
+	while (r >= 0) {
 		if (i <= (n + (r - k))) {
 			pointers[r] = i;	
 			if (r == k - 1) {
 				print_state(pointers, NULL, n, r, i, k);
 				count++;
-				i++;				
+				i++;
 			} else {
 				i = pointers[r] + 1;
 				r++;
 			}				
 		} else {
 			r--;
-			if (r >= 0) i = pointers[r] + 1;			
+			if (r >= 0) i = pointers[r] + 1;
 		}			
 	}
 	printf("--> n choose k = %u\n", count);
@@ -106,6 +106,7 @@ int main(void) {
 	const int array[] = {2, 3, 5, 7, 11, 13};
 	combination(array, N, k);
 }
+getchar();
 puts("\n\n");
 {
 	puts("3 choose 2");
@@ -115,7 +116,7 @@ puts("\n\n");
 	combination(array, N, k);
 }
 
-
+getchar();
 puts("\n\n");
 {
 	puts("3 choose 0");
@@ -125,7 +126,7 @@ puts("\n\n");
 	combination(array, N, k);
 }
 
-
+getchar();
 puts("\n\n");
 {
 	puts("3 choose 1");
@@ -135,6 +136,7 @@ puts("\n\n");
 	combination(array, N, k);
 }
 
+getchar();
 puts("\n\n");
 {
 	puts("3 choose 3");
@@ -147,7 +149,7 @@ puts("\n\n");
 
 
 
-
+getchar();
 puts("\n\n");
 {
 	puts("18 choose 3");
@@ -156,7 +158,7 @@ puts("\n\n");
 	index_combination(N, k);
 }
 
-
+getchar();
 puts("\n\n");
 {
 	puts("18 choose 2");
@@ -165,10 +167,7 @@ puts("\n\n");
 	index_combination(N, k);
 }
 
-
-
-
-
+getchar();
 puts("\n\n");
 {
 	puts("18 choose 4");
@@ -177,6 +176,7 @@ puts("\n\n");
 	index_combination(N, k);
 }
 
+getchar();
 puts("\n\n");
 {
 	puts("18 choose 5");
@@ -189,6 +189,18 @@ puts("\n\n");
 	for (int i = 0; i < 14; i++) puts("\n");
 	exit(0);
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
