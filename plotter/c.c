@@ -14,8 +14,8 @@
 typedef uint64_t nat;
 
 
-static const nat height = 330;
-static const nat width  = 1600;
+static const nat height = 100;
+static const nat width  = 300;
 
 
 struct row {
