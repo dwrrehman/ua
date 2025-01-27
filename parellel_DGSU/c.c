@@ -44,19 +44,21 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 2
+#define D 1
 #define execution_limit 500000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
-#define display_rate 3
+#define display_rate 1
 #define update_rate 0
 
 #define total_job_count 300
 #define machine_index 0
-#define machine0_counter_max 4
-#define machine1_counter_max 5
+
+#define machine0_counter_max 1
+#define machine1_counter_max 1
+
 #define machine0_thread_count 3
-#define machine1_thread_count 4
+#define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
 
@@ -759,6 +761,10 @@ int main(void) {
 			if (machine0_counter < machine1_counter_max) { machine0_counter++; mi = 0; } 
 			else { machine_state = 1; machine1_counter = 1; mi = 1; }
 		}
+
+
+		if (machine1_thread_count == 0) mi = 0;
+
 
 		
 		if (core_counter[mi] < machine[mi].core_count - 1) core_counter[mi]++; else core_counter[mi] = 0;
