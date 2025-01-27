@@ -33,9 +33,9 @@ static const int display_rate = 1;
 static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
-static const nat execution_limit = 2000000;
-static const nat array_size = 10000;
-static const nat lifetime_length = 20000;
+static const nat execution_limit = 80000;
+static const nat array_size = 2000;
+static const nat lifetime_length = 2000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -195,15 +195,24 @@ int main(int argc, const char** argv) {
 
 		nat dupl_count = 0;
 		nat* duplicates = NULL;
+
+		puts("deduplicating...");
+		const nat zvs_per_dot = count / 128 + 1;
+		nat dot_counter = 0;
 	
 		for (nat i = 0; i < count; i++) { 
+
+			if (dot_counter >= zvs_per_dot) {
+				putchar('.'); fflush(stdout);
+				dot_counter = 0; 
+			} else dot_counter++;
 
 			for (nat d = 0; d < dupl_count; d++) {
 				if (duplicates[d] == i) goto next_i;
 			}
 
 			for (nat j = i + 1; j < count; j++) {
-				printf("testing i=%llu and j=%llu... ", i, j);
+				// printf("testing i=%llu and j=%llu... ", i, j);
 
 				if (not memcmp(list[i].lifetime[0], list[j].lifetime[0], lifetime_byte_count)) {
 					equivalent_z[count * i + equivalent_count[i]] = j;
@@ -212,14 +221,15 @@ int main(int argc, const char** argv) {
 					duplicates = realloc(duplicates, sizeof(nat) * (dupl_count + 1));
 					duplicates[dupl_count++] = j;
 
-					printf("[%llu IS A DUPLICATE].\n", j);
+					//printf("[%llu IS A DUPLICATE].\n", j);
 
 				} else {
-					puts("different.");
+					//puts("different.");
 				}
 			}
 			next_i: continue;
 		}
+		puts("");
 
 		puts("list has these empirical lifetime equivalencies: ");
 		for (nat i = 0; i < count; i++) {
@@ -419,10 +429,10 @@ int main(int argc, const char** argv) {
 		if (sleep > 0) SDL_Delay((uint32_t) sleep);
 		counter++;
 	
-		if (not (counter & ((1 << 6) - 1))) {
-			double fps = 1 / ((double) (SDL_GetTicks() - start) / 1000.0);
-			printf("fps = %.5lf\n", fps);
-		}
+		//if (not (counter & ((1 << 6) - 1))) {
+		//	//double fps = 1 / ((double) (SDL_GetTicks() - start) / 1000.0);
+		//	// printf("fps = %.5lf\n", fps);
+		//}
 	}
 	SDL_DestroyTexture(texture);
 	SDL_DestroyRenderer(renderer);

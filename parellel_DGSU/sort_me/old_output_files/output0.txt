@@ -1,0 +1,37 @@
+D_general_search_utility: b release
+D_general_search_utility: ./run
+PRUNED:  origin = 2, z = 01001000200030004000 ... at = 2
+final graph state: 01001000200030004004
+su: D = 0 space:
+	 good    0 zv
+	 bad     270165 zv
+	 exg_bad 25886 zv
+	 execution_limit = 1000000000
+	 array_size = 1000000
+	 in       0.00s [1202411144.234813:1202411144.234813]
+
+
+pm counts:
+z_is_good: 0       		pm_zr5: 12732   		
+pm_zr6: 3452    		pm_ndi: 0       		
+pm_pco: 0       		pm_per: 2539    		
+pm_ns0: 22930   		pm_oer: 0       		
+pm_r0i: 90      		pm_r1i: 0       		
+ pm_h0: 9982    		 pm_h1: 0       		
+pm_erw: 45      		pm_rmv: 2       		
+pm_imv: 0       		pm_ga_dummy: 0       		
+pm_ga_26dol: 0       		pm_ga_sdol: 0       		
+pm_ga_6g: 4       		pm_ga_ns0: 2       		
+pm_ga_zr5: 5834    		pm_ga_pco: 155916  		
+pm_ga_ndi: 11098   		pm_ga_sndi: 11284   		
+pm_ga_snco: 11284   		pm_ga_sn1: 2       		
+pm_ga_zr6: 2       		pm_ga_rdo: 0       		
+pm_ga_uo: 48853   		[done]
+D_general_search_utility: 
+
+
+
+
+
+
+

@@ -1,14 +1,10 @@
-// edit distance search utility, based on the D general SU, 
-// written on 2412146.212420, by dwrr
-/* tries to use these 4 zv's as a partial graph:
-	014415352131354442420020 2 dt
-	014415352131354542420020 2 dt
-	012115252033300442420040 2 dt
-	014415252133310442420021 2 dt
-and modifies K different PAs inside that partial graph, 
-along with searching over all possible values for 
-the new second duplicate operation, (in the case of 2sp)
-*/
+// D-general version of the 0 space search util  
+// written on 202410163.164303 dwrr
+// size of raw 0 space is: (5^15) 	                 		=              30,517,578,125
+// size of raw 1 space is: (6^15) * (5 * (6 ^ 3)) 	                =         507,799,783,342,080
+// size of raw 2 space is: (7^15) * (5 * (7 ^ 3)) * (5 * (7 ^ 3)) 	=  13,963,646,602,082,100,175
+
+// rewritten kinda  on 202411144.202807 dwrr
 
 #include <time.h>
 #include <string.h>
@@ -29,12 +25,11 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-#define D 2
-#define K 3
+#define D 1
 
-#define execution_limit 1000000000LLU
-#define array_size 1000000LLU
-#define display_rate 11
+#define execution_limit		1000000000LLU
+#define array_size 		1000000LLU
+#define display_rate 		27
 
 enum operations { one, two, three, five, six };
 
@@ -103,7 +98,7 @@ static void get_datetime(char datetime[32]) {
 	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
 }
 
-static void append_to_file(char* filename, size_t filename_size, byte* graph, byte origin) {
+static void append_to_file(char* filename, size_t size, byte* graph, byte origin) {
 	char dt[32] = {0};   get_datetime(dt);
 	char z[64] = {0};    get_graphs_z_value(z, graph); 
 	char o[16] = {0};    snprintf(o, sizeof o, "%hhu", origin);
@@ -120,7 +115,7 @@ try_open:;
 			fflush(stdout);
 			abort();
 		}
-		snprintf(filename, filename_size, "%s_%08x%08x%08x%08x_z.txt", dt, 
+		snprintf(filename, size, "%s_%08x%08x%08x%08x_z.txt", dt, 
 			rand(), rand(), rand(), rand()
 		);
 		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
@@ -281,9 +276,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
-
-		//  if (*zskip_at > I + state) *zskip_at = I + state;
-
+		if (*zskip_at > I + state) *zskip_at = I + state;
 		ip = graph[I + state];
 	}
 	return z_is_good;
@@ -297,92 +290,57 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 		counts[pm]++;
 		if (not pm) { *origin = o; return 0; }
 	}
-	return 1;
+	return at;
 }
 
+static byte noneditable(byte pa) { return (pa < 20 and pa % 4 == 0) or pa == 18; }
+static byte editable(byte pa) { return not noneditable(pa); }
 
 
+int main(void) {
+	srand((unsigned) time(0));
 
-static byte** editable_pa_combinations = NULL;
-static nat combination_count = 0;
+	char filename[4096] = {0};
+	nat* array = calloc(array_size + 1, sizeof(nat));
+	nat* counts = calloc(pm_count, sizeof(nat));
+	
+	byte partial_graph[20] = {
+		0,  0, 0, 0, 
+		1,  0, 0, 0, 
+		2,  0, 0, 0, 
+		3,  0, 0, 0, 
+		4,  0, 4, 0,
+	};
 
+	byte graph[graph_count] = {0};
+	memcpy(graph, partial_graph, sizeof partial_graph);
+	
+	byte pointer = 1;
+	nat good_count = 0, bad_count = 0, exg_bad_count = 0, display_counter = 0;
 
+	struct timeval time_begin = {0};
+	gettimeofday(&time_begin, NULL);
 
-// ((pa < 20 and pa % 4 == 0) or pa == 18)    AND   not in   {1, 2, 3}
+	goto init;
+loop:
+	if (graph[pointer] < ((pointer % 4) ? operation_count - 1 : 4)) goto increment;
+	if (pointer < graph_count - 1) goto reset_;
+	goto done;
 
-
-
-
-static byte one_of_K_designated_editable_pas(byte pa, nat this) {
-
-	//printf("\tnoneditable(pa = %hhu, this = %llu)\n", pa, this);
-
-	//puts("\tgoing through k elements in this combination");
-	for (byte i = 0; i < K; i++) {
-
-		//printf("\t\tnoneditable:   looking at   pa = %hhu,  [i] = %hhu...\n", pa, editable_pa_combinations[this][i]);
-
-		if (editable_pa_combinations[this][i] == pa) {
-			//puts("\t\t\t---> FOUND!!!!");
-			return 1;
-		}
-	}
-	//puts("NOT FOUND. in editable PA list.");
-	return 0;
-}
-
-
-static byte editable(byte pa, nat this) {
-	if (pa == 18) return 0;
-	if (pa < 20 and pa % 4 == 0) return 0;
-	if (pa >= 24) return 1;
-	return one_of_K_designated_editable_pas(pa, this);
-}
-
-static byte noneditable(byte pa, nat this) { return not editable(pa, this); }
-
-
-
-static void index_combination(byte* editable_pas, const byte editable_count) {
-	if (not K) return;
-	int* pointers = calloc(K, sizeof(int));	
-	int r = 0, i = 0;
-	const int n = (int) editable_count;
-	while (r >= 0) {
-		if (i <= (n + (r - K))) {
-			pointers[r] = i;
-			if (r == K - 1) {
-
-				editable_pa_combinations = realloc(editable_pa_combinations, sizeof(byte*) * (combination_count + 1));
-				editable_pa_combinations[combination_count] = malloc(K);
-				for (byte e = 0; e < K; e++) {
-					editable_pa_combinations[combination_count][e] = editable_pas[pointers[e]];
-				}
-				combination_count++;
-				
-				i++;
-			} else {
-				i = pointers[r] + 1;
-				r++;
-			}
-		} else {
-			r--;
-			if (r >= 0) i = pointers[r] + 1;
-		}			
-	}
-}
-
-
-static void init_graph_from_string(byte* graph, const char* string) {
-	for (byte i = 0; i < strlen(string); i++) 
-		graph[i] = (byte) (string[i] - '0');
-}
-
-
-static byte graph_analysis(byte* graph, nat c, nat* counts) {
+increment:
+	graph[pointer]++;
+init:  	pointer = 1;
 
 	u16 was_utilized = 0;
-	byte at = 255;
+	byte at = 1;
+
+	const byte debug = not (display_counter & ((1 << display_rate) - 1));
+	if (debug) display_counter = 1; else display_counter++;
+
+	if (debug) {
+		printf("GA trying: z = "); print_graph_raw(graph); puts(""); fflush(stdout);
+		display_counter = 1;
+	}
 
 	for (byte index = 20; index < graph_count; index += 4) {	
 		if (index < graph_count - 4 and graph[index] > graph[index + 4]) { 
@@ -397,22 +355,11 @@ static byte graph_analysis(byte* graph, nat c, nat* counts) {
 
 		const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
 
-		if (graph[4 * index] == six and g != 4) {
-			at = graph_count;
-			if (editable(4 * index + 2, c) and at > 4 * index + 2) at = 4 * index + 2;
-			if (editable(4 * index, c) and at > 4 * index) at = 4 * index;
-			if (at == graph_count) continue;
-			counts[pm_ga_6g]++;
-			//puts(pm_spelling[pm_ga_6g]);
-			goto bad;
-		}
-
 		if (graph[4 * index] == six and graph[4 * e] == one) {
 			at = graph_count;
-			if (editable(4 * index + 3, c) and at > 4 * index + 3) at = 4 * index + 3;
-			if (editable(4 * index, c) and at > 4 * index) at = 4 * index;
-			if (editable(4 * e, c) and at > 4 * e) at = 4 * e;
-			if (at == graph_count) continue;
+			if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
+			if (editable(4 * index) and at > 4 * index) at = 4 * index;
+			if (editable(4 * e) and at > 4 * e) at = 4 * e;
 			counts[pm_ga_ns0]++;
 			//puts(pm_spelling[pm_ga_ns0]);
 			goto bad;
@@ -420,10 +367,9 @@ static byte graph_analysis(byte* graph, nat c, nat* counts) {
  
 		if (graph[4 * index] == six and graph[4 * e] == five) {
 			at = graph_count;
-			if (editable(4 * index + 3, c) and at > 4 * index + 3) at = 4 * index + 3;
-			if (editable(4 * index, c) and at > 4 * index) at = 4 * index;
-			if (editable(4 * e, c) and at > 4 * e) at = 4 * e;
-			if (at == graph_count) continue;
+			if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
+			if (editable(4 * index) and at > 4 * index) at = 4 * index;
+			if (editable(4 * e) and at > 4 * e) at = 4 * e;
 			counts[pm_ga_ns0]++;
 			//puts(pm_spelling[pm_ga_ns0]);
 			goto bad;
@@ -446,9 +392,9 @@ static byte graph_analysis(byte* graph, nat c, nat* counts) {
 					const byte dest = graph[4 * index + offset];
 					if (graph[4 * dest] != destination) continue;
 					at = graph_count;
-					if (editable(4 * index + offset, c) and at > 4 * index + offset) at = 4 * index + offset;
-					if (editable(4 * index, c) and at > 4 * index) at = 4 * index;
-					if (editable(4 * dest, c) and at > 4 * dest) at = 4 * dest;
+					if (editable(4 * index + offset) and at > 4 * index + offset) at = 4 * index + offset;
+					if (editable(4 * index) and at > 4 * index) at = 4 * index;
+					if (editable(4 * dest) and at > 4 * dest) at = 4 * dest;
 					if (at == graph_count) continue;
 					counts[pairs[i + 2]]++;
 					//puts(pm_spelling[pairs[i + 2]]);
@@ -461,7 +407,7 @@ static byte graph_analysis(byte* graph, nat c, nat* counts) {
 		if (g != index) was_utilized |= 1 << g;
 		if (e != index) was_utilized |= 1 << e;
 
-		/*const byte j = 4 * index;
+		const byte j = 4 * index;
 		for (byte i = graph_count - 4; i >= 20 and j < i; i -= 4) {
 			if (not memcmp(graph + i, graph + j, 4)) { 
 				at = j + (j < 20); 
@@ -469,249 +415,66 @@ static byte graph_analysis(byte* graph, nat c, nat* counts) {
 				// puts("pm_ga_rdo"); 
 				goto bad;
 			}
-		}*/
+		}
 	}
 
 	for (byte index = 0; index < operation_count; index++) {
 		if (not ((was_utilized >> index) & 1)) { 
-			at = 0; do at++; while (noneditable(at, c));
+			at = 1;
 			counts[pm_ga_uo]++; 
 			//puts("pm_ga_uo"); 
 			goto bad; 
 		} 
 	}
 
-	return 0;
-bad: 	return at;
-}
-
-
-static void nf(
-	byte* graph, 
-	nat* array, 
-	nat* counts, 
-	char* filename, 
-	nat* good_count, 
-	nat* bad_count, 
-	nat* exg_bad_count,
-	nat combination
-) {
-	nat display_counter = 0;
-	byte pointer = 1;
-
-	goto init;
-loop:
-	if (graph[pointer] < ((pointer % 4) ? operation_count - 1 : 4)) goto increment;
-	if (pointer < graph_count - 1) goto reset_;
-	goto done;
-
-increment:
-	graph[pointer]++;
-init:  	pointer = 0;
-	do pointer++; while (noneditable(pointer, combination));
-
-	const byte debug = not (display_counter & ((1 << display_rate) - 1));
-	if (debug) display_counter = 1; else display_counter++;
-
-	if (debug) {
-		printf("GA trying: z = "); print_graph_raw(graph); puts(""); fflush(stdout);
-	}
-	
-	byte at = graph_analysis(graph, combination, counts);
-	if (at) goto bad;
-
 	byte origin = 0;
-	byte is_bad = execute_graph(graph, array, &origin, counts);
+	at = execute_graph(graph, array, &origin, counts);
 
 	if (debug) {
-		printf("EXECUTED:  z = "); 
+		printf("\033[%dm%s:  origin = %hhu, z = ", at ? 31 : 32, at ? "PRUNED" : " FOUND", at); 
 		print_graph_raw(graph); 
-		puts(""); fflush(stdout);
+		printf(" ... at = %hhu\033[0m\n", at);
+		fflush(stdout);
+		display_counter = 1;
 	}
 
-	if (not is_bad) {
+	if (not at) {
 		printf("\033[32m  ---> GOOD: origin = %hhu, z = ", origin); 
-		print_graph_raw(graph);
+		print_graph_raw(graph); 
 		printf("\033[0m\n");
 		fflush(stdout);
 
-		append_to_file(filename, 4096, graph, origin);
+		append_to_file(filename, sizeof filename, graph, origin);
 		usleep(100000);
-		(*good_count)++;
-	} else 
-		(*exg_bad_count)++;
+		good_count++;
+		goto loop;
+	} else exg_bad_count++;
 
-	goto loop;
-
-bad:	(*bad_count)++;
-	if (noneditable(at, combination)) {
+bad:	bad_count++;
+	if (noneditable(at)) {
 		printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
 		abort();
 	}
-	for (byte i = 1; i < at; i++) if (editable(i, combination)) graph[i] = 0;
+	for (byte i = 1; i < at; i++) if (editable(i)) graph[i] = 0;
 	pointer = at; goto loop;
 reset_:
 	graph[pointer] = 0; 
-	do pointer++; while (noneditable(pointer, combination));
+	do pointer++; while (noneditable(pointer));
 	goto loop;
 done:;
-	return;
-}
-
-
-
-static void select_partial_graph(byte* graph, byte zv_index) {
-	const char* zv_string = NULL;
-	if (zv_index == 0) zv_string = "014415352131354442420020";
-	if (zv_index == 1) zv_string = "014415352131354542420020";
-	if (zv_index == 2) zv_string = "012115252033300442420040";
-	if (zv_index == 3) zv_string = "014415252133310442420021";
-	init_graph_from_string(graph, zv_string);
-}
-
-
-int main(void) {
-
-	srand((unsigned) time(0));
-
-	struct timeval time_begin = {0};
-	gettimeofday(&time_begin, NULL);
-
-	byte* editable_pas_1sp = calloc(graph_count, 1);
-	byte editable_count_1sp = 0;
-
-	for (byte pa = 0; pa < 24; pa++) {
-		if ((pa < 20 and pa % 4 == 0) or pa == 18) continue;
-		editable_pas_1sp[editable_count_1sp++] = pa;
-	}
-
-	index_combination(editable_pas_1sp, editable_count_1sp); 
-
-
-	printf("editable_pas_1sp: (%hhu){", editable_count_1sp);
-	for (byte i = 0; i < editable_count_1sp; i++) {
-		printf("%hhu ", editable_pas_1sp[i]);
-	}
-	printf("}\n");
-
-	printf("editable_pa_combinations: (%llu)\n", combination_count);
-	for (nat i = 0; i < combination_count; i++) {
-		printf("%llu: { ", i);
-		for (byte j = 0; j < K; j++) {
-			printf("%hhu ", editable_pa_combinations[i][j]);
-		}
-		puts("}\n");
-	}
-	puts("");
-
-
-	char filename[4096] = {0};
-	byte graph[graph_count] = {0};
-	nat* array = calloc(array_size + 1, sizeof(nat));
-	nat* counts = calloc(pm_count, sizeof(nat));
-	
-	nat 
-		good_count = 0, 
-		bad_count = 0, 
-		exg_bad_count = 0;
-		
-	for (byte zv_index = 0; zv_index < 4; zv_index++) {
-
-		printf("trying zv index = %hhu...\n", zv_index);
-
-		for (nat this_combination = 0; this_combination < combination_count; this_combination++) {
-
-			printf("trying combination index = %llu / %llu : { ", this_combination, combination_count);
-
-			for (byte i = 0; i < K; i++) {
-				printf("%hhu ", editable_pa_combinations[this_combination][i]);
-			}
-			puts("}");
-			
-			
-			select_partial_graph(graph, zv_index);
-
-			//puts("using zv: ");
-			//print_graph_raw(graph); puts("");
-			//getchar();
-
-			for (byte i = 0; i < graph_count; i++)  {
-				//puts("\n");
-
-				const byte pa_is_editable = editable(i, this_combination);
-				//printf("checking PA = %hhu: is_editable = %u\n", i, pa_is_editable);
-				if (pa_is_editable)  { 
-					//puts("zeroing..."); 
-					graph[i] = 0; 
-				} else { 
-					//puts("not zeroing..."); 
-				} 
-			}
-
-
-			//puts("using initial parial graph: ");
-			//print_graph_raw(graph); puts("");
-			//getchar();
-
-			nf(
-				graph, array, counts, filename, 
-				&good_count, &bad_count, &exg_bad_count,
-				this_combination
-			);
-			
-			//printf("final graph state: ");
-			//print_graph_raw(graph); 
-			//puts("");
-			// getchar();
-
-
-			//printf("trying combination index = %llu : { ", this_combination);
-
-			/*for (byte i = 0; i < K; i++) {
-				printf("%hhu ", editable_pa_combinations[this_combination][i]);
-			}
-			puts("}");
-			
-
-			for (byte i = 0; i < graph_count; i++)  {
-				puts("\n");
-
-				const byte pa_is_editable = editable(i, this_combination);
-				printf("checking PA = %hhu: is_editable = %u\n", i, pa_is_editable);
-				if (pa_is_editable)  { 
-					puts("zeroing..."); 
-				} else { 
-					puts("not zeroing..."); 
-				} 
-			}
-
-			puts("using initial parial graph: ");
-			print_graph_raw(graph); puts("");
-			// getchar();
-
-			*/
-		}
-
-		printf("finished trying zv %hhu...\n", zv_index);
-		// getchar();
-	}
-
-
-
-
-
-
-
-
 	struct timeval time_end = {0};
 	gettimeofday(&time_end, NULL);
+
+	printf("final graph state: ");
+	print_graph_raw(graph); 
+	puts("");
 
 	const double seconds = difftime(time_end.tv_sec, time_begin.tv_sec);
 	char time_begin_dt[32] = {0}, time_end_dt[32] = {0};
 	strftime(time_end_dt,   32, "1%Y%m%d%u.%H%M%S", localtime(&time_end.tv_sec));
 	strftime(time_begin_dt, 32, "1%Y%m%d%u.%H%M%S", localtime(&time_begin.tv_sec));
 
-	printf("su: D = %u, K = %u, space:\n"
+	printf("su: D = %u space:\n"
 		"\t good    %llu zv\n"
 		"\t bad     %llu zv\n"
 		"\t exg_bad %llu zv\n"
@@ -719,7 +482,7 @@ int main(void) {
                 "\t array_size = %llu\n"
 		"\t in %10.2lfs [%s:%s]\n"
 		"\n",
-		D, K, good_count, bad_count, exg_bad_count,
+		D, good_count, bad_count, exg_bad_count,
 		execution_limit, array_size, 
 		seconds, time_begin_dt, time_end_dt
 	);
@@ -1715,7 +1478,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
-		// if (*zskip_at > I + state) *zskip_at = I + state;
+		if (*zskip_at > I + state) *zskip_at = I + state;
 		ip = graph[I + state];
 	}
 	return z_is_good;
@@ -1768,59 +1531,6 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 
 
 
-
-
-
-
-
-
-
-
-
-	//const byte debug = not (display_counter & ((1 << display_rate) - 1));
-	//if (debug) display_counter = 1; else display_counter++;
-	//if (debug) {
-	//	printf("GA trying: z = "); print_graph_raw(graph); puts(""); fflush(stdout);
-	//	display_counter = 1;
-	//}
-
-
-
-/*
-
-0144153521313544424200200000
-0000153521313544424200200000
-
-
-
-
-0144153521313544424200200000
-0044153521313544424200200006
-0104153521313544424200200000
-0104153521313544424200200006
-
-
-
-
-
-
-
-
-0144 1535 2131 3544424200200000
-
-
-*/
-
-
-
-
-// D-general version of the 0 space search util  
-// written on 202410163.164303 dwrr
-// size of raw 0 space is: (5^15) 	                 		=              30,517,578,125
-// size of raw 1 space is: (6^15) * (5 * (6 ^ 3)) 	                =         507,799,783,342,080
-// size of raw 2 space is: (7^15) * (5 * (7 ^ 3)) * (5 * (7 ^ 3)) 	=  13,963,646,602,082,100,175
-
-// rewritten kinda  on 202411144.202807 dwrr
 
 
 

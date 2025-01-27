@@ -1,0 +1,25 @@
+PRUNED:  origin = 3, z = 01401030200030004002 ... at = 3
+final graph state: 01001000200030004004
+su: D = 0 space:
+	 good    0 zv
+	 bad     954585 zv
+	 exg_bad 340377 zv
+	 execution_limit = 1000000000
+	 array_size = 1000000
+	 in       0.00s [1202411144.212524:1202411144.212524]
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 0       		
+pm_zr5: 124256  		pm_zr6: 91420   		
+pm_ndi: 46525   		pm_pco: 134551  		
+pm_per: 14660   		pm_ns0: 164942  		
+pm_oer: 0       		pm_r0i: 1170    		
+pm_r1i: 0       		 pm_h0: 103092  		
+ pm_h1: 0       		pm_erw: 119     		
+pm_rmv: 18      		pm_imv: 1       		[done]
+D_general_search_utility: 
+
+
+
+

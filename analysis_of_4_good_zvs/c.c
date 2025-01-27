@@ -36,16 +36,15 @@ static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++
 
 
 enum analyses {
-	none, s0xw, mv_hg, bl_hg, wic_hg, erp_hg, 
+	none, s0xw, mv_hg, bl_hg, wic_hg, erp_hg, bl_csv, 
 	print_array,
 	print_lifetime,
+	print_array_over_time,
 };
 
-static const nat analysis = s0xw;
-static const nat zv_index = 4;
+static const nat analysis = print_array_over_time;
+static const nat zv_index = 3;
 static const bool should_generate_xw_csv = false;
-
-
 
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
@@ -121,6 +120,54 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
 		ip = graph[I + state];
+
+		if (analysis == print_array_over_time) {
+
+			const nat max_cell_index = 80;
+			const nat max_cell_value = 70;
+
+			printf("\033[H\033[2J");
+			
+			printf("bout_length = ");
+			for (nat i = 0; i < bout_length; i++) {
+				printf("# ");
+			}
+			puts("\n");
+			printf("walk_counter = ");
+			for (nat i = 0; i < walk_ia_counter; i++) {
+				printf("# ");
+			}
+			puts("\n");
+		
+			printf("         ");
+
+			for (nat i = 0; i < pointer; i++) {
+				printf("      ");
+			}
+			printf("   V  ");
+			puts("");
+
+			printf(" [N]     ");
+
+			for (nat i = 0; i < max_cell_index; i++) {
+				printf(" [%03llu]", i);
+			}
+			puts("");
+			
+			for (nat m = 0; m < max_cell_value; m++) {
+
+				if (array[n] > m) printf("  #      "); else printf("         ");
+
+				for (nat i = 0; i < max_cell_index; i++) {
+					if (array[i] > m) printf("   #  "); else printf("      ");
+				}
+				puts("");
+			}
+
+			usleep(5000);
+		}
+
+
 	}
 	if (analysis == print_lifetime) puts("");
 	

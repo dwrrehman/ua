@@ -1,0 +1,31 @@
+PRUNED:  origin = 2, z = 013110252550355042020145 ... at = 2
+PRUNED:  origin = 2, z = 013510302031300445020545 ... at = 2
+PRUNED:  origin = 2, z = 014410352355350445020255 ... at = 2
+final graph state: 010010002000300040000005
+su: D = 1 space:
+	 good    419 zv
+	 bad     670356842 zv
+	 exg_bad 56957911 zv
+	 execution_limit = 1000000000
+	 array_size = 1000000
+	 in    2763.00s [1202411144.235809:1202411155.004412]
+
+
+pm counts:
+z_is_good: 419     		pm_zr5: 25929465		
+pm_zr6: 7162531 		pm_ndi: 0       		
+pm_pco: 286892  		pm_per: 5223559 		
+pm_ns0: 64704435		pm_oer: 3244    		
+pm_r0i: 194699  		pm_r1i: 12899   		
+ pm_h0: 18533961		 pm_h1: 2202    		
+pm_erw: 26457   		pm_rmv: 23783   		
+pm_imv: 296     		pm_csm: 3232    		
+pm_ga_dummy: 0       		pm_ga_26dol: 0       		
+pm_ga_sdol: 0       		pm_ga_6g: 1400    		
+pm_ga_ns0: 628     		pm_ga_zr5: 6132585 		
+pm_ga_pco: 309824615		pm_ga_ndi: 13674272		
+pm_ga_sndi: 16224471		pm_ga_snco: 15706580		
+pm_ga_sn1: 611     		pm_ga_zr6: 574     		
+pm_ga_rdo: 2484806 		pm_ga_uo: 249348389		[done]
+D_general_search_utility: 
+
