@@ -44,21 +44,21 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 2
+#define D 1
 #define execution_limit 500000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
-#define display_rate 5
+#define display_rate 2
 #define update_rate 1
 
-#define total_job_count 300
+#define total_job_count 1000
 #define machine_index 0
 
 #define machine0_counter_max 1
 #define machine1_counter_max 1
 
 #define machine0_thread_count 10
-#define machine1_thread_count 64
+#define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
 
