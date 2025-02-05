@@ -44,21 +44,21 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 2
-#define execution_limit 500000000LLU
+#define D 0
+#define execution_limit 250000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
-#define display_rate 5
+#define display_rate 0
 #define update_rate 1
 
-#define total_job_count 300
+#define total_job_count 40
 #define machine_index 0
 
 #define machine0_counter_max 1
 #define machine1_counter_max 1
 
-#define machine0_thread_count 10
-#define machine1_thread_count 64
+#define machine0_thread_count 4
+#define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
 
@@ -89,6 +89,7 @@ enum pruning_metrics {
 	pm_oer, pm_rsi,
 	pm_h0, pm_h1, pm_erw,
 	pm_rmv, pm_imv, pm_csm,
+	pm_bdl,
 
 	pm_ga_sdol, 
 	pm_ga_6g,    pm_ga_ns0, 
@@ -108,6 +109,7 @@ static const char* pm_spelling[pm_count] = {
 	"pm_oer", "pm_rsi", 
 	"pm_h0", "pm_h1", "pm_erw",
 	"pm_rmv", "pm_imv", "pm_csm",
+	"pm_bdl",
 
 	"pm_ga_sdol", 
 	"pm_ga_6g",   "pm_ga_ns0", 
@@ -129,7 +131,8 @@ static const char* pm_spelling[pm_count] = {
 #define max_consecutive_s0_incr 30
 #define max_consecutive_h0_bouts 12
 #define max_consecutive_h1_bouts 24
-#define max_erw_count 200
+#define max_consecutive_bld_walk_count 30
+
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
 
@@ -193,17 +196,17 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		bout_length = 0, 
 		RMV_value = 0, 
 		IMV_value = 0,
-		OER_er_at = 0,
-		walk_ia_counter = 0;
+		OER_ier_at = 0,
+		BDL_ier_at = 0,
+		PER_ier_at = (nat) ~0;
 
 	byte	H0_counter = 0,  H1_counter = 0, 
 		OER_counter = 0, RMV_counter = 0, 
 		IMV_counter = 0, CSM_counter = 0,
-		ERW_counter = 0;
+		BDL_counter = 0;
 	
 	byte ip = origin;
 	byte last_mcal_op = 255;
-	nat did_ier_at = (nat)~0;
 
 	byte rsi_counter[max_rsi_count];
 	rsi_counter[0] = 0;
@@ -244,10 +247,10 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			if (last_mcal_op != three) return pm_pco;
 			if (not pointer) return pm_zr5; 
 			
-			if (pointer == OER_er_at or pointer == OER_er_at + 1) {
+			if (pointer == OER_ier_at or pointer == OER_ier_at + 1) {
 				OER_counter++;
 				if (OER_counter >= max_oer_repetions) return pm_oer;
-			} else { OER_er_at = pointer; OER_counter = 0; }
+			} else { OER_ier_at = pointer; OER_counter = 0; }
 			
 			CSM_counter = 0;
 			RMV_value = (nat) -1;
@@ -273,13 +276,14 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				if (IMV_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
 			}
 
-			if (walk_ia_counter < (e < 500000 ? 3 : 6)) {
-				ERW_counter++;
-				if (ERW_counter >= max_erw_count) return pm_erw;
-			} else ERW_counter = 0;
+			if (pointer + 1 == BDL_ier_at) { 
+				BDL_counter++; 
+				if (BDL_counter >= max_consecutive_bld_walk_count) return pm_bdl; 
+			} else BDL_counter = 0;
+			BDL_ier_at = pointer;
 
-			walk_ia_counter = 0;
-			did_ier_at = pointer;
+			PER_ier_at = pointer;
+
 			pointer = 0;
 		}
 
@@ -304,12 +308,11 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
 			} else H1_counter = 0;
 
-			if (did_ier_at != (nat) ~0) {
-				if (pointer >= did_ier_at) return pm_per; 
-				did_ier_at = (nat) ~0;
+			if (PER_ier_at != (nat) ~0) {
+				if (pointer >= PER_ier_at) return pm_per; 
+				PER_ier_at = (nat) ~0;
 			}
 
-			walk_ia_counter++;
 			bout_length = 0;
 			array[pointer]++;
 		}
@@ -334,6 +337,7 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	}
 	return at;
 }
+
 
 static byte noneditable(byte pa) { return (pa < 20 and pa % 4 == 0) or pa == 18; }
 static byte editable(byte pa) { return not noneditable(pa); }
@@ -1023,6 +1027,27 @@ for (nat j = 0; j < total_job_count; j++) {
 
 //const nat ti = job % thread_count;
 		//cores[ti].jobs[cores[ti].job_count++] = (struct job) { .begin = begin_zv, .end = end_zv };
+
+
+
+
+
+
+
+/*
+
+
+			if (walk_ia_counter < (e < 500000 ? 3 : 6)) {
+				ERW_counter++;
+				if (ERW_counter >= max_erw_count) return pm_erw;
+			} else ERW_counter = 0;
+
+
+
+
+*/
+
+
 
 
 

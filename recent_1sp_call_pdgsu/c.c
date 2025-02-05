@@ -44,20 +44,20 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 1
-#define execution_limit 500000000LLU
+#define D 0
+#define execution_limit 300000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
 #define display_rate 2
 #define update_rate 1
 
-#define total_job_count 1000
+#define total_job_count 30
 #define machine_index 0
 
 #define machine0_counter_max 1
 #define machine1_counter_max 1
 
-#define machine0_thread_count 10
+#define machine0_thread_count 4
 #define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
@@ -129,7 +129,7 @@ static const char* pm_spelling[pm_count] = {
 #define max_consecutive_s0_incr 30
 #define max_consecutive_h0_bouts 12
 #define max_consecutive_h1_bouts 24
-#define max_erw_count 200
+// #define max_erw_count 200
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
 
@@ -183,7 +183,41 @@ try_open:;
 	);
 }
 
+
+
+/*static void debug_pm(byte op, byte origin, nat e, nat* history, nat pm) {
+
+	if (op == three or op == one or op == five) {
+		memmove(history, history + 1, sizeof(nat) * 8192 - 1);
+		history[8192 - 1] = op;
+	}
+
+	printf("\n\033[32;1m at origin = %hhu: \n[PRUNED GRAPH VIA <%s> AT %llu]:\033[0m\n", origin, pm_spelling[pm], e);
+	puts("[LIFETIME-START]"); 
+
+	for (nat i = 0; i < 8192; i++) {
+		// if (history[i] == (nat) -1) {}
+		if (history[i] == one) { 
+			if (i and (history[i - 1] == one or history[i - 1] == five)) { 
+				printf("."); 
+				fflush(stdout); 
+			} 
+		} 
+		else if (history[i] == five) { printf("\n"); fflush(stdout); } 
+		else if (history[i] == three) { printf("#"); fflush(stdout); } 
+	}
+	getchar();
+}
+*/
+
+
+
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
+
+
+	nat history[8192] = {0};
+	memset(history, 255, sizeof history);
+
 
 	const nat n = array_size;
 	array[0] = 0; 
@@ -193,13 +227,13 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		bout_length = 0, 
 		RMV_value = 0, 
 		IMV_value = 0,
-		OER_er_at = 0,
-		walk_ia_counter = 0;
+		OER_er_at = 0;
+		// walk_ia_counter = 0;
 
 	byte	H0_counter = 0,  H1_counter = 0, 
 		OER_counter = 0, RMV_counter = 0, 
-		IMV_counter = 0, CSM_counter = 0,
-		ERW_counter = 0;
+		IMV_counter = 0, CSM_counter = 0;
+		// ERW_counter = 0;
 	
 	byte ip = origin;
 	byte last_mcal_op = 255;
@@ -273,12 +307,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				if (IMV_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
 			}
 
-			if (walk_ia_counter < (e < 500000 ? 3 : 6)) {
-				ERW_counter++;
-				if (ERW_counter >= max_erw_count) return pm_erw;
-			} else ERW_counter = 0;
 
-			walk_ia_counter = 0;
+
+			// walk_ia_counter = 0;
 			did_ier_at = pointer;
 			pointer = 0;
 		}
@@ -309,11 +340,24 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				did_ier_at = (nat) ~0;
 			}
 
-			walk_ia_counter++;
+			// walk_ia_counter++;
 			bout_length = 0;
 			array[pointer]++;
 		}
+
 		if (op == three or op == one or op == five) last_mcal_op = op;
+
+
+
+
+		//if (op == three or op == one or op == five) { 
+			//memmove(history, history + 1, sizeof(nat) * (8192 - 1));
+			//history[8192 - 1] = op;
+		//}
+
+
+
+
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
@@ -1023,6 +1067,57 @@ for (nat j = 0; j < total_job_count; j++) {
 
 //const nat ti = job % thread_count;
 		//cores[ti].jobs[cores[ti].job_count++] = (struct job) { .begin = begin_zv, .end = end_zv };
+
+
+
+
+
+			/*if (walk_ia_counter < (e < 500000 ? 1 : 6)) {
+				ERW_counter++;
+				if (ERW_counter >= max_erw_count) {
+					debug_pm(op, origin, e, history, pm_erw);
+					fflush(stdout);
+					return pm_erw;
+				}
+			} else ERW_counter = 0;*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*	nat* array = calloc(array_size + 1, sizeof(nat));
+
+	byte zv[24] = {
+		0,  1, 4, 4, 
+		1,  5, 3, 5, 
+		2,  1, 3, 1, 
+		3,  5, 4, 4, 
+		4,  2, 4, 2,
+		0,  0, 2, 0,
+	};
+
+	byte zskip_at_unused = 0;
+	const nat pm = execute_graph_starting_at(2, zv, array, &zskip_at_unused);
+	printf("pruned by   pm = %s\n", pm_spelling[pm]);
+
+	exit(1);
+
+
+
+*/
+
+
+
 
 
 

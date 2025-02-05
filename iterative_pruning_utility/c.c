@@ -67,7 +67,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-#define D 1
+#define D 0
 #define execution_limit 1000000LLU
 #define array_size 100000LLU
 
@@ -80,6 +80,7 @@ enum pruning_metrics {
 	pm_oer, pm_rsi,
 	pm_h0, pm_h1, pm_erw,
 	pm_rmv, pm_imv, pm_csm,
+	pm_bdl,
 
 	pm_ga_dummy,
 
@@ -101,6 +102,7 @@ static const char* pm_spelling[pm_count] = {
 	"pm_oer", "pm_rsi", 
 	"pm_h0", "pm_h1", "pm_erw",
 	"pm_rmv", "pm_imv", "pm_csm",
+	"pm_bdl",
 
 	"pm_ga_dummy",
 
@@ -115,6 +117,9 @@ static const char* pm_spelling[pm_count] = {
 
 #define operation_count (5 + D)
 #define graph_count (operation_count * 4)
+
+
+#define max_rsi_count 512
 #define max_oer_repetions 50
 #define max_rmv_modnat_repetions 30
 #define max_imv_modnat_repetions 80
@@ -122,12 +127,7 @@ static const char* pm_spelling[pm_count] = {
 #define max_consecutive_s0_incr 30
 #define max_consecutive_h0_bouts 12
 #define max_consecutive_h1_bouts 24
-#define max_erw_count 200
-
-
-
-
-
+#define max_consecutive_bld_walk_count 30
 
 
 static const nat row_count = 110;
@@ -213,13 +213,15 @@ static void print_graph_as_adj(byte* graph) {
 }
 
 static void print_counts(void) {
-	printf("printing pm counts:\n");
-	for (nat i = 0; i < pm_count; i++) {
-		if (i and not (i % 4)) puts("");
-		printf("%6s: %8llu\t\t", pm_spelling[i], pm_counts[i]);
-	}
-	puts("");
-	puts("[done]");
+
+	printf("pm counts:\n");
+        for (nat i = 0; i < pm_count; i++) {
+                if (i and not (i % 2)) {
+			puts("");
+		}
+		printf("%13s: %-8lld\t\t", pm_spelling[i], pm_counts[i]);
+        }
+        puts("\n[done]");
 }
 
 
@@ -263,13 +265,10 @@ try_open:;
 }
 
 
-
-
-
-
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
 
-static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at, nat* ttp) {
+
+static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
 
 	const nat n = array_size;
 	array[0] = 0; 
@@ -279,29 +278,22 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		bout_length = 0, 
 		RMV_value = 0, 
 		IMV_value = 0,
-		OER_er_at = 0,
-		ERW_counter = 0,
-		walk_ia_counter = 0;
+		OER_ier_at = 0,
+		BDL_ier_at = 0,
+		PER_ier_at = (nat) ~0;
 
 	byte	H0_counter = 0,  H1_counter = 0, 
 		OER_counter = 0, RMV_counter = 0, 
-		IMV_counter = 0, CSM_counter = 0;
+		IMV_counter = 0, CSM_counter = 0,
+		BDL_counter = 0;
 	
 	byte ip = origin;
 	byte last_mcal_op = 255;
-	nat did_ier_at = (nat)~0;
 
-#define max_rsi_count 20
-	byte rsi_counter[max_rsi_count] = {0};
+	byte rsi_counter[max_rsi_count];
+	rsi_counter[0] = 0;
 
 	for (nat e = 0; e < execution_limit; e++) {
-
-		*ttp = e;
-
-		if (e and not (e & ((1 << 28) - 1))) {
-			printf("taking a significant amount of time on e = %llu, z = ", e); 
-			print_graph_raw(graph); puts(""); 
-		}
 
 		const byte I = ip * 4, op = graph[I];
 
@@ -329,6 +321,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			if (pointer > xw and pointer < n) { 
 				xw = pointer; 
 				array[pointer] = 0; 
+				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
 			}
 		}
 
@@ -336,10 +329,10 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			if (last_mcal_op != three) return pm_pco;
 			if (not pointer) return pm_zr5; 
 			
-			if (pointer == OER_er_at or pointer == OER_er_at + 1) {
+			if (pointer == OER_ier_at or pointer == OER_ier_at + 1) {
 				OER_counter++;
 				if (OER_counter >= max_oer_repetions) return pm_oer;
-			} else { OER_er_at = pointer; OER_counter = 0; }
+			} else { OER_ier_at = pointer; OER_counter = 0; }
 			
 			CSM_counter = 0;
 			RMV_value = (nat) -1;
@@ -365,13 +358,14 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				if (IMV_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
 			}
 
-			if (walk_ia_counter < (e < 500000 ? 3 : 6)) {
-				ERW_counter++;
-				if (ERW_counter >= max_erw_count) return pm_erw;
-			} else ERW_counter = 0;
+			if (pointer + 1 == BDL_ier_at) { 
+				BDL_counter++; 
+				if (BDL_counter >= max_consecutive_bld_walk_count) { puts("PRUNED_GRAPH VIA BDL!!"); return pm_bdl; } 
+			} else BDL_counter = 0;
+			BDL_ier_at = pointer;
 
-			walk_ia_counter = 0;
-			did_ier_at = pointer;
+			PER_ier_at = pointer;
+
 			pointer = 0;
 		}
 
@@ -396,12 +390,11 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
 			} else H1_counter = 0;
 
-			if (did_ier_at != (nat) ~0) {
-				if (pointer >= did_ier_at) return pm_per; 
-				did_ier_at = (nat) ~0;
+			if (PER_ier_at != (nat) ~0) {
+				if (pointer >= PER_ier_at) return pm_per; 
+				PER_ier_at = (nat) ~0;
 			}
 
-			walk_ia_counter++;
 			bout_length = 0;
 			array[pointer]++;
 		}
@@ -423,14 +416,19 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	byte at = graph_count;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three and graph[4 * o] != two) continue;
-		nat ttp;
-		const nat pm = execute_graph_starting_at(o, graph, array, &at, &ttp);
-		printf("pruned via %s : e = %llu, o = %hhu, z = ", pm_spelling[pm], ttp, o); print_graph(graph); 
+		const nat pm = execute_graph_starting_at(o, graph, array, &at);
 		counts[pm]++;
 		if (not pm) { *origin = o; return 0; }
 	}
-	return 1;
+	return at;
 }
+
+
+
+
+
+
+
 
 
 
@@ -467,22 +465,21 @@ static nat print_lifetime(
 
 		} else if (op == five) {
 
-			if (e >= 0) {
-				for (nat i = 0; i < n; i++) {
-					if (i < window_begin) continue;
-					if (i > window_end) break;
-					if (not array[i]) break;
-					if (not modes[i]) putchar(' ');
-					else if (i == pointer) putchar('@');
-					else putchar('#');
-				}
-				puts("");
-
-				if (timestep_delay) usleep(timestep_delay);
-				er++;
-				if (er == paging_row_count) Eer = E;
-				if (er > er_count) { puts("maxed out er count."); goto done; }
+		
+			for (nat i = 0; i < n; i++) {
+				if (i < window_begin) continue;
+				if (i > window_end) break;
+				if (not array[i]) break;
+				if (not modes[i]) putchar(' ');
+				else if (i == pointer) putchar('@');
+				else putchar('#');
 			}
+			puts("");
+
+			if (timestep_delay) usleep(timestep_delay);
+			er++;
+			if (er == paging_row_count) Eer = E;
+			if (er > er_count) { puts("maxed out er count."); goto done; }
 
 			pointer = 0;
 			memset(modes, 0, sizeof(bool) * (n + 1));
@@ -499,7 +496,7 @@ static nat print_lifetime(
 		if (array[n] == array[pointer]) state = 3;
 		ip = graph[I + state];
 
-		if (e >= 0) E++;
+		E++;
 	}
 	if (print_count) {
 		for (nat i = 0; i < n; i++) {
@@ -652,7 +649,7 @@ static void machine_prune(byte* graph, nat* array, struct zlist list) { //  cons
 		const char* color = is_bad ? red : green;
 		const char* type =  is_bad ? "BAD" : "GOOD";
 		printf(bold "%s ---> %s (%llu / %llu) -- ( via %s )" reset "\n", 
-			color, type, z, list.count, "unknown_pm"
+			color, type, z, list.count, "... see other data..."
 		);
 		if (is_bad) bad++; else { append_to_file(filename, sizeof filename, graph, origin); good++; } 
 	}
@@ -1740,7 +1737,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
 			else { BDL_er_at = pointer; BDL_counter = 0; }
-			if (BDL_counter >= max_bdl_er_repetions) return pm_bdl; 
+			if (BDL_counter >= max_bdl_er_repetions) return pm_b dl; 
 
 			if (BDL2_er_at > 1 and pointer == BDL2_er_at - 2) { BDL2_counter++; BDL2_er_at -= 2; }
 			else { BDL2_er_at = pointer; BDL2_counter = 0; }
@@ -2171,7 +2168,7 @@ printf("-------------------------------------execute_graph_starting_at(%hhu) {--
 
 			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
 			else { BDL_er_at = pointer; BDL_counter = 0; }
-			if (BDL_counter >= max_bdl_er_repetions)  return pm_bdl;
+			if (BDL_counter >= max_bdl_er_repetions)  return pm_bd l;
 
 			if (BDL2_er_at > 1 and pointer == BDL2_er_at - 2) { BDL2_counter++; BDL2_er_at -= 2; }
 			else { BDL2_er_at = pointer; BDL2_counter = 0; }
@@ -2619,7 +2616,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 			if (BDL_er_at and pointer == BDL_er_at - 1) { BDL_counter++; BDL_er_at--; }
 			else { BDL_er_at = pointer; BDL_counter = 0; }
-			if (BDL_counter >= max_bdl_er_repetions)  return pm_bdl;
+			if (BDL_counter >= max_bdl_er_repetions)  return pm_bd l;
 
 			if (BDL2_er_at > 1 and pointer == BDL2_er_at - 2) { BDL2_counter++; BDL2_er_at -= 2; }
 			else { BDL2_er_at = pointer; BDL2_counter = 0; }
