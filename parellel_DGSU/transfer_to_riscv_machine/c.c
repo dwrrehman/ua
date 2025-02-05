@@ -8,9 +8,6 @@
 
 // rewritten kinda  on 202411144.202807 dwrr
 
-// fixed bug relating to ERW for 2sp, added various bdl checks, instead.  202502053.011729
-
-
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
@@ -47,21 +44,21 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 2
+#define D 0
 #define execution_limit 250000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
-#define display_rate 3
+#define display_rate 0
 #define update_rate 1
 
-#define total_job_count 4000
+#define total_job_count 40
 #define machine_index 0
 
 #define machine0_counter_max 1
 #define machine1_counter_max 1
 
-#define machine0_thread_count 10
-#define machine1_thread_count 64
+#define machine0_thread_count 4
+#define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
 
@@ -134,7 +131,7 @@ static const char* pm_spelling[pm_count] = {
 #define max_consecutive_s0_incr 30
 #define max_consecutive_h0_bouts 12
 #define max_consecutive_h1_bouts 24
-#define max_consecutive_bld_walk_count 150
+#define max_consecutive_bld_walk_count 30
 
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
@@ -280,6 +277,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				if (IMV_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
 			}
 
+
 			if (	pointer     == BDL_ier_at or 
 				pointer + 1 == BDL_ier_at or 
 				pointer + 2 == BDL_ier_at or
@@ -301,7 +299,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			} else BDL3_counter = 0;
 
 			BDL_ier_at = pointer;
+
 			PER_ier_at = pointer;
+
 			pointer = 0;
 		}
 

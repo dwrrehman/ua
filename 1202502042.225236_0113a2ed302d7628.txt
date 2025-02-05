@@ -1,0 +1,44 @@
+[1202502042.220016]: write: wrote z = 002210552131304542420525 to file "1202502042.185842_77301c885147d305682266e737bb8513_z.txt"
+[1202502042.220024]: write: wrote z = 052410552131304542420525 to file "1202502042.185842_77301c885147d305682266e737bb8513_z.txt"
+[1202502042.220032]: write: wrote z = 054410552131304542420525 to file "1202502042.185842_77301c885147d305682266e737bb8513_z.txt"
+[1202502042.220039]: write: wrote z = 050415552131304542420525 to file "1202502042.185842_77301c885147d305682266e737bb8513_z.txt"
+[1202502042.220047]: write: wrote z = 051415552131304542420525 to file "1202502042.185842_77301c885147d305682266e737bb8513_z.txt"
+[1202502042.220055]: write: wrote z = 052415552131304542420525 to file "1202502042.185842_77301c885147d305682266e737bb8513_z.txt"
+[1202502042.220102]: write: wrote z = 054415552131304542420525 to file "1202502042.185842_77301c885147d305682266e737bb8513_z.txt"
+[1202502042.220110]: write: wrote z = 055415552131304542420525 to file "1202502042.185842_77301c885147d305682266e737bb8513_z.txt"
+worker_thread[8]: terminating thread!
+su: D = 1 space:
+         chunk_count = 2
+         total_job_count = 640
+         machine_index = 0
+         machine0_counter_max = 1
+         machine1_counter_max = 1
+         machine0_thread_count = 64
+         machine1_thread_count = 0
+         display_rate = 2
+         update_rate = 0
+         execution_limit = 250000000
+         array_size = 1000000
+         in   10997.00s [1202502042.185807:1202502042.220124]
+
+
+pm counts:
+z_is_good: 11344                pm_zr5: 2319025470
+pm_zr6: 1717058909              pm_ndi: 1083917339
+pm_pco: 1257154070              pm_per: 469752890
+pm_ns0: 2631087136              pm_oer: 307844  
+pm_rsi: 47940325                 pm_h0: 1547260566
+ pm_h1: 393226                  pm_erw: 0       
+pm_rmv: 5270863                 pm_imv: 710     
+pm_csm: 50360                   pm_bdl: 3667345 
+pm_ga_sdol: 0                   pm_ga_6g: 9       
+pm_ga_ns0: 1123                 pm_ga_zr5: 44955   
+pm_ga_pco: 5816151244           pm_ga_ndi: 5439664 
+pm_ga_sndi: 201144876           pm_ga_snco: 170912206   
+pm_ga_sn1: 813                  pm_ga_zr6: 905     
+pm_ga_rdo: 90758716             pm_ga_uo: 15413662001           [done]
+transfer_to_riscv_machine:   
+
+
+
+

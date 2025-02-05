@@ -58,17 +58,15 @@
 #define red   "\x1B[31m"
 #define green   "\x1B[32m"
 #define yellow   "\x1B[33m"
-
 #define bold    "\033[1m"
-
 
 typedef uint8_t byte;
 typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-#define D 0
-#define execution_limit 1000000LLU
+#define D 1
+#define execution_limit 10000000LLU
 #define array_size 100000LLU
 
 enum operations { one, two, three, five, six };
@@ -118,7 +116,6 @@ static const char* pm_spelling[pm_count] = {
 #define operation_count (5 + D)
 #define graph_count (operation_count * 4)
 
-
 #define max_rsi_count 512
 #define max_oer_repetions 50
 #define max_rmv_modnat_repetions 30
@@ -127,8 +124,7 @@ static const char* pm_spelling[pm_count] = {
 #define max_consecutive_s0_incr 30
 #define max_consecutive_h0_bouts 12
 #define max_consecutive_h1_bouts 24
-#define max_consecutive_bld_walk_count 30
-
+#define max_consecutive_bld_walk_count 150
 
 static const nat row_count = 110;
 static const nat paging_row_count = 100;
@@ -267,7 +263,6 @@ try_open:;
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
 
-
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
 
 	const nat n = array_size;
@@ -285,7 +280,10 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	byte	H0_counter = 0,  H1_counter = 0, 
 		OER_counter = 0, RMV_counter = 0, 
 		IMV_counter = 0, CSM_counter = 0,
-		BDL_counter = 0;
+
+		BDL1_counter = 0, 
+		BDL2_counter = 0, 
+		BDL3_counter = 0;
 	
 	byte ip = origin;
 	byte last_mcal_op = 255;
@@ -358,14 +356,30 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				if (IMV_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
 			}
 
-			if (pointer + 1 == BDL_ier_at) { 
-				BDL_counter++; 
-				if (BDL_counter >= max_consecutive_bld_walk_count) { puts("PRUNED_GRAPH VIA BDL!!"); return pm_bdl; } 
-			} else BDL_counter = 0;
+
+			if (	pointer     == BDL_ier_at or 
+				pointer + 1 == BDL_ier_at or 
+				pointer + 2 == BDL_ier_at or
+				pointer + 3 == BDL_ier_at or
+				pointer + 4 == BDL_ier_at
+			) {
+				BDL1_counter++; 
+				if (BDL1_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL1_counter = 0;
+
+			if (pointer + 5 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL2_counter++; 
+				if (BDL2_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL2_counter = 0;
+
+			if (pointer + 6 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL3_counter++; 
+				if (BDL3_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL3_counter = 0;
+
+
 			BDL_ier_at = pointer;
-
 			PER_ier_at = pointer;
-
 			pointer = 0;
 		}
 
@@ -410,13 +424,12 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 }
 
 
-
-
 static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	byte at = graph_count;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three and graph[4 * o] != two) continue;
 		const nat pm = execute_graph_starting_at(o, graph, array, &at);
+		printf("PRUNED VIA pm=%s\n", pm_spelling[pm]);
 		counts[pm]++;
 		if (not pm) { *origin = o; return 0; }
 	}
@@ -669,11 +682,6 @@ static void print_help(void) {
 		"\t\n"
 	);
 }
-
-// "\t viz list \n"
-		// "\t generate images \n"
-
-
 
 int main(int argc, const char** argv) {
 
@@ -1690,8 +1698,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 	nat did_ier_at = (nat)~0;
 
 
-	nat history[100] = {0};
-	memset(history, 255, sizeof history);
+	//nat history[100] = {0};
+	//memset(history, 255, sizeof history);
 
 
 	for (; e < execution_limit; e++) {
@@ -1824,8 +1832,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		if (op == three or op == one or op == five) { 
 			last_mcal_op = op; mcal_index++; 
 
-			memmove(history, history + 1, sizeof(nat) * 99);
-			history[99] = op;
+			//memmove(history, history + 1, sizeof(nat) * 99);
+			//history[99] = op;
 		}
 
 
@@ -2780,6 +2788,188 @@ try_open:;
 
 */
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ 0 1 2 3 
+ - - - - - - - - - - - - - - - - - - - - - 
+                       #
+                       #                 <---  +0
+
+                       #
+                     #                   <---  +1
+
+                       #
+                   #                     <---  +2
+
+
+
+                  #
+                # # 
+            # #
+          #
+        #
+      #
+      #
+    # #
+  #
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 0 1 2 3 
+ - - - - - - - - - - - - - - - - - - - - - 
+                       #
+                     #                   <---  +1
+
+                       #
+                   #                     <---  +2
+
+                       #
+                 #                       <---  +3
+
+
+
+
+
+
+                #
+          # # #
+      # #
+    #
+  #
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// "\t viz list \n"
+		// "\t generate images \n"
+
+
+
+
+
+
+
+
+
+// 0121 1525 2033 3004 4242 0044
+
+
+
+
+/*
+			{ 0 or 1 or 2 or 3 }
+
+
+			4 3 /
+			4 0 / 
+			4 -1 /
+
+
+			5 0 /
+			5 1 /
+			5 3 /
+
+			6 2 /
+			6 0 /
+
+			7 / 
+
+
+
+
+
+
+
+			3 4
+			4 5
+			5 6
+			6 7
+
+			
+			
+
+
+
+
+
+
+			4 2 2 / 
+
+			5 1 / 
+
+			6 / 
+
+			4 / 
+
+		*/
 
 
 
