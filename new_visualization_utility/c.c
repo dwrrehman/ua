@@ -10,7 +10,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 1;        // the duplication count (operation_count = 5 + D)
+static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
@@ -33,9 +33,9 @@ static const int display_rate = 1;
 static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
-static const nat execution_limit = 200000;
-static const nat array_size = 1000;
-static const nat lifetime_length = 1000;
+static const nat execution_limit = 6000000;
+static const nat array_size = 6000;
+static const nat lifetime_length = 6000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -61,9 +61,7 @@ static void print_nats(nat* v, nat l) {
 */
 
 static void print_bytes(byte* v, nat l) {
-	printf("(%llu)[ ", l);
-	for (nat i = 0; i < l; i++) printf("%2hhu ", v[i]);
-	printf("]");
+	for (nat i = 0; i < l; i++) printf("%hhu", v[i]);
 }
 
 static void init_graph_from_string(const char* string) {
@@ -164,6 +162,12 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 }
 
 
+/*static void print_z(struct z_value* list, nat i) {
+	printf("z #%llu: ", i);
+	print_bytes(list[i].value, graph_count);
+	printf(", origin = %llu, lifetime = %p\n", list[i].origin, (void*) list[i].lifetime);
+}*/
+
 int main(int argc, const char** argv) {
 
 	array = calloc(array_size + 1, sizeof(nat));
@@ -178,8 +182,11 @@ int main(int argc, const char** argv) {
 
 	print_z_list(list, count);
 
-	for (nat i = 0; i < count; i++)
+	for (nat i = 0; i < count; i++) {
+		printf("[%llu / %llu] : ", i, count);
 		generate_lifetime(list + i);
+	}
+
 	
 	printf("loading lifetime data for zlist...\n");
 	print_z_list(list, count);
@@ -231,13 +238,27 @@ int main(int argc, const char** argv) {
 		}
 		puts("");
 
+
+
+		nat hpz[100] = {0};
+		nat hpz_count = 0;
+
 		puts("list has these empirical lifetime equivalencies: ");
+
 		for (nat i = 0; i < count; i++) {
 			printf("%llu: ", i);
+
 			for (nat j = 0; j < equivalent_count[i]; j++) 
 				printf(" %llu ", equivalent_z[count * i + j]);
 			puts("");
+
+			if (equivalent_count[i] >= 12) {
+				printf("[high-profile]");  fflush(stdout); getchar();
+
+				if (hpz_count < 100) { if (equivalent_count[i] >= 10) hpz[hpz_count++] = i; } 
+			}
 		}
+
 		byte* seen = calloc(count, 1);
 		for (nat i = 0; i < count; i++) {
 			if (seen[i]) continue;
@@ -256,6 +277,17 @@ int main(int argc, const char** argv) {
 		}
 		count = unique_count;
 		print_z_list(list, count);
+
+		
+		puts("--------------------- printing subset -------------------");
+		puts("");
+
+		for (nat i = 0; i < hpz_count; i++) { 
+			print_bytes(list[i].value, graph_count);
+			printf(" %llu 202502252.224411\n", list[i].origin);
+		}
+		puts("");
+		
 	}
 	
 	size_t height = default_window_size_height >> 1, width = default_window_size_width >> 1;

@@ -65,8 +65,8 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-#define D 1
-#define execution_limit 10000000LLU
+#define D 2
+#define execution_limit 5000000LLU
 #define array_size 100000LLU
 
 enum operations { one, two, three, five, six };
@@ -78,7 +78,7 @@ enum pruning_metrics {
 	pm_oer, pm_rsi,
 	pm_h0, pm_h1, pm_erw,
 	pm_rmv, pm_imv, pm_csm,
-	pm_bdl,
+	pm_bdl, pm_fse, pm_osi,
 
 	pm_ga_dummy,
 
@@ -100,7 +100,7 @@ static const char* pm_spelling[pm_count] = {
 	"pm_oer", "pm_rsi", 
 	"pm_h0", "pm_h1", "pm_erw",
 	"pm_rmv", "pm_imv", "pm_csm",
-	"pm_bdl",
+	"pm_bdl", "pm_fse", "pm_osi",
 
 	"pm_ga_dummy",
 
@@ -115,16 +115,6 @@ static const char* pm_spelling[pm_count] = {
 
 #define operation_count (5 + D)
 #define graph_count (operation_count * 4)
-
-#define max_rsi_count 512
-#define max_oer_repetions 50
-#define max_rmv_modnat_repetions 30
-#define max_imv_modnat_repetions 80
-#define max_consecutive_small_modnats 230
-#define max_consecutive_s0_incr 30
-#define max_consecutive_h0_bouts 12
-#define max_consecutive_h1_bouts 24
-#define max_consecutive_bld_walk_count 150
 
 static const nat row_count = 110;
 static const nat paging_row_count = 100;
@@ -261,9 +251,80 @@ try_open:;
 }
 
 
+static void debug_pm(byte op, byte origin, nat e, nat* history, nat pm) {
+
+	if (op == three or op == one or op == five) {
+		memmove(history, history + 1, sizeof(nat) * 99);
+		history[99] = op;
+	}
+
+	printf("\n\033[32;1m at origin = %hhu: \n[PRUNED GRAPH VIA <%s> AT %llu]:\033[0m\n", origin, pm_spelling[pm], e);
+	puts("[LIFETIME-START]"); 
+
+	for (nat i = 0; i < 100; i++) {
+		// if (history[i] == (nat) -1) {}
+		if (history[i] == one) { 
+			if (i and (history[i - 1] == one or history[i - 1] == five)) { 
+				printf("."); 
+				fflush(stdout); 
+			} 
+		} 
+		else if (history[i] == five) { printf("\n"); fflush(stdout); } 
+		else if (history[i] == three) { printf("#"); fflush(stdout); } 
+	}
+	getchar();
+}
+
+
+
+
+
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
+
+#define max_rsi_count 512
+#define max_oer_repetions 50
+#define max_rmv_modnat_repetions 30
+#define max_imv_modnat_repetions 80
+#define max_consecutive_small_modnats 230
+#define max_consecutive_s0_incr 30
+#define max_consecutive_h0_bouts 12
+#define max_consecutive_h1_bouts 24
+#define max_consecutive_bld_walk_count 150
+#define max_consecutive_bld_walk_count_small 30
 
 	const nat n = array_size;
 	array[0] = 0; 
@@ -280,10 +341,11 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	byte	H0_counter = 0,  H1_counter = 0, 
 		OER_counter = 0, RMV_counter = 0, 
 		IMV_counter = 0, CSM_counter = 0,
-
-		BDL1_counter = 0, 
-		BDL2_counter = 0, 
-		BDL3_counter = 0;
+		BDL1_counter = 0, BDL2_counter = 0,
+		BDL3_counter = 0, BDL4_counter = 0,
+		BDL5_counter = 0, BDL6_counter = 0,
+		BDL7_counter = 0, BDL8_counter = 0,
+		BDL9_counter = 0;
 	
 	byte ip = origin;
 	byte last_mcal_op = 255;
@@ -357,25 +419,55 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			}
 
 
+			if (pointer + 1 == BDL_ier_at) {
+				BDL1_counter++; 
+				if (BDL1_counter >= max_consecutive_bld_walk_count_small) return pm_bdl; 
+			} else BDL1_counter = 0;
+
+			if (pointer + 2 == BDL_ier_at) {
+				BDL2_counter++; 
+				if (BDL2_counter >= max_consecutive_bld_walk_count_small) return pm_bdl; 
+			} else BDL2_counter = 0;
+
+			if (pointer + 3 == BDL_ier_at) {
+				BDL3_counter++; 
+				if (BDL3_counter >= max_consecutive_bld_walk_count_small) return pm_bdl; 
+			} else BDL3_counter = 0;
+
 			if (	pointer     == BDL_ier_at or 
 				pointer + 1 == BDL_ier_at or 
 				pointer + 2 == BDL_ier_at or
 				pointer + 3 == BDL_ier_at or
 				pointer + 4 == BDL_ier_at
 			) {
-				BDL1_counter++; 
-				if (BDL1_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
-			} else BDL1_counter = 0;
+				BDL4_counter++; 
+				if (BDL4_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL4_counter = 0;
 
 			if (pointer + 5 == BDL_ier_at or pointer == BDL_ier_at) { 
-				BDL2_counter++; 
-				if (BDL2_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
-			} else BDL2_counter = 0;
+				BDL5_counter++; 
+				if (BDL5_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL5_counter = 0;
 
 			if (pointer + 6 == BDL_ier_at or pointer == BDL_ier_at) { 
-				BDL3_counter++; 
-				if (BDL3_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
-			} else BDL3_counter = 0;
+				BDL6_counter++; 
+				if (BDL6_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL6_counter = 0;
+
+			if (pointer + 7 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL7_counter++; 
+				if (BDL7_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL7_counter = 0;
+
+			if (pointer + 8 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL8_counter++; 
+				if (BDL8_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL8_counter = 0;
+
+			if (pointer + 9 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL9_counter++; 
+				if (BDL9_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL9_counter = 0;
 
 
 			BDL_ier_at = pointer;
@@ -420,24 +512,25 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		if (*zskip_at > I + state) *zskip_at = I + state;
 		ip = graph[I + state];
 	}
+
+	if (xw < 11) return pm_fse;
+	for (nat i = 0; i < 10; i++) {
+		if (array[i] < 20) return pm_fse;
+	}
+
 	return z_is_good;
 }
-
 
 static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	byte at = graph_count;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three and graph[4 * o] != two) continue;
 		const nat pm = execute_graph_starting_at(o, graph, array, &at);
-		printf("PRUNED VIA pm=%s\n", pm_spelling[pm]);
 		counts[pm]++;
 		if (not pm) { *origin = o; return 0; }
 	}
 	return at;
 }
-
-
-
 
 
 
@@ -2970,6 +3063,329 @@ try_open:;
 			4 / 
 
 		*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
+	
+	nat history[100] = {0};
+	memset(history, 255, sizeof history);
+
+
+#define max_rsi_count 512
+#define max_oer_repetions 50
+#define max_rmv_modnat_repetions 30
+#define max_imv_modnat_repetions 80
+#define max_consecutive_small_modnats 230
+#define max_consecutive_s0_incr 30
+#define max_consecutive_h0_bouts 12
+#define max_consecutive_h1_bouts 24
+#define max_consecutive_bld_walk_count 150
+#define max_consecutive_bld_walk_count_small 30
+// #define max_consecutive_OSI_COUNT 40
+
+	const nat n = array_size;
+	array[0] = 0; 
+	array[n] = 0;
+
+	nat 	xw = 0,  pointer = 0,  
+		bout_length = 0, 
+		RMV_value = 0, 
+		IMV_value = 0,
+		OER_ier_at = 0,
+		BDL_ier_at = 0,
+		PER_ier_at = (nat) ~0;
+
+	byte	H0_counter = 0,  H1_counter = 0, 
+		OER_counter = 0, RMV_counter = 0, 
+		IMV_counter = 0, CSM_counter = 0,
+		BDL1_counter = 0, BDL2_counter = 0,
+		BDL3_counter = 0, BDL4_counter = 0, 
+		BDL5_counter = 0, BDL6_counter = 0, 
+
+		OSI0_counter = 0, OSI1_counter = 0,
+		OSI2_counter = 0, OSI3_counter = 0,
+		OSI4_counter = 0, OSI5_counter = 0;
+	
+	byte ip = origin;
+	byte last_mcal_op = 255;
+
+	byte rsi_counter[max_rsi_count];
+	rsi_counter[0] = 0;
+
+	for (nat e = 0; e < execution_limit; e++) {
+
+		const byte I = ip * 4, op = graph[I];
+
+		if (op == one) {
+			if (pointer == n) { 
+				puts("FEA condition violated by a z value: "); 
+				print_graph_raw(graph); 
+				puts(""); 
+				abort(); 
+			}
+  
+			if (not array[pointer]) return pm_ns0; 
+			if (last_mcal_op == one)  H0_counter = 0;
+
+			if (pointer < max_rsi_count) { 
+				if (last_mcal_op == three) {
+					rsi_counter[pointer]++;
+					if (rsi_counter[pointer] >= max_consecutive_s0_incr) return pm_rsi;
+				} else rsi_counter[pointer] = 0;
+			}
+
+
+
+
+			if (pointer == 1 or pointer == 2) { 
+				if (last_mcal_op == three) {
+					OSI0_counter++;
+					if (OSI0_counter >= max_consecutive_OSI_COUNT) return pm_osi;
+				} else OSI0_counter = 0;
+			}
+
+			if (pointer == 3 or pointer == 4) { 
+				if (last_mcal_op == three) {
+					OSI1_counter++;
+					if (OSI1_counter >= max_consecutive_OSI_COUNT) return pm_osi;
+				} else OSI1_counter = 0;
+			}
+
+
+			if (pointer == 5 or pointer == 6) { 
+				if (last_mcal_op == three) {
+					OSI2_counter++;
+					if (OSI2_counter >= max_consecutive_OSI_COUNT) return pm_osi;
+				} else OSI2_counter = 0;
+			}
+
+			if (pointer == 7 or pointer == 8) { 
+				if (last_mcal_op == three) {
+					OSI3_counter++;
+					if (OSI3_counter >= max_consecutive_OSI_COUNT) return pm_osi;
+				} else OSI3_counter = 0;
+			}
+
+
+			if (pointer == 9 or pointer == 10) { 
+				if (last_mcal_op == three) {
+					OSI4_counter++;
+					if (OSI4_counter >= max_consecutive_OSI_COUNT) return pm_osi;
+				} else OSI4_counter = 0;
+			}
+
+
+			if (pointer == 11 or pointer == 12) { 
+				if (last_mcal_op == three) {
+					OSI5_counter++;
+					if (OSI5_counter >= max_consecutive_OSI_COUNT) return pm_osi;
+				} else OSI5_counter = 0;
+			}
+
+
+			
+			bout_length++;
+			pointer++;
+
+			if (pointer > xw and pointer < n) { 
+				xw = pointer; 
+				array[pointer] = 0; 
+				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
+			}
+		}
+
+		else if (op == five) {
+			if (last_mcal_op != three) return pm_pco;
+			if (not pointer) return pm_zr5; 
+			
+			if (pointer == OER_ier_at or pointer == OER_ier_at + 1) {
+				OER_counter++;
+				if (OER_counter >= max_oer_repetions) return pm_oer;
+			} else { OER_ier_at = pointer; OER_counter = 0; }
+			
+			CSM_counter = 0;
+			RMV_value = (nat) -1;
+			RMV_counter = 0;
+			for (nat i = 0; i < xw; i++) {
+				if (array[i] < 8) CSM_counter++; else CSM_counter = 0;
+				if (CSM_counter > max_consecutive_small_modnats) return pm_csm;
+				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
+				if (RMV_counter >= max_rmv_modnat_repetions) return pm_rmv;
+			}
+
+			IMV_value = (nat) -1;
+			IMV_counter = 0;
+			for (nat i = 0; i < xw; i++) {
+				if (array[i] == IMV_value + 1) { IMV_counter++; IMV_value++; } else { IMV_value = array[i]; IMV_counter = 0; }
+				if (IMV_counter >= max_imv_modnat_repetions) return pm_imv;
+			}
+
+			IMV_value = (nat) -1;
+			IMV_counter = 0;
+			for (nat i = 0; i < xw; i += 2) { // note the "i += 2".
+				if (array[i] == IMV_value + 1) { IMV_counter++; IMV_value++; } else { IMV_value = array[i]; IMV_counter = 0; }
+				if (IMV_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
+			}
+
+
+			if (pointer + 3 == BDL_ier_at) {
+				BDL4_counter++; 
+				if (BDL4_counter >= max_consecutive_bld_walk_count_small) return pm_bdl; 
+			} else BDL4_counter = 0;
+
+			if (pointer + 2 == BDL_ier_at) {
+				BDL5_counter++; 
+				if (BDL5_counter >= max_consecutive_bld_walk_count_small) return pm_bdl; 
+			} else BDL5_counter = 0;
+
+			if (pointer + 1 == BDL_ier_at) {
+				BDL6_counter++; 
+				if (BDL6_counter >= max_consecutive_bld_walk_count_small) return pm_bdl; 
+			} else BDL6_counter = 0;
+
+
+
+			if (	pointer     == BDL_ier_at or 
+				pointer + 1 == BDL_ier_at or 
+				pointer + 2 == BDL_ier_at or
+				pointer + 3 == BDL_ier_at or
+				pointer + 4 == BDL_ier_at
+			) {
+				BDL1_counter++; 
+				if (BDL1_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL1_counter = 0;
+
+			if (pointer + 5 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL2_counter++; 
+				if (BDL2_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL2_counter = 0;
+
+			if (pointer + 6 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL3_counter++; 
+				if (BDL3_counter >= max_consecutive_bld_walk_count and e >= 500000) return pm_bdl; 
+			} else BDL3_counter = 0;
+
+			BDL_ier_at = pointer;
+			PER_ier_at = pointer;
+			pointer = 0;
+		}
+
+		else if (op == two) {
+			array[n]++;
+		}
+
+		else if (op == six) {  
+			if (not array[n]) return pm_zr6;
+			array[n] = 0;
+		}
+		else if (op == three) {
+			if (last_mcal_op == three) return pm_ndi;
+
+			if (last_mcal_op == one) {
+				H0_counter++;
+				if (H0_counter >= max_consecutive_h0_bouts) { 
+					debug_pm(op, origin, e, history, pm_h0);
+					fflush(stdout);
+					return pm_h0;  
+				} 
+			}
+
+			if (bout_length == 2) {
+				H1_counter++;
+				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
+			} else H1_counter = 0;
+
+			if (PER_ier_at != (nat) ~0) {
+				if (pointer >= PER_ier_at) return pm_per; 
+				PER_ier_at = (nat) ~0;
+			}
+
+			bout_length = 0;
+			array[pointer]++;
+		}
+		if (op == three or op == one or op == five) last_mcal_op = op;
+
+	if (op == three or op == one or op == five) {
+		memmove(history, history + 1, sizeof(nat) * 99);
+		history[99] = op;
+	}
+
+
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		if (*zskip_at > I + state) *zskip_at = I + state;
+		ip = graph[I + state];
+	}
+
+	for (nat i = 0; i < 10; i++) {
+		if (array[i] < 20) return pm_fse;
+	}
+
+	// if (array[20] == 0) return pm_fse;
+
+	return z_is_good;
+}
+
+static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
+	byte at = graph_count;
+	for (byte o = 0; o < operation_count; o++) {
+		if (graph[4 * o] != three and graph[4 * o] != two) continue;
+		const nat pm = execute_graph_starting_at(o, graph, array, &at);
+		counts[pm]++;
+		if (not pm) { *origin = o; return 0; }
+	}
+	return at;
+}
+
+
+
+
+
+
+*/
+
+
+
+
+
 
 
 
