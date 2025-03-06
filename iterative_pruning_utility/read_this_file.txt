@@ -1,0 +1,62 @@
+     pm_bdl11: 0       		     pm_bdl12: 0       		
+  pm_ga_26dol: 0       		   pm_ga_sdol: 0       		
+     pm_ga_6g: 0       		    pm_ga_ns0: 0       		
+    pm_ga_zr5: 0       		    pm_ga_pco: 0       		
+    pm_ga_ndi: 0       		   pm_ga_sndi: 0       		
+   pm_ga_snco: 0       		    pm_ga_sn1: 0       		
+    pm_ga_zr6: 0       		    pm_ga_rdo: 0       		
+     pm_ga_uo: 0       		
+[done]
+
+
+			good: 46
+			bad: 9
+
+
+:55: q       
+iterative_pruning_utility: ./run ../latest_2sp_call_results/new_2sp_call_results_z.txt 
+:50976: m
+ 0.99937 [  50944 /  50976 :: good:  18939, bad:  32005 ] trying z = 0124103625313144464210002545pm counts:
+    z_is_good: 18957   		       pm_zr5: 12680   		
+       pm_zr6: 5436    		       pm_ndi: 8429    		
+       pm_pco: 9672    		       pm_per: 2677    		
+       pm_ns0: 17484   		       pm_oer: 0       		
+       pm_rsi: 119     		        pm_h0: 1191    		
+       pm_h0s: 8813    		        pm_h1: 467     		
+        pm_h2: 334     		       pm_rmv: 94      		
+      pm_ormv: 44      		       pm_imv: 0       		
+       pm_csm: 9       		       pm_fse: 31      		
+       pm_osi: 0       		      pm_pair: 22753   		
+      pm_bdl1: 525     		      pm_bdl2: 20704   		
+      pm_bdl3: 18      		      pm_bdl4: 9       		
+      pm_bdl5: 6       		      pm_bdl6: 1       		
+      pm_bdl7: 0       		      pm_bdl8: 0       		
+      pm_bdl9: 0       		     pm_bdl10: 21      		
+     pm_bdl11: 11      		     pm_bdl12: 34      		
+  pm_ga_26dol: 0       		   pm_ga_sdol: 0       		
+     pm_ga_6g: 0       		    pm_ga_ns0: 0       		
+    pm_ga_zr5: 0       		    pm_ga_pco: 0       		
+    pm_ga_ndi: 0       		   pm_ga_sndi: 0       		
+   pm_ga_snco: 0       		    pm_ga_sn1: 0       		
+    pm_ga_zr6: 0       		    pm_ga_rdo: 0       		
+     pm_ga_uo: 0       		
+[done]
+
+
+			good: 18957
+			bad: 32019
+
+
+:50976: 
+
+
+
+ouptted in file    
+
+iterative_pruning_utility: wc 1202503053.234543_55ab48fb604482ad31df5d3b3f61e611_z.txt
+   18957   56871  928893 1202503053.234543_55ab48fb604482ad31df5d3b3f61e611_z.txt
+iterative_pruning_utility: 
+
+
+
+ 
