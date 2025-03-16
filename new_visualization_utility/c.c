@@ -71,16 +71,15 @@ static const int display_rate = 1;
 static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
-static const nat execution_limit = 20000000;
-static const nat array_size = 1000;
-static const nat lifetime_length = 1000;
+static const nat execution_limit = 200000000;
+static const nat array_size = 2000;
+static const nat lifetime_length = 8000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
 
 static nat* erp_tallys = NULL;
 static nat* array = NULL;
-static byte* graph = NULL;
 
 struct z_value {
 	uint32_t** lifetime;
@@ -99,18 +98,92 @@ static void print_nats(nat* v, nat l) {
 }
 */
 
+
+static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
+static void print_graph(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
+
 static void print_bytes(byte* v, nat l) {
 	for (nat i = 0; i < l; i++) printf("%hhu", v[i]);
 }
+
+
+static void get_graphs_z_value(char string[64], byte* graph) {
+	for (byte i = 0; i < graph_count; i++) string[i] = (char) graph[i] + '0';
+	string[graph_count] = 0;
+}
+
+
+
+
+
+static void get_datetime(char datetime[32]) {
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	struct tm* tm_info = localtime(&tv.tv_sec);
+	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
+}
+
+
+
+static void append_to_file(char* filename, size_t filename_size, byte* graph, nat origin, nat score) {
+	
+	char z[64] = {0};    get_graphs_z_value(z, graph); 
+	char o[16] = {0};    snprintf(o, sizeof o, "%hhu", (byte) origin);
+	char dt[32] = {0};   get_datetime(dt); 
+	char sc[32] = {0};   snprintf(sc, sizeof sc, "%llu", score);
+	
+	int flags = O_WRONLY | O_APPEND;
+	mode_t permissions = 0;
+
+try_open:;
+	const int file = open(filename, flags, permissions);
+	if (file < 0) {
+		if (permissions) {
+			perror("create openat file");
+			printf("[%s]: [z=%s]: failed to create filename = \"%s\"\n", dt, z, filename);
+			fflush(stdout);
+			abort();
+		}
+		snprintf(filename, filename_size, "%s_%08x%08x%08x%08x_z.txt", dt, 
+			rand(), rand(), rand(), rand()
+		);
+		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		goto try_open;
+	}
+
+	write(file, z, strlen(z));
+	write(file, " ", 1);
+	write(file, o, strlen(o));
+	write(file, " ", 1);
+	write(file, sc, strlen(sc));
+	write(file, "\n", 1);
+	close(file);
+
+	//printf("[%s]: write: %s z = %s to file \"%s\"\n",
+	//	dt, permissions ? "created" : "wrote", z, filename
+	//);
+}
+
+
+
+
+
+
+
+
+static byte* graph = NULL;
 
 static void init_graph_from_string(const char* string) {
 	for (byte i = 0; i < graph_count; i++) 
 		graph[i] = (byte) (string[i] - '0');
 }
 
+
+
+
+
 static void set_graph(byte* z) { memcpy(graph, z, graph_count); }
-static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
-static void print_graph(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
 
 static void print_z_list(struct z_value* list, nat count) {
 	printf("printing z list: (%llu z values): \n", count);
@@ -120,6 +193,8 @@ static void print_z_list(struct z_value* list, nat count) {
 		printf(", origin = %llu, lifetime = %p\n", list[i].origin, (void*) list[i].lifetime);
 	}	
 }
+
+
 
 static void generate_lifetime(struct z_value* z) {
 	const nat n = array_size;
@@ -145,7 +220,7 @@ static void generate_lifetime(struct z_value* z) {
 		const byte I = ip * 4, op = graph[I];
 
 		if (op == one) { 
-			if (pointer == n) { puts("fea pointer overflow"); goto done; } 
+			if (pointer == n) { goto done; }  //  puts("fea pointer overflow"); 
 			pointer++; 
 
 		} else if (op == five) {
@@ -215,64 +290,6 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 }*/
 
 
-static void get_graphs_z_value(char string[64], byte* graph) {
-	for (byte i = 0; i < graph_count; i++) string[i] = (char) graph[i] + '0';
-	string[graph_count] = 0;
-}
-
-
-static void get_datetime(char datetime[32]) {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	struct tm* tm_info = localtime(&tv.tv_sec);
-	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
-}
-
-
-
-static void append_to_file(char* filename, size_t filename_size, byte* graph, nat origin, nat score) {
-	
-	char z[64] = {0};    get_graphs_z_value(z, graph); 
-	char o[16] = {0};    snprintf(o, sizeof o, "%hhu", (byte) origin);
-	char dt[32] = {0};   get_datetime(dt); 
-	char sc[32] = {0};   snprintf(sc, sizeof sc, "%llu", score);
-	
-	int flags = O_WRONLY | O_APPEND;
-	mode_t permissions = 0;
-
-try_open:;
-	const int file = open(filename, flags, permissions);
-	if (file < 0) {
-		if (permissions) {
-			perror("create openat file");
-			printf("[%s]: [z=%s]: failed to create filename = \"%s\"\n", dt, z, filename);
-			fflush(stdout);
-			abort();
-		}
-		snprintf(filename, filename_size, "%s_%08x%08x%08x%08x_z.txt", dt, 
-			rand(), rand(), rand(), rand()
-		);
-		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
-		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-		goto try_open;
-	}
-
-	write(file, z, strlen(z));
-	write(file, " ", 1);
-	write(file, o, strlen(o));
-	write(file, " ", 1);
-	write(file, sc, strlen(sc));
-	write(file, "\n", 1);
-	close(file);
-
-	//printf("[%s]: write: %s z = %s to file \"%s\"\n",
-	//	dt, permissions ? "created" : "wrote", z, filename
-	//);
-}
-
-
-
-
 int main(int argc, const char** argv) {
 
 	erp_tallys = calloc(array_size + 1, sizeof(nat));
@@ -285,8 +302,6 @@ int main(int argc, const char** argv) {
 
 	nat count = 0;
 	struct z_value* list = load_zlist(argv[1], &count);
-
-	
 
 	for (nat i = 0; i < count; i++) {
 		if (i % 64 == 0) {
@@ -403,11 +418,10 @@ int main(int argc, const char** argv) {
 			append_to_file(hp_filename, sizeof hp_filename, list[hp_z[i]].value, list[hp_z[i]].origin, hp_score[i]);
 		}
 		puts("");
-
-
-		
 		
 	}
+
+	uint8_t* is_good = calloc(count, 1);
 	
 	size_t height = default_window_size_height >> 1, width = default_window_size_width >> 1;
 	size_t screen_size = height * width * 4;
@@ -465,6 +479,7 @@ int main(int argc, const char** argv) {
 				for (nat w = 0; w < width; w++) {
 					const nat lifetime_width = array_size + 1;
 					screen[width * h + w] = list[current].lifetime[viz_method][lifetime_width * h_l + w_l];
+					if (w == 50 and is_good[current]) screen[width * h + w] = 0xFFFFFFFF;
 					w_l++;
 				}
 				h_l++;
@@ -554,6 +569,9 @@ int main(int argc, const char** argv) {
 				if (key[SDL_SCANCODE_2]) viz_method = 1;
 				if (key[SDL_SCANCODE_3]) viz_method = 2;
 
+				if (key[SDL_SCANCODE_W]) { is_good[current] = 0; printf("MARKED zi#%llu and BAD\n", current); } 
+				if (key[SDL_SCANCODE_E]) { is_good[current] = 1; printf("MARKED zi#%llu and GOOD\n", current); } 
+
 				if (key[SDL_SCANCODE_F]) { if (current < count - 1) current++; /*printf("current is now %llu.\n", current);*/ } 
 				if (key[SDL_SCANCODE_A]) { if (current) current--; /*printf("current is now %llu.\n", current);*/ } 
 
@@ -583,6 +601,20 @@ int main(int argc, const char** argv) {
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+
+	char good_zlist_filename[4096] = {0};
+	nat good_count = 0;
+	for (nat i = 0; i < count; i++) {
+		if (is_good[i]) {
+			append_to_file(
+				good_zlist_filename, 
+				sizeof good_zlist_filename, 
+				list[i].value, list[i].origin, i
+			); good_count++;
+		}
+	}
+
+	printf("info: wrote good zlist of good_count = %llu : %s\n", good_count, good_zlist_filename);
 }
 
 
