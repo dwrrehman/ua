@@ -72,8 +72,8 @@ static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
 static const nat execution_limit = 20000000;
-static const nat array_size = 800;
-static const nat lifetime_length = 800;
+static const nat array_size = 1000;
+static const nat lifetime_length = 1000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -290,7 +290,7 @@ int main(int argc, const char** argv) {
 
 	for (nat i = 0; i < count; i++) {
 		if (i % 64 == 0) {
-			printf("\r[%3llu / %3llu] : [z = ", i, count); 
+			printf("\r  %1.5lf [%3llu / %3llu] : [z = ", ((double)i) / ((double) count), i, count); 
 			print_graph_raw(list[i].value); 
 			printf(", o = %2llu] generating lifetime...", list[i].origin);
 			fflush(stdout);

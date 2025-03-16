@@ -1,0 +1,39 @@
+SU: searching [D=2] space....
+su: D = 2 space:
+	 chunk_count = 2
+	 total_job_count = 20000
+	 machine_index = 0
+	 machine0_counter_max = 1
+	 machine1_counter_max = 1
+	 machine0_thread_count = 10
+	 machine1_thread_count = 0
+	 display_rate = 3
+	 update_rate = 1
+	 execution_limit = 250000000
+	 array_size = 1000000
+	 in   41780.00s [1202503064.000430:1202503064.114050]
+
+
+pm counts:
+z_is_good: 14351   		pm_zr5: 193840111970		
+pm_zr6: 130927368231		pm_ndi: 92045618828		
+pm_pco: 84081665048		pm_per: 35592681200		
+pm_ns0: 237873854214		pm_oer: 40589841		
+pm_rsi: 4960284803		 pm_h0: 107392012757		
+pm_h0s: 674562  		 pm_h1: 66290582		
+ pm_h2: 19929   		pm_rmv: 474572097		
+pm_ormv: 238339  		pm_imv: 36331   		
+pm_csm: 3749280 		pm_fse: 90100   		
+pm_pair: 10471186643		pm_bdl1: 164018850		
+pm_bdl2: 52199425		pm_bdl3: 1330564 		
+pm_bdl4: 1051763 		pm_bdl5: 830     		
+pm_bdl6: 4509    		pm_bdl7: 15      		
+pm_bdl8: 116     		pm_bdl9: 1113    		
+pm_bdl10: 93      		pm_bdl11: 12      		
+pm_bdl12: 40      		pm_ga_sdol: 11643   		
+pm_ga_6g: 389     		pm_ga_ns0: 19099   		
+pm_ga_zr5: 748497  		pm_ga_pco: 480858403991		
+pm_ga_ndi: 143661451		pm_ga_sndi: 8009438706		
+pm_ga_snco: 5997409236		pm_ga_sn1: 9115    		
+pm_ga_zr6: 10832   		pm_ga_rdo: 10569446873		
+pm_ga_uo: 1294273669242		[done]

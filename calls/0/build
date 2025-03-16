@@ -1,0 +1,28 @@
+#!/bin/zsh
+
+if [ "release" = "$1" ]; then
+	clang -std=c11 -Ofast c.c -o run -mcpu=apple-m1
+
+
+elif [ "profile" = "$1" ]; then
+	/opt/homebrew/opt/llvm/bin/clang -g -O0 -std=c11 -Ofast c.c -o run -fcoverage-mapping -fprofile-instr-generate
+
+
+elif [ "generate_coverage" = "$1" ]; then
+	/opt/homebrew/opt/llvm/bin/llvm-profdata merge -output=default.profdata default.profraw -sparse=true
+	/opt/homebrew/opt/llvm/bin/llvm-cov show --instr-profile default.profdata ./run
+
+
+elif [ "general_release" = "$1" ]; then
+	clang -std=c11 -Ofast c.c -o run
+
+elif [ "clean" = "$1" ]; then
+	rm -rf run
+	rm -rf run.dSYM
+
+elif [ "" = "$1" ]; then 
+		clang -g -O0 -std=c11 -Weverything -Wno-declaration-after-statement -fsanitize=address,undefined c.c -o run -ferror-limit=1 
+
+else 
+	echo "build: unknown target: $1"
+fi
