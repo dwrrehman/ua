@@ -41,8 +41,6 @@
 #include <time.h>
 #include <unistd.h>
 
-
-
 typedef uint8_t byte;
 typedef uint64_t nat;
 typedef uint32_t u32;
@@ -71,9 +69,11 @@ static const int display_rate = 1;
 static const int default_window_size_width = 800;
 static const int default_window_size_height = 800;
 
-static const nat execution_limit = 200000000;
-static const nat array_size = 2000;
-static const nat lifetime_length = 8000;
+static const nat execution_limit = 4 * 160000000;
+static const nat pre_run_duration = 4 * 80000000;
+
+static const nat array_size = 4096;
+static const nat lifetime_length = 4 * 40000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -86,18 +86,8 @@ struct z_value {
 	byte* value;
 	nat origin;
 	nat unique;
+	nat xw;
 };
-
-/*
-static void print_nats(nat* v, nat l) {
-	printf("(%llu)[ ", l);
-	for (nat i = 0; i < l; i++) {
-		printf("%llu ", v[i]);
-	}
-	printf("]");
-}
-*/
-
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
 static void print_graph(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
@@ -106,15 +96,10 @@ static void print_bytes(byte* v, nat l) {
 	for (nat i = 0; i < l; i++) printf("%hhu", v[i]);
 }
 
-
 static void get_graphs_z_value(char string[64], byte* graph) {
 	for (byte i = 0; i < graph_count; i++) string[i] = (char) graph[i] + '0';
 	string[graph_count] = 0;
 }
-
-
-
-
 
 static void get_datetime(char datetime[32]) {
 	struct timeval tv;
@@ -122,8 +107,6 @@ static void get_datetime(char datetime[32]) {
 	struct tm* tm_info = localtime(&tv.tv_sec);
 	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
 }
-
-
 
 static void append_to_file(char* filename, size_t filename_size, byte* graph, nat origin, nat score) {
 	
@@ -142,8 +125,7 @@ try_open:;
 			perror("create openat file");
 			printf("[%s]: [z=%s]: failed to create filename = \"%s\"\n", dt, z, filename);
 			fflush(stdout);
-			abort();
-		}
+			abort();		}
 		snprintf(filename, filename_size, "%s_%08x%08x%08x%08x_z.txt", dt, 
 			rand(), rand(), rand(), rand()
 		);
@@ -165,23 +147,12 @@ try_open:;
 	//);
 }
 
-
-
-
-
-
-
-
 static byte* graph = NULL;
 
 static void init_graph_from_string(const char* string) {
 	for (byte i = 0; i < graph_count; i++) 
 		graph[i] = (byte) (string[i] - '0');
 }
-
-
-
-
 
 static void set_graph(byte* z) { memcpy(graph, z, graph_count); }
 
@@ -190,11 +161,9 @@ static void print_z_list(struct z_value* list, nat count) {
 	for (nat i = 0; i < count; i++) {
 		printf("z #%llu: ", i);
 		print_bytes(list[i].value, graph_count);
-		printf(", origin = %llu, lifetime = %p\n", list[i].origin, (void*) list[i].lifetime);
+		printf(", origin = %llu, lifetime = %p, xw = %llu\n", list[i].origin, (void*) list[i].lifetime, list[i].xw);
 	}	
 }
-
-
 
 static void generate_lifetime(struct z_value* z) {
 	const nat n = array_size;
@@ -205,6 +174,7 @@ static void generate_lifetime(struct z_value* z) {
 
 	memset(array, 0, sizeof(nat) * (array_size + 1));
 	set_graph(z->value);
+	nat xw = 0;
 
 	z->lifetime = calloc(3, sizeof(uint32_t*));
 	z->lifetime[0] = calloc(width * lifetime_length, 4);
@@ -214,18 +184,19 @@ static void generate_lifetime(struct z_value* z) {
 	memset(erp_tallys, 0, sizeof(nat) * (array_size + 1));
 
 	for (nat e = 0; e < execution_limit; e++) {
-
-		// printf("executing instructions...\n");
-
 		const byte I = ip * 4, op = graph[I];
 
 		if (op == one) { 
 			if (pointer == n) { goto done; }  //  puts("fea pointer overflow"); 
 			pointer++; 
+			if (pointer > xw) xw = pointer;
 
 		} else if (op == five) {
-			timestep++;
-			if (timestep >= lifetime_length) break;
+			if (e >= pre_run_duration) {
+				timestep++;
+				if (timestep >= lifetime_length) break;
+			}
+
 			erp_tallys[pointer]++;
 			pointer = 0;
 		}
@@ -233,7 +204,10 @@ static void generate_lifetime(struct z_value* z) {
 
 		else if (op == six) { array[n] = 0; }
 
-		else if (op == three) { array[pointer]++; z->lifetime[0][width * timestep + pointer] = (uint32_t) ~0; }
+		else if (op == three) { 
+			array[pointer]++; 
+			if (e >= pre_run_duration) z->lifetime[0][width * timestep + pointer] = (uint32_t) ~0; 
+		}
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -243,13 +217,17 @@ static void generate_lifetime(struct z_value* z) {
 	}
 
 done:
-	for (nat h = 0; h < n + 1 and h < lifetime_length - 1; h++) 
-		for (nat w = 0; w < width; w++) 
-			if (w < array[h]) z->lifetime[1][width * (h + 1) + w] = (uint32_t) ~0;
-	
-	for (nat h = 0; h < n + 1 and h < lifetime_length - 1; h++) 
-		for (nat w = 0; w < width; w++) 
-			if (w < erp_tallys[h]) z->lifetime[2][width * (h + 1) + w] = (uint32_t) ~0;
+	z->xw = xw;
+	for (nat h = 0; h < n + 1 and h < lifetime_length - 1; h++) {
+		for (nat w = 0; w < width; w++) {
+
+			if (w < array[h]) 
+				z->lifetime[1][width * (h + 1) + w] = (uint32_t) ~0;
+
+			if (w < erp_tallys[h]) 
+				z->lifetime[2][width * (h + 1) + w] = (uint32_t) ~0;
+		}
+	}			
 }
 
 static struct z_value* load_zlist(const char* filename, nat* list_count) {
@@ -282,13 +260,12 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 	return list;
 }
 
+static int comparison_function(const void* raw_a, const void* raw_b) {
+	const struct z_value* a = (const struct z_value*) raw_a;
+	const struct z_value* b = (const struct z_value*) raw_b;
+	return (int) (a->xw - b->xw);
 
-/*static void print_z(struct z_value* list, nat i) {
-	printf("z #%llu: ", i);
-	print_bytes(list[i].value, graph_count);
-	printf(", origin = %llu, lifetime = %p\n", list[i].origin, (void*) list[i].lifetime);
-}*/
-
+}
 
 int main(int argc, const char** argv) {
 
@@ -303,8 +280,11 @@ int main(int argc, const char** argv) {
 	nat count = 0;
 	struct z_value* list = load_zlist(argv[1], &count);
 
+	const nat generating_display_rate = 8;
+
+
 	for (nat i = 0; i < count; i++) {
-		if (i % 64 == 0) {
+		if (i % generating_display_rate == 0) {
 			printf("\r  %1.5lf [%3llu / %3llu] : [z = ", ((double)i) / ((double) count), i, count); 
 			print_graph_raw(list[i].value); 
 			printf(", o = %2llu] generating lifetime...", list[i].origin);
@@ -403,8 +383,6 @@ int main(int argc, const char** argv) {
 			list[unique_count++] = list[i];
 		}
 		count = unique_count;
-		print_z_list(list, count);
-
 		
 		puts("--------------------- printing subset -------------------");
 		puts("");
@@ -420,6 +398,13 @@ int main(int argc, const char** argv) {
 		puts("");
 		
 	}
+
+
+	puts("sorting list...");
+
+	qsort(list, count, sizeof(struct z_value), comparison_function);
+	print_z_list(list, count);
+
 
 	uint8_t* is_good = calloc(count, 1);
 	
@@ -439,7 +424,7 @@ int main(int argc, const char** argv) {
 
 	bool quit = false, fullscreen = false;
 	nat counter = 0, speed = 64;
-	nat current = 0, initial_y = 0, initial_x = 0;
+	nat current = 0, initial_y[3] = {0}, initial_x[3] = {0};
 
 	nat viz_method = 0;
 
@@ -467,15 +452,14 @@ int main(int argc, const char** argv) {
 						(int) width, (int) height);
 
 				printf("width = %lu, height = %lu\n", width, height);
-			} 
-			
+			} 			
 
-			if ((int64_t) initial_y > (int64_t) lifetime_length - (int64_t) height) initial_y = lifetime_length - height;
-			if ((int64_t) initial_x > (int64_t) array_size + 1 - (int64_t) width) initial_x = array_size + 1 - width;
+			if ((int64_t) initial_y[viz_method] > (int64_t) lifetime_length - (int64_t) height) initial_y[viz_method] = lifetime_length - height;
+			if ((int64_t) initial_x[viz_method] > (int64_t) array_size + 1 - (int64_t) width) initial_x[viz_method] = array_size + 1 - width;
 
-			nat h_l = initial_y;
+			nat h_l = initial_y[viz_method];
 			for (nat h = 0; h < height; h++) {
-				nat w_l = initial_x;
+				nat w_l = initial_x[viz_method];
 				for (nat w = 0; w < width; w++) {
 					const nat lifetime_width = array_size + 1;
 					screen[width * h + w] = list[current].lifetime[viz_method][lifetime_width * h_l + w_l];
@@ -507,21 +491,21 @@ int main(int argc, const char** argv) {
 				const bool command = !!key[SDL_SCANCODE_LGUI];
 
 				if (not command and event.wheel.y < 0) { 
-					if ((int64_t) initial_y + (int64_t) speed < (int64_t) lifetime_length - (int64_t) height) initial_y += speed; 
-					else initial_y = lifetime_length - height;
+					if ((int64_t) initial_y[viz_method] + (int64_t) speed < (int64_t) lifetime_length - (int64_t) height) initial_y[viz_method] += speed; 
+					else initial_y[viz_method] = lifetime_length - height;
 				}
 
 				if (not command and event.wheel.y > 0) { 
-					if (initial_y >= speed) initial_y -= speed; else initial_y = 0;
+					if (initial_y[viz_method] >= speed) initial_y[viz_method] -= speed; else initial_y[viz_method] = 0;
 				}
 	
 				if (not command and event.wheel.x > 0) { 
-					if ((int64_t) initial_x + (int64_t) speed < (int64_t) array_size + 1 - (int64_t) width) initial_x += speed; 
-					else initial_x = array_size + 1 - width;
+					if ((int64_t) initial_x[viz_method] + (int64_t) speed < (int64_t) array_size + 1 - (int64_t) width) initial_x[viz_method] += speed; 
+					else initial_x[viz_method] = array_size + 1 - width;
 				}
 
 				if (not command and event.wheel.x < 0) { 
-					if (initial_x >= speed) initial_x -= speed; else initial_x = 0;
+					if (initial_x[viz_method] >= speed) initial_x[viz_method] -= speed; else initial_x[viz_method] = 0;
 				}
 	
 				if (command and event.wheel.y > 0) {
@@ -564,7 +548,7 @@ int main(int argc, const char** argv) {
 				if (key[SDL_SCANCODE_GRAVE]) SDL_SetWindowFullscreen(window, (fullscreen = !fullscreen) ? SDL_WINDOW_FULLSCREEN : 0);
 				if (key[SDL_SCANCODE_ESCAPE] or key[SDL_SCANCODE_Q]) quit = true;
 
-				if (key[SDL_SCANCODE_0]) { initial_x = 0; initial_y = 0; }
+				if (key[SDL_SCANCODE_0]) { initial_x[viz_method] = 0; initial_y[viz_method] = 0; }
 				if (key[SDL_SCANCODE_1]) viz_method = 0;
 				if (key[SDL_SCANCODE_2]) viz_method = 1;
 				if (key[SDL_SCANCODE_3]) viz_method = 2;
@@ -704,6 +688,13 @@ if (key[SDL_SCANCODE_E]) { if (width and height) { width--; height--; goto resiz
 
 
 
+/*static void print_z(struct z_value* list, nat i) {
+	printf("z #%llu: ", i);
+	print_bytes(list[i].value, graph_count);
+	printf(", origin = %llu, lifetime = %p\n", list[i].origin, (void*) list[i].lifetime);
+}*/
+
+
 
 
 
@@ -800,6 +791,16 @@ s
 // }	
 
 
+
+/*
+static void print_nats(nat* v, nat l) {
+	printf("(%llu)[ ", l);
+	for (nat i = 0; i < l; i++) {
+		printf("%llu ", v[i]);
+	}
+	printf("]");
+}
+*/
 
 
 

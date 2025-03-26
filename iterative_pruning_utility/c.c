@@ -1,21 +1,13 @@
 // 202403225.180314:   ip util   dwrr   
 // used for looking through output z lists, and pruning them down further.
-
 // formula for size of 0 space:
 //      (5 ^ 9)
 // formula for size of 1 space:
 //	(6 ^ 9) * (5) * (6 ^ 3)
-
 // formula for size of 3 space:
 //((5 + 3) ^ 9) * ((5 * ((5 + 3) ^ 3)) ^ 3)
-
 // general formula:
 //       ((5 + D) ^ 9) * ((5 * ((5 + D) ^ 3)) ^ D)
-
-
-
-// todo:                      reset the pruning metric counts!
-
 
 #include <time.h>
 #include <math.h>
@@ -65,7 +57,7 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 
 #define D 2
-#define execution_limit 5000000LLU
+#define execution_limit 1000000LLU
 #define array_size 100000LLU
 
 enum operations { one, two, three, five, six };
@@ -82,6 +74,7 @@ enum pruning_metrics {
 	pm_bdl4, pm_bdl5, pm_bdl6, 
 	pm_bdl7, pm_bdl8, pm_bdl9, 
 	pm_bdl10, pm_bdl11, pm_bdl12, 
+	pm_erp1, pm_erp2,
 
 	pm_ga_sdol, 
 	pm_ga_6g,    pm_ga_ns0, 
@@ -105,6 +98,7 @@ static const char* pm_spelling[pm_count] = {
 	"pm_bdl4", "pm_bdl5", "pm_bdl6", 
 	"pm_bdl7", "pm_bdl8", "pm_bdl9", 
 	"pm_bdl10", "pm_bdl11", "pm_bdl12", 
+	"pm_erp1",  "pm_erp2", 
 
 	"pm_ga_sdol", 
 	"pm_ga_6g",    "pm_ga_ns0", 
@@ -118,7 +112,7 @@ static const char* pm_spelling[pm_count] = {
 #define operation_count (5 + D)
 #define graph_count (operation_count * 4)
 
-static const nat row_count = 110;
+static const nat row_count = 1100000;
 static const nat paging_row_count = 100;
 static const nat window_begin = 0;
 static const nat window_end = 10000000000;
@@ -213,8 +207,6 @@ static void print_counts(void) {
         puts("\n[done]");
 }
 
-
-
 static void append_to_file(char* filename, size_t size, byte* graph, byte origin) {
 	char dt[32] = {0};   get_datetime(dt);
 	char z[64] = {0};    get_graphs_z_value(z, graph); 
@@ -257,7 +249,6 @@ try_open:;
 #define history_count 8192
 static byte history[history_count] = {0};
 
-
 static void debug_pm(byte origin, nat e, nat pm) {
 
 	printf("\n\033[32;1m at origin = %hhu: \n[PRUNED GRAPH VIA <%s> AT %llu]:\033[0m\n", origin, pm_spelling[pm], e);
@@ -274,16 +265,13 @@ static void debug_pm(byte origin, nat e, nat pm) {
 		else if (history[i] == five) { printf("\n"); fflush(stdout); } 
 		else if (history[i] == three) { printf("#"); fflush(stdout); } 
 	}
-
+	fflush(stdout);
 	getchar();
 }
 
-
-
-
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
 
-// memset(history, 255, history_count);
+memset(history, 255, history_count);
 
 #define max_rsi_count 512
 #define max_oer_repetions 50
@@ -293,10 +281,12 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 #define max_consecutive_small_modnats 230
 #define max_consecutive_s0_incr 30
 #define max_consecutive_h0_bouts 10
-#define max_consecutive_h1_bouts 24
+#define max_consecutive_h1_bouts 16
 #define max_consecutive_h2_bouts 24
 #define max_consecutive_h0s_bouts 7
 #define max_consecutive_pairs 8
+
+#define max_erp_count 20
 
 	const nat n = array_size;
 	array[0] = 0; 
@@ -319,8 +309,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	byte ip = origin;
 	byte last_mcal_op = 255;
 
-	byte rsi_counter[max_rsi_count];
-	rsi_counter[0] = 0;
+	nat performed_er_at = 0;
+ 	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
+	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
 
 	for (nat e = 0; e < execution_limit; e++) {
 
@@ -358,6 +349,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				xw = pointer; 
 				array[pointer] = 0; 
 				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
+				if (pointer < max_erp_count) small_erp_array[pointer] = 0;
 			}
 		}
 
@@ -456,8 +448,6 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			} else BDL8_counter = 0;
 
 
-
-
 			if (pointer + 9 == BDL_ier_at) { 
 				BDL9_counter++; 
 				if (BDL9_counter >= 30 and e >= 500000) return pm_bdl9; 
@@ -481,6 +471,12 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			if (pair_index == 3) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) {
 				/*debug_pm(origin, e, pm_pair); fflush(stdout); */return pm_pair; } } 
 			else if (pair_index) { pair_count = 0; pair_index = 0; }
+		
+			if (pointer < 64) performed_er_at |= (1LLU << pointer);
+
+			if (pointer < max_erp_count and small_erp_array[pointer] < 250) {
+				small_erp_array[pointer]++;
+			}
 
 			BDL_ier_at = pointer;
 			PER_ier_at = pointer;
@@ -530,12 +526,13 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			bout_length = 0;
 			array[pointer]++;
 		}
+
 		if (op == three or op == one or op == five) last_mcal_op = op;
 
-		//if (op == three or op == one or op == five) {
-			//memmove(history, history + 1, history_count - 1);
-			//history[history_count - 1] = op;
-		//}
+		if (op == three or op == one or op == five) {
+			memmove(history, history + 1, history_count - 1);
+			history[history_count - 1] = op;
+		}
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -556,43 +553,23 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	const bool l1 = array[1] > max_modnat_value;
 	const bool l2 = array[2] > max_modnat_value;
 	const bool should_prune = (l0 or l1 or l2) and (max_modnat_value >= 100);
+	if (should_prune) return pm_ls0;
 
-
-	if (0) {
-		puts("\n");
-		printf("average = %llu, max_modnat_value = %llu\n", 
-			average, max_modnat_value
-		);
-		printf("[0] = %s  (%llu vs %llu) \n[1] = %s  (%llu vs %llu) \n[2] = %s  (%llu vs %llu) \n", 
-			l0 ? "LARGE" : "small", array[0], max_modnat_value,
-			l1 ? "LARGE" : "small", array[1], max_modnat_value,
-			l2 ? "LARGE" : "small", array[2], max_modnat_value
-		);
-		nat largest = array[0];
-		if (array[1] > largest) largest = array[1];
-		if (array[1] > largest) largest = array[1];
-		if (max_modnat_value > largest) largest = max_modnat_value;
-		nat scale = largest / 130;
-		if (not scale) scale = 1; 
-		printf("info: [largest = %llu, scale = %llu]\n", largest, scale);
-		printf("*0: ");
-		for (nat i = 0; i < array[0] / scale; i++) {
-			putchar('#');
-		} puts(""); printf("*1: ");
-		for (nat i = 0; i < array[1] / scale; i++) {
-			putchar('#');
-		} puts(""); printf("*2: ");
-		for (nat i = 0; i < array[2] / scale; i++) {
-			putchar('#');
-		} puts(""); printf("max:");
-		for (nat i = 0; i < max_modnat_value / scale; i++) {
-			putchar('#');
-		} puts(""); puts("");
-		printf("should_prune = %s\n", should_prune ? "PRUNE" : "good");
+	const nat max_position = xw < 64 ? xw : 64;
+	for (nat i = 1; i < max_position; i++) {
+		if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
 	}
 
-
-	if (should_prune) return pm_ls0;
+/*	printf("small erp array: (%llu:%u) {", xw, max_erp_count);
+	for (nat i = 0; i < max_erp_count; i++) {
+		printf("%u ", small_erp_array[i]);
+	}
+	puts("}");
+*/
+	const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
+	for (nat i = 1; i < max_position2; i++) {
+		if (small_erp_array[i] < 5) return pm_erp2;
+	}
 
 	return z_is_good;
 }
@@ -609,18 +586,9 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 }
 
 
-
-
-
-
-
-
-
-
-
 static nat print_lifetime(
 	bool print_os, 
-	byte* graph,  nat* array, 
+	byte* graph,  nat* array,
 	byte origin,  nat print_count, nat er_count
 ) {
 
@@ -633,6 +601,7 @@ static nat print_lifetime(
 	if (print_count) puts("[starting lifetime...]");
 	nat e = 0;
 
+	nat* erp_array = calloc(array_size + 1, sizeof(nat));
 	memset(array, 0, (array_size + 1) * sizeof(nat));
 
 	for (; e < print_count; e++) {
@@ -661,6 +630,7 @@ static nat print_lifetime(
 			if (er == paging_row_count) Eer = E;
 			if (er > er_count) { puts("maxed out er count."); goto done; }
 
+			erp_array[pointer]++;
 			pointer = 0;
 			memset(modes, 0, sizeof(bool) * (n + 1));
 		}
@@ -696,12 +666,12 @@ done:
 	puts("");
 	print_nats(array, xw);
 	puts("");
+	print_nats(erp_array, xw);
+	puts("");
+
 	free(modes);
 	return Eer;
 }
-
-
-
 
 static void synthesize_graph_over_one_group(struct zlist zlist) {
 
@@ -765,9 +735,6 @@ static void synthesize_graph_over_one_group(struct zlist zlist) {
 	"};"
 	);
 }
-
-
-
 
 static void find_major_groups(byte* graph, struct zlist list) {
 
@@ -860,6 +827,29 @@ static void print_help(void) {
 }
 
 int main(int argc, const char** argv) {
+/*
+	//0510106021053141424200262035
+{
+	byte graph[28] = {
+		0,5,1,0,
+		1,0,6,0,
+		2,1,0,5,
+		3,1,4,1,
+		4,2,4,2,
+		0,0,2,6,
+		2,0,3,5
+	};
+
+	nat* array = calloc(array_size + 1, sizeof(nat));
+
+	byte zskip_at = 0;
+	nat x = execute_graph_starting_at(2, graph, array, &zskip_at);
+	printf("EG on 0510106021053141424200262035 : pm = %llu %s\n", x, pm_spelling[x]);
+}
+
+*/
+
+
 
 	// compiletime computation:
 	srand((unsigned)time(0)); rand();
@@ -913,6 +903,107 @@ loop:
 	else printf("unknown command %s\n", input);
 	goto loop;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2962,6 +3053,40 @@ try_open:;
 
 
 
+
+
+	if (0) {
+		puts("\n");
+		printf("average = %llu, max_modnat_value = %llu\n", 
+			average, max_modnat_value
+		);
+		printf("[0] = %s  (%llu vs %llu) \n[1] = %s  (%llu vs %llu) \n[2] = %s  (%llu vs %llu) \n", 
+			l0 ? "LARGE" : "small", array[0], max_modnat_value,
+			l1 ? "LARGE" : "small", array[1], max_modnat_value,
+			l2 ? "LARGE" : "small", array[2], max_modnat_value
+		);
+		nat largest = array[0];
+		if (array[1] > largest) largest = array[1];
+		if (array[1] > largest) largest = array[1];
+		if (max_modnat_value > largest) largest = max_modnat_value;
+		nat scale = largest / 130;
+		if (not scale) scale = 1; 
+		printf("info: [largest = %llu, scale = %llu]\n", largest, scale);
+		printf("*0: ");
+		for (nat i = 0; i < array[0] / scale; i++) {
+			putchar('#');
+		} puts(""); printf("*1: ");
+		for (nat i = 0; i < array[1] / scale; i++) {
+			putchar('#');
+		} puts(""); printf("*2: ");
+		for (nat i = 0; i < array[2] / scale; i++) {
+			putchar('#');
+		} puts(""); printf("max:");
+		for (nat i = 0; i < max_modnat_value / scale; i++) {
+			putchar('#');
+		} puts(""); puts("");
+		printf("should_prune = %s\n", should_prune ? "PRUNE" : "good");
+	}
 
 
 

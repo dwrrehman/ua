@@ -98,6 +98,7 @@ enum pruning_metrics {
 	pm_bdl4, pm_bdl5, pm_bdl6, 
 	pm_bdl7, pm_bdl8, pm_bdl9, 
 	pm_bdl10, pm_bdl11, pm_bdl12, 
+	pm_erp1, pm_erp2,
 
 	pm_ga_sdol, 
 	pm_ga_6g,    pm_ga_ns0, 
@@ -121,6 +122,7 @@ static const char* pm_spelling[pm_count] = {
 	"pm_bdl4", "pm_bdl5", "pm_bdl6", 
 	"pm_bdl7", "pm_bdl8", "pm_bdl9", 
 	"pm_bdl10", "pm_bdl11", "pm_bdl12", 
+	"pm_erp1", "pm_erp2",
 
 	"pm_ga_sdol", 
 	"pm_ga_6g",    "pm_ga_ns0", 
@@ -186,7 +188,6 @@ try_open:;
 	);
 }
 
-
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
 
 #define max_rsi_count 512
@@ -197,10 +198,11 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 #define max_consecutive_small_modnats 230
 #define max_consecutive_s0_incr 30
 #define max_consecutive_h0_bouts 10
-#define max_consecutive_h1_bouts 24
+#define max_consecutive_h1_bouts 16
 #define max_consecutive_h2_bouts 24
 #define max_consecutive_h0s_bouts 7
 #define max_consecutive_pairs 8
+#define max_erp_count 20
 
 	const nat n = array_size;
 	array[0] = 0; 
@@ -223,8 +225,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	byte ip = origin;
 	byte last_mcal_op = 255;
 
-	byte rsi_counter[max_rsi_count];
-	rsi_counter[0] = 0;
+	nat performed_er_at = 0;
+ 	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
+	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
 
 	for (nat e = 0; e < execution_limit; e++) {
 
@@ -261,6 +264,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				xw = pointer; 
 				array[pointer] = 0; 
 				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
+				if (pointer < max_erp_count) small_erp_array[pointer] = 0;
 			}
 		}
 
@@ -358,6 +362,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				if (BDL8_counter >= 80 and e >= 500000) return pm_bdl8; 
 			} else BDL8_counter = 0;
 
+
 			if (pointer + 9 == BDL_ier_at) { 
 				BDL9_counter++; 
 				if (BDL9_counter >= 30 and e >= 500000) return pm_bdl9; 
@@ -380,6 +385,11 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 
 			if (pair_index == 3) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
 			else if (pair_index) { pair_count = 0; pair_index = 0; }
+		
+			if (pointer < 64) performed_er_at |= (1LLU << pointer);
+			if (pointer < max_erp_count and small_erp_array[pointer] < 250) {
+				small_erp_array[pointer]++;
+			}
 
 			BDL_ier_at = pointer;
 			PER_ier_at = pointer;
@@ -429,8 +439,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			bout_length = 0;
 			array[pointer]++;
 		}
-		if (op == three or op == one or op == five) last_mcal_op = op;
 
+		if (op == three or op == one or op == five) last_mcal_op = op;
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
@@ -452,6 +462,15 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	const bool should_prune = (l0 or l1 or l2) and (max_modnat_value >= 100);
 	if (should_prune) return pm_ls0;
 
+	const nat max_position = xw < 64 ? xw : 64;
+	for (nat i = 1; i < max_position; i++) {
+		if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
+	}
+	const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
+	for (nat i = 1; i < max_position2; i++) {
+		if (small_erp_array[i] < 5) return pm_erp2;
+	}
+
 	return z_is_good;
 }
 
@@ -465,17 +484,6 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	}
 	return at;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 static byte noneditable(byte pa) { return (pa < 20 and pa % 4 == 0) or pa == 18; }
 static byte editable(byte pa) { return not noneditable(pa); }
@@ -1418,6 +1426,33 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 			else if (pair_index) { pair_count = 0; pair_index = 0; }
 			...
 		}
+
+
+
+
+
+	// 0144 1535 2133 3545 4242 0020
+
+	// 014415352133354542420020
+
+	byte z_graph[24] = {
+		0,  1, 4, 4, 
+		1,  5, 3, 5, 
+		2,  1, 3, 1, 
+		3,  5, 4, 5, 
+		4,  2, 4, 2,
+		0,  0, 2, 0,
+	};
+
+	byte zskip_at = 0;
+	nat* array = calloc(array_size + 1, sizeof(nat));
+	nat x = execute_graph_starting_at(2, z_graph, array, &zskip_at);
+	printf("pm = %llu %s\n", x, pm_spelling[x]);
+	exit(0);
+
+
+
+
 
 
 
