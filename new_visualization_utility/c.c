@@ -66,14 +66,14 @@ static const size_t max_height = 4096, max_width = 4096;
 static const int delay_ms_per_frame = 16;
 static const int display_rate = 1;
 
-static const int default_window_size_width = 800;
-static const int default_window_size_height = 800;
+static const int default_window_size_width = 1000;
+static const int default_window_size_height = 1000;
 
-static const nat execution_limit = 4 * 160000000;
-static const nat pre_run_duration = 4 * 80000000;
+static const nat execution_limit  = 3200000000;
+static const nat pre_run_duration = 1600000000;
 
 static const nat array_size = 4096;
-static const nat lifetime_length = 4 * 40000;
+static const nat lifetime_length = 11000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -219,6 +219,9 @@ static void generate_lifetime(struct z_value* z) {
 done:
 	z->xw = xw;
 	for (nat h = 0; h < n + 1 and h < lifetime_length - 1; h++) {
+
+		if (h == xw + 1) break;
+		
 		for (nat w = 0; w < width; w++) {
 
 			if (w < array[h]) 
@@ -268,6 +271,8 @@ static int comparison_function(const void* raw_a, const void* raw_b) {
 }
 
 int main(int argc, const char** argv) {
+
+	srand((unsigned) time(NULL));
 
 	erp_tallys = calloc(array_size + 1, sizeof(nat));
 	array = calloc(array_size + 1, sizeof(nat));

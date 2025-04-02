@@ -29,22 +29,12 @@
 #include <pthread.h>
 #include <ctype.h>    
 #include <errno.h>    
-#include <fcntl.h>
-#include <iso646.h>
-#include <math.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>  
-#include <stdlib.h>
-#include <string.h>  
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <termios.h>
-#include <time.h>
-#include <unistd.h>
 
 #define reset "\x1B[0m"
 #define red   "\x1B[31m"
@@ -57,7 +47,7 @@ typedef uint32_t u32;
 typedef uint16_t u16;
 
 #define D 2
-#define execution_limit 1000000LLU
+#define execution_limit 800000LLU
 #define array_size 100000LLU
 
 enum operations { one, two, three, five, six };
@@ -126,12 +116,6 @@ struct zlist {
 };
 
 static void set_graph(byte* graph, byte* z) { memcpy(graph, z, graph_count); }
-
-/*static nat expn(nat base, nat exponent) {
-	nat result = 1;
-	for (nat i = 0; i < exponent; i++) result *= base;
-	return result;
-}*/
 
 static void init_graph_from_string(byte* graph, const char* string) {
 	for (byte i = 0; i < graph_count; i++) 
@@ -555,36 +539,22 @@ memset(history, 255, history_count);
 	const bool should_prune = (l0 or l1 or l2) and (max_modnat_value >= 100);
 	if (should_prune) return pm_ls0;
 
-	const nat max_position = xw < 64 ? xw : 64;
-	for (nat i = 1; i < max_position; i++) {
-		if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
-	}
+	if (xw >= 100) {
+		const nat max_position = xw < 64 ? xw : 64;
+		for (nat i = 1; i < max_position; i++) {
+			if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
+		}	
+		const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
+		for (nat i = 1; i < max_position2; i++) {
+			if (small_erp_array[i] < 5) return pm_erp2;
+		}
 
-/*	printf("small erp array: (%llu:%u) {", xw, max_erp_count);
-	for (nat i = 0; i < max_erp_count; i++) {
-		printf("%u ", small_erp_array[i]);
-	}
-	puts("}");
-*/
-	const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
-	for (nat i = 1; i < max_position2; i++) {
-		if (small_erp_array[i] < 5) return pm_erp2;
+	} else {
+		printf("\nfound a zv with a very small XW! [xw = %llu]\n", xw);
 	}
 
 	return z_is_good;
 }
-
-static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
-	byte at = graph_count;
-	for (byte o = 0; o < operation_count; o++) {
-		if (graph[4 * o] != three and graph[4 * o] != two) continue;
-		const nat pm = execute_graph_starting_at(o, graph, array, &at);
-		counts[pm]++;
-		if (not pm) { *origin = o; return 0; }
-	}
-	return at;
-}
-
 
 static nat print_lifetime(
 	bool print_os, 
@@ -786,8 +756,10 @@ static void machine_prune(byte* graph, nat* array, struct zlist list) { //  cons
 	char filename[4096] = {0};
 	nat good = 0, bad = 0;
 	nat display_counter = 0;
-	for (nat z = 0; z < list.count; z++) {
+	
+	memset(pm_counts, 0, pm_count * sizeof(nat));
 
+	for (nat z = 0; z < list.count; z++) {
 		set_graph(graph, list.values[z]);
 
 		if (display_counter % 1 == 0) { //  32
@@ -798,16 +770,14 @@ static void machine_prune(byte* graph, nat* array, struct zlist list) { //  cons
 		} 
 		display_counter++;
 
-		byte origin;
-		const nat is_bad = execute_graph(graph, array, &origin, pm_counts);
-		//const char* color = is_bad ? red : green;
-		//const char* type =  is_bad ? "BAD" : "GOOD";
-
-		//printf(bold "%s ---> %s (%llu / %llu) -- ( via %s )" reset "\n", 
-		//	color, type, z, list.count, "... see other data..."
-		//);
-
-		if (is_bad) bad++; else { append_to_file(filename, sizeof filename, graph, origin); good++; } 
+		for (byte origin = 0; origin < operation_count; origin++) {
+			if (graph[4 * origin] != three and graph[4 * origin] != two) continue;
+			byte at; 
+			const nat pm = execute_graph_starting_at(origin, graph, array, &at);
+			pm_counts[pm]++;
+			if (pm) bad++;
+			else { append_to_file(filename, sizeof filename, graph, origin); good++; }
+		}
 	}
 	print_counts();
 	printf("\n\n\t\t\tgood: %llu\n\t\t\tbad: %llu\n\n\n", good, bad);
@@ -827,29 +797,6 @@ static void print_help(void) {
 }
 
 int main(int argc, const char** argv) {
-/*
-	//0510106021053141424200262035
-{
-	byte graph[28] = {
-		0,5,1,0,
-		1,0,6,0,
-		2,1,0,5,
-		3,1,4,1,
-		4,2,4,2,
-		0,0,2,6,
-		2,0,3,5
-	};
-
-	nat* array = calloc(array_size + 1, sizeof(nat));
-
-	byte zskip_at = 0;
-	nat x = execute_graph_starting_at(2, graph, array, &zskip_at);
-	printf("EG on 0510106021053141424200262035 : pm = %llu %s\n", x, pm_spelling[x]);
-}
-
-*/
-
-
 
 	// compiletime computation:
 	srand((unsigned)time(0)); rand();
@@ -999,6 +946,51 @@ loop:
 
 
 
+
+
+
+/*static nat expn(nat base, nat exponent) {
+	nat result = 1;
+	for (nat i = 0; i < exponent; i++) result *= base;
+	return result;
+}*/
+
+
+/*	printf("small erp array: (%llu:%u) {", xw, max_erp_count);
+	for (nat i = 0; i < max_erp_count; i++) {
+		printf("%u ", small_erp_array[i]);
+	}
+	puts("}");
+*/
+
+
+		//printf(bold "%s ---> %s (%llu / %llu) -- ( via %s )" reset "\n", 
+		//	color, type, z, list.count, "... see other data..."
+		//);
+
+		//const char* color = is_bad ? red : green;
+		//const char* type =  is_bad ? "BAD" : "GOOD";
+/*
+	//0510106021053141424200262035
+{
+	byte graph[28] = {
+		0,5,1,0,
+		1,0,6,0,
+		2,1,0,5,
+		3,1,4,1,
+		4,2,4,2,
+		0,0,2,6,
+		2,0,3,5
+	};
+
+	nat* array = calloc(array_size + 1, sizeof(nat));
+
+	byte zskip_at = 0;
+	nat x = execute_graph_starting_at(2, graph, array, &zskip_at);
+	printf("EG on 0510106021053141424200262035 : pm = %llu %s\n", x, pm_spelling[x]);
+}
+
+*/
 
 
 

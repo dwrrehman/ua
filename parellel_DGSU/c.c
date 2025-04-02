@@ -462,15 +462,17 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	const bool should_prune = (l0 or l1 or l2) and (max_modnat_value >= 100);
 	if (should_prune) return pm_ls0;
 
-	const nat max_position = xw < 64 ? xw : 64;
-	for (nat i = 1; i < max_position; i++) {
-		if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
+	if (xw >= 100) {
+		const nat max_position = xw < 64 ? xw : 64;
+		for (nat i = 1; i < max_position; i++) {
+			if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
+		}
+		const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
+		for (nat i = 1; i < max_position2; i++) {
+			if (small_erp_array[i] < 5) return pm_erp2;
+		}
 	}
-	const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
-	for (nat i = 1; i < max_position2; i++) {
-		if (small_erp_array[i] < 5) return pm_erp2;
-	}
-
+	
 	return z_is_good;
 }
 
