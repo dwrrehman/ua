@@ -654,11 +654,12 @@ static void* worker_thread(void* raw_argument) {
 
 		byte origin = 0;
 		at = execute_graph(graph, array, &origin, counts);
-		if (at) goto bad;
-
-		append_to_file(filename, sizeof filename, graph, origin);
-		usleep(100000);
-		goto loop;
+		if (not at) {
+			append_to_file(filename, sizeof filename, graph, origin);
+			usleep(100000);
+			goto loop;
+		}
+		while (at > 2 and noneditable(at)) at--;
 
 	bad:	if (noneditable(at)) {
 			printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
