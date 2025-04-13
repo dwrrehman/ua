@@ -2,14 +2,20 @@
 
 // D-general version of the 0 space search util  
 // written on 202410163.164303 dwrr
-// size of raw 0 space is: (5^15) 	                 		=              30,517,578,125    / 5 =    6103515625
-// size of raw 1 space is: (6^15) * (5 * (6 ^ 3)) 	                =         507,799,783,342,080  / 6 =    84633297223680
-// size of raw 2 space is: (7^15) * (5 * (7 ^ 3)) * (5 * (7 ^ 3)) 	=  13,963,646,602,082,100,175 / 7 =   1994806657440300025 
+// size of raw 0 space is: (5^15) 	                 			=              30,517,578,125    / 5 =    6103515625
+// size of raw 1 space is: (6^15) * (5 * (6 ^ 3)) 	              		=         507,799,783,342,080  / 6 =    84633297223680
+// size of raw 2 space is: (7^15) * (5 * (7 ^ 3)) * (5 * (7 ^ 3)) 		=  13,963,646,602,082,100,175 / 7 =   1994806657440300025 
+// size of raw 3 space is: (8^15) * (5 * (8 ^ 3)) * (5 * (8 ^ 3) * (5 * (8 ^ 3)) =  5.9029581036 × 10²³ 
+//with 6.g and skip loop (1.l + 2.l) applied in PG:
+//	(8^15) * (5 * (8 ^ 3)) * (5 * (8 ^ 3) * (5 * (8 ^ 3)) / (8 * 8 * 8)         = 1.1529215046×10²¹
+//			1,000,000,000,000,000,000,000
+//			s  q   Q   t   b   m   t   h
+//	1.1 Sexillion zv to search over, with our partial graph supplied 
+
 
 // rewritten kinda  on 202411144.202807 dwrr
-
 // fixed bug relating to ERW for 2sp, added various bdl checks, instead.  202502053.011729
-
+// searching 3sp on 1202504126.183639, added partial graph with skip loop on 1202504126.200838
 
 #include <time.h>
 #include <string.h>
@@ -48,14 +54,14 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 2
+#define D 3
 #define execution_limit 250000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
-#define display_rate 3
-#define update_rate 1
+#define display_rate 4
+#define update_rate 2
 
-#define total_job_count 20000
+#define total_job_count 60000
 #define machine_index 0
 
 #define machine0_counter_max 1
@@ -125,7 +131,7 @@ static const char* pm_spelling[pm_count] = {
 	"pm_erp1", "pm_erp2",
 
 	"pm_ga_sdol", 
-	"pm_ga_6g",    "pm_ga_ns0", 
+	"pm_ga_6g",    "pm_ga_ns0",
 	"pm_ga_zr5",   "pm_ga_pco", 
 	"pm_ga_ndi",   "pm_ga_sndi", 
 	"pm_ga_snco",  "pm_ga_sn1", 
@@ -190,6 +196,7 @@ try_open:;
 
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
 
+#define max_erp_count 20
 #define max_rsi_count 512
 #define max_oer_repetions 50
 #define max_rmv_modnat_repetions 15
@@ -202,7 +209,6 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 #define max_consecutive_h2_bouts 24
 #define max_consecutive_h0s_bouts 7
 #define max_consecutive_pairs 8
-#define max_erp_count 20
 
 	const nat n = array_size;
 	array[0] = 0; 
@@ -213,7 +219,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		BDL_ier_at = 0,
 		PER_ier_at = (nat) ~0;
 
-	byte	H0_counter = 0,  H0S_counter = 0,  H1_counter = 0, H2_counter = 0, OER_counter = 0,
+	byte	H0_counter = 0,  H0S_counter = 0,  
+		H1_counter = 0, H2_counter = 0, OER_counter = 0,
 		BDL1_counter = 0, BDL2_counter = 0,
 		BDL3_counter = 0, BDL4_counter = 0,
 		BDL5_counter = 0, BDL6_counter = 0,
@@ -245,7 +252,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			if (last_mcal_op == one)  H0_counter = 0;
 			if (last_mcal_op == one)  H0S_counter = 0;
 
-			if (pointer < max_rsi_count) { 
+			if (pointer < max_rsi_count) {
 				if (last_mcal_op == three) {
 					rsi_counter[pointer]++;
 					if (rsi_counter[pointer] >= max_consecutive_s0_incr) return pm_rsi;
@@ -471,8 +478,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		for (nat i = 1; i < max_position2; i++) {
 			if (small_erp_array[i] < 5) return pm_erp2;
 		}
-	}
-	
+	}	
 	return z_is_good;
 }
 
@@ -487,7 +493,14 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	return at;
 }
 
-static byte noneditable(byte pa) { return (pa < 20 and pa % 4 == 0) or pa == 18; }
+static byte noneditable(byte pa) { 
+
+	return (pa < 20 and pa % 4 == 0) or 
+		pa == 18 or 
+		pa == 1 or 
+		pa == 5; 
+
+}
 static byte editable(byte pa) { return not noneditable(pa); }
 
 static void* worker_thread(void* raw_argument) {
@@ -533,21 +546,21 @@ static void* worker_thread(void* raw_argument) {
 
 	increment:
 		graph[pointer]++;
-	init:  	pointer = 1;
+	init:  	pointer = 2;
 
 		u16 was_utilized = 0;
-		byte at = 1;
+		byte at = 2;
 
 		for (byte index = 20; index < graph_count; index += 4) {
-			if (index < graph_count - 4 and graph[index] > graph[index + 4]) { 
-				at = index + 4; 
-				counts[pm_ga_sdol]++; 
-				// puts(pm_spelling[pm_ga_sdol]); 
-				goto bad; 
+			if (index < graph_count - 4 and graph[index] > graph[index + 4]) {
+				at = index + 4;
+				counts[pm_ga_sdol]++;
+				// puts(pm_spelling[pm_ga_sdol]);
+				goto bad;
 			} 
 		}
 
-		for (byte index = operation_count; index--;) { 
+		for (byte index = operation_count; index--;) {
 
 			const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
 
@@ -606,7 +619,11 @@ static void* worker_thread(void* raw_argument) {
 			const byte j = 4 * index;
 			for (byte i = graph_count - 4; i >= 20 and j < i; i -= 4) {
 				if (not memcmp(graph + i, graph + j, 4)) { 
-					at = j + (j < 20); 
+					at = graph_count;
+					if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
+					if (editable(4 * index + 2) and at > 4 * index + 2) at = 4 * index + 2;
+					if (editable(4 * index + 1) and at > 4 * index + 1) at = 4 * index + 1;
+					if (editable(4 * index + 0) and at > 4 * index + 0) at = 4 * index + 0;
 					counts[pm_ga_rdo]++; 
 					// puts("pm_ga_rdo"); 
 					goto bad;
@@ -616,7 +633,7 @@ static void* worker_thread(void* raw_argument) {
 
 		for (byte index = 0; index < operation_count; index++) {
 			if (not ((was_utilized >> index) & 1)) { 
-				at = 1;
+				at = 2;
 				counts[pm_ga_uo]++; 
 				//puts("pm_ga_uo"); 
 				goto bad; 
@@ -628,6 +645,7 @@ static void* worker_thread(void* raw_argument) {
 				at = graph_count;
 				if (editable(4 * index + 2) and at > 4 * index + 2) at = 4 * index + 2;
 				if (editable(4 * index) and at > 4 * index) at = 4 * index;
+				if (at == graph_count) abort();
 				counts[pm_ga_6g]++;
 				//puts(pm_spelling[pm_ga_6g]);
 				goto bad;
@@ -646,7 +664,7 @@ static void* worker_thread(void* raw_argument) {
 			printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
 			abort();
 		}
-		for (byte i = 1; i < at; i++) if (editable(i)) graph[i] = 0;
+		for (byte i = 2; i < at; i++) if (editable(i)) graph[i] = 0;
 		pointer = at; goto loop;
 	reset_:
 		graph[pointer] = 0; 
@@ -796,12 +814,13 @@ static void divide(chunk* q, chunk* r, chunk* total, chunk* divisor) {
 int main(void) {
 	srand((unsigned) time(0));
 
+	const byte u = 0;
 	byte partial_graph[20] = {
-		0,  0, 0, 0, 
-		1,  0, 0, 0, 
-		2,  0, 0, 0, 
-		3,  0, 0, 0, 
-		4,  0, 4, 0,
+		0,  1, u, u,
+		1,  0, u, u,
+		2,  u, u, u,
+		3,  u, u, u,
+		4,  u, 4, u,
 	};
 
 	static char output_filename[4096] = {0};
@@ -811,8 +830,6 @@ int main(void) {
 	for (nat i = 0; i < thread_count; i++)  atomic_init(global_progress + i, 0);
 
 	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
-
-
 
 	struct machine* machine = calloc(2, sizeof(struct machine));
 	for (nat mi = 0; mi < 2; mi++) {
@@ -917,7 +934,6 @@ int main(void) {
 
 		if (machine1_thread_count == 0) mi = 0;
 
-
 		
 		if (core_counter[mi] < machine[mi].core_count - 1) core_counter[mi]++; else core_counter[mi] = 0;
 		const nat c = core_counter[mi];
@@ -961,7 +977,8 @@ int main(void) {
 		pthread_create(threads + i, NULL, worker_thread, machine[machine_index].cores + i);
 	}
 
-	nat resolution = job_count_per_core / 80;
+
+	nat resolution = job_count_per_core / 100;
 	if (resolution == 0) resolution = 1;
 
 	while (1) {
@@ -975,7 +992,7 @@ int main(void) {
 
 		for (nat i = 0; i < thread_count; i++) {
 			const nat size = atomic_load_explicit(global_progress + i, memory_order_relaxed);
-			printf("  %c %020llu :: ", i == (nat) -1 ? '*' : ' ', size);
+			printf(" %llu: [%8llu / %8llu] :: ", i, size, machine->cores[i].job_count);
 			for (nat j = 0; j < size / resolution; j++) {
 				putchar('#');
 			}
@@ -1065,6 +1082,62 @@ int main(void) {
         snprintf(output_string, 4096, "[done]\n");
 	print(output_filename, 4096, output_string);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
