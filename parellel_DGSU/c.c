@@ -660,6 +660,7 @@ static void* worker_thread(void* raw_argument) {
 			goto loop;
 		}
 		while (at > 2 and noneditable(at)) at--;
+		if (at < 2) at = 2;
 
 	bad:	if (noneditable(at)) {
 			printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
