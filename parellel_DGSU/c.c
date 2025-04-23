@@ -54,20 +54,20 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 3
+#define D 2
 #define execution_limit 250000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
 #define display_rate 4
 #define update_rate 2
 
-#define total_job_count 6000
+#define total_job_count 49
 #define machine_index 0
 
 #define machine0_counter_max 1
 #define machine1_counter_max 1
 
-#define machine0_thread_count 10
+#define machine0_thread_count 1 // 10
 #define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
@@ -210,6 +210,10 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 #define max_consecutive_h0s_bouts 7
 #define max_consecutive_pairs 8
 
+
+	printf("EXG:  in execute_graph_starting_at(origin=%hhu)\n", origin);
+	getchar();
+
 	const nat n = array_size;
 	array[0] = 0; 
 	array[n] = 0;
@@ -239,6 +243,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	for (nat e = 0; e < execution_limit; e++) {
 
 		const byte I = ip * 4, op = graph[I];
+
+		if (op == 3) printf("executing instruction op=%hhu\n", op);
 
 		if (op == one) {
 			if (pointer == n) { 
@@ -456,6 +462,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		ip = graph[I + state];
 	}
 
+
+	puts("finished an EL!\n");
+	getchar();
 	if (xw < 11) return pm_fse;
 	for (nat i = 0; i < 10; i++) {
 		if (array[i] < 20) return pm_fse;
@@ -478,7 +487,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		for (nat i = 1; i < max_position2; i++) {
 			if (small_erp_array[i] < 5) return pm_erp2;
 		}
-	}	
+	}
+
 	return z_is_good;
 }
 
@@ -487,6 +497,8 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three and graph[4 * o] != two) continue;
 		const nat pm = execute_graph_starting_at(o, graph, array, &at);
+		printf("EXG: in execute_graph(o=%hhu): PRUNED GRAPH VIA %s\n", o, pm_spelling[pm]);
+		getchar();
 		counts[pm]++;
 		if (not pm) { *origin = o; return 0; }
 	}
@@ -494,11 +506,9 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 }
 
 static byte noneditable(byte pa) { 
-
 	return (pa < 20 and pa % 4 == 0) or 
-		pa == 18 or 
-		pa == 1 or 
-		pa == 5; 
+		pa == 18 or pa == 19 or
+		pa == 1 or pa == 5;
 
 }
 static byte editable(byte pa) { return not noneditable(pa); }
@@ -517,12 +527,71 @@ static void* worker_thread(void* raw_argument) {
 	byte pointer = 0;
 	nat update_counter = 0;
 
+
+	byte n__best_zv_in_2sp[32] = {
+		0,  1, 1, 4,
+		1,  0, 2, 5,
+		2,  1, 3, 6,
+		3,  1, 4, 1,
+		4,  2, 4, 2,
+		0,  4, 1, 4,
+		0,  1, 4, 0,
+		0,  0, 0, 0,
+	};
+
+	void* raw_best = calloc(1, graph_count   + (8 - (graph_count % 8)) % 8);
+	memcpy(raw_best, n__best_zv_in_2sp, graph_count);
+	nat* best_64 = raw_best;
+
+
+
 	const struct joblist list = *(struct joblist*) raw_argument;
 	const nat thread_index = list.thread_index;
 	const nat count = list.job_count;
 	const struct job* jobs = list.jobs;
 
+	const nat debug = not thread_index;
+
+
+	nat not_found_counter = 0;
+	nat found_counter = 0;
+
 	for (nat job_index = 0; job_index < count; job_index++) {
+
+		memcpy(graph, jobs[job_index].begin, graph_count);
+		memcpy(end, jobs[job_index].end, graph_count);
+
+		for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+			if (best_64[i] < graph_64[i]) goto skip_bad_job_;
+			if (best_64[i] > graph_64[i]) goto acceptable_;
+		}	
+	acceptable_:
+		for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+			if (best_64[i] < end_64[i]) goto acceptable2_;
+			if (best_64[i] > end_64[i]) goto skip_bad_job_;
+		}
+
+	acceptable2_:
+		printf("info: FOUND THE JOB THAT CONTAINS THIS ZV!! [job_index = %llu\n", job_index); 
+		found_counter++;
+		continue;
+
+	skip_bad_job_:
+		printf("info: skipping over job: [job_index = %llu\n", job_index); fflush(stdout);
+		not_found_counter++;
+		continue;
+	}
+
+
+
+
+	printf("counters that were computed: not_found = %llu, found = %llu\n", not_found_counter, found_counter);
+	abort();
+
+
+	
+	for (nat job_index = 0; job_index < count; job_index++) {
+
 
 		if (not (update_counter & ((1 << update_rate) - 1))) {
 			update_counter = 0;
@@ -531,9 +600,52 @@ static void* worker_thread(void* raw_argument) {
 
 		memcpy(graph, jobs[job_index].begin, graph_count);
 		memcpy(end, jobs[job_index].end, graph_count);
+		// goto init;
+
+		for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+			if (best_64[i] < graph_64[i]) goto skip_bad_job;
+			if (best_64[i] > graph_64[i]) goto acceptable;
+		}	
+	acceptable:
+		for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+			if (best_64[i] < end_64[i]) goto acceptable2;
+			if (best_64[i] > end_64[i]) goto skip_bad_job;
+		}
+
+	acceptable2:
+		printf("info: FOUND THE JOB THAT CONTAINS THIS ZV!! [job_index = %llu\n", job_index); fflush(stdout); getchar();
 		goto init;
 
-	loop:	for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+	skip_bad_job:
+		printf("info: skipping over job: [job_index = %llu\n", job_index); fflush(stdout);
+		continue;
+
+
+	loop:
+
+		/*if (debug) {
+			printf("AT INIT: about to process: [pointer=%hhu] \n", pointer);
+			puts("");
+			for (byte i = 0; i < graph_count; i++) {
+				if (i % 4 == 0) printf("   ");
+				if (noneditable(i)) printf("[%hhu] ", graph[i]);
+				else printf(" %hhu  ", graph[i]);
+
+			}
+			puts("");
+			for (byte i = 0; i < pointer; i++) { 
+				if (i % 4 == 0) printf("   ");
+				printf("    ");
+			}
+
+			if (pointer % 4 == 0) printf("   ");
+			puts(" ^ ");
+			puts("");
+			getchar();
+		}*/
+
+
+		for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
 			if (graph_64[i] < end_64[i]) goto process;
 			if (graph_64[i] > end_64[i]) goto next_job;
 		}
@@ -548,6 +660,31 @@ static void* worker_thread(void* raw_argument) {
 		graph[pointer]++;
 	init:  	pointer = 2;
 
+
+		/*if (debug) {
+			printf("AT INIT: about to process: [pointer=%hhu] \n", pointer);
+			puts("");
+			for (byte i = 0; i < graph_count; i++) {
+				if (i % 4 == 0) printf("   ");
+				if (noneditable(i)) printf("[%hhu] ", graph[i]);
+				else printf(" %hhu  ", graph[i]);
+
+			}
+			puts("");
+			for (byte i = 0; i < pointer; i++) { 
+				if (i % 4 == 0) printf("   ");
+				printf("    ");
+			}
+
+			if (pointer % 4 == 0) printf("   ");
+			puts(" ^ ");
+			puts("");
+			getchar();
+		}*/
+
+		
+
+
 		u16 was_utilized = 0;
 		byte at = 2;
 
@@ -555,7 +692,7 @@ static void* worker_thread(void* raw_argument) {
 			if (index < graph_count - 4 and graph[index] > graph[index + 4]) {
 				at = index + 4;
 				counts[pm_ga_sdol]++;
-				// puts(pm_spelling[pm_ga_sdol]);
+				puts(pm_spelling[pm_ga_sdol]); getchar();
 				goto bad;
 			} 
 		}
@@ -570,7 +707,7 @@ static void* worker_thread(void* raw_argument) {
 				if (editable(4 * index) and at > 4 * index) at = 4 * index;
 				if (editable(4 * e) and at > 4 * e) at = 4 * e;
 				counts[pm_ga_ns0]++;
-				//puts(pm_spelling[pm_ga_ns0]);
+				puts(pm_spelling[pm_ga_ns0]); getchar();
 				goto bad;
 			}
 	 
@@ -580,7 +717,7 @@ static void* worker_thread(void* raw_argument) {
 				if (editable(4 * index) and at > 4 * index) at = 4 * index;
 				if (editable(4 * e) and at > 4 * e) at = 4 * e;
 				counts[pm_ga_ns0]++;
-				//puts(pm_spelling[pm_ga_ns0]);
+				puts(pm_spelling[pm_ga_ns0]); getchar();
 				goto bad;
 			}
 
@@ -606,7 +743,7 @@ static void* worker_thread(void* raw_argument) {
 						if (editable(4 * dest) and at > 4 * dest) at = 4 * dest;
 						if (at == graph_count) continue;
 						counts[pairs[i + 2]]++;
-						//puts(pm_spelling[pairs[i + 2]]);
+						puts(pm_spelling[pairs[i + 2]]);
 						goto bad;
 					}
 				} 
@@ -625,7 +762,32 @@ static void* worker_thread(void* raw_argument) {
 					if (editable(4 * index + 1) and at > 4 * index + 1) at = 4 * index + 1;
 					if (editable(4 * index + 0) and at > 4 * index + 0) at = 4 * index + 0;
 					counts[pm_ga_rdo]++; 
-					// puts("pm_ga_rdo"); 
+					puts("pm_ga_rdo");  
+					//printf("devised  [at = %hhu]\n", at);
+
+
+
+		/*if (debug) {
+			printf("RDO ZSKIP ABOUT TO HAPPEN: [at=%hhu] \n", at);
+			puts("");
+			for (byte i = 0; i < graph_count; i++) {
+				if (i % 4 == 0) printf("   ");
+				if (noneditable(i)) printf("[%hhu] ", graph[i]);
+				else printf(" %hhu  ", graph[i]);
+
+			}
+			puts("");
+			for (byte i = 0; i < at; i++) { 
+				if (i % 4 == 0) printf("   ");
+				printf("    ");
+			}
+
+			if (pointer % 4 == 0) printf("   ");
+			puts(" ^ ");
+			puts("");
+		}*/
+
+					//getchar();
 					goto bad;
 				}
 			}
@@ -635,7 +797,7 @@ static void* worker_thread(void* raw_argument) {
 			if (not ((was_utilized >> index) & 1)) { 
 				at = 2;
 				counts[pm_ga_uo]++; 
-				//puts("pm_ga_uo"); 
+				puts("pm_ga_uo"); 
 				goto bad; 
 			} 
 		}
@@ -647,25 +809,98 @@ static void* worker_thread(void* raw_argument) {
 				if (editable(4 * index) and at > 4 * index) at = 4 * index;
 				if (at == graph_count) abort();
 				counts[pm_ga_6g]++;
-				//puts(pm_spelling[pm_ga_6g]);
+				puts(pm_spelling[pm_ga_6g]); getchar();
 				goto bad;
 			}
 		}
 
+
+
+
+
+
+		//---------------- exg -----------------------------
+
+
+		for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+			if (graph_64[i] < best_64[i]) goto less_trich;
+			if (graph_64[i] > best_64[i]) goto greater_trich;
+		}
+		goto equal_trich;
+
+
+
+	less_trich:
+		puts("<");
+		goto done_trich;
+
+
+	equal_trich:
+		puts("=");
+		goto done_trich;
+
+
+	greater_trich:
+		puts(">");
+
+		goto done_trich;
+
+
+	done_trich:
+
+		goto loop;
+
+
+
 		byte origin = 0;
 		at = execute_graph(graph, array, &origin, counts);
+
 		if (not at) {
+
+			if (debug) printf("EXG: found good zv. writing out...\n"); 
+			getchar();getchar();getchar();getchar();getchar();getchar();
+
 			append_to_file(filename, sizeof filename, graph, origin);
 			usleep(100000);
 			goto loop;
 		}
+
+
+		if (debug) printf("EXG: attempted to perform a zskip at: at = %hhu...\n", at);
 		while (at > 2 and noneditable(at)) at--;
 		if (at < 2) at = 2;
+		if (debug) printf("EXG: the revised version of at was: at = %hhu...\n", at);
+
+		if (debug) {
+			printf("AT INIT: about to process: [at=%hhu] \n", at);
+			puts("");
+			for (byte i = 0; i < graph_count; i++) {
+				if (i % 4 == 0) printf("   ");
+				if (noneditable(i)) printf("[%hhu] ", graph[i]);
+				else printf(" %hhu  ", graph[i]);
+
+			}
+			puts("");
+			for (byte i = 0; i < at; i++) { 
+				if (i % 4 == 0) printf("   ");
+				printf("    ");
+			}
+
+			if (pointer % 4 == 0) printf("   ");
+			puts(" ^ ");
+			puts("");
+		}
+
+		getchar();
+
 
 	bad:	if (noneditable(at)) {
 			printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
 			abort();
 		}
+
+		printf("AT BAD: performing final zskip: [at = %hhu]...\n", at);
+		
 		for (byte i = 2; i < at; i++) if (editable(i)) graph[i] = 0;
 		pointer = at; goto loop;
 	reset_:
@@ -822,7 +1057,7 @@ int main(void) {
 		1,  0, u, u,
 		2,  u, u, u,
 		3,  u, u, u,
-		4,  u, 4, u,
+		4,  u, 4, 2,
 	};
 
 	static char output_filename[4096] = {0};
@@ -832,8 +1067,6 @@ int main(void) {
 	for (nat i = 0; i < thread_count; i++)  atomic_init(global_progress + i, 0);
 
 	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
-
-
 
 	struct machine* machine = calloc(2, sizeof(struct machine));
 	for (nat mi = 0; mi < 2; mi++) {
@@ -868,6 +1101,12 @@ int main(void) {
 	bitwise_invert(n1);
 	nat width[chunk_count] = {0};
 	memcpy(width, q, chunk_count * sizeof(nat));
+
+
+	debug_zi("width", width);
+	getchar();
+	
+
 	nat width_m1[chunk_count] = {0};
 	memcpy(width_m1, width, chunk_count * sizeof(nat));
 	adc(width_m1, n1, 0);
@@ -875,11 +1114,24 @@ int main(void) {
 	memcpy(last_zi, total, chunk_count * sizeof(nat));
 	adc(last_zi, n1, 0);
 
+
+
+	debug_zi("last_zi", last_zi);
+	getchar();
+
+
 	nat begin[chunk_count] = {0};
 	nat machine0_counter = 0, machine1_counter = 0, machine_state = 0;
 	nat core_counter[2] = {0};
 
+
+
+
 	for (nat job = 0; job < total_job_count; job++) {
+
+		printf("[job = %llu]: computing range _begin and _end!\n", job);
+		getchar();
+
 
 		nat range_begin[chunk_count] = {0};
 		memcpy(range_begin, begin, sizeof(nat) * chunk_count);
@@ -891,14 +1143,41 @@ int main(void) {
 		nat range_end[chunk_count] = {0};
 		memcpy(range_end, job < total_job_count - 1 ? sum : last_zi, sizeof(nat) * chunk_count);
 
+		debug_zi("begin", begin);
+		getchar();
+	
 		adc(begin, width, 0);
+
+		debug_zi("(after adc) begin", begin);
+		getchar();
+
+
+
+
+
 
 		byte* begin_zv = calloc(graph_count, 1);
 		memcpy(begin_zv, partial_graph, 20);
 
+
+
+
 		nat p_begin[chunk_count] = { [0] = 1 };
+
+
+
+
+		// XXXXXXX
+
+
 		for (byte i = 0; i < graph_count; i++) {
-			if (noneditable(i)) continue;
+
+
+			if (noneditable(i)) { 
+				//printf("zizv: info: skipped over iteration %hhu\n", i); getchar(); 
+				continue; } 
+
+
 			const nat radix = (nat) (i % 4 ? operation_count : 5);
 			nat radix_mp[chunk_count] = { [0] = radix };
 			nat div1[chunk_count] = {0};
@@ -907,24 +1186,112 @@ int main(void) {
 			divide(q, rem2, div1, radix_mp);
 			begin_zv[i] = (byte) *rem2;
 			mul_small(p_begin, radix);
+
+			/*printf("zizv: [i = %hhu]:\n", i);
+			putchar(9); debug_zi("range_begin", range_begin);
+			putchar(9); debug_zi("p_begin", p_begin);
+			putchar(9); debug_zi("div1", div1);
+			putchar(9); debug_zi("rem2", rem2);
+			putchar(9); debug_zi("radix_mp", radix_mp);
+			
+			getchar();*/
 		}
+		//getchar();
+
+
+
+
+
+
+		puts("about to calc zv for zi range end:");
+		debug_zi("range_begin", range_begin);
+		debug_zi("range_end", range_end);
+		//getchar();
 
 		byte* end_zv = calloc(graph_count, 1);
 		memcpy(end_zv, partial_graph, 20);
 
+
+
+
+
+	/*
+
+
+
+	nat p = 1;
+	for (nat i = 0; i < hole_count; i++) {		
+		nat mod = (nat) (positions[i] & 3 ? operation_count : 5);
+		graph[positions[i]] = (byte) ((range_begin / p) % mod);
+		p *= mod;
+	}
+
+
+	012110252143312240010242
+
+	0x211x2521xxx1224x01x2xx
+	
+	x,x,x,x,x,x,x,x,x,
+	
+
+
+
+	nat p = 1;
+
+
+	for (nat i = 0; i < graph_count; i++) {
+
+		if (noneditable(i)) continue;
+
+		const nat radix = (nat) (i % 4 ? operation_count : 5);
+
+		graph[i] = (byte) ((range_begin / p) % mod);
+
+		p *= radix;
+	}
+		
+	*/
+
+
 		nat p_end[chunk_count] = { [0] = 1 };
 		for (byte i = 0; i < graph_count; i++) {
-			if (noneditable(i)) continue;
+
+
+			if (noneditable(i)) {
+				printf("zizv: info: skipped over iteration %hhu\n", i); //getchar(); 
+				continue; } 
+
+
 			const nat radix = (nat) (i % 4 ? operation_count : 5);
 			nat radix_mp[chunk_count] = { [0] = radix };
 			nat div1[chunk_count] = {0};
 			nat rem2[chunk_count] = {0};
+
+			puts("BEFORE COMPUTATION:");
+			printf("zizv: [i = %hhu]:\n", i);
+			putchar(9); debug_zi("range_end", range_end);
+			putchar(9); debug_zi("p_end", p_end);
+			putchar(9); debug_zi("radix_mp", radix_mp);
+			//getchar();
+
 			divide(div1, r, range_end, p_end);
 			divide(q, rem2, div1, radix_mp);
 			end_zv[i] = (byte) *rem2;
 			mul_small(p_end, radix);
+
+			puts("AFTER COMPUTATION:");
+			printf("zizv: [i = %hhu]:\n", i);
+			putchar(9); debug_zi("range_end", range_end);
+			putchar(9); debug_zi("p_end", p_end);
+			putchar(9); debug_zi("div1", div1);
+			putchar(9); debug_zi("rem2", rem2);
+			putchar(9); debug_zi("radix_mp", radix_mp);			
+			//getchar();
 		}
 
+
+		getchar();
+	
 		nat mi;
 
 		if (machine_state) {
@@ -935,18 +1302,28 @@ int main(void) {
 			else { machine_state = 1; machine1_counter = 1; mi = 1; }
 		}
 
-
 		if (machine1_thread_count == 0) mi = 0;
-
 		
 		if (core_counter[mi] < machine[mi].core_count - 1) core_counter[mi]++; else core_counter[mi] = 0;
 		const nat c = core_counter[mi];
 	
 		machine[mi].cores[c].jobs = realloc(machine[mi].cores[c].jobs, sizeof(struct job) * (machine[mi].cores[c].job_count + 1));
 		machine[mi].cores[c].jobs[machine[mi].cores[c].job_count++] = (struct job) { .begin = begin_zv, .end = end_zv };
+
+		
+
+		printf("pushed job : [%6llu] = (", job);
+		print_graph_raw(begin_zv);
+		printf(" ... ");
+		print_graph_raw(end_zv);
+		puts(")");
+
+
 	}
 
 	const nat job_count_per_core = machine[machine_index].cores[0].job_count;
+
+
 
 	for (nat mi = 0; mi < 2; mi++) {
 		
@@ -958,7 +1335,7 @@ int main(void) {
 
 			for (nat j = 0; j < machine[mi].cores[i].job_count; j++) {
 
-				printf("\t\t[%llu] = (", j);
+				printf("\t\t[%6llu] = (", j);
 				print_graph_raw(machine[mi].cores[i].jobs[j].begin);
 				printf(" ... ");
 				print_graph_raw(machine[mi].cores[i].jobs[j].end);
@@ -968,8 +1345,10 @@ int main(void) {
 		}
 		puts("----------------------------------\n\n");
 	}
-
 	getchar();
+
+
+
 
 	snprintf(output_string, 4096, "SU: searching [D=%u] space....\n", D);
 	print(output_filename, 4096, output_string);
@@ -985,6 +1364,7 @@ int main(void) {
 	nat resolution = job_count_per_core / 100;
 	if (resolution == 0) resolution = 1;
 
+	goto skip_printing;
 	while (1) {
 		nat sum = 0;
 		for (nat i = 0; i < thread_count; i++) {
@@ -1012,6 +1392,7 @@ int main(void) {
 	next:	sleep(1 << display_rate);
 	}
 
+	skip_printing:;
 	nat counts[pm_count] = {0};
 
 	for (nat i = 0; i < thread_count; i++) {
@@ -1031,43 +1412,30 @@ int main(void) {
 
 	snprintf(output_string, 4096,
 		"su: D = %u space:\n"
-
-		"\t chunk_count = %u\n"
-		
+		"\t chunk_count = %u\n"		
 		"\t total_job_count = %u\n"
 		"\t machine_index = %u\n"
-
 		"\t machine0_counter_max = %u\n"
 		"\t machine1_counter_max = %u\n"
-
 		"\t machine0_thread_count = %u\n"
 		"\t machine1_thread_count = %u\n"
-
 		"\t display_rate = %u\n"
 		"\t update_rate = %u\n"
-
 		"\t execution_limit = %llu\n"
                 "\t array_size = %llu\n"
-
 		"\t in %10.2lfs [%s:%s]\n"
 		"\n",
 		D, chunk_count,
-
 		total_job_count, 
 		machine_index, 
-
 		machine0_counter_max, 
-		machine1_counter_max, 
-		
+		machine1_counter_max, 		
 		machine0_thread_count, 
 		machine1_thread_count,
-
 		display_rate, 
 		update_rate,
-
 		execution_limit, 
 		array_size, 
-
 		seconds, time_begin_dt, time_end_dt
 	);
 	print(output_filename, 4096, output_string);
@@ -1139,6 +1507,40 @@ int main(void) {
 
 
 
+	
+		/*byte best_zv_in_2sp[28] = {
+			0,  1, 1, 4,
+			1,  0, 2, 5,
+			2,  1, 3, 6,
+			3,  1, 4, 1,
+			4,  2, 4, 2,
+			0,  4, 1, 4,
+			0,  1, 4, 0,
+		};
+
+		byte best_end_graph[28] = {
+			0,  1, 6, 6,
+			1,  0, 6, 6,
+			2,  6, 6, 6,
+			3,  6, 6, 6,
+			4,  6, 4, 2,
+			4,  6, 6, 6,
+			4,  6, 6, 6,
+		};
+
+
+		memcpy(graph, best_zv_in_2sp, graph_count);
+		memcpy(end, best_end_graph, graph_count);
+
+		*/
+
+
+	
+		/*
+
+
+			if (best >= range_begin and best <= range_end) { ... } 
+		*/
 
 
 
