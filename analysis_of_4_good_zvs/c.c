@@ -22,9 +22,9 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-#define D 1
+#define D 2
 
-#define execution_limit 100000000LLU
+#define execution_limit 500000000LLU
 #define array_size 1000000LLU
 
 enum operations { one, two, three, five, six };
@@ -34,7 +34,6 @@ enum operations { one, two, three, five, six };
 
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
 
-
 enum analyses {
 	none, s0xw, mv_hg, bl_hg, wic_hg, erp_hg, bl_csv, 
 	print_array,
@@ -42,8 +41,11 @@ enum analyses {
 	print_array_over_time,
 };
 
-static const nat analysis = print_array_over_time;
-static const nat zv_index = 3;
+
+//static const nat analysis = print_array; //erp_hg;
+static const nat analysis = erp_hg;
+
+static const nat zv_index = 0;
 static const bool should_generate_xw_csv = false;
 
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
@@ -62,6 +64,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 
 	for (nat e = 0; e < execution_limit; e++) {
+
+		if (not (e & 0x3FFFFFFF)) { printf("e = %llu\n", e); }
 
 		const byte I = ip * 4, op = graph[I];
 
@@ -154,7 +158,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 			}
 			puts("");
 			
-			for (nat m = 0; m < max_cell_value; m++) {
+ 			for (nat m = 0; m < max_cell_value; m++) {
 
 				if (array[n] > m) printf("  #      "); else printf("         ");
 
@@ -164,7 +168,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 				puts("");
 			}
 
-			usleep(5000);
+			usleep(1000);
 		}
 
 
@@ -173,14 +177,18 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 	
 
 	if (analysis == s0xw) {
+
 		printf("xw = %llu\n", xw);
 		printf("*0 = %llu\n", array[0]);
-		printf("2 * *0 = %llu\n", 2 * array[0]);
 		printf("xw / *0 = %10.10lf\n", ((double) xw) / ((double) array[0]));
+		printf("*0 / xw = %10.10lf\n", ((double) array[0]) / ((double) xw));
+
+		printf("array: { ");
+		for (nat i = 0; i < xw + 5; i++) 
+			printf("%llu ", array[i]);		
+		puts("}");
+
 	}
-
-
-
 
 
 	if (analysis == mv_hg) {
@@ -210,13 +218,11 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 
 
-
-
 	if (analysis == bl_hg) {
 
-		const nat scale = 3;
+		const nat scale = 10;
 
-		for (nat i = 0; i < 130; i++) {
+		for (nat i = 0; i < 230; i++) {
 			const nat value = bout_length_tallys[i];
 			//if (not value) continue;
 			printf("%5llu : %5llu : ", i, value);
@@ -229,7 +235,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 	if (analysis == wic_hg) {
 
-		const nat scale = 100;
+		const nat scale = 1500;
 
 		for (nat i = 0; i < 100; i++) {
 			const nat value = walk_ia_count_tallys[i];
@@ -243,9 +249,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 	if (analysis == erp_hg) {
 
-		const nat scale = 1;
+		const nat scale = 10;
 
-		for (nat i = 0; i < 1000; i++) {
+		for (nat i = 0; i < 2000; i++) {
 			const nat value = er_position_tallys[i];
 			// if (not value) continue;
 			printf("%5llu : %5llu : ", i, value);
@@ -255,22 +261,20 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		puts("");
 	}
 
-
 	if (analysis == print_array) {
 		puts("array state:");
 
-		for (nat i = 0; i < n; i++) {
-			if (not array[i]) break;
-			for (nat _ = 0; _ < array[i]; _++) putchar('#'); puts("");
+		const nat scale = 10;
+
+		for (nat i = 0; i < n; i++) {			
+			const nat value = array[i];
+			if (not value) break;
+
+			printf("%5llu : %5llu : ", i, value);
+			for (nat _ = 0; _ < value / scale + !!value; _++) putchar('#'); 
+			puts("");
 		}
 	}
-
-
-
-
-
-
-
 
 	return 0;
 }
@@ -286,10 +290,18 @@ int main(void) {
 	byte graph[graph_count] = {0};
 
 	const char* zv_string = NULL;
-	if (zv_index == 1) zv_string = "014415352131354442420020";
-	if (zv_index == 2) zv_string = "014415352131354542420020";
-	if (zv_index == 3) zv_string = "012115252033300442420040";
-	if (zv_index == 4) zv_string = "014415252133310442420021";
+	//if (zv_index == 1) zv_string = "014415352131354442420020";
+	//if (zv_index == 2) zv_string = "014415352131354542420020";
+	//if (zv_index == 3) zv_string = "012115252033300442420040";
+	//if (zv_index == 4) zv_string = "014415252133310442420021";
+
+
+	
+	zv_string = "0114102521363141424204140140";
+//		     0114102521363141424204140140
+
+
+
 
 
 	init_graph_from_string(graph, zv_string);

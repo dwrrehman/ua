@@ -54,14 +54,14 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 3
+#define D 2
 #define execution_limit 250000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
-#define display_rate 4
-#define update_rate 2
+#define display_rate 3
+#define update_rate 1
 
-#define total_job_count 6000
+#define total_job_count 1000
 #define machine_index 0
 
 #define machine0_counter_max 1
@@ -832,8 +832,6 @@ int main(void) {
 	for (nat i = 0; i < thread_count; i++)  atomic_init(global_progress + i, 0);
 
 	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
-
-
 
 	struct machine* machine = calloc(2, sizeof(struct machine));
 	for (nat mi = 0; mi < 2; mi++) {
