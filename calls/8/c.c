@@ -96,7 +96,7 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 2
+#define D 3
 #define execution_limit 250000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
