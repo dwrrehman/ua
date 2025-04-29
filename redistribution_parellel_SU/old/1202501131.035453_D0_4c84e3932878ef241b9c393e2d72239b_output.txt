@@ -1,0 +1,26 @@
+SU: searching [D=0] space....
+su: D = 0 space:
+	 thread_count = 3
+	 job_count_per_core = 2
+	 display_rate = 0
+	 update_rate = 3
+	 execution_limit = 500000000
+	 array_size = 1000000
+	 in       7.00s [1202501131.035453:1202501131.035500]
+
+
+pm counts:
+z_is_good: 0       		pm_zr5: 400302  		
+pm_zr6: 305829  		pm_ndi: 172637  		
+pm_pco: 391266  		pm_per: 91223   		
+pm_ns0: 588798  		pm_oer: 0       		
+pm_rsi: 5814    		 pm_h0: 399736  		
+ pm_h1: 0       		pm_erw: 1161    		
+pm_rmv: 740     		pm_imv: 0       		
+pm_csm: 0       		pm_ga_sdol: 0       		
+pm_ga_6g: 0       		pm_ga_ns0: 4       		
+pm_ga_zr5: 63      		pm_ga_pco: 1082128 		
+pm_ga_ndi: 4035    		pm_ga_sndi: 99392   		
+pm_ga_snco: 94424   		pm_ga_sn1: 4       		
+pm_ga_zr6: 4       		pm_ga_rdo: 0       		
+pm_ga_uo: 2387844 		[done]

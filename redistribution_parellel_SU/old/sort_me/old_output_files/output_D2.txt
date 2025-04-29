@@ -1,0 +1,21 @@
+PRUNED:  origin = 2, z = 0146102221353056430210001333 ... at = 2
+final graph state: 0100100020003000400000000006
+su: 0 space:
+	 good    0 zv
+	 bad     2440878789 zv
+	 exg_bad 518143379 zv
+	 execution_limit = 1000000000
+	 array_size = 1000000
+	 in     278.00s [1202411144.211710:1202411144.212148]
+
+
+pm counts:
+z_is_good: 0       		 pm_ga: 0       		
+pm_zr5: 172194709		pm_zr6: 179598274		
+pm_ndi: 153564944		pm_pco: 383227416		
+pm_per: 20180467		pm_ns0: 687929782		
+pm_oer: 0       		pm_r0i: 863126  		
+pm_r1i: 0       		 pm_h0: 164378097		
+ pm_h1: 0       		pm_erw: 45004   		
+pm_rmv: 35245   		pm_imv: 12346   		[done]
+D_general_search_utility:  

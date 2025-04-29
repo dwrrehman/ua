@@ -1,0 +1,42 @@
+GA trying: z = 012015222541321445420555
+GA trying: z = 005212052111312445420555
+GA trying: z = 032012222010304445420555
+GA trying: z = 045210052545344445420555
+GA trying: z = 051012052405325445420555
+GA trying: z = 035515522051310545420555
+GA trying: z = 004512302150301545420555
+PRUNED:  origin = 2, z = 004512302150301545420555 ... at = 2
+GA trying: z = 002110502505341545420555
+GA trying: z = 032010502150322545420555
+GA trying: z = 001410552554304545420555
+GA trying: z = 001512002404354545420555
+GA trying: z = 051010252155325545420555
+final graph state: 000010002000300040400005
+su: D = 1 space:
+	 good    6344 zv
+	 bad     26248564866 zv
+	 exg_bad 4334499193 zv
+	 execution_limit = 1000000000
+	 array_size = 1000000
+	 in   66249.00s [1202411236.230630:1202411247.173039]
+
+
+pm counts:
+z_is_good: 6344    		pm_zr5: 2332644509		
+pm_zr6: 1740024737		pm_ndi: 1091410518		
+pm_pco: 1271572145		pm_per: 471972956		
+pm_ns0: 2652961961		pm_oer: 316004  		
+pm_rsi: 47963098		 pm_h0: 1564293399		
+ pm_h1: 397030  		pm_erw: 3840038 		
+pm_rmv: 5248427 		pm_imv: 17383   		
+pm_csm: 49374   		pm_ga_dummy: 0       		
+pm_ga_26dol: 0       		pm_ga_sdol: 0       		
+pm_ga_6g: 0       		pm_ga_ns0: 839     		
+pm_ga_zr5: 45624   		pm_ga_pco: 5866642449		
+pm_ga_ndi: 5544120 		pm_ga_sndi: 204274116		
+pm_ga_snco: 176934377		pm_ga_sn1: 719     		
+pm_ga_zr6: 772     		pm_ga_rdo: 90758715		
+pm_ga_uo: 15569863942		[done]
+D_general_search_utility:   
+
+
