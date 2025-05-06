@@ -136,6 +136,9 @@ struct machine {
 
 static _Atomic nat* global_progress = NULL;
 
+// 1202505051.144537 added this change: 
+//#define ordering memory_order_relaxed
+#define ordering memory_order_seq_cst
 
 enum operations { one, two, three, five, six };
 
@@ -590,11 +593,11 @@ static void* worker_thread(void* raw_argument) {
 	for (nat job_index = 0; job_index < count; job_index++) {
 
 		for (nat i = 0; i < thread_count; i++) {
-			const nat progress = atomic_load_explicit(global_progress + i, memory_order_relaxed);
+			const nat progress = atomic_load_explicit(global_progress + i, ordering);
 			if (progress == all_jobs_have_finished) goto terminate_thread;
 		}
  	
-		atomic_store_explicit(global_progress + thread_index, job_index, memory_order_relaxed);
+		atomic_store_explicit(global_progress + thread_index, job_index, ordering);
 
 		memcpy(graph, jobs[job_index].begin, graph_count);
 		memcpy(end, jobs[job_index].end, graph_count);
@@ -749,7 +752,7 @@ static void* worker_thread(void* raw_argument) {
 		continue;
 	}
 
-	if (count) atomic_store_explicit(global_progress + thread_index, all_jobs_have_finished, memory_order_relaxed);
+	if (count) atomic_store_explicit(global_progress + thread_index, all_jobs_have_finished, ordering);
 
 terminate_thread:
 	free(raw_graph);
@@ -1066,7 +1069,7 @@ start_up_threads:
 	while (1) {
 		nat sum = 0;
 		for (nat i = 0; i < thread_count; i++) {
-			local_progress[i] = atomic_load_explicit(global_progress + i, memory_order_relaxed);
+			local_progress[i] = atomic_load_explicit(global_progress + i, ordering);
 			if (local_progress[i] == all_jobs_have_finished) goto thread_had_terminated;
 			if (local_progress[i] == no_job_has_started) local_progress[i] = 0;
 			sum += local_progress[i];
@@ -1104,7 +1107,7 @@ thread_had_terminated:
 	nat remaining_count = 0;
 
 	for (nat i = 0; i < thread_count; i++) {
-		const nat done_job_index = atomic_load_explicit(global_progress + i, memory_order_relaxed);
+		const nat done_job_index = atomic_load_explicit(global_progress + i, ordering);
 
 		printf("LOADED: [core #%llu]: done_job_index = %llu\n", i, done_job_index);
 
@@ -1134,7 +1137,7 @@ thread_had_terminated:
 	}
 
 	printf("thread_had_terminate: redistributed %llu jobs onto the cores again!\n", remaining_count);
-	getchar();
+	//getchar();
 
 	for (nat i = 0; i < machine[machine_index].core_count; i++) {
 		printf("\tcore #%llu job list: (%llu jobs): \n", i, machine[machine_index].cores[i].job_count);
@@ -1147,7 +1150,7 @@ thread_had_terminated:
 		}
 		puts("");
 	}
-	getchar();
+	//getchar();
 
 	for (nat i = 0; i < thread_count; i++)  atomic_init(global_progress + i, no_job_has_started);
 	goto start_up_threads;
@@ -1160,7 +1163,7 @@ thread_had_terminated:
 	//printf("thread_had_terminate: redistributed %llu jobs onto the cores again!\n", remaining_count);
 	//getchar();
 	/*for (nat i = 0; i < thread_count; i++) {
-		const nat done_job_index = atomic_load_explicit(global_progress + i, memory_order_relaxed);
+		const nat done_job_index = atomic_load_explicit(global_progress + i, ordering);
 		if (done_job_index == all_jobs_have_finished) { machine[machine_index].cores[i].job_count = 0; continue; } 	
 		nat first_job_index = done_job_index + 1;
 		if (done_job_index == no_job_has_started) first_job_index = 0;
