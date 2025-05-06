@@ -46,7 +46,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 2;        // the duplication count (operation_count = 5 + D)
+static const byte D = 3;        // the duplication count (operation_count = 5 + D)
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
@@ -69,8 +69,8 @@ static const int display_rate = 1;
 static const int default_window_size_width = 1000;
 static const int default_window_size_height = 1000;
 
-static const nat execution_limit  = 300000000;
-static const nat pre_run_duration = 160000000;
+static const nat execution_limit  = 3000000;
+static const nat pre_run_duration = 1600000;
 
 static const nat array_size = 4096;
 static const nat lifetime_length = 3000;
