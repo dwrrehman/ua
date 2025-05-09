@@ -54,6 +54,75 @@ the new sizes of all of the spaces are the following:
 
 
 
+
+
+//#define all_jobs_have_finished  0x0FFFFFFFFFFFFFF0
+//#define no_job_has_started      ((nat) -1)
+// 1202505051.144537 added this change: 
+//#define ordering memory_order_relaxed
+
+
+
+
+if (not (update_counter & ((1 << update_rate) - 1))) {
+			update_counter = 0;
+		} else update_counter++;
+
+
+
+
+
+		for (nat i = 0; i < thread_count; i++) {
+			const nat progress = atomic_load_explicit(global_progress + i, ordering);
+			if (progress == all_jobs_have_finished) goto terminate_thread;
+		}
+
+
+
+
+
+     The atomic_compare_exchange_strong() operation 
+
+		stores the "desired" value into atomic variable object, 
+
+			but only if the atomic variable is equal to the expected value.  
+
+	. Upon success, the operation returns true.  
+
+	. Upon failure, the "*expected" value is   overwritten   with the contents of the atomic variable
+			and false is returned.
+
+
+
+const nat  b =    (na) !!(job_index >= count and count);
+
+
+	(... nat* expected, nat desired, _Atomic nat* flag) {
+
+		if (*expected == *flag) {
+			*flag = desired; return true;
+		} else {
+			*expected = *flag; return false;
+		}
+	}
+
+
+
+worker_thread() {
+....
+
+	const bool nonzero_amount_of_jobs_finished = job_index >= count and count;
+	nat expected = 0;
+	const bool was_equal = atomic_compare_exchange_strong(&flag, &expected, nonzero_amount_of_jobs_finished));
+	if (not was_equal or nonzero_amount_of_jobs_finished) goto terminate;
+
+
+...	
+
+}
+
+
+
 */
 
 
@@ -91,6 +160,8 @@ the new sizes of all of the spaces are the following:
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
+
 
 typedef uint8_t byte;
 typedef uint16_t u16;
@@ -104,7 +175,7 @@ typedef uint64_t chunk;
 #define chunk_count 2
 #define display_rate 0
 
-#define total_job_count 200
+#define total_job_count 2000
 #define machine_index 0
 
 #define machine0_counter_max 1
@@ -117,6 +188,7 @@ typedef uint64_t chunk;
 struct job {
 	byte* begin;
 	byte* end;
+	nat uid;
 };
 
 struct joblist {
@@ -130,15 +202,11 @@ struct machine {
 	nat core_count;
 };
 
+static _Atomic nat flag = 0;
+static _Atomic nat* display_progress = NULL;
 
-#define all_jobs_have_finished  0x0FFFFFFFFFFFFFF0
-#define no_job_has_started      0x1FFFFFFFFFFFFFF1
-
-static _Atomic nat* global_progress = NULL;
-
-// 1202505051.144537 added this change: 
-//#define ordering memory_order_relaxed
-#define ordering memory_order_seq_cst
+static _Atomic nat* debug_job_processed = NULL;
+static _Atomic nat* debug_zr5_count = NULL;
 
 enum operations { one, two, three, five, six };
 
@@ -534,46 +602,39 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	return z_is_good;
 }
 
-static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
+static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts, nat* zr5_count) {
 	byte at = graph_count;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three and graph[4 * o] != two) continue;
 		const nat pm = execute_graph_starting_at(o, graph, array, &at);
 		counts[pm]++;
+		if (pm == pm_zr5) (*zr5_count)++;
 		if (not pm) { *origin = o; return 0; }
 	}
 	return at;
 }
 
+
+#define lsepa 1
+
 static byte noneditable(byte pa) { 
-	return (pa < 20 and pa % 4 == 0) or 
-		pa == 18 or pa == 19 or
-		pa == 1 or pa == 5;
+	//return (pa < 20 and pa % 4 == 0) or 
+	//	pa == 18 or pa == 19 or
+	//	pa == 1 or pa == 5;
+
+	return (pa < 20 and pa % 4 == 0) or pa == 18;
 
 }
+
 static byte editable(byte pa) { return not noneditable(pa); }
-
-
-
-
-
-
-/*
-if (not (update_counter & ((1 << update_rate) - 1))) {
-			update_counter = 0;
-		} else update_counter++;
-
-*/
-
-
-
-
 
 static void* worker_thread(void* raw_argument) {
 
 	char filename[4096] = {0};
 
-	nat* counts = calloc(pm_count, sizeof(nat));
+	nat* raw_counts = calloc(1 + pm_count, sizeof(nat));
+	nat* counts = raw_counts + 1;
+	nat* current_progress = raw_counts;
 
 	nat* array = calloc(array_size + 1, sizeof(nat));
 	void* raw_graph = calloc(1, graph_count + (8 - (graph_count % 8)) % 8);
@@ -589,38 +650,47 @@ static void* worker_thread(void* raw_argument) {
 	const nat thread_index = list.thread_index;
 	const nat count = list.job_count;
 	const struct job* jobs = list.jobs;
-	
-	for (nat job_index = 0; job_index < count; job_index++) {
 
-		for (nat i = 0; i < thread_count; i++) {
-			const nat progress = atomic_load_explicit(global_progress + i, ordering);
-			if (progress == all_jobs_have_finished) goto terminate_thread;
-		}
- 	
-		atomic_store_explicit(global_progress + thread_index, job_index, ordering);
+	nat job_index = 0;
+	nat zr5_count = 0;
 
+	next_job:;
+
+		const bool nonzero_amount_of_jobs_finished = job_index >= count and count;
+		nat expected = 0;
+		const bool was_equal = atomic_compare_exchange_strong(&flag, &expected, nonzero_amount_of_jobs_finished);
+		if (not was_equal or job_index >= count) goto terminate;
+
+		atomic_store_explicit(display_progress + thread_index, job_index, memory_order_relaxed);
 		memcpy(graph, jobs[job_index].begin, graph_count);
-		memcpy(end, jobs[job_index].end, graph_count);
+		memcpy(end, jobs[job_index].end, graph_count);		
+		atomic_fetch_add_explicit(debug_job_processed + jobs[job_index].uid, 1, memory_order_relaxed);
+
 		goto init;
 
 	loop:
 		for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
 			if (graph_64[i] < end_64[i]) goto process;
-			if (graph_64[i] > end_64[i]) goto next_job;
+			if (graph_64[i] > end_64[i]) break;
 		}
-		goto next_job;
+		goto prepare_next_job;
 
 	process:
 		if (graph[pointer] < ((pointer % 4) ? operation_count - 1 : 4)) goto increment;
 		if (pointer < graph_count - 1) goto reset_;
+
+	prepare_next_job: 
+		atomic_store_explicit(debug_zr5_count + jobs[job_index].uid, zr5_count, memory_order_relaxed); 
+		zr5_count = 0; 
+		job_index++;
 		goto next_job;
 
 	increment:
 		graph[pointer]++;
-	init:  	pointer = 2;
+	init:  	pointer = lsepa;
 
 		u16 was_utilized = 0;
-		byte at = 2;
+		byte at = lsepa;
 
 		for (byte index = 20; index < graph_count; index += 4) {
 			if (index < graph_count - 4 and graph[index] > graph[index + 4]) {
@@ -706,7 +776,7 @@ static void* worker_thread(void* raw_argument) {
 
 		for (byte index = 0; index < operation_count; index++) {
 			if (not ((was_utilized >> index) & 1)) { 
-				at = 2;
+				at = lsepa;
 				counts[pm_ga_uo]++; 
 				//puts("pm_ga_uo"); 
 				goto bad; 
@@ -726,7 +796,7 @@ static void* worker_thread(void* raw_argument) {
 		}
 
 		byte origin = 0;
-		at = execute_graph(graph, array, &origin, counts);
+		at = execute_graph(graph, array, &origin, counts, &zr5_count);
 
 		if (not at) {
 			append_to_file(filename, sizeof filename, graph, origin);
@@ -734,31 +804,26 @@ static void* worker_thread(void* raw_argument) {
 			goto loop;
 		}
 
-		while (at > 2 and noneditable(at)) at--;
-		if (at < 2) at = 2;
+		while (at > lsepa and noneditable(at)) at--;
+		if (at < lsepa) at = lsepa;
 
 	bad:	if (noneditable(at)) {
 			printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
 			abort();
 		}		
-		for (byte i = 2; i < at; i++) if (editable(i)) graph[i] = 0;
+		for (byte i = lsepa; i < at; i++) if (editable(i)) graph[i] = 0;
 		pointer = at; goto loop;
 	reset_:
 		graph[pointer] = 0; 
 		do pointer++; while (noneditable(pointer));
 		goto loop;
 
-	next_job:
-		continue;
-	}
-
-	if (count) atomic_store_explicit(global_progress + thread_index, all_jobs_have_finished, ordering);
-
-terminate_thread:
+terminate:
 	free(raw_graph);
 	free(raw_end);
 	free(array);
-	return counts;
+	*current_progress = job_index;
+	return raw_counts;
 }
 
 static void print(char* filename, size_t size, const char* string) {
@@ -892,21 +957,39 @@ static void divide(chunk* q, chunk* r, chunk* total, chunk* divisor) {
 int main(void) {
 	srand((unsigned) time(0));
 
-#define noneditable_pa_count 4
+
+
+#define noneditable_pa_count  1 //4
+
 	const byte u = 0;
-	byte partial_graph[20] = {
+	/*byte partial_graph[20] = {
 		0,  1, u, u,
 		1,  0, u, u,
 		2,  u, u, u,
 		3,  u, u, u,
 		4,  u, 4, 2,
-	};
+	};*/
 
+	byte partial_graph[20] = {
+		0,  u, u, u,
+		1,  u, u, u,
+		2,  u, u, u,
+		3,  u, u, u,
+		4,  u, 4, u,
+	};
+	
 	static char output_filename[4096] = {0};
 	static char output_string[4096] = {0};
+	
+	atomic_init(&flag, 0);	
+ 	display_progress = calloc(1, thread_count * sizeof(_Atomic nat));
 
-	global_progress = calloc(1, thread_count * sizeof(_Atomic nat));
-	for (nat i = 0; i < thread_count; i++)  atomic_init(global_progress + i, no_job_has_started);
+	for (nat i = 0; i < thread_count; i++)  atomic_init(display_progress + i, 0);
+ 	debug_job_processed = calloc(1, total_job_count * sizeof(_Atomic nat));
+	for (nat i = 0; i < total_job_count; i++)  atomic_init(debug_job_processed + i, 0);
+ 	debug_zr5_count = calloc(1, total_job_count * sizeof(_Atomic nat));
+	for (nat i = 0; i < total_job_count; i++)  atomic_init(debug_zr5_count + i, 0);
+
 	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
 
 	struct machine* machine = calloc(2, sizeof(struct machine));
@@ -1021,8 +1104,32 @@ int main(void) {
 		const nat c = core_counter[mi];
 	
 		machine[mi].cores[c].jobs = realloc(machine[mi].cores[c].jobs, sizeof(struct job) * (machine[mi].cores[c].job_count + 1));
-		machine[mi].cores[c].jobs[machine[mi].cores[c].job_count++] = (struct job) { .begin = begin_zv, .end = end_zv };
+		machine[mi].cores[c].jobs[machine[mi].cores[c].job_count++] = (struct job) { .begin = begin_zv, .end = end_zv, .uid = job };
 	}
+
+
+
+
+if ((1)) {
+	const nat shuffle_count = 3000;
+	for (nat mi = 0; mi < 2; mi++) {
+		for (nat i = 0; i < machine[mi].core_count; i++) {
+			const nat job_count = machine[mi].cores[i].job_count;
+			for (nat s = 0; s < shuffle_count; s++) {
+				const nat a = (nat) rand() % job_count;
+				const nat b = (nat) rand() % job_count;
+				struct job t = machine[mi].cores[i].jobs[a];				
+				machine[mi].cores[i].jobs[a] = machine[mi].cores[i].jobs[b];
+				machine[mi].cores[i].jobs[b] = t;				
+			}
+		}
+	}
+}
+	
+
+
+
+
 
 	const nat job_count_per_core = machine[machine_index].cores[0].job_count;
 
@@ -1036,7 +1143,7 @@ int main(void) {
 
 			for (nat j = 0; j < machine[mi].cores[i].job_count; j++) {
 
-				printf("\t\t[%6llu] = (", j);
+				printf("\t\t[%6llu] = {uid=%llu}(", j, machine[mi].cores[i].jobs[j].uid);
 				print_graph_raw(machine[mi].cores[i].jobs[j].begin);
 				printf(" ... ");
 				print_graph_raw(machine[mi].cores[i].jobs[j].end);
@@ -1054,8 +1161,11 @@ int main(void) {
 	struct timeval time_begin = {0};
 	gettimeofday(&time_begin, NULL);
 
-	nat local_progress[thread_count] = {0};
+	nat display_local_progress[thread_count] = {0};
 	nat counts[pm_count] = {0};
+
+	nat job_indexes[thread_count] = {0};
+
 
 start_up_threads:
 
@@ -1067,19 +1177,34 @@ start_up_threads:
 	if (resolution == 0) resolution = 1;
 
 	while (1) {
+		nat expected = 0;
+		if (not atomic_compare_exchange_strong(&flag, &expected, 0)) goto terminate;
+
 		nat sum = 0;
 		for (nat i = 0; i < thread_count; i++) {
-			local_progress[i] = atomic_load_explicit(global_progress + i, ordering);
-			if (local_progress[i] == all_jobs_have_finished) goto thread_had_terminated;
-			if (local_progress[i] == no_job_has_started) local_progress[i] = 0;
-			sum += local_progress[i];
+			display_local_progress[i] = atomic_load_explicit(display_progress + i, memory_order_relaxed);
+			sum += display_local_progress[i];
 		}
 
-		printf("\033[H\033[2J\n-----------------current jobs (jcpc=%llu)-------------------\n", job_count_per_core);
+		// printf("\033[H\033[2J");
+
+		for (nat i = 0; i < total_job_count; i++) {
+			if (i % 100 == 0) puts("");
+			const nat b = atomic_load_explicit(debug_job_processed + i, memory_order_relaxed);
+
+			char c = ' ';
+			if (b == 1) c = '#';
+			else if (b > 1) c = '@';
+			printf("%c", c);
+		}
+		puts(" [end] ");
+		fflush(stdout);
+
+		printf("\n-----------------current jobs (jcpc=%llu)-------------------\n", job_count_per_core);
 		printf("\n\t%1.10lf%%\n\n", (double) (sum) / (double) total_job_count);
 
 		for (nat i = 0; i < thread_count; i++) {
-			const nat size = local_progress[i];
+			const nat size = display_local_progress[i];
 			printf(" %llu: [%8llu / %8llu] :: ", i, size, machine[machine_index].cores[i].job_count);
 			for (nat j = 0; j < size / resolution; j++) {
 				putchar('#');
@@ -1087,98 +1212,69 @@ start_up_threads:
 			puts("");
 		}
 		puts("");
-
 		//sleep(1 << display_rate);
-
 		usleep(10000);
 	}
 
-thread_had_terminated:
+terminate:
 
 	printf("thread_had_terminate: joining threads!\n");
 	for (nat i = 0; i < thread_count; i++) {
-		nat* local_counts = NULL;
-		pthread_join(threads[i], (void**) &local_counts);
-		for (nat j = 0; j < pm_count; j++) counts[j] += local_counts[j];
-		free(local_counts);
+		nat* result = NULL;
+		pthread_join(threads[i], (void**) &result);
+		for (nat j = 0; j < pm_count; j++) counts[j] += result[j + 1];
+		job_indexes[i] = *result;
+		free(result);
 	}
+
+	const nat mi = machine_index;
 
 	struct job remaining_jobs[total_job_count] = {0};
 	nat remaining_count = 0;
 
 	for (nat i = 0; i < thread_count; i++) {
-		const nat done_job_index = atomic_load_explicit(global_progress + i, ordering);
-
-		printf("LOADED: [core #%llu]: done_job_index = %llu\n", i, done_job_index);
-
-		if (done_job_index == all_jobs_have_finished) { puts("done with jobs...."); continue; } 
-		nat first_job_index = done_job_index + 1;
-		if (done_job_index == no_job_has_started) first_job_index = 0;
-
+		const nat k = job_indexes[i];
+		printf("LOADED: [core #%llu]: job_indexes[%llu] = %llu\n", i, i, k);
 		nat pushed = 0;
-		for (nat j = first_job_index; j < machine[machine_index].cores[i].job_count; j++) { 
-			remaining_jobs[remaining_count++] = machine[machine_index].cores[i].jobs[j];
+		for (nat j = k; j < machine[mi].cores[i].job_count; j++) { 
+			remaining_jobs[remaining_count++] = machine[mi].cores[i].jobs[j];
 			pushed++;
 		}
-		printf("     ---> pushed %llu jobs to remaining!\n", pushed);		
+		printf("     ---> pushed %llu jobs to remaining!\n", pushed);
 	}
-
 
 	if (not remaining_count) goto all_threads_have_finished;
 
-	for (nat i = 0; i < thread_count; i++) machine[machine_index].cores[i].job_count = 0;
-	memset(core_counter, 0, sizeof core_counter);
+	for (nat i = 0; i < thread_count; i++) machine[mi].cores[i].job_count = 0;
+	nat counter = 0;
 	for (nat i = 0; i < remaining_count; i++) {
-		if (core_counter[machine_index] < machine[machine_index].core_count - 1) core_counter[machine_index]++; 
-		else core_counter[machine_index] = 0;
-		const nat c = core_counter[machine_index];	
-		machine[machine_index].cores[c].jobs = realloc(machine[machine_index].cores[c].jobs, sizeof(struct job) * (machine[machine_index].cores[c].job_count + 1));
-		machine[machine_index].cores[c].jobs[machine[machine_index].cores[c].job_count++] = remaining_jobs[i];
+		if (counter < machine[mi].core_count - 1) counter++; 
+		else counter = 0;
+		const nat c = counter;	
+		machine[mi].cores[c].jobs = realloc(machine[mi].cores[c].jobs, sizeof(struct job) * (machine[mi].cores[c].job_count + 1));
+		machine[mi].cores[c].jobs[machine[mi].cores[c].job_count++] = remaining_jobs[i];
 	}
+
+	atomic_store(&flag, 0);
+	for (nat i = 0; i < thread_count; i++) atomic_store_explicit(display_progress + i, 0, memory_order_relaxed);
 
 	printf("thread_had_terminate: redistributed %llu jobs onto the cores again!\n", remaining_count);
 	//getchar();
 
-	for (nat i = 0; i < machine[machine_index].core_count; i++) {
-		printf("\tcore #%llu job list: (%llu jobs): \n", i, machine[machine_index].cores[i].job_count);
-		for (nat j = 0; j < machine[machine_index].cores[i].job_count; j++) {
-			printf("\t\t[%6llu] = (", j);
-			print_graph_raw(machine[machine_index].cores[i].jobs[j].begin);
+	for (nat i = 0; i < machine[mi].core_count; i++) {
+		printf("\tcore #%llu job list: (%llu jobs): \n", i, machine[mi].cores[i].job_count);
+		for (nat j = 0; j < machine[mi].cores[i].job_count; j++) {
+			printf("\t\t[%6llu] = {uid=%llu}(", j, machine[mi].cores[i].jobs[j].uid);
+			print_graph_raw(machine[mi].cores[i].jobs[j].begin);
 			printf(" ... ");
-			print_graph_raw(machine[machine_index].cores[i].jobs[j].end);
+			print_graph_raw(machine[mi].cores[i].jobs[j].end);
 			puts(")");
 		}
 		puts("");
 	}
 	//getchar();
-
-	for (nat i = 0; i < thread_count; i++)  atomic_init(global_progress + i, no_job_has_started);
+	
 	goto start_up_threads;
-
-
-
-
-
-
-	//printf("thread_had_terminate: redistributed %llu jobs onto the cores again!\n", remaining_count);
-	//getchar();
-	/*for (nat i = 0; i < thread_count; i++) {
-		const nat done_job_index = atomic_load_explicit(global_progress + i, ordering);
-		if (done_job_index == all_jobs_have_finished) { machine[machine_index].cores[i].job_count = 0; continue; } 	
-		nat first_job_index = done_job_index + 1;
-		if (done_job_index == no_job_has_started) first_job_index = 0;
-		memmove(machine[machine_index].cores[i].jobs, 
-		        machine[machine_index].cores[i].jobs + first_job_index, 
-			sizeof(struct job) * (machine[machine_index].cores[i].job_count - first_job_index)
-		);
-		machine[machine_index].cores[i].job_count -= first_job_index;		
-	}*/
-	//for (nat i = 0; i < thread_count; i++) atomic_init(global_progress + i, no_job_has_started);
-
-
-
-
-
 
 all_threads_have_finished:;
 
@@ -1231,6 +1327,29 @@ all_threads_have_finished:;
         }
         snprintf(output_string, 4096, "[done]\n");
 	print(output_filename, 4096, output_string);
+
+
+{
+	const int max = 8 * 65536;
+	char* string = calloc(1, max);
+	int length = 0;
+	nat sum = 0;
+	for (nat i = 0; i < total_job_count; i++) {
+		const nat count = atomic_load_explicit(debug_zr5_count + i, memory_order_relaxed);
+		if (i % 16 == 0) length += snprintf(string + length, max, "\n");
+		length += snprintf(string + length, max, "%04llX  ", count);
+		sum += count;
+	}
+	length += snprintf(string + length, max, "\ndone\n");
+	
+	char myfilename[4096] = {0};
+	print(myfilename, sizeof myfilename, string);
+
+	printf("sum = %llu\n", sum);
+}
+
+
+
 }
 
 
@@ -1251,15 +1370,42 @@ all_threads_have_finished:;
 
 
 
+/*
 
 
 
 
+static void print(char* filename, size_t size, const char* string) {
+	char dt[32] = {0};   get_datetime(dt);
 
+	int flags = O_WRONLY | O_APPEND;
+	mode_t permissions = 0;
+try_open:;
+	const int file = open(filename, flags, permissions);
+	if (file < 0) {
+		if (permissions) {
+			perror("create openat file");
+			printf("print: [%s]: failed to create filename = \"%s\"\n", dt, filename);
+			fflush(stdout);
+			abort();
+		}
+		snprintf(filename, size, "%s_D%u_%08x%08x%08x%08x_output.txt", dt, D,
+			rand(), rand(), rand(), rand()
+		);
+		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		goto try_open;
+	}
 
+	write(file, string, strlen(string));
+	close(file);
+	printf("%s", string);
+	fflush(stdout);
+}
 
 
 
+*/
 
 
 
@@ -1356,6 +1502,34 @@ all_threads_have_finished:;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//printf("thread_had_terminate: redistributed %llu jobs onto the cores again!\n", remaining_count);
+	//getchar();
+	/*for (nat i = 0; i < thread_count; i++) {
+		const nat done_job_index = atomic_load_explicit(global_progress + i, ordering);
+		if (done_job_index == all_jobs_have_finished) { machine[machine_index].cores[i].job_count = 0; continue; } 	
+		nat first_job_index = done_job_index + 1;
+		if (done_job_index == no_job_has_started) first_job_index = 0;
+		memmove(machine[machine_index].cores[i].jobs, 
+		        machine[machine_index].cores[i].jobs + first_job_index, 
+			sizeof(struct job) * (machine[machine_index].cores[i].job_count - first_job_index)
+		);
+		machine[machine_index].cores[i].job_count -= first_job_index;		
+	}*/
+	//for (nat i = 0; i < thread_count; i++) atomic_init(global_progress + i, no_job_has_started);
 
 
 

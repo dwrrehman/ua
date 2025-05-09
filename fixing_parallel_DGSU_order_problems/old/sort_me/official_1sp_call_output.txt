@@ -1,0 +1,43 @@
+taking a significant amount of time on e = 268435456, z = 012115202053315442420145
+taking a significant amount of time on e = 536870912, z = 012115202053315442420145
+taking a significant amount of time on e = 805306368, z = 012115202053315442420145
+  ---> GOOD: origin = 2, z = 012115202053315442420145
+[1202412113.020702]: write: wrote z = 012115202053315442420145 to file "1202412102.223134_107d4b4a11d9efbb7b09e72447262b97_z.txt"
+GA trying: z = 054015502010311540420245
+GA trying: z = 045015252005354242420445
+GA trying: z = 020010552454340045420545
+GA trying: z = 031412552550325245420055
+GA trying: z = 010110222151312040420255
+GA trying: z = 005212232530314240420455
+PRUNED:  origin = 2, z = 005212232530314240420455 ... at = 2
+GA trying: z = 022510232000310142420555
+final graph state: 000010002000300040400005
+su: D = 1 space:
+	 good    1202 zv
+	 bad     26248569508 zv
+	 exg_bad 4334503948 zv
+	 execution_limit = 1000000000
+	 array_size = 1000000
+	 in   13305.00s [1202412102.222600:1202412113.020745]
+
+
+pm counts:
+z_is_good: 1202    		pm_zr5: 2332644643		
+pm_zr6: 1740024885		pm_ndi: 1091410518		
+pm_pco: 1271572216		pm_per: 471975095		
+pm_ns0: 2652961904		pm_oer: 312952  		
+pm_rsi: 47963172		 pm_h0: 1564292961		
+ pm_h1: 396790  		pm_erw: 3818087 		
+pm_rmv: 5278668 		pm_imv: 16837   		
+pm_csm: 49522   		pm_ga_dummy: 0       		
+pm_ga_26dol: 0       		pm_ga_sdol: 0       		
+pm_ga_6g: 0       		pm_ga_ns0: 839     		
+pm_ga_zr5: 45624   		pm_ga_pco: 5866642349		
+pm_ga_ndi: 5544120 		pm_ga_sndi: 204274116		
+pm_ga_snco: 176934377		pm_ga_sn1: 719     		
+pm_ga_zr6: 772     		pm_ga_rdo: 90758702		
+pm_ga_uo: 15569863942		[done]
+D_general_search_utility: 
+
+
+13305 / 3600 = 3.6958333333 hours

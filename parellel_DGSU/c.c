@@ -58,6 +58,12 @@ the new sizes of all of the spaces are the following:
 
 
 
+//	114,316
+
+
+
+
+
 
 #include <time.h>
 #include <string.h>
@@ -96,26 +102,27 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 1
+#define D 0
 #define execution_limit 250000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
 #define display_rate 0
 #define update_rate 1
 
-#define total_job_count 200
+#define total_job_count 2000
 #define machine_index 0
 
 #define machine0_counter_max 1
 #define machine1_counter_max 1
 
-#define machine0_thread_count 10
+#define machine0_thread_count 1
 #define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
 struct job {
 	byte* begin;
 	byte* end;
+	nat uid;
 };
 
 struct joblist {
@@ -536,10 +543,16 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	return at;
 }
 
-static byte noneditable(byte pa) { 
-	return (pa < 20 and pa % 4 == 0) or 
-		pa == 18 or pa == 19 or
-		pa == 1 or pa == 5;
+
+#define lsepa 1
+
+static byte noneditable(byte pa) {
+
+	//return (pa < 20 and pa % 4 == 0) or 
+	//	pa == 18 or pa == 19 or
+	//	pa == 1 or pa == 5;
+
+	return (pa < 20 and pa % 4 == 0) or pa == 18;	
 
 }
 static byte editable(byte pa) { return not noneditable(pa); }
@@ -565,8 +578,7 @@ static void* worker_thread(void* raw_argument) {
 	
 	for (nat job_index = 0; job_index < count; job_index++) {
 
- 
-		if (not (update_counter & ((1 << update_rate) - 1))) {
+ 		if (not (update_counter & ((1 << update_rate) - 1))) {
 			update_counter = 0;
 			atomic_store_explicit(global_progress + thread_index, job_index, memory_order_relaxed);
 		} else update_counter++;
@@ -589,10 +601,10 @@ static void* worker_thread(void* raw_argument) {
 
 	increment:
 		graph[pointer]++;
-	init:  	pointer = 2;
+	init:  	pointer = lsepa;
 
 		u16 was_utilized = 0;
-		byte at = 2;
+		byte at = lsepa;
 
 		for (byte index = 20; index < graph_count; index += 4) {
 			if (index < graph_count - 4 and graph[index] > graph[index + 4]) {
@@ -678,7 +690,7 @@ static void* worker_thread(void* raw_argument) {
 
 		for (byte index = 0; index < operation_count; index++) {
 			if (not ((was_utilized >> index) & 1)) { 
-				at = 2;
+				at = lsepa;
 				counts[pm_ga_uo]++; 
 				//puts("pm_ga_uo"); 
 				goto bad; 
@@ -706,14 +718,14 @@ static void* worker_thread(void* raw_argument) {
 			goto loop;
 		}
 
-		while (at > 2 and noneditable(at)) at--;
-		if (at < 2) at = 2;
+		while (at > lsepa and noneditable(at)) at--;
+		if (at < lsepa) at = lsepa;
 
 	bad:	if (noneditable(at)) {
 			printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
 			abort();
 		}		
-		for (byte i = 2; i < at; i++) if (editable(i)) graph[i] = 0;
+		for (byte i = lsepa; i < at; i++) if (editable(i)) graph[i] = 0;
 		pointer = at; goto loop;
 	reset_:
 		graph[pointer] = 0; 
@@ -863,16 +875,29 @@ static void divide(chunk* q, chunk* r, chunk* total, chunk* divisor) {
 int main(void) {
 	srand((unsigned) time(0));
 
-#define noneditable_pa_count 4
+
+#define noneditable_pa_count 1 //4
 
 	const byte u = 0;
+
 	byte partial_graph[20] = {
+		0,  u, u, u,
+		1,  u, u, u,
+		2,  u, u, u,
+		3,  u, u, u,
+		4,  u, 4, u,
+	};
+
+
+	/*byte partial_graph[20] = {
 		0,  1, u, u,
 		1,  0, u, u,
 		2,  u, u, u,
 		3,  u, u, u,
 		4,  u, 4, 2,
-	};
+	};*/
+
+
 
 	static char output_filename[4096] = {0};
 	static char output_string[4096] = {0};
@@ -994,10 +1019,14 @@ int main(void) {
 		const nat c = core_counter[mi];
 	
 		machine[mi].cores[c].jobs = realloc(machine[mi].cores[c].jobs, sizeof(struct job) * (machine[mi].cores[c].job_count + 1));
-		machine[mi].cores[c].jobs[machine[mi].cores[c].job_count++] = (struct job) { .begin = begin_zv, .end = end_zv };
+		machine[mi].cores[c].jobs[machine[mi].cores[c].job_count++] = (struct job) { .begin = begin_zv, .end = end_zv, .uid = job };
 	}
 
 	const nat job_count_per_core = machine[machine_index].cores[0].job_count;
+
+
+
+	puts("before:");
 
 	for (nat mi = 0; mi < 2; mi++) {
 		
@@ -1009,7 +1038,7 @@ int main(void) {
 
 			for (nat j = 0; j < machine[mi].cores[i].job_count; j++) {
 
-				printf("\t\t[%6llu] = (", j);
+				printf("\t\t[%6llu] = (uid=%llu)(", j, machine[mi].cores[i].jobs[j].uid);
 				print_graph_raw(machine[mi].cores[i].jobs[j].begin);
 				printf(" ... ");
 				print_graph_raw(machine[mi].cores[i].jobs[j].end);
@@ -1020,6 +1049,53 @@ int main(void) {
 		puts("----------------------------------\n\n");
 	}
 	getchar();
+
+
+
+if ((1)) {
+	const nat shuffle_count = 3000;
+	for (nat mi = 0; mi < 2; mi++) {
+		for (nat i = 0; i < machine[mi].core_count; i++) {
+			const nat job_count = machine[mi].cores[i].job_count;
+			for (nat s = 0; s < shuffle_count; s++) {
+				const nat a = rand() % job_count;
+				const nat b = rand() % job_count;
+				struct job t = machine[mi].cores[i].jobs[a];				
+				machine[mi].cores[i].jobs[a] = machine[mi].cores[i].jobs[b];
+				machine[mi].cores[i].jobs[b] = t;				
+			}
+		}
+	}
+}
+	
+
+
+	puts("after");
+	for (nat mi = 0; mi < 2; mi++) {
+		
+		printf("machine #%llu has %llu cores: \n", mi, machine[mi].core_count);
+
+		for (nat i = 0; i < machine[mi].core_count; i++) {
+
+			printf("\tcore #%llu job list: (%llu jobs): \n", i, machine[mi].cores[i].job_count);
+
+			for (nat j = 0; j < machine[mi].cores[i].job_count; j++) {
+
+				printf("\t\t[%6llu] = (uid=%llu)(", j, machine[mi].cores[i].jobs[j].uid);
+				print_graph_raw(machine[mi].cores[i].jobs[j].begin);
+				printf(" ... ");
+				print_graph_raw(machine[mi].cores[i].jobs[j].end);
+				puts(")");
+			}
+			puts("");
+		}
+		puts("----------------------------------\n\n");
+	}
+	getchar();
+
+
+
+
 
 
 
