@@ -166,20 +166,20 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 typedef uint64_t chunk;
 
-#define D 2
+#define D 0
 #define execution_limit 250000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
 #define display_rate 2
 
 #define total_job_count 10000
-#define machine_index 1
+#define machine_index 0
 
 #define machine0_counter_max 1
 #define machine1_counter_max 1
 
-#define machine0_thread_count 10 // 5
-#define machine1_thread_count 64
+#define machine0_thread_count 5
+#define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
 struct job {
@@ -708,106 +708,6 @@ static void* worker_thread(void* raw_argument) {
 				goto bad;
 			}
 
-
-			
-
-			/*
-
-			2 x ----------(*n > *i)---------> x
-
-			
-			2 x ----------(*n > *i)---------> 2 y
-			  y ----------(*n > *i)---------> x
-
-
-			2 x ----------(*n > *i)---------> 2 y
-			  y ----------(*n > *i)---------> 2 z
-			  z ----------(*n > *i)---------> x
-
-
-			2 x ----------(*n > *i)---------> 2 y
-			  y ----------(*n > *i)---------> 2 z
-			  z ----------(*n > *i)---------> 2 w
-			  w ----------(*n > *i)---------> x
-		*/
-
-
-			// 2 x ----------(*n > *i)---------> x
-
-			/// 0 1 1 4   1 0 2 5   2 1 3 6   ...  1 x 5 x   ...    0 1 4 0 
-		
-			if (graph[4 * index + 0] == two and g == index) {
-				at = graph_count;
-				if (editable(4 * index + 2) and at > 4 * index + 2) at = 4 * index + 2;
-				if (editable(4 * index) and at > 4 * index) at = 4 * index;
-				if (at == graph_count) abort();
-				counts[pm_ga_sndi]++;
-				//puts(pm_spelling[pm_ga_sndi]);
-				goto bad;
-			}
-
-
-
-			//2 x ----------(*n > *i)---------> 2 y
-			//  y ----------(*n > *i)---------> x
-
-			/// 0 1 1 4   1 0 2 5   2 1 3 6   ...  1 x 5 x   ...    0 1 4 0 
-
-			// g is y
-			// index is x
-		
-			if (	graph[4 * index + 0] == two and     //x is a two
-				graph[4 * g + 0] == two and         //y is a two
-				graph[4 * g + 2] == index        //y take g side to go to x
-				//graph[4 * index + 2] == g and       //x take g side to go to y
-			) {
-				at = graph_count;
-
-				if (editable(4 * index) and at > 4 * index) at = 4 * index;
-				if (editable(4 * g) and at > 4 * g) at = 4 * g;
-
-				if (editable(4 * g + 2) and at > 4 * g + 2) at = 4 * g + 2;
-				if (editable(4 * index + 2) and at > 4 * index + 2) at = 4 * index + 2;
-				
-				if (at == graph_count) abort();
-				counts[pm_ga_sndi]++;
-				//puts(pm_spelling[pm_ga_sndi]);
-				goto bad;
-			}
-
-
-
-
-			if (	graph[4 * index + 0] == two and 
-				graph[4 * graph[4 * index + 2] + 0] == two and  
-				graph[4 * graph[4 * graph[4 * index + 2] + 2] + 0] == two and				
-				graph[4 * graph[4 * graph[4 * index + 2] + 2] + 2] == index
-			) {
-				at = graph_count;
-
-				if (editable(4 * index) and at > 4 * index) at = 4 * index;
-				if (editable(4 * g) and at > 4 * g) at = 4 * g;
-
-				if (editable(4 * graph[4 * graph[4 * index + 2] + 2]) and 
-					at > 4 * graph[4 * graph[4 * index + 2] + 2]) 
-					at = 4 * graph[4 * graph[4 * index + 2] + 2];
-
-				if (editable(4 * index + 2) and at > 4 * index + 2) at = 4 * index + 2;
-
-				if (editable(4 * g + 2) and at > 4 * g + 2) at = 4 * g + 2;
-
-				if (editable(4 * graph[4 * graph[4 * index + 2] + 2] + 2) and 
-					at > 4 * graph[4 * graph[4 * index + 2] + 2] + 2) 
-					at = 4 * graph[4 * graph[4 * index + 2] + 2] + 2;
-			
-				if (at == graph_count) abort();
-				counts[pm_ga_sndi]++;
-				//puts(pm_spelling[pm_ga_sndi]);
-				goto bad;
-			}
-
-
-
 			{const byte pairs[3 * 5] = {
 				three, three, pm_ga_ndi,
 				five, one,  pm_ga_pco,
@@ -835,7 +735,7 @@ static void* worker_thread(void* raw_argument) {
 					}
 				} 
 			}}
-
+		
 			if (l != index) was_utilized |= 1 << l;
 			if (g != index) was_utilized |= 1 << g;
 			if (e != index) was_utilized |= 1 << e;
@@ -853,8 +753,6 @@ static void* worker_thread(void* raw_argument) {
 					goto bad;
 				}
 			}
-
-
 		}
 
 		for (byte index = 0; index < operation_count; index++) {
