@@ -2,7 +2,7 @@
 
 // modified to be parellel on 202501131.020611: dwrr 202501131.034623:
 
-// D-general version of the 0 space search util  
+// d-general version of the 0 space search util  
 // written on 202410163.164303 dwrr
 
 // size of raw 0 space is: (5^15) 	                 			=              30,517,578,125    / 5 =    6103515625
@@ -167,7 +167,7 @@ typedef uint64_t nat;
 typedef uint64_t chunk;
 
 #define D 0
-#define execution_limit 250000000LLU
+#define execution_limit 50000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
 #define display_rate 2
@@ -178,7 +178,7 @@ typedef uint64_t chunk;
 #define machine0_counter_max 1
 #define machine1_counter_max 1
 
-#define machine0_thread_count 5
+#define machine0_thread_count 10
 #define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
@@ -205,7 +205,7 @@ enum operations { one, two, three, five, six };
 
 enum pruning_metrics {
 	z_is_good,
-	pm_zr5, pm_zr6, pm_ndi,
+	pm_zr5, pm_zr6, pm_ndi, pm_sndi,
 	pm_pco, pm_per, pm_ns0,
 	pm_oer, pm_rsi,
 	pm_h0, pm_h0s, pm_h1, pm_h2, 
@@ -229,7 +229,7 @@ enum pruning_metrics {
 
 static const char* pm_spelling[pm_count] = {
 	"z_is_good",
-	"pm_zr5", "pm_zr6", "pm_ndi",
+	"pm_zr5", "pm_zr6", "pm_ndi", "pm_sndi", 
 	"pm_pco", "pm_per", "pm_ns0",
 	"pm_oer", "pm_rsi",
 	"pm_h0", "pm_h0s", "pm_h1", "pm_h2", 
@@ -330,7 +330,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 		BDL_ier_at = 0,
 		PER_ier_at = (nat) ~0;
 
-	byte	H0_counter = 0,  H0S_counter = 0,  
+	byte	H0_counter = 0,  H0S_counter = 0, SNDI_counter = 0,
 		H1_counter = 0, H2_counter = 0, OER_counter = 0,
 		BDL1_counter = 0, BDL2_counter = 0,
 		BDL3_counter = 0, BDL4_counter = 0,
@@ -347,9 +347,21 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
  	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
 	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
 
+	nat first = 1; // debug
+
 	for (nat e = 0; e < execution_limit; e++) {
 
 		const byte I = ip * 4, op = graph[I];
+
+		if (e >= 100000000) {
+			if (first) {
+				print_graph_raw(graph); puts("");
+				getchar();
+				first = 0;
+			}
+			printf("%hhu ", op); fflush(stdout);
+			usleep(20000);
+		}
 
 		if (op == one) {
 			if (pointer == n) { 
@@ -374,6 +386,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			else if (pair_index == 3) pair_index = 4;
 			else if (pair_index == 4) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
 			else if (pair_index) { pair_count = 0; pair_index = 0; }
+
+			SNDI_counter = 0;
 
 			bout_length++;
 			pointer++;
@@ -509,17 +523,22 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 				small_erp_array[pointer]++;
 			}
 
+			SNDI_counter = 0;
+
 			BDL_ier_at = pointer;
 			PER_ier_at = pointer;
 			pointer = 0;
 		}
 
 		else if (op == two) {
+			SNDI_counter++;
+			if (SNDI_counter >= 10) return pm_sndi;
 			array[n]++;
 		}
 
 		else if (op == six) {  
 			if (not array[n]) return pm_zr6;
+			SNDI_counter = 0;
 			array[n] = 0;
 		}
 		else if (op == three) {
@@ -553,6 +572,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			if (not pair_index) pair_index = 1;
 			else if (pair_index == 2) pair_index = 3;
 			else { pair_count = 0; pair_index = 0; }
+
+			SNDI_counter = 0;
 
 			bout_length = 0;
 			array[pointer]++;
@@ -708,6 +729,106 @@ static void* worker_thread(void* raw_argument) {
 				goto bad;
 			}
 
+
+			
+
+			/*
+
+			2 x ----------(*n > *i)---------> x
+
+			
+			2 x ----------(*n > *i)---------> 2 y
+			  y ----------(*n > *i)---------> x
+
+
+			2 x ----------(*n > *i)---------> 2 y
+			  y ----------(*n > *i)---------> 2 z
+			  z ----------(*n > *i)---------> x
+
+
+			2 x ----------(*n > *i)---------> 2 y
+			  y ----------(*n > *i)---------> 2 z
+			  z ----------(*n > *i)---------> 2 w
+			  w ----------(*n > *i)---------> x
+		*/
+
+
+			// 2 x ----------(*n > *i)---------> x
+
+			/// 0 1 1 4   1 0 2 5   2 1 3 6   ...  1 x 5 x   ...    0 1 4 0 
+		
+			if (graph[4 * index + 0] == two and g == index) {
+				at = graph_count;
+				if (editable(4 * index + 2) and at > 4 * index + 2) at = 4 * index + 2;
+				if (editable(4 * index) and at > 4 * index) at = 4 * index;
+				if (at == graph_count) abort();
+				counts[pm_ga_sndi]++;
+				//puts(pm_spelling[pm_ga_sndi]);
+				goto bad;
+			}
+
+
+
+			//2 x ----------(*n > *i)---------> 2 y
+			//  y ----------(*n > *i)---------> x
+
+			/// 0 1 1 4   1 0 2 5   2 1 3 6   ...  1 x 5 x   ...    0 1 4 0 
+
+			// g is y
+			// index is x
+		
+			if (	graph[4 * index + 0] == two and     //x is a two
+				graph[4 * g + 0] == two and         //y is a two
+				graph[4 * g + 2] == index        //y take g side to go to x
+				//graph[4 * index + 2] == g and       //x take g side to go to y
+			) {
+				at = graph_count;
+
+				if (editable(4 * index) and at > 4 * index) at = 4 * index;
+				if (editable(4 * g) and at > 4 * g) at = 4 * g;
+
+				if (editable(4 * g + 2) and at > 4 * g + 2) at = 4 * g + 2;
+				if (editable(4 * index + 2) and at > 4 * index + 2) at = 4 * index + 2;
+				
+				if (at == graph_count) abort();
+				counts[pm_ga_sndi]++;
+				//puts(pm_spelling[pm_ga_sndi]);
+				goto bad;
+			}
+
+
+
+
+			if (	graph[4 * index + 0] == two and 
+				graph[4 * graph[4 * index + 2] + 0] == two and  
+				graph[4 * graph[4 * graph[4 * index + 2] + 2] + 0] == two and				
+				graph[4 * graph[4 * graph[4 * index + 2] + 2] + 2] == index
+			) {
+				at = graph_count;
+
+				if (editable(4 * index) and at > 4 * index) at = 4 * index;
+				if (editable(4 * g) and at > 4 * g) at = 4 * g;
+
+				if (editable(4 * graph[4 * graph[4 * index + 2] + 2]) and 
+					at > 4 * graph[4 * graph[4 * index + 2] + 2]) 
+					at = 4 * graph[4 * graph[4 * index + 2] + 2];
+
+				if (editable(4 * index + 2) and at > 4 * index + 2) at = 4 * index + 2;
+
+				if (editable(4 * g + 2) and at > 4 * g + 2) at = 4 * g + 2;
+
+				if (editable(4 * graph[4 * graph[4 * index + 2] + 2] + 2) and 
+					at > 4 * graph[4 * graph[4 * index + 2] + 2] + 2) 
+					at = 4 * graph[4 * graph[4 * index + 2] + 2] + 2;
+			
+				if (at == graph_count) abort();
+				counts[pm_ga_sndi]++;
+				//puts(pm_spelling[pm_ga_sndi]);
+				goto bad;
+			}
+
+
+
 			{const byte pairs[3 * 5] = {
 				three, three, pm_ga_ndi,
 				five, one,  pm_ga_pco,
@@ -735,7 +856,7 @@ static void* worker_thread(void* raw_argument) {
 					}
 				} 
 			}}
-		
+
 			if (l != index) was_utilized |= 1 << l;
 			if (g != index) was_utilized |= 1 << g;
 			if (e != index) was_utilized |= 1 << e;
@@ -753,6 +874,8 @@ static void* worker_thread(void* raw_argument) {
 					goto bad;
 				}
 			}
+
+
 		}
 
 		for (byte index = 0; index < operation_count; index++) {
@@ -1094,6 +1217,9 @@ int main(void) {
 
 	nat job_indexes[thread_count] = {0};
 
+	nat completed_so_far = 0;
+
+
 start_up_threads:
 
 	for (nat i = 0; i < machine[machine_index].core_count; i++) {
@@ -1120,7 +1246,7 @@ start_up_threads:
 
 		printf("\033[H\033[2J");
 		printf("\n-----------------current jobs (max_job_size=%llu)-------------------\n", max_job_size);
-		printf("\n\t%1.10lf%%\n\n", (double) (sum) / (double) total_job_count);
+		printf("\n\t%1.10lf%%\n\n", (double) (completed_so_far + sum) / (double) total_job_count);
 		printf("  resolution = %llu\n", resolution);
 
 		for (nat i = 0; i < thread_count; i++) {
@@ -1171,6 +1297,8 @@ terminate:
 	}
 	atomic_store(&flag, 0);
 	for (nat i = 0; i < thread_count; i++) atomic_store_explicit(display_progress + i, 0, memory_order_relaxed);
+
+	completed_so_far = total_job_count - remaining_count;
 
 	goto start_up_threads;
 
@@ -1695,6 +1823,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	for (nat e = 0; e < execution_limit; e++) {
 
 		const byte I = ip * 4, op = graph[I];
+
+
+		
 
 		if (op == one) {
 			if (pointer == n) { 

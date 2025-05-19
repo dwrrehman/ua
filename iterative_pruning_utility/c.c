@@ -46,8 +46,8 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-#define D 3
-#define execution_limit 600000LLU
+#define D 1
+#define execution_limit 1000000LLU
 #define array_size 100000LLU
 
 enum operations { one, two, three, five, six };

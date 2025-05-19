@@ -42,8 +42,8 @@ enum analyses {
 };
 
 
-//static const nat analysis = print_array; //erp_hg;
-static const nat analysis = erp_hg;
+//static const nat analysis = print_lifetime; //erp_hg;
+static const nat analysis = print_lifetime;
 
 static const nat zv_index = 0;
 static const bool should_generate_xw_csv = false;
@@ -69,6 +69,8 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 		const byte I = ip * 4, op = graph[I];
 
+		abort(); usleep(100);
+
 		if (op == one) {
 			if (pointer == n) { 
 				puts("FEA condition violated by a z value: "); 
@@ -80,7 +82,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 			bout_length++;
 			pointer++;
 
-			if (analysis == print_lifetime)  {   if (last_mcal_op == three) putchar('#'); else putchar(' '); } 
+			if (analysis == print_lifetime)  {   if (last_mcal_op == three) putchar('#'); else putchar(' '); fflush(stdout); } 
 
 			if (pointer > xw and pointer < n) { 
 				xw = pointer; 
@@ -99,7 +101,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 			pointer = 0;
 			er_count++;
 
-			if (analysis == print_lifetime) puts("#");
+			if (analysis == print_lifetime) { puts("#"); fflush(stdout); } 
 		}
 
 		else if (op == two) {
@@ -173,7 +175,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 
 	}
-	if (analysis == print_lifetime) puts("");
+	if (analysis == print_lifetime) { puts(""); fflush(stdout); } 
 	
 
 	if (analysis == s0xw) {
@@ -295,13 +297,9 @@ int main(void) {
 	//if (zv_index == 3) zv_string = "012115252033300442420040";
 	//if (zv_index == 4) zv_string = "014415252133310442420021";
 
-
 	
 	zv_string = "0114102521363141424204140140";
 //		     0114102521363141424204140140
-
-
-
 
 
 	init_graph_from_string(graph, zv_string);

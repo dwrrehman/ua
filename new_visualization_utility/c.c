@@ -46,7 +46,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 3;        // the duplication count (operation_count = 5 + D)
+static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
@@ -69,11 +69,13 @@ static const int display_rate = 1;
 static const int default_window_size_width = 1000;
 static const int default_window_size_height = 1000;
 
-static const nat execution_limit  = 3000000;
-static const nat pre_run_duration = 1600000;
+static const nat execution_limit  = (nat) -1;
+static const nat pre_run_duration = 100000;
 
-static const nat array_size = 4096;
-static const nat lifetime_length = 3000;
+static const nat array_size = 4000;
+static const nat lifetime_length = 2000;
+
+static const nat generating_display_rate = 8;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -284,9 +286,6 @@ int main(int argc, const char** argv) {
 
 	nat count = 0;
 	struct z_value* list = load_zlist(argv[1], &count);
-
-	const nat generating_display_rate = 8;
-
 
 	for (nat i = 0; i < count; i++) {
 		if (i % generating_display_rate == 0) {

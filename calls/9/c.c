@@ -347,13 +347,13 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
  	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
 	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
 
-	nat first = 1; // debug
+	//nat first = 1; // debug
 
 	for (nat e = 0; e < execution_limit; e++) {
 
 		const byte I = ip * 4, op = graph[I];
 
-		if (e >= 100000000) {
+		/*if (e >= 100000000) {
 			if (first) {
 				print_graph_raw(graph); puts("");
 				getchar();
@@ -361,7 +361,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			}
 			printf("%hhu ", op); fflush(stdout);
 			usleep(20000);
-		}
+		}*/
 
 		if (op == one) {
 			if (pointer == n) { 
@@ -904,7 +904,7 @@ static void* worker_thread(void* raw_argument) {
 
 		if (not at) {
 			append_to_file(filename, sizeof filename, graph, origin);
-			usleep(100000);
+			//usleep(100000);
 			goto loop;
 		}
 
