@@ -69,11 +69,11 @@ static const int display_rate = 1;
 static const int default_window_size_width = 1000;
 static const int default_window_size_height = 1000;
 
-static const nat execution_limit  = (nat) -1;
-static const nat pre_run_duration = 100000;
+static const nat execution_limit  = 10000000;
+static const nat pre_run_duration = 0;
 
 static const nat array_size = 4000;
-static const nat lifetime_length = 2000;
+static const nat lifetime_length = 10000;
 
 static const nat generating_display_rate = 8;
 
