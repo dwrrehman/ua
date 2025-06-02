@@ -46,19 +46,19 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-#define D 1
-#define execution_limit 1000000LLU
+#define D 2
+#define execution_limit 5000000LLU
 #define array_size 100000LLU
 
 enum operations { one, two, three, five, six };
 
 enum pruning_metrics {
 	z_is_good,
-	pm_zr5, pm_zr6, pm_ndi,
+	pm_zr5, pm_zr6, pm_ndi, pm_sndi,
 	pm_pco, pm_per, pm_ns0,
 	pm_oer, pm_rsi,
 	pm_h0, pm_h0s, pm_h1, pm_h2, 
-	pm_rmv, pm_ormv, pm_imv, pm_csm,
+	pm_rmv, pm_ormv, pm_imv, pm_csm, pm_lmv,
 	pm_fse, pm_pair, pm_ls0, 
 	pm_bdl1, pm_bdl2, pm_bdl3, 
 	pm_bdl4, pm_bdl5, pm_bdl6, 
@@ -78,11 +78,11 @@ enum pruning_metrics {
 
 static const char* pm_spelling[pm_count] = {
 	"z_is_good",
-	"pm_zr5", "pm_zr6", "pm_ndi",
+	"pm_zr5", "pm_zr6", "pm_ndi", "pm_sndi",
 	"pm_pco", "pm_per", "pm_ns0",
 	"pm_oer", "pm_rsi",
 	"pm_h0", "pm_h0s", "pm_h1", "pm_h2", 
-	"pm_rmv", "pm_ormv", "pm_imv", "pm_csm",
+	"pm_rmv", "pm_ormv", "pm_imv", "pm_csm", "pm_lmv",
 	"pm_fse", "pm_pair", "pm_ls0",
 	"pm_bdl1", "pm_bdl2", "pm_bdl3", 
 	"pm_bdl4", "pm_bdl5", "pm_bdl6", 
@@ -230,7 +230,38 @@ try_open:;
 }
 
 
-#define history_count 8192
+
+static void print_array(nat* array, nat xw, nat location, bool print_whole_array) {
+
+	nat max = 0;
+	for (nat i = 0; i < xw + 5; i++) {
+		const nat difference = i < location ? location - i : i - location;
+		if (difference > 30 and not print_whole_array) continue;
+		if (array[i] > max) max = array[i];
+	}
+
+	nat resolution = max / 128;
+	if (resolution == 0) resolution = 1;
+
+	//resolution = 1;
+
+	printf("array: (xw = %llu)\n", xw);
+	for (nat i = 0; i < xw + 5; i++) {
+		const nat difference = i < location ? location - i : i - location;
+		if (difference > 30 and not print_whole_array) continue;
+		printf("%6llu: %6llu: ", i, array[i]);
+		for (nat _ = 0; _ < array[i] / resolution; _++) { putchar('#'); putchar('#'); } 
+		if (i == location) printf("\033[31;1m        <------------------- (PRUNED HAPPEND FROM THIS CELL (#%llu))\033[0m", location);
+		putchar(10);
+	}
+	putchar(10);
+}
+
+
+
+
+
+#define history_count (7000)
 static byte history[history_count] = {0};
 
 static void debug_pm(byte origin, nat e, nat pm) {
@@ -250,13 +281,14 @@ static void debug_pm(byte origin, nat e, nat pm) {
 		else if (history[i] == three) { printf("#"); fflush(stdout); } 
 	}
 	fflush(stdout);
-	getchar();
+	//getchar();
 }
 
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
 
-memset(history, 255, history_count);
+//memset(history, 255, history_count);
 
+#define max_erp_count 20
 #define max_rsi_count 512
 #define max_oer_repetions 50
 #define max_rmv_modnat_repetions 15
@@ -270,8 +302,6 @@ memset(history, 255, history_count);
 #define max_consecutive_h0s_bouts 7
 #define max_consecutive_pairs 8
 
-#define max_erp_count 20
-
 	const nat n = array_size;
 	array[0] = 0; 
 	array[n] = 0;
@@ -281,7 +311,8 @@ memset(history, 255, history_count);
 		BDL_ier_at = 0,
 		PER_ier_at = (nat) ~0;
 
-	byte	H0_counter = 0,  H0S_counter = 0,  H1_counter = 0, H2_counter = 0, OER_counter = 0,
+	byte	H0_counter = 0,  H0S_counter = 0, SNDI_counter = 0,
+		H1_counter = 0, H2_counter = 0, OER_counter = 0,
 		BDL1_counter = 0, BDL2_counter = 0,
 		BDL3_counter = 0, BDL4_counter = 0,
 		BDL5_counter = 0, BDL6_counter = 0,
@@ -297,9 +328,21 @@ memset(history, 255, history_count);
  	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
 	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
 
+	//nat first = 1; // debug
+
 	for (nat e = 0; e < execution_limit; e++) {
 
 		const byte I = ip * 4, op = graph[I];
+
+		/*if (e >= 100000000) {
+			if (first) {
+				print_graph_raw(graph); puts("");
+				getchar();
+				first = 0;
+			}
+			printf("%hhu ", op); fflush(stdout);
+			usleep(20000);
+		}*/
 
 		if (op == one) {
 			if (pointer == n) { 
@@ -313,7 +356,7 @@ memset(history, 255, history_count);
 			if (last_mcal_op == one)  H0_counter = 0;
 			if (last_mcal_op == one)  H0S_counter = 0;
 
-			if (pointer < max_rsi_count) { 
+			if (pointer < max_rsi_count) {
 				if (last_mcal_op == three) {
 					rsi_counter[pointer]++;
 					if (rsi_counter[pointer] >= max_consecutive_s0_incr) return pm_rsi;
@@ -322,9 +365,10 @@ memset(history, 255, history_count);
 
 			if (pair_index == 1) pair_index = 2;
 			else if (pair_index == 3) pair_index = 4;
-			else if (pair_index == 4) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) { 
-						/*debug_pm(origin, e, pm_pair); fflush(stdout); */ return pm_pair; } } 
+			else if (pair_index == 4) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
 			else if (pair_index) { pair_count = 0; pair_index = 0; }
+
+			SNDI_counter = 0;
 
 			bout_length++;
 			pointer++;
@@ -345,6 +389,24 @@ memset(history, 255, history_count);
 				OER_counter++;
 				if (OER_counter >= max_oer_repetions) return pm_oer;
 			} else { OER_ier_at = pointer; OER_counter = 0; }
+			
+			for (nat i = 0; i < xw; i++) {
+				const nat a = array[i];
+				const nat b = array[i + 1];
+
+				const bool which = a < b;
+
+				const nat difference = which ? b - a : a - b;
+				const nat min = which ? a : b;
+				nat above_minimum_size = which ? (b >= 200) : (a >= 200);
+				
+				if (above_minimum_size and difference >= min / 3) {
+					//debug_pm(origin, e, pm_lmv);
+					print_array(array, xw, i, 0); 
+					usleep(50000); //getchar();
+					return pm_lmv;
+				}
+			}
 			
 			byte CSM_counter = 0;
 			nat RMV_value = (nat) -1;
@@ -452,15 +514,15 @@ memset(history, 255, history_count);
 				if (BDL12_counter >= 30 and e >= 500000) return pm_bdl12; 
 			} else BDL12_counter = 0;
 
-			if (pair_index == 3) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) {
-				/*debug_pm(origin, e, pm_pair); fflush(stdout); */return pm_pair; } } 
+			if (pair_index == 3) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
 			else if (pair_index) { pair_count = 0; pair_index = 0; }
 		
 			if (pointer < 64) performed_er_at |= (1LLU << pointer);
-
 			if (pointer < max_erp_count and small_erp_array[pointer] < 250) {
 				small_erp_array[pointer]++;
 			}
+
+			SNDI_counter = 0;
 
 			BDL_ier_at = pointer;
 			PER_ier_at = pointer;
@@ -468,11 +530,14 @@ memset(history, 255, history_count);
 		}
 
 		else if (op == two) {
+			SNDI_counter++;
+			if (SNDI_counter >= 10) return pm_sndi;
 			array[n]++;
 		}
 
 		else if (op == six) {  
 			if (not array[n]) return pm_zr6;
+			SNDI_counter = 0;
 			array[n] = 0;
 		}
 		else if (op == three) {
@@ -507,16 +572,20 @@ memset(history, 255, history_count);
 			else if (pair_index == 2) pair_index = 3;
 			else { pair_count = 0; pair_index = 0; }
 
+			SNDI_counter = 0;
+
 			bout_length = 0;
 			array[pointer]++;
 		}
 
 		if (op == three or op == one or op == five) last_mcal_op = op;
-
-		if (op == three or op == one or op == five) {
-			memmove(history, history + 1, history_count - 1);
+	
+		/*if (op == three or op == one or op == five) {
+			memmove(history, history + 1, history_count - 1 );
 			history[history_count - 1] = op;
-		}
+		}*/
+
+
 
 		byte state = 0;
 		if (array[n] < array[pointer]) state = 1;
@@ -525,6 +594,7 @@ memset(history, 255, history_count);
 		if (*zskip_at > I + state) *zskip_at = I + state;
 		ip = graph[I + state];
 	}
+
 
 	if (xw < 11) return pm_fse;
 	for (nat i = 0; i < 10; i++) {
@@ -543,16 +613,13 @@ memset(history, 255, history_count);
 		const nat max_position = xw < 64 ? xw : 64;
 		for (nat i = 1; i < max_position; i++) {
 			if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
-		}	
+		}
 		const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
 		for (nat i = 1; i < max_position2; i++) {
 			if (small_erp_array[i] < 5) return pm_erp2;
 		}
-
-	} else {
-		printf("\nfound a zv with a very small XW! [xw = %llu]\n", xw);
 	}
-
+	//print_array(array, xw, 0, 1);
 	return z_is_good;
 }
 
@@ -797,6 +864,19 @@ static void print_help(void) {
 }
 
 int main(int argc, const char** argv) {
+
+
+	/*{
+	nat* array = calloc(array_size + 1, sizeof(nat));
+	byte graph[graph_count] = {0};
+	init_graph_from_string(graph, "0415162626303546424101441501");	
+	byte zskip_at = 0;
+	const nat pm = execute_graph_starting_at(1, graph, array, &zskip_at);
+	printf("info: pruned zv via %s\n", pm_spelling[pm]);
+	exit(0);
+	}*/
+
+
 
 	// compiletime computation:
 	srand((unsigned)time(0)); rand();

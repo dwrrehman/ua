@@ -69,13 +69,13 @@ static const int display_rate = 1;
 static const int default_window_size_width = 1000;
 static const int default_window_size_height = 1000;
 
-static const nat execution_limit  = 10000000;
-static const nat pre_run_duration = 0;
+static const nat execution_limit  = 100000000;
+static const nat pre_run_duration = 5000000;
 
 static const nat array_size = 4000;
-static const nat lifetime_length = 10000;
+static const nat lifetime_length = 3000;
 
-static const nat generating_display_rate = 8;
+static const nat generating_display_rate = 32;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -84,7 +84,7 @@ static nat* erp_tallys = NULL;
 static nat* array = NULL;
 
 struct z_value {
-	uint32_t** lifetime;
+	byte** lifetime;
 	byte* value;
 	nat origin;
 	nat unique;
@@ -167,6 +167,34 @@ static void print_z_list(struct z_value* list, nat count) {
 	}	
 }
 
+/*
+
+
+
+----------------------------------------------------------
+
+	uint32_t* array = calloc(count, sizeof(uint32_t));
+
+	array[i] = 1;
+	array[i] = 0;
+
+	if (array[i]) { ... } 
+
+----------------------------------------------------------
+
+
+	byte* array = calloc(count / 8 + 1, 1);
+
+	array[i / 8] |= (1 << (i % 8));       // array[i] = 1;
+	array[i / 8] &= ~(1 << (i % 8));       // array[i] = 0;
+
+	if ((array[i / 8] >> (i % 8)) & 1) { ... }    // if (array[i]) { ... }
+	
+*/
+
+
+
+
 static void generate_lifetime(struct z_value* z) {
 	const nat n = array_size;
 	const nat width = n + 1;
@@ -178,10 +206,10 @@ static void generate_lifetime(struct z_value* z) {
 	set_graph(z->value);
 	nat xw = 0;
 
-	z->lifetime = calloc(3, sizeof(uint32_t*));
-	z->lifetime[0] = calloc(width * lifetime_length, 4);
-	z->lifetime[1] = calloc(width * lifetime_length, 4);
-	z->lifetime[2] = calloc(width * lifetime_length, 4);
+	z->lifetime = calloc(3, sizeof(byte*));
+	z->lifetime[0] = calloc(width * lifetime_length / 8 + 1, 1);
+	z->lifetime[1] = calloc(width * lifetime_length / 8 + 1, 1);
+	z->lifetime[2] = calloc(width * lifetime_length / 8 + 1, 1);
 
 	memset(erp_tallys, 0, sizeof(nat) * (array_size + 1));
 
@@ -208,7 +236,10 @@ static void generate_lifetime(struct z_value* z) {
 
 		else if (op == three) { 
 			array[pointer]++; 
-			if (e >= pre_run_duration) z->lifetime[0][width * timestep + pointer] = (uint32_t) ~0; 
+			if (e >= pre_run_duration) { 
+				const nat i = width * timestep + pointer;
+				z->lifetime[0][i / 8] |= (1 << (i % 8));
+			}
 		}
 
 		byte state = 0;
@@ -221,16 +252,16 @@ static void generate_lifetime(struct z_value* z) {
 done:
 	z->xw = xw;
 	for (nat h = 0; h < n + 1 and h < lifetime_length - 1; h++) {
-
-		if (h == xw + 1) break;
-		
+		if (h == xw + 1) break;		
 		for (nat w = 0; w < width; w++) {
-
-			if (w < array[h]) 
-				z->lifetime[1][width * (h + 1) + w] = (uint32_t) ~0;
-
-			if (w < erp_tallys[h]) 
-				z->lifetime[2][width * (h + 1) + w] = (uint32_t) ~0;
+			if (w < array[h]) {
+				const nat i = width * (h + 1) + w;
+				z->lifetime[1][i / 8] |= (1 << (i % 8));
+			}
+			if (w < erp_tallys[h]) {
+				const nat i = width * (h + 1) + w;
+				z->lifetime[2][i / 8] |= (1 << (i % 8));
+			}
 		}
 	}			
 }
@@ -305,7 +336,7 @@ int main(int argc, const char** argv) {
 		nat* equivalent_count = calloc(count, sizeof(nat));
 		nat* equivalent_z = calloc(count * count, sizeof(nat));
 		
-		const nat lifetime_byte_count = 4 * ((array_size + 1) * (lifetime_length));
+		const nat lifetime_byte_count = (array_size + 1) * lifetime_length / 8 + 1;
 
 		puts("finding all equivalent lifetimes...");
 
@@ -409,7 +440,6 @@ int main(int argc, const char** argv) {
 	qsort(list, count, sizeof(struct z_value), comparison_function);
 	print_z_list(list, count);
 
-
 	uint8_t* is_good = calloc(count, 1);
 	
 	size_t height = default_window_size_height >> 1, width = default_window_size_width >> 1;
@@ -465,8 +495,15 @@ int main(int argc, const char** argv) {
 			for (nat h = 0; h < height; h++) {
 				nat w_l = initial_x[viz_method];
 				for (nat w = 0; w < width; w++) {
+
 					const nat lifetime_width = array_size + 1;
-					screen[width * h + w] = list[current].lifetime[viz_method][lifetime_width * h_l + w_l];
+					const nat i = lifetime_width * h_l + w_l;
+
+					if ((list[current].lifetime[viz_method][i / 8] >> (i % 8)) & 1)
+						screen[width * h + w] = 0xFFFFFFFF;
+					else 
+						screen[width * h + w] = 0x00000000;
+
 					if (w == 50 and is_good[current]) screen[width * h + w] = 0xFFFFFFFF;
 					w_l++;
 				}
@@ -590,10 +627,12 @@ int main(int argc, const char** argv) {
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
+	const bool output_zlist_override = false;
+
 	char good_zlist_filename[4096] = {0};
 	nat good_count = 0;
 	for (nat i = 0; i < count; i++) {
-		if (is_good[i]) {
+		if (is_good[i] or output_zlist_override) {
 			append_to_file(
 				good_zlist_filename, 
 				sizeof good_zlist_filename, 
@@ -1048,6 +1087,74 @@ static void print_unique_list(struct z_value* list, nat count) {
 
 
 
+
+static void generate_lifetime(struct z_value* z) {
+	const nat n = array_size;
+	const nat width = n + 1;
+	nat pointer = 0;
+	nat timestep = 1;
+	byte ip = (byte) z->origin;
+
+	memset(array, 0, sizeof(nat) * (array_size + 1));
+	set_graph(z->value);
+	nat xw = 0;
+
+	z->lifetime = calloc(3, sizeof(uint32_t*));
+	z->lifetime[0] = calloc(width * lifetime_length, 4);
+	z->lifetime[1] = calloc(width * lifetime_length, 4);
+	z->lifetime[2] = calloc(width * lifetime_length, 4);
+
+	memset(erp_tallys, 0, sizeof(nat) * (array_size + 1));
+
+	for (nat e = 0; e < execution_limit; e++) {
+		const byte I = ip * 4, op = graph[I];
+
+		if (op == one) { 
+			if (pointer == n) { goto done; }  //  puts("fea pointer overflow"); 
+			pointer++; 
+			if (pointer > xw) xw = pointer;
+
+		} else if (op == five) {
+			if (e >= pre_run_duration) {
+				timestep++;
+				if (timestep >= lifetime_length) break;
+			}
+
+			erp_tallys[pointer]++;
+			pointer = 0;
+		}
+		else if (op == two) { array[n]++; }
+
+		else if (op == six) { array[n] = 0; }
+
+		else if (op == three) { 
+			array[pointer]++; 
+			if (e >= pre_run_duration) z->lifetime[0][width * timestep + pointer] = (uint32_t) ~0; 
+		}
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		ip = graph[I + state];
+	}
+
+done:
+	z->xw = xw;
+	for (nat h = 0; h < n + 1 and h < lifetime_length - 1; h++) {
+
+		if (h == xw + 1) break;
+		
+		for (nat w = 0; w < width; w++) {
+
+			if (w < array[h]) 
+				z->lifetime[1][width * (h + 1) + w] = (uint32_t) ~0;
+
+			if (w < erp_tallys[h]) 
+				z->lifetime[2][width * (h + 1) + w] = (uint32_t) ~0;
+		}
+	}			
+}
 
 
 
