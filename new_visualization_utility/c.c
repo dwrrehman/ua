@@ -60,22 +60,25 @@ static const byte D = 2;        // the duplication count (operation_count = 5 + 
 
 enum operations { one, two, three, five, six };
 
+
+
 static const bool should_deduplicate_z_list = true;
-
-static const size_t max_height = 4096, max_width = 4096;
-static const int delay_ms_per_frame = 16;
-static const int display_rate = 1;
-
-static const int default_window_size_width = 1000;
-static const int default_window_size_height = 1000;
 
 static const nat execution_limit  = 100000000;
 static const nat pre_run_duration = 5000000;
 
-static const nat array_size = 4000;
+static const nat array_size = 4096; // (must be divisible by 8)
 static const nat lifetime_length = 3000;
 
-static const nat generating_display_rate = 32;
+static const nat generating_display_rate = 8;
+
+
+
+
+
+static const size_t max_height = 4096, max_width = 4096;
+static const int default_window_size_width = 1000;
+static const int default_window_size_height = 1000;
 
 static const byte operation_count = 5 + D;
 static const byte graph_count = 4 * operation_count;
@@ -206,10 +209,11 @@ static void generate_lifetime(struct z_value* z) {
 	set_graph(z->value);
 	nat xw = 0;
 
-	z->lifetime = calloc(3, sizeof(byte*));
+	z->lifetime = calloc(4, sizeof(byte*));
 	z->lifetime[0] = calloc(width * lifetime_length / 8 + 1, 1);
 	z->lifetime[1] = calloc(width * lifetime_length / 8 + 1, 1);
 	z->lifetime[2] = calloc(width * lifetime_length / 8 + 1, 1);
+	z->lifetime[3] = calloc(width * lifetime_length / 8 + 1, 1);
 
 	memset(erp_tallys, 0, sizeof(nat) * (array_size + 1));
 
@@ -457,63 +461,117 @@ int main(int argc, const char** argv) {
 	int pitch = 0;
 
 	bool quit = false, fullscreen = false;
-	nat counter = 0, speed = 64;
-	nat current = 0, initial_y[3] = {0}, initial_x[3] = {0};
+	nat speed = 64;
+	nat current = 0, initial_y[4] = {0}, initial_x[4] = {0};
 
+	int delay_ms_per_frame = 1, ers_per_frame = 1;
+
+	nat timestep = 1;
 	nat viz_method = 0;
+	byte pc = 0;
+	nat pointer = 0;
 
 	while (not quit) {
 		uint32_t start = SDL_GetTicks();
 
-		if (not (counter & ((1 << display_rate) - 1))) {
-			if (lifetime_length < height or array_size + 1 < width) {
-				height = default_window_size_height >> 1;
-				width = default_window_size_width >> 1;
+		if (viz_method == 3) { 
+		const nat n = array_size;
+		//const nat array_width = n + 1;
 
-				while (width > 1 and height > 1 and (lifetime_length < height or array_size + 1 < width)) {
-					width >>= 1;
-					height >>= 1;
+		for (int _ = 0; _ < ers_per_frame; _++) {
+
+			for (nat e = 0; e < execution_limit; e++) {
+			const byte I = pc * 4, op = list[current].value[I];
+	
+			if (op == one) { 
+				if (pointer == n) {
+					pointer = 0; 
+					timestep = 1; 
+					pc = (byte) list[current].origin; 
+					memset(array, 0, sizeof(nat) * (array_size + 1));
+					memset(list[current].lifetime[3], 0, (array_size) * lifetime_length / 8 + 1);
+					break;
 				}
+				pointer++; 
+	
+			} else if (op == five) {
+				if (timestep < height - 1) timestep++;
+				else {
+					memmove(
+						list[current].lifetime[3],
+						list[current].lifetime[3] + (array_size / 8),
+						(height - 1) * (array_size / 8)
+					);
 
-				screen_size = width * height * 4;
-				screen = realloc(screen, screen_size);
-				memset(screen, 0x00, screen_size);
-				SDL_DestroyTexture(texture);
-
-				texture = SDL_CreateTexture(renderer, 
-						SDL_PIXELFORMAT_ARGB8888, 
-						SDL_TEXTUREACCESS_STREAMING, 
-						(int) width, (int) height);
-
-				printf("width = %lu, height = %lu\n", width, height);
-			} 			
-
-			if ((int64_t) initial_y[viz_method] > (int64_t) lifetime_length - (int64_t) height) initial_y[viz_method] = lifetime_length - height;
-			if ((int64_t) initial_x[viz_method] > (int64_t) array_size + 1 - (int64_t) width) initial_x[viz_method] = array_size + 1 - width;
-
-			nat h_l = initial_y[viz_method];
-			for (nat h = 0; h < height; h++) {
-				nat w_l = initial_x[viz_method];
-				for (nat w = 0; w < width; w++) {
-
-					const nat lifetime_width = array_size + 1;
-					const nat i = lifetime_width * h_l + w_l;
-
-					if ((list[current].lifetime[viz_method][i / 8] >> (i % 8)) & 1)
-						screen[width * h + w] = 0xFFFFFFFF;
-					else 
-						screen[width * h + w] = 0x00000000;
-
-					if (w == 50 and is_good[current]) screen[width * h + w] = 0xFFFFFFFF;
-					w_l++;
+					memset(
+						list[current].lifetime[3] + (height - 1) * (array_size / 8), 
+						0, 
+						array_size / 8
+					);
 				}
-				h_l++;
+				pointer = 0;	
 			}
-			const double ratio = (double) current / (double) count;
-			const nat progress = (nat) (ratio * (double) width);
-			for (nat i = 0; i < progress; i++) screen[i] = (uint32_t) ~0;
-			for (nat i = 0; i < width - progress; i++) screen[progress + i] = 0;
+			else if (op == two) array[n]++; 
+			else if (op == six) array[n] = 0; 
+			else if (op == three) { 
+				array[pointer]++;
+				const nat i = array_size * timestep + pointer;
+				list[current].lifetime[3][i / 8] |= (1 << (i % 8));
+			}
+	
+			byte state = 0;
+			if (array[n] < array[pointer]) state = 1;
+			if (array[n] > array[pointer]) state = 2;
+			if (array[n] == array[pointer]) state = 3;
+			pc = list[current].value[I + state];
+
+			if (op == five) break;
+		} } } 
+		
+		if (lifetime_length < height or array_size + 1 < width) {
+			height = default_window_size_height >> 1;
+			width = default_window_size_width >> 1;
+			while (width > 1 and height > 1 and (lifetime_length < height or array_size + 1 < width)) {
+				width >>= 1;
+				height >>= 1;
+			}
+
+			screen_size = width * height * 4;
+			screen = realloc(screen, screen_size);
+			memset(screen, 0x00, screen_size);
+			SDL_DestroyTexture(texture);
+
+			texture = SDL_CreateTexture(renderer, 
+					SDL_PIXELFORMAT_ARGB8888, 
+					SDL_TEXTUREACCESS_STREAMING, 
+					(int) width, (int) height);
+			printf("width = %lu, height = %lu\n", width, height);
+		} 			
+
+		if ((int64_t) initial_y[viz_method] > (int64_t) lifetime_length - (int64_t) height) initial_y[viz_method] = lifetime_length - height;
+		if ((int64_t) initial_x[viz_method] > (int64_t) array_size + 1 - (int64_t) width) initial_x[viz_method] = array_size + 1 - width;
+
+		nat h_l = initial_y[viz_method];
+		for (nat h = 0; h < height; h++) {
+			nat w_l = initial_x[viz_method];
+			for (nat w = 0; w < width; w++) {
+
+				const nat lifetime_width = array_size + (viz_method != 3);
+				const nat i = lifetime_width * h_l + w_l;
+				if ((list[current].lifetime[viz_method][i / 8] >> (i % 8)) & 1)
+					screen[width * h + w] = 0xFFFFFFFF;
+				else 	screen[width * h + w] = 0x00000000;
+
+				if (w == 50 and is_good[current]) screen[width * h + w] = 0xFFFFFFFF;
+				w_l++;
+			}
+			h_l++;
 		}
+
+		const double ratio = (double) current / (double) count;
+		const nat progress = (nat) (ratio * (double) width);
+		for (nat i = 0; i < progress; i++) screen[i] = (uint32_t) ~0;
+		for (nat i = 0; i < width - progress; i++) screen[progress + i] = 0;	
 
 		SDL_LockTexture(texture, NULL, (void**) &pixels, &pitch);
 		memcpy(pixels, screen, screen_size);
@@ -552,7 +610,13 @@ int main(int argc, const char** argv) {
 				if (command and event.wheel.y > 0) {
 					if (width > speed and height > speed) { 
 						width -= speed; 
-						height -= speed; 
+						height -= speed;
+
+						if (viz_method == 3) { 
+							timestep = 1;
+							memset(list[current].lifetime[3], 0, (array_size) * lifetime_length / 8 + 1);
+						}
+
 						goto resize1; 
 					}
 				} 
@@ -597,11 +661,46 @@ int main(int argc, const char** argv) {
 				if (key[SDL_SCANCODE_W]) { is_good[current] = 0; printf("MARKED zi#%llu and BAD\n", current); } 
 				if (key[SDL_SCANCODE_E]) { is_good[current] = 1; printf("MARKED zi#%llu and GOOD\n", current); } 
 
-				if (key[SDL_SCANCODE_F]) { if (current < count - 1) current++; /*printf("current is now %llu.\n", current);*/ } 
-				if (key[SDL_SCANCODE_A]) { if (current) current--; /*printf("current is now %llu.\n", current);*/ } 
+				if (key[SDL_SCANCODE_X]) {					
+					if (delay_ms_per_frame > 0) delay_ms_per_frame--; 
+					else ers_per_frame++;
+					printf("delay_ms_per_frame = %d, ers_per_frame = %d\n", delay_ms_per_frame, ers_per_frame); 
+				}
+				if (key[SDL_SCANCODE_C]) { 
+					if (ers_per_frame > 1) ers_per_frame--;
+					else delay_ms_per_frame++;
+					printf("delay_ms_per_frame = %d, ers_per_frame = %d\n", delay_ms_per_frame, ers_per_frame); 
+				}
+
+				if (key[SDL_SCANCODE_F]) { 
+					if (current < count - 1) current++;
+					if (viz_method == 3) goto reset_dynamic_state;
+				} 
+
+				if (key[SDL_SCANCODE_A]) { 
+					if (current) current--;
+					if (viz_method == 3) goto reset_dynamic_state;
+				}
 
 				if (key[SDL_SCANCODE_K]) { if (speed > 1) speed >>= 1; printf("speed = %llu\n", speed); }
 				if (key[SDL_SCANCODE_L]) { speed <<= 1; printf("speed = %llu\n", speed); }
+
+				if (key[SDL_SCANCODE_4]) {
+					viz_method = 3;
+					reset_dynamic_state: 
+					pointer = 0;
+					timestep = 1;
+					pc = (byte) list[current].origin; 
+					memset(array, 0, sizeof(nat) * (array_size + 1));
+					memset(list[current].lifetime[3], 0, (array_size) * lifetime_length / 8 + 1);
+				}
+
+				if (key[SDL_SCANCODE_V]) {					
+					if (viz_method == 3) { 
+						timestep = 1;
+						memset(list[current].lifetime[3], 0, (array_size) * lifetime_length / 8 + 1);
+					}
+				}
 
 				if (key[SDL_SCANCODE_Z]) {
 					printf("[index in list = %llu]: current displaying: origin = %llu,  ", current, list[current].origin);
@@ -613,15 +712,9 @@ int main(int argc, const char** argv) {
 
 		int32_t time = (int32_t) SDL_GetTicks() - (int32_t) start;
 		if (time < 0) continue;
-		int32_t sleep = delay_ms_per_frame - (int32_t) time; 
+		int32_t sleep = (viz_method == 3 ? delay_ms_per_frame : 16) - (int32_t) time; 
 		if (sleep > 0) SDL_Delay((uint32_t) sleep);
-		counter++;
-	
-		//if (not (counter & ((1 << 6) - 1))) {
-		//	//double fps = 1 / ((double) (SDL_GetTicks() - start) / 1000.0);
-		//	// printf("fps = %.5lf\n", fps);
-		//}
-	}
+		}
 	SDL_DestroyTexture(texture);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
@@ -676,6 +769,10 @@ int main(int argc, const char** argv) {
 
 
 
+		//if (not (counter & ((1 << 6) - 1))) {
+		//	//double fps = 1 / ((double) (SDL_GetTicks() - start) / 1000.0);
+		//	// printf("fps = %.5lf\n", fps);
+		//}
 
 
 
