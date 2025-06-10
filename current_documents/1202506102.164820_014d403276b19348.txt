@@ -1,0 +1,96 @@
+draft of the outline for the ua paper:
+written on 1202506102.164839
+---------------------------------------
+
+
+
+	intro: 
+
+				about physics, blackholes, and rule 110, basically. explaining why physics and science is important, why a theory of everything is important. etc. basic stuff to get the ball rolling and get people on board and interested in this problem lol... 
+
+
+
+	hypothesis and axioms: 
+
+
+				explain our view point, and the neccesary things you need to agree with in order for everything else to folllow. 
+					and explain why those axioms are probably correct as well. 
+
+
+				hypothesis: there exists a computational way of describing our universe where the laws of physics and particles are emergent phenomenona from a very complex computational behavior. in other words, there exists a computation which is maximally complex, and this computation is isomorphic to our universe, becuase our universe is using that compuattion to exist. in other words, 
+
+				axioms: 
+					determinism is all that exists: why its true is because science comes from a point of view of trying to understand things. fundamental nondeterministism posits that things are fundamentally unknowable, which is in direct contradiction with the central assumption that scientists have when investigating a new aspect of the universe. they need to assume that what they are investigating is knowable, otherwise they wouldnt investigate it.  
+
+
+					finitism is all that exists: any measurement or any observation has only indicated that things are finite in nature, and everything in science has a finite precision, accuracy, and extent. infinity has never been proven, observed, or verified to exist, and thus we assume it does not, via occams razor. 
+
+					relationalism is all that exists: from a functional point of view, it is impossible to know the way that things actually are, you can only know the effects that things have on other things, via observation and measurement. because of this, relationalism is a more miniimalist set of constraints on what need sto actually exist- only the relationships or interactions between things need to exist to give the illusion of the entity existing. thus, this philosohpy of existence in our universe is more simple and parsimonious than other ways of thinking, and thus we assume relationshism via occams razor. 
+
+					computation is existence: a consequence of relationalism: a simulation of an entity, and the actual entitiy itself are fundamentally equivalent then, as an entity is merely defined by its relationships, and interactions. thus, if recreate those interactions in computation or change of infromation in some way, the resultant computation is indistinguishable in all ways from the actual existence of the entity, and thus from a scientific standpoint, they are the same entity. completely indistinguishable. 
+
+ 
+
+					maximal efficiency: given two competing computations for acheving a given entity, where one is less efficient or does something needless compared to the other, we will alawys prefer the more effficient/simpler one, via occams razor. adding needless complexity which does not have any different computational effect is pointless and unneccessary, and only obscures the final resultant compuation. thus, we strive to find a maximally efficient version of the compuattion we are looking for, always. 
+
+
+
+
+
+	
+
+
+	
+	methods1: search utility:
+
+
+				explain how we actually found the ua itself. say the pm's, the search approach. the xfg formulation, adding the halt check, etc. all the things we used to find it in the first place. (doesnt have to be chronological, but it needs to touch on all the important details that lead to finding it, and include source code for exactly what program derived it in the first place, as well as any manual processes used in doing so)
+
+
+
+	results1: the universe algorithm:
+
+
+				show the ua, and how it works, and its interesting properties. show its lifetime. 
+				show case everything we know about it, basically. 
+
+
+	
+	
+	methods2: process for deriving the electron mass
+
+
+				write out in detail   exactly how to derive the electron mass starting from the lifetime, and why the lifetime should be interpretted in this specific way. 
+
+
+
+
+
+
+	results2: computing the electron mass
+
+
+				give the prediction of the mass value,  and then compare it with the experimentally observed value! 
+				show the error, and also plot this against how changing n and m changes this accuracy. 
+
+
+
+
+
+	discussion:  
+
+	
+			not sure what to include here... probably something about physics and how  everythings deterministic? how does this relate to quantum mechanics? how does various physical theories get represented in this theory?  all past physics needs to be within this algortihm somehow, and it would be nice to know how basically. 
+
+
+
+
+
+	conclusion: 
+
+
+			basicaly just stating that the discovery and prediction of the electron mass is a really big deal, and that humanity will be forever changed as a result of this discovery, as the state of human knowledge is forever changed, techanically. 
+
+
+
+
