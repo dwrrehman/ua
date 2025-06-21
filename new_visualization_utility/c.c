@@ -58,23 +58,23 @@ static const byte D = 2;        // the duplication count (operation_count = 5 + 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeclaration-after-statement"
 
-enum operations { one, two, three, five, six };
-
-
-
 static const bool should_deduplicate_z_list = true;
 
-static const nat execution_limit  = 100000000;
-static const nat pre_run_duration = 5000000;
+static const nat execution_limit  = (nat) -1;
+static const nat pre_run_duration = 1000000000;
 
-static const nat array_size = 4096; // (must be divisible by 8)
-static const nat lifetime_length = 3000;
+static const nat array_size = 16384; // (must be divisible by 8)
+static const nat lifetime_length = 16384;
 
-static const nat generating_display_rate = 8;
-
-
+static const nat generating_display_rate = 1;
 
 
+
+
+
+
+
+enum operations { one, two, three, five, six };
 
 static const size_t max_height = 4096, max_width = 4096;
 static const int default_window_size_width = 1000;
@@ -485,12 +485,12 @@ int main(int argc, const char** argv) {
 	
 			if (op == one) { 
 				if (pointer == n) {
-					pointer = 0; 
-					timestep = 1; 
+					pointer = 0;
+					timestep = 1;
 					pc = (byte) list[current].origin; 
 					memset(array, 0, sizeof(nat) * (array_size + 1));
 					memset(list[current].lifetime[3], 0, (array_size) * lifetime_length / 8 + 1);
-					break;
+					goto outside_of_loop;
 				}
 				pointer++; 
 	
@@ -526,7 +526,8 @@ int main(int argc, const char** argv) {
 			pc = list[current].value[I + state];
 
 			if (op == five) break;
-		} } } 
+
+		} } }  outside_of_loop:;
 		
 		if (lifetime_length < height or array_size + 1 < width) {
 			height = default_window_size_height >> 1;
