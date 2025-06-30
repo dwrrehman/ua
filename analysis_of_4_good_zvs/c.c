@@ -24,15 +24,8 @@ typedef uint16_t u16;
 
 #define D 2
 
-#define execution_limit 500000000LLU
+#define execution_limit 10000000000LLU
 #define array_size 1000000LLU
-
-enum operations { one, two, three, five, six };
-
-#define operation_count (5 + D)
-#define graph_count (operation_count * 4)
-
-static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
 
 enum analyses {
 	none, s0xw, mv_hg, bl_hg, wic_hg, erp_hg, bl_csv, 
@@ -41,12 +34,19 @@ enum analyses {
 	print_array_over_time,
 };
 
+static nat analysis = print_lifetime;
 
-//static const nat analysis = print_lifetime; //erp_hg;
-static const nat analysis = print_lifetime;
-
-static const nat zv_index = 0;
 static const bool should_generate_xw_csv = false;
+
+enum operations { one, two, three, five, six };
+
+#define operation_count (5 + D)
+#define graph_count (operation_count * 4)
+
+static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
+
+
+
 
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
@@ -60,7 +60,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 	nat 	xw = 0,  pointer = 0,  bout_length = 0, walk_ia_counter = 0, er_count = 0;
 	byte ip = origin;
 	byte last_mcal_op = 255;
-	nat did_ier_at = (nat)~0;
+	//nat did_ier_at = (nat)~0;
 
 
 	for (nat e = 0; e < execution_limit; e++) {
@@ -69,7 +69,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 		const byte I = ip * 4, op = graph[I];
 
-		abort(); usleep(100);
+		if (analysis == print_lifetime) usleep(100);
 
 		if (op == one) {
 			if (pointer == n) { 
@@ -97,7 +97,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 			er_position_tallys[pointer]++;
 
 			walk_ia_counter = 0;
-			did_ier_at = pointer;
+			//did_ier_at = pointer;
 			pointer = 0;
 			er_count++;
 
@@ -189,7 +189,6 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 		for (nat i = 0; i < xw + 5; i++) 
 			printf("%llu ", array[i]);		
 		puts("}");
-
 	}
 
 
@@ -222,9 +221,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 	if (analysis == bl_hg) {
 
-		const nat scale = 10;
+		const nat scale = 30;
 
-		for (nat i = 0; i < 230; i++) {
+		for (nat i = 0; i < 1000; i++) {
 			const nat value = bout_length_tallys[i];
 			//if (not value) continue;
 			printf("%5llu : %5llu : ", i, value);
@@ -237,9 +236,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 	if (analysis == wic_hg) {
 
-		const nat scale = 1500;
+		const nat scale = 20000;
 
-		for (nat i = 0; i < 100; i++) {
+		for (nat i = 0; i < 60; i++) {
 			const nat value = walk_ia_count_tallys[i];
 			printf("%5llu : %5llu : ", i, value);
 			for (nat _ = 0; _ < value / scale + !!value; _++) putchar('#');
@@ -251,9 +250,9 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array) {
 
 	if (analysis == erp_hg) {
 
-		const nat scale = 10;
+		const nat scale = 100;
 
-		for (nat i = 0; i < 2000; i++) {
+		for (nat i = 0; i < 3000; i++) {
 			const nat value = er_position_tallys[i];
 			// if (not value) continue;
 			printf("%5llu : %5llu : ", i, value);
@@ -291,21 +290,24 @@ int main(void) {
 	nat* array = calloc(array_size + 1, sizeof(nat));
 	byte graph[graph_count] = {0};
 
+	byte origin = 0;
 	const char* zv_string = NULL;
-	//if (zv_index == 1) zv_string = "014415352131354442420020";
-	//if (zv_index == 2) zv_string = "014415352131354542420020";
-	//if (zv_index == 3) zv_string = "012115252033300442420040";
-	//if (zv_index == 4) zv_string = "014415252133310442420021";
 
-	
-	zv_string = "0114102521363141424204140140";
-//		     0114102521363141424204140140
 
+
+	zv_string = "0464152021303144424601641213"; 
+	origin = 1;
+
+
+
+
+	//if (zv_index == 1) { abort(); zv_string = "0524165121303142424110001521"; origin = 2; } 
+	//if (zv_index == 2) { zv_string = "0464152021303144424601641213"; origin = 1; }
+	//if (zv_index == 3) { abort(); zv_string = "0112102625303161414204152414"; origin = 1; }
 
 	init_graph_from_string(graph, zv_string);
-
 	if (should_generate_xw_csv) printf("timestep, xw\n");
-	execute_graph_starting_at(2, graph, array);
+	execute_graph_starting_at(origin, graph, array);
 
 	if (not should_generate_xw_csv) {
 		puts("");
@@ -339,6 +341,12 @@ int main(void) {
 
 
 
+
+/*
+		0524165121303142424110001521 2 0
+		0464152021303144424601641213 1 7
+		0112102625303161414204152414 1 8
+*/
 
 
 /*
@@ -427,6 +435,24 @@ looking at the ratio of "xw / *0"  and finding out the fact that its always very
 				014415252133310442420021 2 dt
 
 */
+
+
+
+
+
+
+
+	//const nat zv_index = 0;
+	//const char* zv_string = NULL;
+	//if (zv_index == 1) zv_string = "014415352131354442420020";
+	//if (zv_index == 2) zv_string = "014415352131354542420020";
+	//if (zv_index == 3) zv_string = "012115252033300442420040";
+	//if (zv_index == 4) zv_string = "014415252133310442420021";
+
+	
+//	zv_string = "0114102521363141424204140140";
+//		     0114102521363141424204140140
+//static const nat analysis = print_lifetime; //erp_hg;
 
 
 
