@@ -1,0 +1,299 @@
+
+iter for uaj 1202506301.001726
+------------------------------
+
+
+
+
+hippocampus: (CA3 and CA1)
+--------------
+. CA1 is the pooling layer?
+. CA3 is the inference layer? 
+. CA1 -> entorhinal cortex (EC) L5 and L6
+. CA3 --(a)--> CA1
+. EC L3 ---(a)--> CA1
+. CA3 has self distal connections
+. CA1  --> EC 5/6
+
+. subiculum (S)
+. . EC L3 --> S	
+. . S ---> EC 5/6
+. . S ---> CA1 (feedback)
+. . CA1 ---> S
+. parasubiculum contains grid cells
+. postsubiciulum contains head direction cells
+
+. dentate gyrus (DG):
+. . DG --(p)--> CA3
+. . CA3 ------> DG (feedback)
+. . L2 of EC --> DG
+. . . DG does an up scaling, kind of?
+. . . is L3 in EC a PL??? and S and CA1 are also PLs?
+
+
+
+Entorhinal cortex:
+-----------------------
+. MEC (medial) and LEC (lateral) parts of EC
+
+. . MEC conveys spatial features to the H (hippocampus)
+. . . presubicium and postrhinal cortex   gives strong inputs to MEC
+. . .MEC exhibits "grid cell" firing patterns, head direction cells, speed cells, and border cells, 
+. . . egocentric!!
+
+. . LEC conveys non-spatial features to the H
+. . 
+
+
+
+
+
+
+
+brain waves:
+----------------
+. gamma oscilations are around 30 to 100 Hz!! ---> 1/30 = 33ms to 10ms
+. . fastest brain waves measurable!
+
+
+
+
+
+
+GABA:
+---------------
+
+. . GABA-A allow chloride (negatively charged) ions to flow into the cell
+. . . -70mV potential created by IPSPs via A-type
+. . found on PC dendrites
+
+. . GABA-B activate potassium channels to cause positive K ions to leave the cell
+. . . -100mV potential created by IPSPs via B-type
+. .  found on axon terminals of PV IN, and PC dendrites
+. . triggers a slowly rising IPSP, 
+. . . little effect on AMPA mediated currents
+. . .  highly effective at counteracting NMDA mediated currents
+. . 
+
+. purely voltage based? no protein chain reactions involved in influencing LTP/LTD?...
+. . thus, how is PV anti-hebbian learning happening?
+
+.  both types of learning rules (hebbian and anti-hebbian learning rules) are happening on the dendrites of PV IN!
+. . PC---(p:glut)-->PV feed forward (proximal) (FF) : mediated by NMDARs and  Glu-A2 containing (calcium impermeable) AMPARs
+. . . it seems that PV cell dendrites actually mainly use FF typical learning rules here..?
+
+. . PC---(d:glut)-->PV feed back (distal) (FB) : mediated by Glu-A2 lacking  (cacium permeable (CP)) AMPAR's! 
+. . "Unlike NMDAR-dependent LTP, this form of plasticity requires coincident presynaptic activation and postsynaptic hyperpolarization"
+. . CP AMPARs act as coincidence detectors too!
+. . . these receptors have "inverse-voltage-dependent conductance"!
+. . . ie, the more depolarized the cell is, the less calcium will flow in?
+. . . and CP AMPARs depol is comprised via a polyamine block, 
+. . . thus also bAPs suppress LTP using these CP-AMPARs!
+
+. . CP-AMPARs are voltage sensitive...?
+
+
+. PV INs get inputs as well, for any given layer connection! (both PC and PVs). 
+. . thats how distal depolarizations cause less cells being active, 
+
+      ---->  its because the PVs have a larger affect on the layer than the distal inputs!!! thats why. wow.
+
+
+
+
+
+
+ok so from what i understand,     (PCs = excitatory pyramidal cells (Glutamatergic),  INs = inhibitory interneuron cells (GABAergic))
+the mental model for   IN anti-hebbian learning rules  is this:
+
+. when INs are inactive, but are receiving excitatory input from PCs, INs will strengthen those connections with those active PCs, in the hopes of eventually the IN firing, so that we can inhibit those PCs which are active. 
+
+. however, hebbian type learning also happens in INs, because they are also trying to predict their inputs just like the PCs, 
+. . its just, because of the anti-hebbian, their activity ends up inducing a "homeostatic" affect   where the more that excitatory PCs are active, the more the INs will slowly and gradually become more activated and eventually they will inhibit the excitatory network again, keeping things in a balance! 
+
+. however, the new problem now, is that these anti-hebbian rules don't represent true semantic connections in the same way as hebbian connections do, and thus decreases the semantic content learned by INs. but this is fine, because PCs are the dominant semantic information learners anyways lol. and PCs vastly outnumber INs. 
+
+. so, INs find a balance of the amount of anti-hebbian and hebbian connections which they have. 
+. . when receiving more feed forward / proximal type of inputs from other layers, hebbian type of learning is used, 
+. . and when receiving more self-layer interactions, anti-hebbian is used, 
+. . .         obviously, with the sole purpose of causing homeostasis in the sparse activity pattern (ie the SDR) of this layer. 
+
+. i still need to understand SST and CCK INs.. they are doing something different lol.. 
+
+
+
+
+
+
+
+
+
+
+
+voltage gated ion channel notes:
+----------------
+. at rest: potassium  (K+) is common inside the cells, not outside 
+. voltage gated sodium channels (VGNC's) mediate bAPs and dendritic Na spikes
+. 
+
+
+dendritic calcium spikes:
+----------------
+. calcium activated   BK potassium channels   dampen calcium spikes, once initiated
+. calcium spikes are only initiated in dendrites (both apical and basal)
+. Ca spikes are initiated efficiently upon upon widespread synaptic depolarization (via local NMDAr depol synapses?) simultaneous with bAPs, 
+
+
+
+
+
+
+
+
+
+more layer 5 notes:
+----------------
+. 5a:
+. . 5a has higher input resistance
+. . higher firing thresholds
+. . higher rheobase (ie, higher current required to cause APs)
+. . regular spiking
+. . slow repolarization rate, APs are broad in time
+. lower expression of voltage gated calcium channels (VGCCs)
+. 5b:
+. . non-adapting APs, no hyper-polarization period
+. . burst firing, "intrinsically bursting" (not intrinsically firing though..)
+. .  strong inputs to apical dendrites initiated dendritic calcium spikes
+. 
+
+
+
+
+
+
+202506264.145007: iter       <===========================================
+
+. apical inputs as a mechanism to distinctify 6a from 4!?
+
+. analysis of 3 good zvs in 2sp! 
+
+. keyboard progress!!
+
+. three approaches/techniqnues for helping 3sp search:
+. . ndh :  { 0 1 2 } ....?
+. . origins? hmm
+. . no self loop backs!!! 
+. . 4D orthoplex : 6 connections per operation
+
+. how would we interpret the output of the edsf to predict aspects/constants of the universe?...
+
+. correct how distal inputs cause a sparser activiation:
+. .   its because both PC an PVs/INs get input, and the PVs have a larger affect on the layer than the inputs to PC distal dendrites have!!! 
+. . . thus, the only cells which will have a chance to still be active are the ones receiving the distal inputs, i think. 
+
+. correct the GABA antihebbian learning method! 
+. . GABA is voltage based infuence, 
+. . but there are CP-AMPARs on IN dendrites which control calcium-mediated anti-hebbian LTP! (homeostatic influence!)
+
+. correct the facilating idea  and mechanism:
+. . ditching facilitation: its only short term platicity, and not relevant
+. . presynaptic residual cacium (Ca) is the mechanism for facilitation,  short term plasticity is just not thattt important... lol
+
+. . we can use APICAL connections from 4 ---> 6a  to cause 6a to form relationships, and 4 to form HO sequences!
+
+. dendritic calcium spikes are the way that apical dendrites influence the soma!
+. also apparently BAPs can affect apical dendrites for some neurons...?
+
+layer 5 details:
+
+. 5b receives proximal input from T1.
+. 5a project apically to 5b,  but not the other way around
+. 2/3 ->  5a
+. 2/3 ->  5b
+. 4 -> 2/3
+. 6 -> 5b
+. 
+. 5a is more of a temporal integrator, 5b is more of a coincidence detection
+. "far out apical coincident inputs with BAPs efficiently elicitly calcium spikes" for 5b
+. 5a's apical dendrite acts more like a distal dendrite?.. 
+. 5a ---(a)---> 5b
+. 5b proximally projects to T2 (PoM)
+. PoM ---(a)----> 5a
+
+layer 6a details:
+
+. 6a has two parts?? CT and CC    (6a_a is CC   6a_b is CT, deeper 6a)
+. . both have aplcal dendrites in 4, 
+. . CT 6a project distally to T1
+. . CT 6a is facilitating (presynaptic!)
+. . CC 6a is weakly fac, or depress.
+. . CC have long range connections
+. . 6a (?) -(a)-> 5b
+. . 6a (?) -(a)-> 2/3
+. . 4 ---(a)----> 6a_a
+. . 5a ---(a)----> 6a_a
+
+ 
+
+particular helpful quotes from this paper: "L6a PC subtypes form synaptic microcircuits":
+
+
+. . "we found that short-term facilitation is an important feature for the identification of L6A connections with a presynaptic CT PC regardless of the postsynaptic neuron type"
+. . "A substantial fraction of L6A CT PCs located in deeper layer 6A projects to both the VPM and the posterior medial nucleus (PoM) of thalamus, 
+. . "...while L6A CT PCs in upper L6A project predominantly to VPM alone"
+. . ""A recent study showed that unlike CT PCs projecting to VPM alone, 
+      those projecting to both VPM and PoM establish strong and depressing synapses with L6A PV-positive FS interneurons"
+. . "optogenetic stimulation of CT PCs resulted in facilitating synaptic responses in excitatory cells, FS, and nFS interneurons of layers 4 and 5"
+. . 
+
+
+
+
+
+notes on approaches for pruning 3sp:
+
+. orthoplex : require that each node in the graph has exactly 6 connections (one less than 7, 7 is fully connected, as it's one less than 8, ie op_count) ie, the graph forms a hexadecachron polytope.
+
+. ndh : don't search over the DOL in graphs. i use DOL[0] = 0; and DOL[1] = 1;  or just simply require that the DOL contains both a 0 and 1, (using OPI obviously).
+
+. origins : don't test all origins in a graph. if it fails by one, it's dead. the xfg is not sensitive to initial conditions. 
+
+
+
+
+
+approaches for making the paper:
+. the english paper should focus on making the theory understood by others
+. the binary monolith/artifact is pure though, only truth, and fundamentalness. its a document which is pure and divorced from humans and their own notation and understanding of the ua theory
+. the english scientific paper is made to help others others understand it, using visualizations, using calculations, etc. understanding is key. 
+. . it will include a FAQ, which will list all the frequently asked questions about the theory, and aspects of it.
+. . the FAQ is a separate document along side the english scientific paper. 
+. . the FAQ starts out as a table of contents, listing all questions, and then its second section lists Q1, A1, Q2, A2, etc. in that order. 
+. the english paper will leave more complex visualizations (such as videos, or very large images, as separate supplemental material. these will be referenced in the paper, as they are critical for understanding. the goal of the paper is NOTTTT   (i repeat, NOT)    to be a single self contained document. other humans just need to be okay with opening multiple documents/supplemental-materials on their computer, and just be okay with that. ITS CRITICAL, and REQUIRED, as many materials are not able to be included in the scientific paper itself, due to file size constraints, and also the format of the material itself. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

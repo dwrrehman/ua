@@ -1,30 +1,3 @@
-// 3sp search utility,  
-//    which includes the 4D-orthoplex hypothesis, 
-//    and also the nested DOL hypothesis
-// written on 1202506297.214947 by dwrr
-
-// size of 3sp:   
-
-// applying the NDH:
-// (8^14) * (5 * (8 ^ 3)) * (5 * (8 ^ 3) * (5 * (8 ^ 3)) / 125   =     8^(14 + 9)   =     5.9029581036×10²⁰
-
-// applying the no self loop backs rule  (consequence of the 4D-orthoplex hypothesis) helps as this:
-
-//      7^(14 + 9)   =     27,368,747,340,080,916,343
-//                         Q   q   T   b   m   t   h 
-
-
-
-
-
-
-// don't forget to reset the datetime for the risc-v machine beforeeee you start up the call lol thanks. 
-
-
-
-
-
-
 // modified to have job redistribution to improve the parellelism for calls that use many cores! written on 1202504281.210831 by dwrr
 
 // modified to be parellel on 202501131.020611: dwrr 202501131.034623:
@@ -194,18 +167,18 @@ typedef uint64_t nat;
 typedef uint64_t chunk;
 
 #define D 3
-#define execution_limit 100000000LLU
+#define execution_limit 5000000LLU
 #define array_size 1000000LLU
 #define chunk_count 2
 #define display_rate 2
 
-#define total_job_count 20000
+#define total_job_count 1000
 #define machine_index 0
 
 #define machine0_counter_max 1
 #define machine1_counter_max 1
 
-#define machine0_thread_count 10
+#define machine0_thread_count 3
 #define machine1_thread_count 0
 
 #define  thread_count  ( machine_index ? machine1_thread_count : machine0_thread_count ) 
@@ -228,7 +201,6 @@ struct machine {
 static _Atomic nat flag = 0;
 static _Atomic nat* display_progress = NULL;
 static _Atomic byte* current_zv_progress = NULL;
-static char** filenames = NULL;
 
 enum operations { one, two, three, five, six };
 
@@ -252,8 +224,8 @@ enum pruning_metrics {
 	pm_ga_ndi,   pm_ga_sndi, 
 	pm_ga_snco,  pm_ga_sn1, 
 	pm_ga_zr6,   pm_ga_rdo, 
-	pm_ga_uo,    pm_ga_ndh,
-	pm_ga_4o,    pm_ga_sl,
+	pm_ga_uo,    pm_ga_sl,
+	pm_ga_ndh,   pm_ga_4o, 
 	pm_count
 };
 
@@ -263,7 +235,7 @@ static const char* pm_spelling[pm_count] = {
 	"pm_pco", "pm_per", "pm_ns0",
 	"pm_oer", "pm_rsi",
 	"pm_h0", "pm_h0s", "pm_h1", "pm_h2", 
-	"pm_rmv", "pm_ormv", "pm_imv", "pm_csm", "pm_lmv",
+	"pm_rmv", "pm_ormv", "pm_imv", "pm_csm", "pm_lmv", 
 	"pm_fse", "pm_pair", "pm_ls0",
 	"pm_bdl1", "pm_bdl2", "pm_bdl3", 
 	"pm_bdl4", "pm_bdl5", "pm_bdl6", 
@@ -277,9 +249,8 @@ static const char* pm_spelling[pm_count] = {
 	"pm_ga_ndi",   "pm_ga_sndi", 
 	"pm_ga_snco",  "pm_ga_sn1", 
 	"pm_ga_zr6",   "pm_ga_rdo", 
-	"pm_ga_uo",    "pm_ga_ndh", 
-	"pm_ga_4o",    "pm_ga_sl",
-
+	"pm_ga_uo",    "pm_ga_sl", 
+	"pm_ga_ndh",   "pm_ga_4o", 
 };
 
 #define operation_count (5 + D)
@@ -337,7 +308,10 @@ try_open:;
 	);
 }
 
-static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
+
+
+
+static nat new_execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
 
 #define max_erp_count 20
 #define max_rsi_count 512
@@ -646,11 +620,338 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	return z_is_good;
 }
 
+
+
+
+
+static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
+
+#define max_erp_count 20
+#define max_rsi_count 512
+#define max_oer_repetions 50
+#define max_rmv_modnat_repetions 15
+#define max_ormv_modnat_repetions 15
+#define max_imv_modnat_repetions 40
+#define max_consecutive_small_modnats 230
+#define max_consecutive_s0_incr 30
+#define max_consecutive_h0_bouts 10
+#define max_consecutive_h1_bouts 16
+#define max_consecutive_h2_bouts 24
+#define max_consecutive_h0s_bouts 7
+#define max_consecutive_pairs 8
+
+	const nat n = array_size;
+	array[0] = 0; 
+	array[n] = 0;
+
+	nat 	xw = 0,  pointer = 0,  bout_length = 0, 
+		OER_ier_at = 0,
+		BDL_ier_at = 0,
+		PER_ier_at = (nat) ~0;
+
+	byte	H0_counter = 0,  H0S_counter = 0, SNDI_counter = 0,
+		H1_counter = 0, H2_counter = 0, OER_counter = 0,
+		BDL1_counter = 0, BDL2_counter = 0,
+		BDL3_counter = 0, BDL4_counter = 0,
+		BDL5_counter = 0, BDL6_counter = 0,
+		BDL7_counter = 0, BDL8_counter = 0,
+		BDL9_counter = 0, BDL10_counter = 0, 
+		BDL11_counter = 0, BDL12_counter = 0,
+		pair_index = 0, pair_count = 0;
+	
+	byte ip = origin;
+	byte last_mcal_op = 255;
+
+	nat performed_er_at = 0;
+ 	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
+	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
+
+	//nat first = 1; // debug
+
+	for (nat e = 0; e < execution_limit; e++) {
+
+		const byte I = ip * 4, op = graph[I];
+
+		/*if (e >= 100000000) {
+			if (first) {
+				print_graph_raw(graph); puts("");
+				getchar();
+				first = 0;
+			}
+			printf("%hhu ", op); fflush(stdout);
+			usleep(20000);
+		}*/
+
+		if (op == one) {
+			if (pointer == n) { 
+				puts("FEA condition violated by a z value: "); 
+				print_graph_raw(graph); 
+				puts(""); 
+				abort(); 
+			}
+  
+			if (not array[pointer]) return pm_ns0; 
+			if (last_mcal_op == one)  H0_counter = 0;
+			if (last_mcal_op == one)  H0S_counter = 0;
+
+			if (pointer < max_rsi_count) {
+				if (last_mcal_op == three) {
+					rsi_counter[pointer]++;
+					if (rsi_counter[pointer] >= max_consecutive_s0_incr) return pm_rsi;
+				} else rsi_counter[pointer] = 0;
+			}
+
+			if (pair_index == 1) pair_index = 2;
+			else if (pair_index == 3) pair_index = 4;
+			else if (pair_index == 4) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
+			else if (pair_index) { pair_count = 0; pair_index = 0; }
+
+			SNDI_counter = 0;
+
+			bout_length++;
+			pointer++;
+
+			if (pointer > xw and pointer < n) { 
+				xw = pointer; 
+				array[pointer] = 0; 
+				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
+				if (pointer < max_erp_count) small_erp_array[pointer] = 0;
+			}
+		}
+
+		else if (op == five) {
+			if (last_mcal_op != three) return pm_pco;
+			if (not pointer) return pm_zr5; 
+			
+			if (pointer == OER_ier_at or pointer == OER_ier_at + 1) {
+				OER_counter++;
+				if (OER_counter >= max_oer_repetions) return pm_oer;
+			} else { OER_ier_at = pointer; OER_counter = 0; }
+
+
+			for (nat i = 0; i < xw + 1; i++) {
+				{ const nat a = array[i];
+				const nat b = array[i + 1];
+				const bool which = a < b;
+				const nat difference = which ? b - a : a - b;
+				const nat min = which ? a : b;
+				nat above_minimum_size = which ? (b >= 200) : (a >= 200);
+				if (above_minimum_size and difference >= min / 3) return pm_lmv; }
+			}
+
+			
+			byte CSM_counter = 0;
+			nat RMV_value = (nat) -1;
+			byte RMV_counter = 0;
+			for (nat i = 0; i < xw + 1; i++) {
+				if (array[i] < 8) CSM_counter++; else CSM_counter = 0;
+				if (CSM_counter > max_consecutive_small_modnats) return pm_csm;
+				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
+				if (RMV_counter >= max_rmv_modnat_repetions) return pm_rmv;
+			}
+
+			RMV_value = (nat) -1;
+			RMV_counter = 0;
+			byte RMV_state = 0;
+			for (nat i = 0; i < xw + 1; i++) {
+				if (array[i] == RMV_value + RMV_state) { 
+					RMV_state = not RMV_state;
+					RMV_counter++;
+					if (RMV_counter >= max_ormv_modnat_repetions) return pm_ormv; 
+				} else { 
+					RMV_value = array[i]; 
+					RMV_counter = 0; 
+					RMV_state = 0;
+				}
+			}
+
+			RMV_value = (nat) -1;
+			RMV_counter = 0;
+			for (nat i = 0; i < xw + 1; i++) {
+				if (array[i] == RMV_value + 1) { RMV_counter++; RMV_value++; } else { RMV_value = array[i]; RMV_counter = 0; }
+				if (RMV_counter >= max_imv_modnat_repetions) return pm_imv;
+			}
+
+			RMV_value = (nat) -1;
+			RMV_counter = 0;
+			for (nat i = 0; i < xw + 1; i += 2) {
+				if (array[i] == RMV_value + 1) { RMV_counter++; RMV_value++; } else { RMV_value = array[i]; RMV_counter = 0; }
+				if (RMV_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
+			}
+
+			if (pointer + 1 == BDL_ier_at) {
+				BDL1_counter++; 
+				if (BDL1_counter >= 8) return pm_bdl1; 
+			} else BDL1_counter = 0;
+
+			if (pointer + 2 == BDL_ier_at) {
+				BDL2_counter++; 
+				if (BDL2_counter >= 8) return pm_bdl2; 
+			} else BDL2_counter = 0;
+
+			if (pointer + 3 == BDL_ier_at) {
+				BDL3_counter++;
+				if (BDL3_counter >= 30) return pm_bdl3; 
+			} else BDL3_counter = 0;
+
+			if (	pointer     == BDL_ier_at or 
+				pointer + 1 == BDL_ier_at or 
+				pointer + 2 == BDL_ier_at or
+				pointer + 3 == BDL_ier_at or
+				pointer + 4 == BDL_ier_at
+			) {
+				BDL4_counter++; 
+				if (BDL4_counter >= 150 and e >= 500000) return pm_bdl4; 
+			} else BDL4_counter = 0;
+
+
+			if (pointer + 5 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL5_counter++; 
+				if (BDL5_counter >= 80 and e >= 500000) return pm_bdl5; 
+			} else BDL5_counter = 0;
+
+			if (pointer + 6 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL6_counter++; 
+				if (BDL6_counter >= 80 and e >= 500000) return pm_bdl6; 
+			} else BDL6_counter = 0;
+
+			if (pointer + 7 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL7_counter++; 
+				if (BDL7_counter >= 80 and e >= 500000) return pm_bdl7; 
+			} else BDL7_counter = 0;
+
+			if (pointer + 8 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL8_counter++; 
+				if (BDL8_counter >= 80 and e >= 500000) return pm_bdl8; 
+			} else BDL8_counter = 0;
+
+
+			if (pointer + 9 == BDL_ier_at) { 
+				BDL9_counter++; 
+				if (BDL9_counter >= 30 and e >= 500000) return pm_bdl9; 
+			} else BDL9_counter = 0;
+
+			if (pointer + 10 == BDL_ier_at) { 
+				BDL10_counter++; 
+				if (BDL10_counter >= 30 and e >= 500000) return pm_bdl10; 
+			} else BDL10_counter = 0;
+
+			if (pointer + 11 == BDL_ier_at) { 
+				BDL11_counter++; 
+				if (BDL11_counter >= 30 and e >= 500000) return pm_bdl11; 
+			} else BDL11_counter = 0;
+
+			if (pointer + 12 == BDL_ier_at) { 
+				BDL12_counter++; 
+				if (BDL12_counter >= 30 and e >= 500000) return pm_bdl12; 
+			} else BDL12_counter = 0;
+
+			if (pair_index == 3) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
+			else if (pair_index) { pair_count = 0; pair_index = 0; }
+		
+			if (pointer < 64) performed_er_at |= (1LLU << pointer);
+			if (pointer < max_erp_count and small_erp_array[pointer] < 250) {
+				small_erp_array[pointer]++;
+			}
+
+			SNDI_counter = 0;
+
+			BDL_ier_at = pointer;
+			PER_ier_at = pointer;
+			pointer = 0;
+		}
+
+		else if (op == two) {
+			SNDI_counter++;
+			if (SNDI_counter >= 10) return pm_sndi;
+			array[n]++;
+		}
+
+		else if (op == six) {  
+			if (not array[n]) return pm_zr6;
+			SNDI_counter = 0;
+			array[n] = 0;
+		}
+		else if (op == three) {
+			if (last_mcal_op == three) return pm_ndi;
+
+			if (last_mcal_op == one) {
+				H0_counter++;
+				if (H0_counter >= max_consecutive_h0_bouts) return pm_h0; 
+			}
+
+			if (last_mcal_op == one) {
+				H0S_counter++;
+				if (H0S_counter >= max_consecutive_h0s_bouts and e >= 100000) return pm_h0s; 
+			}
+
+			if (bout_length == 2) {
+				H1_counter++;
+				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
+			} else H1_counter = 0;
+
+			if (bout_length == 3) {
+				H2_counter++;
+				if (H2_counter >= max_consecutive_h2_bouts) return pm_h2; 
+			} else H2_counter = 0;
+
+			if (PER_ier_at != (nat) ~0) {
+				if (pointer >= PER_ier_at) return pm_per; 
+				PER_ier_at = (nat) ~0;
+			}
+ 
+			if (not pair_index) pair_index = 1;
+			else if (pair_index == 2) pair_index = 3;
+			else { pair_count = 0; pair_index = 0; }
+
+			SNDI_counter = 0;
+
+			bout_length = 0;
+			array[pointer]++;
+		}
+
+		if (op == three or op == one or op == five) last_mcal_op = op;
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		if (*zskip_at > I + state) *zskip_at = I + state;
+		ip = graph[I + state];
+	}
+
+
+	if (xw < 11) return pm_fse;
+	for (nat i = 0; i < 10; i++) {
+		if (array[i] < 20) return pm_fse;
+	}
+
+	const nat average = ((array[3] + array[4] + array[5] + array[6]) / 4);
+	const nat max_modnat_value = (average * 3) / 2;
+	const bool l0 = array[0] > max_modnat_value;
+	const bool l1 = array[1] > max_modnat_value;
+	const bool l2 = array[2] > max_modnat_value;
+	const bool should_prune = (l0 or l1 or l2) and (max_modnat_value >= 100);
+	if (should_prune) return pm_ls0;
+
+	if (xw >= 100) {
+		const nat max_position = xw < 64 ? xw : 64;
+		for (nat i = 1; i < max_position; i++) {
+			if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
+		}
+		const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
+		for (nat i = 1; i < max_position2; i++) {
+			if (small_erp_array[i] < 5) return pm_erp2;
+		}
+	}
+
+	return z_is_good;
+}
+
 static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	byte at = graph_count;
 	for (byte o = 0; o < operation_count; o++) {
 		if (graph[4 * o] != three and graph[4 * o] != two) continue;
-		const nat pm = execute_graph_starting_at(o, graph, array, &at);
+		const nat pm = new_execute_graph_starting_at(o, graph, array, &at);
 		counts[pm]++;
 		if (not pm) { *origin = o; return 0; }
 	}
@@ -671,6 +972,7 @@ static byte editable(byte pa) { return not noneditable(pa); }
 
 static void* worker_thread(void* raw_argument) {
 
+	char filename[4096] = {0};
 	nat* raw_counts = calloc(1 + pm_count, sizeof(nat));
 	nat* counts = raw_counts + 1;
 	nat* current_progress = raw_counts;
@@ -687,10 +989,6 @@ static void* worker_thread(void* raw_argument) {
 	const nat thread_index = list.thread_index;
 	const nat count = list.job_count;
 	const struct job* jobs = list.jobs;
-
-	//printf("worker_thread: info: arrived in worker %llu\n", thread_index);
-	//getchar();
-	//nat temporary_display_counter = 0;
 
 	nat job_index = 0;
 
@@ -740,7 +1038,7 @@ static void* worker_thread(void* raw_argument) {
 			//puts("pm_ga_ndh - 1");
 			goto bad;
 		}
-	
+
 		for (byte index = 20; index < graph_count; index += 4) {
 			if (index < graph_count - 4 and graph[index] > graph[index + 4]) {
 				at = index + 4;
@@ -781,7 +1079,6 @@ static void* worker_thread(void* raw_argument) {
 				goto bad;
 			}
 
-
 			if (graph[4 * index] == six and graph[4 * e] == one) {
 				at = graph_count;
 				if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
@@ -803,6 +1100,29 @@ static void* worker_thread(void* raw_argument) {
 				//puts(pm_spelling[pm_ga_ns0]);
 				goto bad;
 			}
+
+
+			
+
+			/*
+
+			2 x ----------(*n > *i)---------> x
+
+			
+			2 x ----------(*n > *i)---------> 2 y
+			  y ----------(*n > *i)---------> x
+
+
+			2 x ----------(*n > *i)---------> 2 y
+			  y ----------(*n > *i)---------> 2 z
+			  z ----------(*n > *i)---------> x
+
+
+			2 x ----------(*n > *i)---------> 2 y
+			  y ----------(*n > *i)---------> 2 z
+			  z ----------(*n > *i)---------> 2 w
+			  w ----------(*n > *i)---------> x
+		*/
 
 
 			// 2 x ----------(*n > *i)---------> x
@@ -872,7 +1192,7 @@ static void* worker_thread(void* raw_argument) {
 				if (editable(4 * graph[4 * graph[4 * index + 2] + 2] + 2) and 
 					at > 4 * graph[4 * graph[4 * index + 2] + 2] + 2) 
 					at = 4 * graph[4 * graph[4 * index + 2] + 2] + 2;
-			
+ 			
 				if (at == graph_count) abort();
 				counts[pm_ga_sndi]++;
 				//puts(pm_spelling[pm_ga_sndi]);
@@ -926,8 +1246,9 @@ static void* worker_thread(void* raw_argument) {
 					goto bad;
 				}
 			}
-		}
 
+
+		}
 
 		for (byte index = 0; index < operation_count; index++) {
 			if (not ((was_utilized >> index) & 1)) { 
@@ -950,20 +1271,7 @@ static void* worker_thread(void* raw_argument) {
 			}
 		}
 
-		/*if ((temporary_display_counter & 0xfffff) == 0) {		
-		        printf("\033[H\033[2J\npm counts: z = ");
-			print_graph_raw(graph); puts("\n");
-	
-		        for (nat i = 0; i < pm_count; i++) {
-		                if (i and not (i % 2)) puts("");
-				printf("%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
-		        }
-		        puts("done");
-			fflush(stdout);
-			usleep(1000);
-		} 
 
-		temporary_display_counter++;*/
 
 
 		for (byte index = 0; index < operation_count; index++) {
@@ -989,14 +1297,15 @@ static void* worker_thread(void* raw_argument) {
 			} 
 		}
 
+
 		for (nat i = 0; i < graph_count; i++)
 			atomic_store_explicit(current_zv_progress + graph_count * thread_index + i, graph[i], memory_order_relaxed);
-
+		
 		byte origin = 0;
 		at = execute_graph(graph, array, &origin, counts);
 
 		if (not at) {
-			append_to_file(filenames[thread_index], 4096, graph, origin);
+			append_to_file(filename, sizeof filename, graph, origin);
 			goto loop;
 		}
 
@@ -1175,6 +1484,8 @@ int main(void) {
 	static char output_filename[4096] = {0};
 	static char output_string[4096] = {0};
 	
+
+
 	atomic_init(&flag, 0);
 
  	display_progress = calloc(1, thread_count * sizeof(_Atomic nat)); 
@@ -1183,19 +1494,9 @@ int main(void) {
 	current_zv_progress = calloc(1, graph_count * thread_count * sizeof(_Atomic nat));
 	for (nat i = 0; i < thread_count; i++)  atomic_init(current_zv_progress + i, 0);
 
+
+
 	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
-
-	filenames = calloc(thread_count, sizeof(char*));
-	for (nat i = 0; i < thread_count; i++) {
-		filenames[i] = calloc(4096, 1);
-		
-		char dt[32] = {0};   
-		get_datetime(dt);
-		snprintf(filenames[i], 4096, "%s_%08x%08x%08x%08x_z.txt", dt, 
-			rand(), rand(), rand(), rand()
-		);
-	}
-
 	struct machine* machine = calloc(2, sizeof(struct machine));
 	for (nat mi = 0; mi < 2; mi++) {
 		const nat core_count = mi ? machine1_thread_count : machine0_thread_count;
@@ -1306,8 +1607,6 @@ int main(void) {
 		
 		if (core_counter[mi] < machine[mi].core_count - 1) core_counter[mi]++; else core_counter[mi] = 0;
 		const nat c = core_counter[mi];
-
-		//printf("main: info: pushed job %llu to core %llu on machine %llu...\n", machine[mi].cores[c].job_count, c, mi);
 	
 		machine[mi].cores[c].jobs = realloc(machine[mi].cores[c].jobs, sizeof(struct job) * (machine[mi].cores[c].job_count + 1));
 		machine[mi].cores[c].jobs[machine[mi].cores[c].job_count++] = (struct job) { .begin = begin_zv, .end = end_zv };
@@ -1323,11 +1622,14 @@ int main(void) {
 
 	nat display_local_progress[thread_count] = {0};
 	nat counts[pm_count] = {0};
+
 	nat job_indexes[thread_count] = {0};
+
 	nat completed_so_far = 0;
 
 
 start_up_threads:
+
 	for (nat i = 0; i < machine[machine_index].core_count; i++) {
 		pthread_create(threads + i, NULL, worker_thread, machine[machine_index].cores + i);
 	}
@@ -1337,7 +1639,7 @@ start_up_threads:
 		if (machine[machine_index].cores[i].job_count > max_job_size) max_job_size = machine[machine_index].cores[i].job_count;
 	}
 
-	nat resolution = max_job_size / 200;
+	nat resolution = max_job_size / 150;
 	if (resolution == 0) resolution = 1;
 
 	while (1) {
@@ -1367,8 +1669,8 @@ start_up_threads:
 			for (nat j = 0; j < amount; j++) putchar('#'); puts("");
 		}
 		puts("");
-		sleep(1 << display_rate);
-		//usleep(10000);
+		//sleep(1 << display_rate);
+		usleep(300000);
 	}
 
 terminate:
@@ -1458,8 +1760,8 @@ all_threads_have_finished:;
         }
         snprintf(output_string, 4096, "[done]\n");
 	print(output_filename, 4096, output_string);
+}
 
-} // main
 
 
 
@@ -1520,41 +1822,6 @@ all_threads_have_finished:;
 
 
 
-
-
-
-	//nat first = 1; // debug
-
-/*if (e >= 100000000) {
-			if (first) {
-				print_graph_raw(graph); puts("");
-				getchar();
-				first = 0;
-			}
-			printf("%hhu ", op); fflush(stdout);
-			usleep(20000);
-		}*/
-			
-
-			/*
-
-			2 x ----------(*n > *i)---------> x
-
-			
-			2 x ----------(*n > *i)---------> 2 y
-			  y ----------(*n > *i)---------> x
-
-
-			2 x ----------(*n > *i)---------> 2 y
-			  y ----------(*n > *i)---------> 2 z
-			  z ----------(*n > *i)---------> x
-
-
-			2 x ----------(*n > *i)---------> 2 y
-			  y ----------(*n > *i)---------> 2 z
-			  z ----------(*n > *i)---------> 2 w
-			  w ----------(*n > *i)---------> x
-		*/
 
 
 
