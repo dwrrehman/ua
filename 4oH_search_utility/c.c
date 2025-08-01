@@ -39,7 +39,8 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 
 #define duplicate_opi 2
-#define thread_count 1
+#define thread_count 2
+#define display_rate 0
 #define execution_limit 100000000LLU
 #define array_size 1000000LLU
 
@@ -150,7 +151,7 @@ static void get_graphs_z_value(char string[64], byte* graph) {
 	string[graph_count] = 0;
 }
 
-static void print_binary(uint32_t x) {
+/*static void print_binary(uint32_t x) {
 	for (byte i = 0; i < 32; i++) 
 		if ((x >> i) & 1) printf("1"); else printf("0");
 }
@@ -159,8 +160,8 @@ static void print_bytes(byte* a, byte c) {
 	printf("(%hhu):{", c);
 	for (byte i = 0; i < c; i++) 
 		printf("%hhu, ", a[i]);
-	printf("}\n");
-}
+	printf("}");
+}*/
 
 static void get_datetime(char datetime[32]) {
 	struct timeval tv;
@@ -524,213 +525,160 @@ static byte execute_graph(byte* graph, nat* array, byte* origin, nat* counts) {
 	return at;
 }
 
-static void* worker_thread(void* __attribute__((unused))_) {
+static void try_trichotomy_colorings(
+	byte* nfarray,
+	byte* graph,
+	byte* pre_graph,
+	nat* array,
+	nat* counts,
+	nat thread_index
+) {
+	for (byte i = 0; i < operation_count; i++) 
+		graph[4 * i + 0] = pre_graph[4 * i + 0];
+	
+	byte pointer = 0;
+	goto init;
+loop:
+	if (nfarray[pointer] < 6 - 1) goto increment;
+	if (pointer < operation_count - 1) goto reset_;
+	goto done;
+
+increment:
+	nfarray[pointer]++;
+init:  	pointer = 0;
+
+
+	for (byte i = 0; i < operation_count; i++) {
+
+		const byte l = 4 * i + 1;
+		const byte g = 4 * i + 2;
+		const byte e = 4 * i + 3;
+
+		const byte A = pre_graph[l];
+		const byte B = pre_graph[g];
+		const byte C = pre_graph[e];
+
+	       if (nfarray[i] == 0) { graph[l] = A; graph[g] = B; graph[e] = C; } else 
+	       if (nfarray[i] == 1) { graph[l] = A; graph[g] = C; graph[e] = B; } else 
+
+	       if (nfarray[i] == 2) { graph[l] = B; graph[g] = A; graph[e] = C; } else 
+	       if (nfarray[i] == 3) { graph[l] = B; graph[g] = C; graph[e] = A; } else 
+
+	       if (nfarray[i] == 4) { graph[l] = C; graph[g] = A; graph[e] = B; } else 
+	       if (nfarray[i] == 5) { graph[l] = C; graph[g] = B; graph[e] = A; }
+	}
+	
+	// (do graph_analysis here!)
+
+	for (nat i = 0; i < graph_count; i++) {
+		atomic_store_explicit(
+			current_zv_progress + 
+				graph_count * thread_index + i, 
+			graph[i], 
+			memory_order_relaxed
+		);
+	}
+		
+	byte origin = 0;
+	byte at = execute_graph(graph, array, &origin, counts);
+
+	if (not at) {
+		append_to_file(filenames[thread_index], 4096, graph, origin);
+		goto loop;
+	} else goto loop;
+
+reset_:;
+	nfarray[pointer] = 0; 
+	pointer++;
+	goto loop;
+
+done:;
+}
+
+static void* worker_thread(void* raw_thread_index) {
+
+	const nat thread_index = *(nat*) raw_thread_index;
 	nat* counts = calloc(pm_count, sizeof(nat));
 	nat* array = calloc(array_size + 1, sizeof(nat));
-
+	
+	byte nfarray[operation_count] = {0};	
+	byte graph[graph_count] = {0};
 	byte pre_graph[graph_count] = {0};
-	//byte graph[graph_count] = {0};
 
 pull_job_from_queue:
 	pthread_mutex_lock(&mutex);
 	const u32 edge_direction = queue_count ? edge_direction_queue[--queue_count] : 0;
-
-	printf("DEBUG: edge_direction = 0x%08x, queue_count = %llu\n", edge_direction, queue_count);
-
 	pthread_mutex_unlock(&mutex);
 	if (not edge_direction) goto terminate;
 
 	for (nat p = 0; p < permutation_count; p++) {
-
-		const u32 permutation = node_permutations[p];
-
-		//printf("DEBUG: permutation = 0x%08x, p = %llu\n", permutation, p);
-		//printf("edge dir: "); print_binary(edge_direction); puts("");
-		//printf("node perm: "); print_binary(permutation); puts("");
-		
+		const u32 permutation = node_permutations[p];		
 		memset(pre_graph, 0, graph_count); // unneccessary
 
 		for (byte pli = 0; pli < 8; pli++)
 			pre_graph[4 * pli + 0] = (permutation >> (3U * pli)) & 7;
 
-
-		//print_graph_raw(pre_graph); puts(""); getchar();
-
 		for (byte pli = 0; pli < 8; pli++) {
 			byte count = 0;
 			for (byte edge = 0; edge < 6; edge++) {
-
 				const byte n = pli * 6 + edge;
-
-				const byte edge_is_complemented = !!(edge_direction & (1 << edges_indexes_per_node[n]));
-				const byte is_output = direction_is_output_per_node[n];
+				const byte edge_is_complemented = !!(edge_direction & (1 << edges_indexes_per_node[n]));				const byte is_output = direction_is_output_per_node[n];
 				const byte source = edge_sources_per_node[n];
-
 				if (is_output xor edge_is_complemented) {
-					if (count >= 3) { puts("internal error: node has more than 3 outputs."); abort(); } 
+					if (count >= 3) { 
+						puts("internal error: node has more than 3 outputs."); 
+						abort(); 
+					}
 					pre_graph[4 * pli + 1 + count] = source;
-
-					//printf("\t pli = %u, edge = %u\n", pli, edge);
-					//printf("\t count = %u\n", count);
-					//printf("\t is_output = %u\n", is_output);
-					//printf("\t edge_is_complemented = %u\n", edge_is_complemented);
-					//printf("\t source = %u\n", source);
-					//print_graph_raw(pre_graph);
-					//puts(""); getchar();
 					count++;
 				}
 			}
-			//printf("DEBUG output count = %u\n", count);
 		}
 
-		print_graph_raw(pre_graph); puts(""); getchar();
+		for (nat i = 0; i < operation_count; i++) {
+			bool source = (pre_graph[4 * i + 0] == five);
+			bool l = (pre_graph[4 * pre_graph[4 * i + 1] + 0] == one);
+			bool g = (pre_graph[4 * pre_graph[4 * i + 2] + 0] == one);
+			bool e = (pre_graph[4 * pre_graph[4 * i + 3] + 0] == one);			
+			if (source and (l or g or e)) {
+				counts[pm_ga_pco]++;
+				goto next_node_permutation;
+			}
+		}
 
-		//if (check against pco, and snco, and zr5, and zr6 based on pregraph) continue;
+		for (nat i = 0; i < operation_count; i++) {
+			bool source = (pre_graph[4 * i + 0] == six);
+			bool l = (pre_graph[4 * pre_graph[4 * i + 1] + 0] == two);
+			bool g = (pre_graph[4 * pre_graph[4 * i + 2] + 0] == two);
+			bool e = (pre_graph[4 * pre_graph[4 * i + 3] + 0] == two);
+			if (source and (l or g or e)) {
+				counts[pm_ga_snco]++;
+				goto next_node_permutation;
+			}			
+		}
 
-		// search over trich colorings!
-		// with nf,   moduli={  6 6 6 6   2 6 6 6  }
-		//
-
+		if (duplicate_opi >= three) {
+			for (nat i = 0; i < operation_count; i++) {
+				bool source = (pre_graph[4 * i + 0] == duplicate_opi);
+				bool l = (pre_graph[4 * pre_graph[4 * i + 1] + 0] == duplicate_opi);
+				bool g = (pre_graph[4 * pre_graph[4 * i + 2] + 0] == duplicate_opi);
+				bool e = (pre_graph[4 * pre_graph[4 * i + 3] + 0] == duplicate_opi);
+				if (source and (l or g or e)) {
+					if (duplicate_opi == three) counts[pm_ga_ndi]++;
+					if (duplicate_opi == five) counts[pm_ga_zr5]++;
+					if (duplicate_opi == six) counts[pm_ga_zr6]++;
+					goto next_node_permutation;
+				}			
+			}
+		}
+		try_trichotomy_colorings(nfarray, graph, pre_graph, array, counts, thread_index);
+		next_node_permutation: continue;
 	}
 	goto pull_job_from_queue;
 terminate:
 	free(array);
 	return counts;
 }	
-
-
-
-/*
-
-	next_job:;
-		const bool nonzero_amount_of_jobs_finished = job_index >= count and count;
-		nat expected = 0;
-		const bool was_equal = atomic_compare_exchange_strong(&flag, &expected, nonzero_amount_of_jobs_finished);
-		if (not was_equal or job_index >= count) goto terminate;
-
-		atomic_store_explicit(display_progress + thread_index, job_index, memory_order_relaxed);
-		memcpy(graph, jobs[job_index].begin, graph_count);
-		memcpy(end, jobs[job_index].end, graph_count);		
-		goto init;
-
-	loop:
-		for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
-			if (graph_64[i] < end_64[i]) goto process;
-			if (graph_64[i] > end_64[i]) break;
-		}
-		goto prepare_next_job;
-
-	process:
-		if (graph[pointer] < ((pointer % 4) ? operation_count - 1 : 4)) goto increment;
-		if (pointer < graph_count - 1) goto reset_;
-
-	prepare_next_job:
-		job_index++;
-		goto next_job;
-
-	increment:
-		graph[pointer]++;
-	init:  	pointer = 0;
-	
-		for (byte index = 20; index < graph_count; index += 4) {
-			if (index < graph_count - 4 and graph[index] > graph[index + 4]) {
-				at = index + 4;
-				counts[pm_ga_sdol]++;
-				//puts(pm_spelling[pm_ga_sdol]);
-				goto bad;
-			} 
-		}
-
-		for (byte index = operation_count; index--;) {
-
-			const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
-
-			if (graph[4 * index] == six and graph[4 * e] == one) {
-				at = graph_count;
-				if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
-				if (editable(4 * index) and at > 4 * index) at = 4 * index;
-				if (editable(4 * e) and at > 4 * e) at = 4 * e;
-				if (at == graph_count) abort();
-				counts[pm_ga_ns0]++;
-				//puts(pm_spelling[pm_ga_ns0]); 
-				goto bad;
-			}
-	 
-			if (graph[4 * index] == six and graph[4 * e] == five) {
-				at = graph_count;
-				if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
-				if (editable(4 * index) and at > 4 * index) at = 4 * index;
-				if (editable(4 * e) and at > 4 * e) at = 4 * e;
-				if (at == graph_count) abort();
-				counts[pm_ga_ns0]++;
-				//puts(pm_spelling[pm_ga_ns0]);
-				goto bad;
-			}
-
-			{const byte pairs[3 * 5] = {
-				three, three, pm_ga_ndi,
-				five, one,  pm_ga_pco,
-				five, five, pm_ga_zr5,
-
-				six, six, pm_ga_zr6,
-				//two, two, pm_ga_sndi,
-				//two, six, pm_ga_sn1,
-				six, two, pm_ga_snco,
-			};
-			for (nat i = 0; i < 5 * 3; i += 3) {
-				const byte source = pairs[i + 1], destination = pairs[i + 0];
-				if (graph[4 * index] == source) {
-					for (byte offset = 1; offset < 4; offset++) {
-						const byte dest = graph[4 * index + offset];
-						if (graph[4 * dest] != destination) continue;
-						at = graph_count;
-						if (editable(4 * index + offset) and at > 4 * index + offset) at = 4 * index + offset;
-						if (editable(4 * index) and at > 4 * index) at = 4 * index;
-						if (editable(4 * dest) and at > 4 * dest) at = 4 * dest;
-						if (at == graph_count) continue;
-						counts[pairs[i + 2]]++;
-						//puts(pm_spelling[pairs[i + 2]]);
-						goto bad;
-					}
-				} 
-			}}
-		}
-
-
-
-	
-		for (nat i = 0; i < graph_count; i++)
-			atomic_store_explicit(current_zv_progress + graph_count * thread_index + i, graph[i], memory_order_relaxed);
-
-		byte origin = 0;
-		at = execute_graph(graph, array, &origin, counts);
-
-		if (not at) {
-			append_to_file(filenames[thread_index], 4096, graph, origin);
-			goto loop;
-		}
-
-		goto loop
-
-	reset_:;
-		graph[pointer] = 0; 
-		do pointer++; while (noneditable(pointer));
-		goto loop;
-
-
-*/
-
-
-	/*
-	bad:	if (noneditable(at)) {
-			printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
-			abort();
-		}		
-		for (byte i = lsepa; i < at; i++) if (editable(i)) graph[i] = 0;
-		pointer = at; goto loop;
-	*/
-
-
 
 static void print(char* filename, size_t size, const char* string) {
 	char dt[32] = {0};   get_datetime(dt);
@@ -825,10 +773,6 @@ init:  	pointer = 0;
 	for (nat i = 0; i < permutation_count; i++) 
 		if (node_permutations[i] == data) goto loop;
 	node_permutations[permutation_count++] = data;
-
-	//printf("0x%08x : ", data); 
-	//print_bytes(placements, 8);
-
 	goto loop;
 reset_:
 	array[pointer] = 0; 
@@ -837,7 +781,6 @@ reset_:
 done:
 	return;
 }
-
 
 int main(void) {
 	srand((unsigned) time(0));
@@ -867,9 +810,7 @@ int main(void) {
 
 	puts("stage: computing valid edge direction jobs...");
 
-	for (u32 bits = 0; bits < (1U << 24U); bits++) {
-
-		
+	for (u32 bits = 0; bits < (1U << 24U); bits++) {		
 		byte edgedir_outputs[8] = { 0, 5, 5, 5, 3, 3, 3, 0 };		
 		edgedir_count_outputs(edgedir_outputs, bits);
 		for (byte i = 0; i < 8; i++) if (edgedir_outputs[i] != 3) goto next_bit_vector;
@@ -899,8 +840,11 @@ int main(void) {
 	gettimeofday(&time_begin, NULL);
 	nat counts[pm_count] = {0};
 
-	for (nat i = 0; i < thread_count; i++) 
-		pthread_create(threads + i, NULL, worker_thread, NULL);	
+	for (nat i = 0; i < thread_count; i++) {
+		nat* arg = malloc(sizeof(nat));
+		*arg = i;
+		pthread_create(threads + i, NULL, worker_thread, arg);
+	}
 
 	while (1) {
 		pthread_mutex_lock(&mutex);
@@ -908,10 +852,15 @@ int main(void) {
 		pthread_mutex_unlock(&mutex);
 		if (not amount_remaining) goto join_threads;
 
-	/*
+		//sleep(8); continue;
+
 		printf("\033[H\033[2J");
-		printf("\n-----------------current jobs (max_job_size=%llu)-------------------\n", 0LLU);
-		printf("\n\t%1.10lf%%\n\n", (double) (total_job_count - amount_remaining) / (double) total_job_count);
+		printf("\n---------- remaining: %llu / %llu ---------\n", 
+			amount_remaining, total_job_count
+		);
+		printf("\n\t%1.10lf%%\n\n", 
+			(double) (total_job_count - amount_remaining) / (double) total_job_count
+		);
 		puts("");
 
 		for (nat i = 0; i < thread_count; i++) {
@@ -926,10 +875,9 @@ int main(void) {
 			print_graph_raw(local_graph);
 			printf("\n");
 		}
-		puts("");
-	*/
-		sleep(1 << 3);
-		usleep(10000);
+		puts("");	
+		sleep(1 << display_rate);
+		//usleep(10000);
 	}
 join_threads:
 	puts("\nmain: joining threads...\n");
@@ -1090,6 +1038,318 @@ join_threads:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//printf("0x%08x : ", data); 
+	//print_bytes(placements, 8);
+
+
+
+
+
+
+		//if (check against pco, and snco, and zr5, and zr6 based on pregraph) continue;
+
+
+
+					//printf("\t pli = %u, edge = %u\n", pli, edge);
+					//printf("\t count = %u\n", count);
+					//printf("\t is_output = %u\n", is_output);
+					//printf("\t edge_is_complemented = %u\n", edge_is_complemented);
+					//printf("\t source = %u\n", source);
+					//print_graph_raw(pre_graph);
+					//puts(""); getchar();
+
+		//print_graph_raw(pre_graph); puts(""); getchar();
+
+		//printf("DEBUG: permutation = 0x%08x, p = %llu\n", permutation, p);
+		//printf("edge dir: "); print_binary(edge_direction); puts("");
+		//printf("node perm: "); print_binary(permutation); puts("");
+
+
+	//printf("DEBUG: edge_direction = 0x%08x, queue_count = %llu\n", edge_direction, queue_count);
+	//printf("[thread %llu]: arrived in try_trich(): ", thread_index);
+	//print_graph_raw(pre_graph); puts("");
+
+
+
+			//printf("DEBUG output count = %u\n", count);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	//     nfarray      +     pre_graph        = graph
+
+	/*print_graph_raw(graph); 
+	printf(" = "); 
+	print_bytes(nfarray, 8); 
+	printf(" + ");	
+	print_graph_raw(pre_graph); 
+	puts(""); 
+	//getchar();
+	*/
+	//printf("[thread %llu]: finished NF trich search! ", thread_index);
+	//print_graph_raw(pre_graph); puts("");
+
+
+
+
+
+
+
+
+/*
+
+
+
+		//nfarray[i] == 0    --->    OPI:  { .l=A .g=B .e=C }
+		//nfarray[i] == 1    --->    OPI:  { .l=A .g=C .e=B } 
+		//nfarray[i] == 2    --->    OPI:  { .l=B .g=A .e=C } 
+		//nfarray[i] == 3    --->    OPI:  { .l=B .g=C .e=A } 
+		//nfarray[i] == 4    --->    OPI:  { .l=C .g=A .e=B } 
+		//nfarray[i] == 5    --->    OPI:  { .l=C .g=B .e=A }
+
+
+
+
+
+
+		// search over trich colorings!
+		// with nf,   moduli={  6 6 6 6   2 6 6 6  }
+		//
+
+
+	next_job:;
+		const bool nonzero_amount_of_jobs_finished = job_index >= count and count;
+		nat expected = 0;
+		const bool was_equal = atomic_compare_exchange_strong(&flag, &expected, nonzero_amount_of_jobs_finished);
+		if (not was_equal or job_index >= count) goto terminate;
+
+		atomic_store_explicit(display_progress + thread_index, job_index, memory_order_relaxed);
+		memcpy(graph, jobs[job_index].begin, graph_count);
+		memcpy(end, jobs[job_index].end, graph_count);		
+		goto init;
+
+	loop:
+		for (byte i = (operation_count & 1) + (operation_count >> 1); i--;) {
+			if (graph_64[i] < end_64[i]) goto process;
+			if (graph_64[i] > end_64[i]) break;
+		}
+		goto prepare_next_job;
+
+	process:
+		if (graph[pointer] < ((pointer % 4) ? operation_count - 1 : 4)) goto increment;
+		if (pointer < graph_count - 1) goto reset_;
+
+	prepare_next_job:
+		job_index++;
+		goto next_job;
+
+	increment:
+		graph[pointer]++;
+	init:  	pointer = 0;
+	
+		for (byte index = 20; index < graph_count; index += 4) {
+			if (index < graph_count - 4 and graph[index] > graph[index + 4]) {
+				at = index + 4;
+				counts[pm_ga_sdol]++;
+				//puts(pm_spelling[pm_ga_sdol]);
+				goto bad;
+			} 
+		}
+
+		for (byte index = operation_count; index--;) {
+
+			const byte l = graph[4 * index + 1], g = graph[4 * index + 2], e = graph[4 * index + 3];
+
+			if (graph[4 * index] == six and graph[4 * e] == one) {
+				at = graph_count;
+				if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
+				if (editable(4 * index) and at > 4 * index) at = 4 * index;
+				if (editable(4 * e) and at > 4 * e) at = 4 * e;
+				if (at == graph_count) abort();
+				counts[pm_ga_ns0]++;
+				//puts(pm_spelling[pm_ga_ns0]); 
+				goto bad;
+			}
+	 
+			if (graph[4 * index] == six and graph[4 * e] == five) {
+				at = graph_count;
+				if (editable(4 * index + 3) and at > 4 * index + 3) at = 4 * index + 3;
+				if (editable(4 * index) and at > 4 * index) at = 4 * index;
+				if (editable(4 * e) and at > 4 * e) at = 4 * e;
+				if (at == graph_count) abort();
+				counts[pm_ga_ns0]++;
+				//puts(pm_spelling[pm_ga_ns0]);
+				goto bad;
+			}
+
+			{const byte pairs[3 * 5] = {
+				three, three, pm_ga_ndi,
+				five, one,  pm_ga_pco,
+				five, five, pm_ga_zr5,
+
+				six, six, pm_ga_zr6,
+				//two, two, pm_ga_sndi,
+				//two, six, pm_ga_sn1,
+				six, two, pm_ga_snco,
+			};
+			for (nat i = 0; i < 5 * 3; i += 3) {
+				const byte source = pairs[i + 1], destination = pairs[i + 0];
+				if (graph[4 * index] == source) {
+					for (byte offset = 1; offset < 4; offset++) {
+						const byte dest = graph[4 * index + offset];
+						if (graph[4 * dest] != destination) continue;
+						at = graph_count;
+						if (editable(4 * index + offset) and at > 4 * index + offset) at = 4 * index + offset;
+						if (editable(4 * index) and at > 4 * index) at = 4 * index;
+						if (editable(4 * dest) and at > 4 * dest) at = 4 * dest;
+						if (at == graph_count) continue;
+						counts[pairs[i + 2]]++;
+						//puts(pm_spelling[pairs[i + 2]]);
+						goto bad;
+					}
+				} 
+			}}
+		}
+
+
+
+	
+		for (nat i = 0; i < graph_count; i++)
+			atomic_store_explicit(current_zv_progress + graph_count * thread_index + i, graph[i], memory_order_relaxed);
+
+		byte origin = 0;
+		at = execute_graph(graph, array, &origin, counts);
+
+		if (not at) {
+			append_to_file(filenames[thread_index], 4096, graph, origin);
+			goto loop;
+		}
+
+		goto loop
+
+	reset_:;
+		graph[pointer] = 0; 
+		do pointer++; while (noneditable(pointer));
+		goto loop;
+
+
+*/
+
+
+	/*
+	bad:	if (noneditable(at)) {
+			printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
+			abort();
+		}		
+		for (byte i = lsepa; i < at; i++) if (editable(i)) graph[i] = 0;
+		pointer = at; goto loop;
+	*/
 
 
 
