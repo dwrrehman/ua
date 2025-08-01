@@ -1,0 +1,36 @@
+4oH_search_utility: cat 1202508015.013907_D3_5523012e6d229eac7bdf662d07ad53e4_output.txt
+SU: searching [D=3] space....
+su: 
+         D = 3
+         total_job_count = 6936
+         execution_limit = 100000000
+         array_size = 1000000
+         in      88.00s [1202508015.013907:1202508015.014035]
+
+
+pm counts:
+z_is_good: 0                    pm_zr5: 4107562528
+pm_zr6: 1335902016              pm_ndi: 495186496
+pm_sndi: 0                      pm_pco: 11642581280
+pm_per: 24725792                pm_ns0: 15384070752
+pm_oer: 0                       pm_rsi: 0       
+ pm_h0: 268047552               pm_h0s: 0       
+ pm_h1: 0                        pm_h2: 0       
+pm_rmv: 0                       pm_ormv: 0       
+pm_imv: 0                       pm_csm: 0       
+pm_lmv: 0                       pm_fse: 0       
+pm_pair: 0                      pm_ls0: 0       
+pm_bdl1: 0                      pm_bdl2: 0       
+pm_bdl3: 0                      pm_bdl4: 0       
+pm_bdl5: 0                      pm_bdl6: 0       
+pm_bdl7: 0                      pm_bdl8: 0       
+pm_bdl9: 0                      pm_bdl10: 0       
+pm_bdl11: 0                     pm_bdl12: 0       
+pm_erp1: 0                      pm_erp2: 0       
+pm_ga_zr6: 0                    pm_ga_zr5: 571776  
+pm_ga_ndi: 0                    pm_ga_ns0: 0       
+pm_ga_pco: 33024384             pm_ga_snco: 1321728             [done]
+4oH_search_utility: 
+
+dup opi = five
+

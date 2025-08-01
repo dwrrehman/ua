@@ -38,9 +38,9 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t nat;
 
-#define duplicate_opi 2
-#define thread_count 2
-#define display_rate 0
+#define duplicate_opi one
+#define thread_count 1
+#define display_rate 1
 #define execution_limit 100000000LLU
 #define array_size 1000000LLU
 
@@ -51,7 +51,6 @@ static nat queue_count = 0;
 static u32 node_permutations[7000] = {0};
 static nat permutation_count = 0;
 static char** filenames = NULL;
-
 
 static byte edgedir_sources[24] = {
 	0, 0, 0, 2, 3, 1, 0, 0,
@@ -65,7 +64,7 @@ static byte edgedir_destinations[24] = {
 	3, 3, 1, 4, 2, 5, 6, 3,
 };
 
-static const byte edges_indexes_per_node[8 * 6] = {    //TODO: verify the contents of this array!!!!
+static const byte edges_indexes_per_node[8 * 6] = { 
 	 0,  1,  2,  6,  7,  8,  
 	 0,  3,  5, 13, 12, 18,
 	 3,  4,  1, 14, 15, 20,
@@ -137,8 +136,6 @@ static const char* pm_spelling[pm_count] = {
 	"pm_ga_zr6", "pm_ga_zr5", "pm_ga_ndi",
 	"pm_ga_ns0", "pm_ga_pco", "pm_ga_snco",
 };
-
-
 
 #define D 3
 #define operation_count (5 + D)
@@ -547,7 +544,6 @@ increment:
 	nfarray[pointer]++;
 init:  	pointer = 0;
 
-
 	for (byte i = 0; i < operation_count; i++) {
 
 		const byte l = 4 * i + 1;
@@ -578,7 +574,9 @@ init:  	pointer = 0;
 			memory_order_relaxed
 		);
 	}
-		
+	
+
+
 	byte origin = 0;
 	byte at = execute_graph(graph, array, &origin, counts);
 
@@ -601,7 +599,7 @@ static void* worker_thread(void* raw_thread_index) {
 	nat* counts = calloc(pm_count, sizeof(nat));
 	nat* array = calloc(array_size + 1, sizeof(nat));
 	
-	byte nfarray[operation_count] = {0};	
+	byte nfarray[operation_count] = {0};
 	byte graph[graph_count] = {0};
 	byte pre_graph[graph_count] = {0};
 
@@ -612,8 +610,9 @@ pull_job_from_queue:
 	if (not edge_direction) goto terminate;
 
 	for (nat p = 0; p < permutation_count; p++) {
-		const u32 permutation = node_permutations[p];		
-		memset(pre_graph, 0, graph_count); // unneccessary
+		const u32 permutation = node_permutations[p];
+
+		memset(pre_graph, 0, graph_count);
 
 		for (byte pli = 0; pli < 8; pli++)
 			pre_graph[4 * pli + 0] = (permutation >> (3U * pli)) & 7;
@@ -622,10 +621,12 @@ pull_job_from_queue:
 			byte count = 0;
 			for (byte edge = 0; edge < 6; edge++) {
 				const byte n = pli * 6 + edge;
-				const byte edge_is_complemented = !!(edge_direction & (1 << edges_indexes_per_node[n]));				const byte is_output = direction_is_output_per_node[n];
+				const byte edge_is_complemented = !!(edge_direction & (1 << edges_indexes_per_node[n]));
+				const byte is_output = direction_is_output_per_node[n];
 				const byte source = edge_sources_per_node[n];
+
 				if (is_output xor edge_is_complemented) {
-					if (count >= 3) { 
+					if (count >= 3) {
 						puts("internal error: node has more than 3 outputs."); 
 						abort(); 
 					}
@@ -639,7 +640,7 @@ pull_job_from_queue:
 			bool source = (pre_graph[4 * i + 0] == five);
 			bool l = (pre_graph[4 * pre_graph[4 * i + 1] + 0] == one);
 			bool g = (pre_graph[4 * pre_graph[4 * i + 2] + 0] == one);
-			bool e = (pre_graph[4 * pre_graph[4 * i + 3] + 0] == one);			
+			bool e = (pre_graph[4 * pre_graph[4 * i + 3] + 0] == one);
 			if (source and (l or g or e)) {
 				counts[pm_ga_pco]++;
 				goto next_node_permutation;
@@ -711,7 +712,7 @@ try_open:;
 static void edgedir_count_outputs(byte* nodes, uint32_t bits) {
 	for (byte i = 0; i < 24; i++) {
 		if (bits & (1 << i)) { 
-			nodes[edgedir_sources[i]]++; 
+			nodes[edgedir_sources[i]]++;
 			nodes[edgedir_destinations[i]]--;
 		}
 	}
@@ -719,8 +720,8 @@ static void edgedir_count_outputs(byte* nodes, uint32_t bits) {
 
 static void edgedir_count_inputs(byte* nodes, uint32_t bits) {
 	for (byte i = 0; i < 24; i++) {
-		if (bits & (1 << i)) { 
-			nodes[edgedir_sources[i]]--; 
+		if (bits & (1 << i)) {
+			nodes[edgedir_sources[i]]--;
 			nodes[edgedir_destinations[i]]++;
 		}
 	}
@@ -770,7 +771,7 @@ init:  	pointer = 0;
 		((u32) placements[6] << (3U * 6U)) | 
 		((u32) placements[7] << (3U * 7U));
 
-	for (nat i = 0; i < permutation_count; i++) 
+	for (nat i = 0; i < permutation_count; i++)
 		if (node_permutations[i] == data) goto loop;
 	node_permutations[permutation_count++] = data;
 	goto loop;
@@ -810,12 +811,12 @@ int main(void) {
 
 	puts("stage: computing valid edge direction jobs...");
 
-	for (u32 bits = 0; bits < (1U << 24U); bits++) {		
-		byte edgedir_outputs[8] = { 0, 5, 5, 5, 3, 3, 3, 0 };		
+	for (u32 bits = 0; bits < (1U << 24U); bits++) {
+		byte edgedir_outputs[8] = { 0, 5, 5, 5, 3, 3, 3, 0 };
 		edgedir_count_outputs(edgedir_outputs, bits);
 		for (byte i = 0; i < 8; i++) if (edgedir_outputs[i] != 3) goto next_bit_vector;
 
-		byte edgedir_inputs[8] = { 6, 1, 1, 1, 3, 3, 3, 6 };	
+		byte edgedir_inputs[8] = { 6, 1, 1, 1, 3, 3, 3, 6 };
 		edgedir_count_inputs(edgedir_inputs, bits);
 		for (byte i = 0; i < 8; i++) if (edgedir_inputs[i] != 3) goto next_bit_vector; 
 
@@ -829,7 +830,7 @@ int main(void) {
 	const nat total_job_count = queue_count;
 
 	printf("generating node permutation data for DOL[2] = %u\n", duplicate_opi);
-	generate_permutation_data(duplicate_opi); 
+	generate_permutation_data(duplicate_opi);
 	printf("permutation_count = %llu\n", permutation_count);
 	printf("all permutations computed:");
 
