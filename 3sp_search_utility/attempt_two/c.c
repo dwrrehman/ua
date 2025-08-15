@@ -41,34 +41,6 @@
   //     queue size is at maximum:   (5 * 8^3) / 2 jobs  and i'll round it up to 2048.
 
 
-
-/*
-
-#include <iso646.h>
-#include <stdint.h>
-
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <time.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdatomic.h>
-#include <sys/stat.h>
-
-#include <sys/types.h>
-
-#include <string.h>
-#include <errno.h>
-*/
-
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -664,26 +636,8 @@ pull_job_from_queue:;
 		u16 was_utilized = 0;
 		byte at = lsepa;
 
-
-
-
-
-
-/*
-
-
-we ran this zv:
-
-	01001752243031004041000010001767
-
-*/
-
-
-
-
 		//printf("nf: "); print_graph_raw(g0, g1); puts("");
 	
-
 		for (byte pa = 20; pa < graph_count; pa += 4) {
 			if (pa < graph_count - 4 and gi(g0, g1, pa) > gi(g0, g1, pa + 4)) {
 				at = pa + 4;
@@ -793,9 +747,6 @@ we ran this zv:
 			} 
 		}
 
-
-
-
 		for (byte pa = 20; pa < graph_count; pa += 4) {
 			if (gi(g0, g1, pa) == five) goto skip_5_1_check;
 		}
@@ -803,6 +754,8 @@ we ran this zv:
 		{ const byte l = gi(g0, g1, 4 * five + 1);
 		const byte g = gi(g0, g1, 4 * five + 2);
 		const byte e = gi(g0, g1, 4 * five + 3);
+
+		ttt  abort(); // do the accounting for this ga pm lol
 
 		if (	gi(g0, g1, 4 * l) == one and
 			gi(g0, g1, 4 * g) == one and
@@ -1128,6 +1081,33 @@ if (	graph[4 * index + 0] == two and
 
 
 
+
+
+/*
+
+#include <iso646.h>
+#include <stdint.h>
+
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <time.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdatomic.h>
+#include <sys/stat.h>
+
+#include <sys/types.h>
+
+#include <string.h>
+#include <errno.h>
+*/
 
 
 
