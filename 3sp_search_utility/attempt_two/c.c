@@ -41,6 +41,192 @@
   //     queue size is at maximum:   (5 * 8^3) / 2 jobs  and i'll round it up to 2048.
 
 
+
+
+
+
+/*
+
+
+
+
+1l3,3l1   1l6,6l1   3l2,2l3   3l5,5l3    
+3l6,6l3   5l6,6l5   5g6,6l5   5g2,2g5    
+6e3,3l6   5e6,6l5   5e3,3l5   2e3,3l2
+3e6,6l3   3e2,2g3   5e2,2g5   
+
+
+
+1202509125.221238
+TABLE:
+
+legend:
+----------------------------------------------------------------------------
+
+	~ = already had it in GA
+
+	* = added, done, added a new GA PM
+
+	E = ...error, ignoring this element in the table....
+
+	? = i dont know if this is good or bad lol.. look into this?...
+
+
+----------------------------------------------------------------------------
+
+A ----x----> B      B -----y-----> A
+
+5 -----(=)-----> 2
+2 -----(>)-----> 5
+
+A 5
+B 6
+x =
+y <
+
+
+       x
+      B1   2   3   5   6        1   2   3   5   6        1   2   3   5   6    
+A    +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+y    | . |   |   |   |   |    | . | . | . | ~ | . |    | . | . | . | ~ | . |   
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | . | ~ |   |   |   |    | . | - | - | E | ~ |    | . | - | * | E | ~ | 
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+   
+     | * | * | ~ |   |   |    | . | - | ~ | E | E |    | . | - | ~ | E | * | 
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | ~ | E | * | ~ |   |    | ~ | E | E | ~ | * |    | ~ | E | * | ~ | * |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | * | ? | * | * | ~ |    | ~ | ~ | ~ | ~ | ~ |    | ~ | ~ | * | ~ | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . |   |   |   |   |    | . | . | . | ~ | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | ~ |   |   |   |    | . | - | - | E | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | ? | ~ |   |   |    | . | * | ~ | E | * |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | ~ | * | ? | ~ |   |    | ~ | * | E | ~ | ~ |  
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | ~ | ~ | ~ | ~ | ~ |    | ~ | ~ | E | ~ | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . |   |   |   |   |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | - |   |   |   |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | - | ~ |   |   |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | ~ | E | E | ~ |   |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | ~ | ~ | E | ~ | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+
+A ----x----> B      B -----y-----> A
+
+2 -----(>)-----> 5 
+5 -----(<)-----> 2
+
+
+A 2
+B 5
+
+x >
+y <
+
+
+
+
+
+COPY OF THE TABLE: ORIGINAL:
+0000000000000000000000000000000000000
+
+
+
+      B1   2   3   5   6        1   2   3   5   6        1   2   3   5   6    
+A    +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | . | / | / | / | / |    | . | . | . | P | . |    | . | . | . | P | . |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | . | s | / | / | / |    | . | - | - | p | S |    | . | - | n | p | S |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | h | n | n | / | / |    | . | - | n | p | n |    | . | - | n | p | n |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | P | p | p | p | / |    | P | p | p | p | p |    | P | p | p | p | p |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | 6 | S | 6 | 6 | 6 |    | g | S | g | g | 6 |    | 0 | S | 6 | 0 | 6 |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | / | / | / | / |    | . | . | . | P | g |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | s | / | / | / |    | . | - | - | p | S |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | n | n | / | / |    | . | n | n | 5 | g |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | P | p | p | p | / |    | P | p | p | p | g |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | g | S | g | g | 6 |    | 0 | S | 6 | 0 | 6 |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | / | / | / | / |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | - | / | / | / |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | - | n | / | / |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | P | p | p | p | / |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | 0 | S | 6 | 0 | 6 |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+
+
+
+
+
+
+terminating...
+total_count = 225
+LEGEND:
+   -  :   z_is_good
+   i  :   pm_infinite_loop
+   5  :   pm_zr5
+   6  :   pm_zr6
+   n  :   pm_ndi
+   s  :   pm_sndi
+   p  :   pm_pco
+   e  :   pm_per
+   0  :   pm_ns0
+   o  :   pm_oer
+   r  :   pm_rsi
+   h  :   pm_h0
+   k  :   pm_h0s
+   1  :   pm_h1
+   2  :   pm_h2
+   a  :   pm_pair
+
+
+
+
+
+1l3,3l1   1l6,6l1   3l2,2l3   3l5,5l3    
+3l6,6l3   5l6,6l5   5g6,6l5   5g2,2g5    
+6e3,3l6   5e6,6l5   5e3,3l5   2e3,3l2
+3e6,6l3   3e2,2g3   5e2,2g5   
+
+
+
+*/
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -73,6 +259,10 @@ static u16 queue[4096] = {0};
 static _Atomic nat queue_count = 0;
 static _Atomic nat progress[thread_count * 2] = {0};
 
+static _Atomic nat execution_counter = 0;
+static nat largest_ttp = 0;
+static double average_ttp = 0;
+
 static char** filenames = NULL;
 
 enum operations { one, two, three, five, six };
@@ -96,11 +286,18 @@ enum pruning_metrics {
 	pm_erp1, pm_erp2,
 
 	pm_ga_sdol, 
+
 	pm_ga_6g,    pm_ga_ns0, 
 	pm_ga_zr5,   pm_ga_pco, 
 	pm_ga_ndi,   pm_ga_snco,  
 	pm_ga_zr6,   pm_ga_rdo, 
+
 	pm_ga_uo,    pm_ga_il,
+
+	pm_ga_5u1,   pm_ga_6u2,
+	pm_ga_3u5,   pm_ga_3u1,
+
+	pm_ga_sndi,  pm_ga_h,
 
 	pm_count
 };
@@ -123,13 +320,20 @@ static const char* pm_spelling[pm_count] = {
 
 	"pm_erp1", "pm_erp2",
 
+
 	"pm_ga_sdol", 
+
 	"pm_ga_6g",    "pm_ga_ns0", 
 	"pm_ga_zr5",   "pm_ga_pco", 
 	"pm_ga_ndi",   "pm_ga_snco",  
 	"pm_ga_zr6",   "pm_ga_rdo", 
+
 	"pm_ga_uo",    "pm_ga_il",
 
+	"pm_ga_5u1",   "pm_ga_6u2",
+	"pm_ga_3u5",   "pm_ga_3u1",
+
+	"pm_ga_sndi",
 };
 
 #define D 3
@@ -241,8 +445,8 @@ static nat execute_graph_starting_at(
 	const byte origin, 
 	const nat g0, const nat g1, 
 	nat* array, 
-	byte* zskip_at
-	//nat* time_till_prune
+	byte* zskip_at,
+	nat* time_till_prune
 ) {
 	
 	const nat n = array_size;
@@ -271,12 +475,12 @@ static nat execute_graph_starting_at(
  	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
 	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
 
+
 	for (nat e = 0; e < execution_limit; e++) {
 
-		//*time_till_prune = e;
-
+		*time_till_prune = e;
+		atomic_fetch_add_explicit(&execution_counter, 1, memory_order_relaxed);
 		const byte op = gi(g0, g1, ip * 4);
-
 		//printf("[op = %hhu]\n", op);
 
 		if (op == one) {
@@ -586,9 +790,16 @@ static byte execute_graph(nat g0, nat g1, nat* array, byte* origin, nat* counts)
 			}
 		}
 
-		//nat ttp = 0;
-		const nat pm = execute_graph_starting_at(pa >> 2, g0, g1, array, &at);//, &ttp);
+
+		//atomic_store_explicit(&execution_counter, 0, memory_order_relaxed);
+
+		nat ttp = 0;
+		const nat pm = execute_graph_starting_at(pa >> 2, g0, g1, array, &at, &ttp);
 		counts[pm]++;
+		
+		if (ttp > largest_ttp) largest_ttp = ttp;	
+		const double d = (double) ttp;
+		average_ttp =   0.000001 * d   +   0.999999 * average_ttp  ;
 
 		/*if ((1)) {
 			printf("EXG: trying: (origin = %d) : \n", pa >> 2);
@@ -615,7 +826,7 @@ static void* worker_thread(void* raw_thread_index) {
 	register byte pointer = 0;
 
 pull_job_from_queue:;
-	const nat n = atomic_fetch_add_explicit(&queue_count, -1, memory_order_relaxed);
+	const nat n = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
 	if ((int64_t) n <= 0) goto terminate;
 	const u16 msb = queue[n - 1];
 	g0 = (1LLU << 16LLU) | (2LLU << 32LLU) | (3LLU << 48LLU);
@@ -645,6 +856,7 @@ pull_job_from_queue:;
 				goto bad;
 			} 
 		}
+
 
 		for (byte pa = graph_count; pa -= 4; ) {
 	
@@ -682,19 +894,66 @@ pull_job_from_queue:;
 				goto bad;
 			}
 
-			if (	gi(g0, g1, pa) == two and
-				gi(g0, g1, 4 * g) == two and
-				gi(g0, g1, 4 * g + 2) == pa >> 2
-			) {
+
+			if (op == two and l == pa >> 2) {
 				at = graph_count;
+				if (editable(pa + 1) and at > pa + 1) at = pa + 1;
 				if (editable(pa) and at > pa) at = pa;
-				if (editable(4 * g) and at > 4 * g) at = 4 * g;
-				if (editable(4 * g + 2) and at > 4 * g + 2) at = 4 * g + 2;
-				if (editable(pa + 2) and at > pa + 2) at = pa + 2;
 				if (at == graph_count) abort();
-				counts[pm_ga_il]++;
+				counts[pm_ga_sndi]++;
 				goto bad;
 			}
+
+
+
+			{const byte loops[5 * 16] = {
+				two, 2, two, 2, pm_ga_il,
+				one, 1, three, 1, pm_ga_h,
+				one, 1, six, 1, pm_ga_zr6,
+				three, 1, two, 1, pm_ga_ndi,
+				three, 1, five, 1, pm_ga_zr5,
+				three, 3, two, 2, pm_ga_ndi,
+				three, 1, six, 1, pm_ga_ndi,
+				three, 3, six, 1, pm_ga_ndi, 
+				five, 1, six, 1, pm_ga_zr5,
+				five, 2, six, 1, pm_ga_zr5,
+				five, 3, six, 1, pm_ga_zr5,					
+				five, 2, two, 2, pm_ga_zr5,
+				five, 3, three, 1, pm_ga_zr5,
+				five, 3, two, 2, pm_ga_zr5,
+				six, 3, three, 1, pm_ga_ndi,
+				two, 3, three, 1, pm_ga_ndi,
+			};
+
+			for (byte i = 0; i < 5 * 16; i += 5) {
+
+				const byte A = loops[i + 0];
+				const byte x = loops[i + 1];
+				const byte B = loops[i + 2];
+				const byte y = loops[i + 3];
+				const byte method = loops[i + 4];
+				const byte K = gi(g0, g1, pa + x);
+
+				if (	op == A and
+					gi(g0, g1, 4 * K) == B and
+					gi(g0, g1, 4 * K + y) == pa >> 2
+				) {
+					at = graph_count;
+					if (editable(pa) and at > pa) at = pa;
+					if (editable(pa + x) and at > pa + x) at = pa + x;
+					if (editable(4 * K) and at > 4 * K) at = 4 * K;
+					if (editable(4 * K + y) and at > 4 * K + y) at = 4 * K + y;
+					if (at == graph_count) abort();
+					counts[method]++;
+					goto bad;
+				}
+			}}
+
+
+
+
+
+
 
 			{const byte pairs[3 * 5] = {
 				three, three, pm_ga_ndi,
@@ -739,6 +998,8 @@ pull_job_from_queue:;
 			}
 		}
 
+
+
 		for (byte la = 0; la < operation_count; la++) {
 			if (not ((was_utilized >> la) & 1)) { 
 				at = lsepa;
@@ -746,6 +1007,8 @@ pull_job_from_queue:;
 				goto bad; 
 			} 
 		}
+
+
 
 		for (byte pa = 20; pa < graph_count; pa += 4) {
 			if (gi(g0, g1, pa) == five) goto skip_5_1_check;
@@ -755,15 +1018,62 @@ pull_job_from_queue:;
 		const byte g = gi(g0, g1, 4 * five + 2);
 		const byte e = gi(g0, g1, 4 * five + 3);
 
-		ttt  abort(); // do the accounting for this ga pm lol
+		if (	gi(g0, g1, 4 * l) == one and
+			gi(g0, g1, 4 * g) == one and
+			gi(g0, g1, 4 * e) == one
+		) {
+			at = 13; 
+			counts[pm_ga_5u1]++;
+			goto bad;
+		} } 
+		skip_5_1_check:; 
+
+
+		for (byte pa = 20; pa < graph_count; pa += 4) {
+			if (gi(g0, g1, pa) == six) goto skip_6_2_check;
+		}
+
+		{ const byte l = gi(g0, g1, 4 * six + 1);
+		const byte e = gi(g0, g1, 4 * six + 3);
+
+		if (	gi(g0, g1, 4 * l) == two and
+			gi(g0, g1, 4 * e) == two
+		) {
+			at = 17;
+			counts[pm_ga_6u2]++;
+			goto bad;
+		} }
+		skip_6_2_check:; 
+
+
+		for (byte pa = 20; pa < graph_count; pa += 4) {
+			if (gi(g0, g1, pa) == three) goto skip_3_15_check;
+		}
+
+		{ const byte l = gi(g0, g1, 4 * three + 1);
+		const byte g = gi(g0, g1, 4 * three + 2);
+		const byte e = gi(g0, g1, 4 * three + 3);
 
 		if (	gi(g0, g1, 4 * l) == one and
 			gi(g0, g1, 4 * g) == one and
 			gi(g0, g1, 4 * e) == one
 		) {
-			at = 13; goto bad;
+			at = 9;
+			counts[pm_ga_3u1]++;
+			goto bad;
+		} 
+
+		if (	gi(g0, g1, 4 * l) == five and
+			gi(g0, g1, 4 * g) == five and 
+			gi(g0, g1, 4 * e) == five
+		) {
+			at = 9;
+			counts[pm_ga_3u5]++;
+			goto bad;
 		} }
-		skip_5_1_check:; 
+		skip_3_15_check:; 
+
+ 
 
 		if (not (g0 & 0xffff)) { at = 1; goto bad; }
 
@@ -881,6 +1191,49 @@ increment:
 init:	pointer = 0;
 	mi = (mi + 1) % machine_count;
 	if (mi != machine_index) goto loop;
+
+	const byte op = gi(g0, 0, 0);
+	const byte l  = gi(g0, 0, 1);
+	const byte g  = gi(g0, 0, 2);
+	const byte e  = gi(g0, 0, 3);
+
+	if (op == two and g == 7) goto loop;
+
+	if (op == three and l == 7) goto loop;
+	if (op == three and g == 7) goto loop;
+	if (op == three and e == 7) goto loop;
+
+	if (op == five and l == 7) goto loop;
+	if (op == five and g == 7) goto loop;
+	if (op == five and e == 7) goto loop;
+
+	if (op == six and l == 7) goto loop;
+	if (op == six and e == 7) goto loop;
+
+	if (op == six and e == one) goto loop;
+	if (op == six and e == five) goto loop;
+
+	if (op == one and l == five) goto loop;
+	if (op == one and g == five) goto loop;
+	if (op == one and e == five) goto loop;
+
+	if (op == two and l == six) goto loop;
+	if (op == two and g == six) goto loop;
+	if (op == two and e == six) goto loop;
+
+	if (op == three and l == three) goto loop;
+	if (op == three and g == three) goto loop;
+	if (op == three and e == three) goto loop;
+
+	if (op == five and l == five) goto loop;
+	if (op == five and g == five) goto loop;
+	if (op == five and e == five) goto loop;
+
+	if (op == six and l == six) goto loop;
+	if (op == six and g != six) goto loop;
+	if (op == six and e == six) goto loop;
+
+
 	const nat n = atomic_fetch_add_explicit(&queue_count, 1, memory_order_relaxed);
 	queue[n] = g0;
 	total_job_count++;
@@ -932,11 +1285,14 @@ done:; }
 			const nat g1 = atomic_load_explicit(progress + 2 * i + 1, memory_order_relaxed);
 			printf(" %5llu : ", i);
 			print_graph_raw(g0, g1);
-			printf("\n");
+			const nat counter = atomic_load_explicit(&execution_counter, memory_order_relaxed);
+			printf("     --    timesteps: %llu ", counter);
+			printf("     --    largest ttp: %llu", largest_ttp);
+			printf("     --    average ttp: %5.5lf\n", average_ttp);
 		}
 		puts("");
-		sleep(1 << display_rate);
-		//usleep(10000);
+		//sleep(1 << display_rate);
+		usleep(10000);
 	}
 
 terminate:
@@ -993,6 +1349,335 @@ terminate:
 	print(output_filename, 4096, output_string);
 
 } // main
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+ (1695 total jobs, prior to making these pms active)
+
+if (destination,sourcel,sourceg,sourcee < 5) {
+
+
+		// 1 ----(l or g or e)--> address #3    (pco)
+
+		// 2 ----(l or g or e)--> address #4    (snco)
+
+		// 3 ----(l or g or e)--> address #2    (ndi)
+
+		// 5 ----(l or g or e)--> address #3    (zr5)
+
+		// 6 ----(l or e)--> address #4    	(zr6)
+
+		// 6 ----(e)--> address #0		(ns0)
+
+		// 6 ----(e)--> address #3		(ns0)
+
+
+
+
+
+2,560 is the total raw number of jobs,
+
+	we got it down to: just     1093 total jobs
+
+
+	
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+1l3,3l1
+1l6,6l1
+3l2,2l3
+3l5,5l3
+3e2,2g3
+3l6,6l3
+3e6,6l3
+
+5l6,6l5
+5g6,6l5
+5e6,6l5
+
+5g2,2g5
+5e3,3l5
+5e2,2g5
+
+6e3,3l6
+2e3,3l2
+*/
+
+
+/*
+
+1202509125.233450
+
+1l3,3l1   1l6,6l1   3l2,2l3   3l5,5l3    
+3l6,6l3   5l6,6l5   5g6,6l5   5g2,2g5    
+6e3,3l6   5e6,6l5   5e3,3l5   2e3,3l2
+3e6,6l3   3e2,2g3   5e2,2g5   
+
+
+
+     1 -----(<)------> 3    <
+
+
+
+
+1l3,3l1
+1l6,6l1
+
+3l2,2l3
+3l5,5l3
+3e2,2g3
+3l6,6l3
+3e6,6l3
+
+5l6,6l5
+5g6,6l5
+5g2,2g5
+5e6,6l5
+5e3,3l5
+5e2,2g5
+
+6e3,3l6
+
+2e3,3l2
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+		if (5.l == 3) goto skip_5_1_check;
+		if (5.l == 1) goto check_5_g;
+		
+		if (5.l == 2) {
+			
+		}
+
+		if (5.l == 6) {
+			if (
+		}
+
+
+	check_5_g:
+		if (we see that 5.g == 3) goto skip_5_1_check;
+		if (we see that 5.g == 1) goto check_5_e;
+
+
+
+	check_5_e:
+		if (we see that 5.e == 3) goto skip_5_1_check;
+		
+		at = 1; 
+		counts[pm_ga_n0i]++;
+		goto bad; 
+
+		} skip_5_1_check:;
+
+
+
+
+
+
+
+
+ 1202508262.224306
+
+	pruning the jobs that we push to the queue, 
+	in main before we push them!!
+
+
+		2-----(>)----->US
+
+			. {2, x, 7, x}
+
+
+		3-----(<=>)----->US     
+
+			. {3, 7, x, x}
+
+			. {3, x, 7, x}
+
+			. {3, x, x, 7}
+
+
+		5----(<=>)----->US
+
+			. {5, 7, x, x}
+
+			. {5, x, 7, x}
+
+			. {5, x, x, 7}
+
+
+		6-----(>)---->( != 4)
+
+
+			. {6, x, !=4, x}
+
+			. {6, 7, x, x}
+
+			. {6, x, x, 7}
+
+
+
+
+
+
+test this zv out with ip util:
+
+	00071273200534544041000010001767
+
+*/
+
+
+
+
 
 
 
