@@ -261,7 +261,10 @@ static _Atomic nat progress[thread_count * 2] = {0};
 
 static _Atomic nat execution_counter = 0;
 static nat largest_ttp = 0;
-static double average_ttp = 0;
+static nat global_ttp_sum = 0;
+static nat global_ttp_count = 0;
+
+static nat ttp_histogram[32] = {0};
 
 static char** filenames = NULL;
 
@@ -427,6 +430,10 @@ try_open:;
 }
 
 
+static nat total_graphs_ran = 0;
+static nat total_graphs = 0;
+
+
 #define max_erp_count 20
 #define max_rsi_count 512
 #define max_oer_repetions 50
@@ -448,6 +455,7 @@ static nat execute_graph_starting_at(
 	byte* zskip_at,
 	nat* time_till_prune
 ) {
+	total_graphs_ran++;
 	
 	const nat n = array_size;
 	array[0] = 0; 
@@ -758,63 +766,170 @@ static byte noneditable(byte pa) {
 __attribute__((always_inline))
 static byte editable(byte pa) { return not noneditable(pa); }
 
-
+#define take_side(x)   			\
+	side = x; 			\
+	la = (here >> (4 * x)) & 0xf; 	\
+	here = gi16(g0, g1, 4 * la); 	\
+	op = here & 0xf;
 
 static byte execute_graph(nat g0, nat g1, nat* array, byte* origin, nat* counts) {
-	byte at = graph_count;
-	for (byte pa = 0; pa < graph_count; pa += 4) {
-		const nat op = gi(g0, g1, pa);
+
+	byte 	at = graph_count, 
+		la = 0, op = 0, side = 0;
+	uint16_t here = 0;
+
+	for (byte o = 0; o < graph_count; o += 4) {
+		here = gi16(g0, g1, o);
+		op = here & 0xf;
 
 		if (op != three and op != two) continue;
 
 		if (op == two) {
-			const byte g = gi(g0, g1, pa + 2);
-			const byte dest = gi(g0, g1, 4 * g);
-			if (dest == one or dest == five or dest == six) {
-				if (editable(pa + 2) and at > pa + 2) at = pa + 2;
-				if (editable(pa) and at > pa) at = pa;
-				if (editable(4 * g) and at > 4 * g) at = 4 * g;
-				continue;
+			take_side(2);
+			if (op == one) goto prune; 
+			if (op == five) goto prune; 
+			if (op == six) goto prune; 
+
+			if (op == two) { 
+				take_side(2);
+				if (op == one) goto prune; 
+				if (op == five) goto prune; 
+				if (op == six) goto prune; 
+				if (op == two) {
+					take_side(2);
+					if (op == one) goto prune; 
+					if (op == five) goto prune; 
+					if (op == six) goto prune; 
+					if (op == two) goto ok;
+					if (op == three) goto ok;
+				}
+				if (op == three) { 
+					take_side(2);
+					if (op == five) goto prune; 
+					if (op == three) goto prune; 
+					if (op == two) goto ok;
+					if (op == one) goto ok;
+					if (op == six) goto ok;
+				}
+			}
+
+			if (op == three) {
+				take_side(3);
+				if (op == five) goto prune; 
+				if (op == three) goto prune; 
+				if (op == two) {
+					take_side(3);
+					if (op == five) goto prune; 
+					if (op == three) goto prune; 
+					if (op == two) goto ok;
+					if (op == one) goto ok;
+					if (op == six) goto ok;
+				}
+				if (op == one) {
+					take_side(2);
+					if (op == five) goto prune; 
+					if (op == one) goto prune;
+					if (op == three) goto ok;
+					if (op == two) goto ok;
+					if (op == six) goto ok;
+				}
+	
+				if (op == six) { 
+					take_side(1);
+					if (op == three) goto prune;
+					if (op == five) goto prune; 
+					if (op == six) goto prune;
+					if (op == one) goto ok;	
+					if (op == two) goto ok;
+				}
 			}
 
 		} else if (op == three) {
+			take_side(1);
+			if (op == three) goto prune; 
+			if (op == five) goto prune; 
+			if (op == six) goto prune; 
 
-			const byte l = gi(g0, g1, pa + 1);
-			const byte dest = gi(g0, g1, 4 * l);
+			if (op == one) {
+				take_side(3);
+				if (op == five) goto prune; 
+				if (op == six) goto prune; 
+				if (op == one) goto prune; 
 
-			if (dest == five or dest == six) {
-				if (editable(pa + 1) and at > pa + 1) at = pa + 1;
-				if (editable(pa) and at > pa) at = pa;
-				if (editable(4 * l) and at > 4 * l) at = 4 * l;
-				continue;
+				if (op == two) {
+					take_side(2);
+					if (op == five) goto prune; 
+					if (op == six) goto prune;
+					if (op == one) goto prune;
+					if (op == two) goto ok;
+					if (op == three) goto ok;
+				}
+				if (op == three) {
+					take_side(1);
+					if (op == three) goto prune;
+					if (op == six) goto prune;
+					if (op == one) goto ok;
+					if (op == two) goto ok;
+					if (op == five) goto ok; 
+				}
+			}
+			if (op == two) {
+				take_side(3);
+				if (op == three) goto prune;
+				if (op == five) goto prune; 
+				if (op == six) goto prune; 
+
+				if (op == one) {
+					take_side(2);
+					if (op == one) goto prune;
+					if (op == three) goto prune;
+					if (op == five) goto prune; 
+					if (op == two) goto ok;
+					if (op == six) goto ok;
+				}
+
+				if (op == two) {
+					take_side(2);
+					if (op == three) goto prune;
+					if (op == five) goto prune; 
+					if (op == six) goto prune;
+					if (op == one) goto ok;
+					if (op == two) goto ok;
+				}
 			}
 		}
 
-
-		//atomic_store_explicit(&execution_counter, 0, memory_order_relaxed);
-
+	ok:;
 		nat ttp = 0;
-		const nat pm = execute_graph_starting_at(pa >> 2, g0, g1, array, &at, &ttp);
+		const nat pm = execute_graph_starting_at(o >> 2, g0, g1, array, &at, &ttp);
 		counts[pm]++;
 		
-		if (ttp > largest_ttp) largest_ttp = ttp;	
-		const double d = (double) ttp;
-		average_ttp =   0.000001 * d   +   0.999999 * average_ttp  ;
+		if (ttp > largest_ttp) largest_ttp = ttp;
+		global_ttp_sum += ttp;
+		global_ttp_count++;
+		if (ttp < 32) ttp_histogram[ttp]++;		
+		if (not pm) { *origin = o; return 0; }
+		continue;
 
-		/*if ((1)) {
-			printf("EXG: trying: (origin = %d) : \n", pa >> 2);
-			print_graph_raw(g0, g1); putchar(10);
-			printf("[ttp = %llu, pm = %s]\n", ttp, pm_spelling[pm]);
-			getchar();
-		}*/
-		
-		if (not pm) { *origin = pa; return 0; }
+	prune:;
+		const byte pa = 4 * la;
+		const byte dla = (here >> (4 * side)) & 0xf;
+		if (editable(pa + side) and at > pa + side) at = pa + side;
+		if (editable(pa) and at > pa) at = pa;
+		if (editable(4 * dla) and at > 4 * dla) at = 4 * dla;
+		continue;
 	}
 
 	if (at == graph_count) at = 1;
+
+	// if (at < 32) rtega_histogram[at]++;
+
 	return at;
 }
 
+
+
+		//atomic_store_explicit(&execution_counter, 0, memory_order_relaxed);
 
 static void* worker_thread(void* raw_thread_index) {
 	const nat thread_index = *(nat*) raw_thread_index;
@@ -847,6 +962,8 @@ pull_job_from_queue:;
 		u16 was_utilized = 0;
 		byte at = lsepa;
 
+		total_graphs++;
+
 		//printf("nf: "); print_graph_raw(g0, g1); puts("");
 	
 		for (byte pa = 20; pa < graph_count; pa += 4) {
@@ -856,7 +973,6 @@ pull_job_from_queue:;
 				goto bad;
 			} 
 		}
-
 
 		for (byte pa = graph_count; pa -= 4; ) {
 	
@@ -884,6 +1000,7 @@ pull_job_from_queue:;
 				counts[pm_ga_ns0]++;
 				goto bad;
 			}
+
 		
 			if (op == two and g == pa >> 2) {
 				at = graph_count;
@@ -894,7 +1011,6 @@ pull_job_from_queue:;
 				goto bad;
 			}
 
-
 			if (op == two and l == pa >> 2) {
 				at = graph_count;
 				if (editable(pa + 1) and at > pa + 1) at = pa + 1;
@@ -904,7 +1020,20 @@ pull_job_from_queue:;
 				goto bad;
 			}
 
-
+			if (	op == one and
+				l == pa >> 2 and 
+				g == pa >> 2 and 
+				e == pa >> 2
+			) { 
+				at = graph_count;
+				if (editable(pa + 1) and at > pa + 1) at = pa + 1;
+				if (editable(pa + 2) and at > pa + 2) at = pa + 2;
+				if (editable(pa + 3) and at > pa + 3) at = pa + 3;
+				if (editable(pa) and at > pa) at = pa;
+				if (at == graph_count) abort();
+				counts[pm_ga_il]++;
+				goto bad;
+			}
 
 			{const byte loops[5 * 16] = {
 				two, 2, two, 2, pm_ga_il,
@@ -948,10 +1077,6 @@ pull_job_from_queue:;
 					goto bad;
 				}
 			}}
-
-
-
-
 
 
 
@@ -999,7 +1124,6 @@ pull_job_from_queue:;
 		}
 
 
-
 		for (byte la = 0; la < operation_count; la++) {
 			if (not ((was_utilized >> la) & 1)) { 
 				at = lsepa;
@@ -1007,7 +1131,6 @@ pull_job_from_queue:;
 				goto bad; 
 			} 
 		}
-
 
 
 		for (byte pa = 20; pa < graph_count; pa += 4) {
@@ -1072,10 +1195,6 @@ pull_job_from_queue:;
 			goto bad;
 		} }
 		skip_3_15_check:; 
-
- 
-
-		if (not (g0 & 0xffff)) { at = 1; goto bad; }
 
 		for (byte pa = graph_count; pa -= 4;) { 
 			if (gi(g0, g1, pa) == six and gi(g0, g1, pa + 2) != 4) {
@@ -1189,54 +1308,44 @@ loop:
 increment:
 	g0 += 1LLU << ((pointer & 15LLU) << 2LLU);
 init:	pointer = 0;
-	mi = (mi + 1) % machine_count;
-	if (mi != machine_index) goto loop;
 
 	const byte op = gi(g0, 0, 0);
 	const byte l  = gi(g0, 0, 1);
 	const byte g  = gi(g0, 0, 2);
 	const byte e  = gi(g0, 0, 3);
-
 	if (op == two and g == 7) goto loop;
-
 	if (op == three and l == 7) goto loop;
 	if (op == three and g == 7) goto loop;
 	if (op == three and e == 7) goto loop;
-
 	if (op == five and l == 7) goto loop;
 	if (op == five and g == 7) goto loop;
 	if (op == five and e == 7) goto loop;
-
 	if (op == six and l == 7) goto loop;
 	if (op == six and e == 7) goto loop;
-
 	if (op == six and e == one) goto loop;
 	if (op == six and e == five) goto loop;
-
 	if (op == one and l == five) goto loop;
 	if (op == one and g == five) goto loop;
 	if (op == one and e == five) goto loop;
-
 	if (op == two and l == six) goto loop;
 	if (op == two and g == six) goto loop;
 	if (op == two and e == six) goto loop;
-
 	if (op == three and l == three) goto loop;
 	if (op == three and g == three) goto loop;
 	if (op == three and e == three) goto loop;
-
 	if (op == five and l == five) goto loop;
 	if (op == five and g == five) goto loop;
 	if (op == five and e == five) goto loop;
-
 	if (op == six and l == six) goto loop;
 	if (op == six and g != six) goto loop;
 	if (op == six and e == six) goto loop;
 
-
+	mi = (mi + 1) % machine_count;
+	if (mi != machine_index) goto loop;
 	const nat n = atomic_fetch_add_explicit(&queue_count, 1, memory_order_relaxed);
 	queue[n] = g0;
 	total_job_count++;
+
 	goto loop;
 reset_:
 	g0 &= ~(0xfLLU << ((pointer & 15LLU) << 2LLU));
@@ -1267,32 +1376,94 @@ done:; }
 	}
 
 	nat counts[pm_count] = {0};
-
 	const bool disable_main = 0;
+	nat previous_g0 = 0;
+	nat previous_g1 = 0;
+	double difference_count = 0;
+	double difference_sum = 0;
+	nat display_counter = 0;
 
 	while (1) {
+		display_counter++;
+		if (display_counter >= 1200) {
+			difference_count = 0; 
+			difference_sum = 0;
+			display_counter = 0;
+		}
+
 		const nat amount_remaining = atomic_load_explicit(&queue_count, memory_order_relaxed);
 		if (amount_remaining <= 0 or disable_main) goto terminate;
 
 		printf("\033[H\033[2J");
-		printf("\n----------------- jobs %llu / %llu -------------------\n", 
+		printf("\n----------------- ran %llu / %llu -------------------\n", 
+			total_graphs_ran, total_graphs
+		);
+		printf("\n----------------- jobs remaining %llu / %llu -------------------\n", 
 			amount_remaining, total_job_count
 		);
-		printf("\n\t%1.10lf%%\n\n", (double) (amount_remaining) / (double) total_job_count);
+
+		printf("\n----------------- %llu : difference %lf / %lf -------------------\n", 
+			display_counter, difference_sum, difference_count
+		);
+		printf("\n\t complete %1.10lf%%\n\n", (double) (total_job_count - amount_remaining) / (double) total_job_count);
+
+		printf("\n\t executed %1.10lf%%\n\n", (double) (total_graphs_ran) / (double) total_graphs);
+
 
 		for (nat i = 0; i < thread_count; i++) {
+
 			const nat g0 = atomic_load_explicit(progress + 2 * i + 0, memory_order_relaxed);
 			const nat g1 = atomic_load_explicit(progress + 2 * i + 1, memory_order_relaxed);
+	
+			nat difference = 0;
+			//printf("\n diff: ");
+			for (byte pa = graph_count; pa--;) {
+				const byte a = gi(g0, g1, pa);
+				const byte b = gi(previous_g0, previous_g1, pa);
+				//printf("%u:%d ", pa, a - b);
+				nat place = 1;
+				for (nat e = 0; e < pa; e++) place *= (e & 3) ? operation_count : 5;
+				difference += (a - b) * place;
+			}
+
+			difference_sum += (double) difference;
+			difference_count++;
+
+			//puts("");
+
+			previous_g0 = g0;
+			previous_g1 = g1;
+
 			printf(" %5llu : ", i);
 			print_graph_raw(g0, g1);
+
 			const nat counter = atomic_load_explicit(&execution_counter, memory_order_relaxed);
-			printf("     --    timesteps: %llu ", counter);
-			printf("     --    largest ttp: %llu", largest_ttp);
-			printf("     --    average ttp: %5.5lf\n", average_ttp);
+
+			printf(". counter: %llu, ", counter);
+			printf(". maxttp: %llu, ", largest_ttp);
+			printf(". avgttp: %5.5lf, ", (double) global_ttp_sum / (double) global_ttp_count);
+			printf(". speed (Z / 100ms): %5.5lf\n", difference_sum / difference_count);
+
 		}
 		puts("");
+
+		nat max = 0, sum = 0;
+		for (nat i = 0; i < 32; i++) {
+			if (max < ttp_histogram[i]) 
+				max = ttp_histogram[i];
+			sum += ttp_histogram[i];
+		}
+		const nat resolution = max / 64;
+
+		for (nat i = 0; i < 32; i++) {
+			const nat value = ttp_histogram[i];
+			printf("%4llu: %1.6lf : %10llu : ", i, sum ? ((double) value / (double) sum) : 0, value);
+			for (nat _ = 0; _ < value / resolution; _++) putchar('#');
+			puts("");
+		}	
+		puts("");
 		//sleep(1 << display_rate);
-		usleep(10000);
+		usleep(100000);
 	}
 
 terminate:
@@ -1386,6 +1557,19 @@ terminate:
 
 
 
+
+
+
+
+
+
+
+		/*if ((1)) {
+			printf("EXG: trying: (origin = %d) : \n", pa >> 2);
+			print_graph_raw(g0, g1); putchar(10);
+			printf("[ttp = %llu, pm = %s]\n", ttp, pm_spelling[pm]);
+			getchar();
+		}*/
 
 
 
