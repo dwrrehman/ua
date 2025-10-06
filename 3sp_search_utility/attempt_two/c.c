@@ -3,230 +3,6 @@
 // and also optimize GA more, and add more 
 // GA checks to help 3sp search happen faster
 // written on 1202508144.203248 by dwrr
-
-
-// why using 512 jobs is not sufficient:
-
-// 8^3 = 512
-
-// oc = 8
-// la is are in lrs(8) 
-// log2(8) = 3
-// 3 bits per la
-// 3 * 3 = 9,  9 bits per job
-// we'll still be using a u16 for each job.
-
-// 64 cores  /  10 cores
-
-// (512/2)/64 = 4 jobs per core          (512/2)/10 = 26 or 25 jobs per core
-
-
-
-// ------------------------------------------------------------
-// 1202508144.204759:
-// instead, we are going to be using:
-
-//      5 * 8^3 = 2560    jobs     
-
-
-//      2560 / 2 = 1280   jobs in the queue for both machines
-
-// machines:
-
-//    (2560 / 2) / 64 = 20      jobs per core on the riscv machine
-
-//    (2560 / 2) / 10 = 128    jobs per core on the mac mini
-
-
-  //     queue size is at maximum:   (5 * 8^3) / 2 jobs  and i'll round it up to 2048.
-
-
-
-
-
-
-/*
-
-
-
-
-1l3,3l1   1l6,6l1   3l2,2l3   3l5,5l3    
-3l6,6l3   5l6,6l5   5g6,6l5   5g2,2g5    
-6e3,3l6   5e6,6l5   5e3,3l5   2e3,3l2
-3e6,6l3   3e2,2g3   5e2,2g5   
-
-
-
-1202509125.221238
-TABLE:
-
-legend:
-----------------------------------------------------------------------------
-
-	~ = already had it in GA
-
-	* = added, done, added a new GA PM
-
-	E = ...error, ignoring this element in the table....
-
-	? = i dont know if this is good or bad lol.. look into this?...
-
-
-----------------------------------------------------------------------------
-
-A ----x----> B      B -----y-----> A
-
-5 -----(=)-----> 2
-2 -----(>)-----> 5
-
-A 5
-B 6
-x =
-y <
-
-
-       x
-      B1   2   3   5   6        1   2   3   5   6        1   2   3   5   6    
-A    +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-y    | . |   |   |   |   |    | . | . | . | ~ | . |    | . | . | . | ~ | . |   
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     | . | ~ |   |   |   |    | . | - | - | E | ~ |    | . | - | * | E | ~ | 
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+   
-     | * | * | ~ |   |   |    | . | - | ~ | E | E |    | . | - | ~ | E | * | 
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     | ~ | E | * | ~ |   |    | ~ | E | E | ~ | * |    | ~ | E | * | ~ | * |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     | * | ? | * | * | ~ |    | ~ | ~ | ~ | ~ | ~ |    | ~ | ~ | * | ~ | ~ |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-
-
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | . |   |   |   |   |    | . | . | . | ~ | ~ |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | . | ~ |   |   |   |    | . | - | - | E | ~ |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | . | ? | ~ |   |   |    | . | * | ~ | E | * |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | ~ | * | ? | ~ |   |    | ~ | * | E | ~ | ~ |  
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | ~ | ~ | ~ | ~ | ~ |    | ~ | ~ | E | ~ | ~ |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-
-
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | . |   |   |   |   |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | . | - |   |   |   |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | . | - | ~ |   |   |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | ~ | E | E | ~ |   |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | ~ | ~ | E | ~ | ~ |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-
-
-
-A ----x----> B      B -----y-----> A
-
-2 -----(>)-----> 5 
-5 -----(<)-----> 2
-
-
-A 2
-B 5
-
-x >
-y <
-
-
-
-
-
-COPY OF THE TABLE: ORIGINAL:
-0000000000000000000000000000000000000
-
-
-
-      B1   2   3   5   6        1   2   3   5   6        1   2   3   5   6    
-A    +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     | . | / | / | / | / |    | . | . | . | P | . |    | . | . | . | P | . |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     | . | s | / | / | / |    | . | - | - | p | S |    | . | - | n | p | S |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     | h | n | n | / | / |    | . | - | n | p | n |    | . | - | n | p | n |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     | P | p | p | p | / |    | P | p | p | p | p |    | P | p | p | p | p |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     | 6 | S | 6 | 6 | 6 |    | g | S | g | g | 6 |    | 0 | S | 6 | 0 | 6 |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-
-
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | . | / | / | / | / |    | . | . | . | P | g |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | . | s | / | / | / |    | . | - | - | p | S |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | . | n | n | / | / |    | . | n | n | 5 | g |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | P | p | p | p | / |    | P | p | p | p | g |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    | g | S | g | g | 6 |    | 0 | S | 6 | 0 | 6 |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-
-
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | . | / | / | / | / |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | . | - | / | / | / |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | . | - | n | / | / |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | P | p | p | p | / |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-     |   |   |   |   |   |    |   |   |   |   |   |    | 0 | S | 6 | 0 | 6 |    
-     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
-
-
-
-
-
-
-
-
-terminating...
-total_count = 225
-LEGEND:
-   -  :   z_is_good
-   i  :   pm_infinite_loop
-   5  :   pm_zr5
-   6  :   pm_zr6
-   n  :   pm_ndi
-   s  :   pm_sndi
-   p  :   pm_pco
-   e  :   pm_per
-   0  :   pm_ns0
-   o  :   pm_oer
-   r  :   pm_rsi
-   h  :   pm_h0
-   k  :   pm_h0s
-   1  :   pm_h1
-   2  :   pm_h2
-   a  :   pm_pair
-
-
-
-
-
-1l3,3l1   1l6,6l1   3l2,2l3   3l5,5l3    
-3l6,6l3   5l6,6l5   5g6,6l5   5g2,2g5    
-6e3,3l6   5e6,6l5   5e3,3l5   2e3,3l2
-3e6,6l3   3e2,2g3   5e2,2g5   
-
-
-
-*/
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -265,6 +41,7 @@ static nat global_ttp_sum = 0;
 static nat global_ttp_count = 0;
 
 static nat ttp_histogram[32] = {0};
+static nat rtega_zskip_histogram[32 + 1] = {0};
 
 static char** filenames = NULL;
 
@@ -429,10 +206,20 @@ try_open:;
 	);
 }
 
+#define lsepa 2
+
+__attribute__((always_inline))
+static byte noneditable(byte pa) {
+	if (pa < 20 and not (pa & 3)) return true;
+	if (pa == 18 or pa == 1 or pa == 5) return true;
+	return false;
+}
+
+__attribute__((always_inline))
+static byte editable(byte pa) { return not noneditable(pa); }
 
 static nat total_graphs_ran = 0;
 static nat total_graphs = 0;
-
 
 #define max_erp_count 20
 #define max_rsi_count 512
@@ -723,9 +510,9 @@ static nat execute_graph_starting_at(
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
-
 		const byte pa = ip * 4;
-		if (*zskip_at > pa + state) *zskip_at = pa + state;
+		if (editable(pa) and *zskip_at > pa) *zskip_at = pa; 
+		if (editable(pa + state) and *zskip_at > pa + state) *zskip_at = pa + state;
 		ip = gi(g0, g1, pa + state);
 	}
 
@@ -755,181 +542,75 @@ static nat execute_graph_starting_at(
 	return z_is_good;
 }
 
+#define take_side(x) \
+	if (editable(pa + x) and at > pa + x) at = pa + x; \
+	pa = (byte) (((instruction_data >> (x << 2)) & 0xf) << 2); \
+	instruction_data = gi16(g0, g1, pa); \
+	op = instruction_data & 0xf; \
+	if (editable(pa) and at > pa) at = pa; \
+		
+static byte execute_graph(nat g0, nat g1, nat* array, byte* origin, nat* counts, const nat thread_index) {
 
-#define lsepa 1
-
-__attribute__((always_inline))
-static byte noneditable(byte pa) {
-	return (pa < 20 and not (pa & 3)) or pa == 18;
-}
-
-__attribute__((always_inline))
-static byte editable(byte pa) { return not noneditable(pa); }
-
-#define take_side(x)   			\
-	side = x; 			\
-	la = (here >> (4 * x)) & 0xf; 	\
-	here = gi16(g0, g1, 4 * la); 	\
-	op = here & 0xf;
-
-static byte execute_graph(nat g0, nat g1, nat* array, byte* origin, nat* counts) {
-
-	byte 	at = graph_count, 
-		la = 0, op = 0, side = 0;
-	uint16_t here = 0;
+	byte at = graph_count, op = 0, pa = 0;
+	uint16_t instruction_data = 0;
 
 	for (byte o = 0; o < graph_count; o += 4) {
-		here = gi16(g0, g1, o);
-		op = here & 0xf;
 
-		if (op != three and op != two) continue;
+		pa = o;
+		instruction_data = gi16(g0, g1, pa);
+		op = instruction_data & 0xf;
+		if (editable(pa) and at > pa) at = pa;
+		
+		if (op != three) continue;
 
-		if (op == two) {
-			take_side(2);
-			if (op == one) goto prune; 
-			if (op == five) goto prune; 
-			if (op == six) goto prune; 
-
-			if (op == two) { 
-				take_side(2);
-				if (op == one) goto prune; 
-				if (op == five) goto prune; 
-				if (op == six) goto prune; 
-				if (op == two) {
-					take_side(2);
-					if (op == one) goto prune; 
-					if (op == five) goto prune; 
-					if (op == six) goto prune; 
-					if (op == two) goto ok;
-					if (op == three) goto ok;
-				}
-				if (op == three) { 
-					take_side(2);
-					if (op == five) goto prune; 
-					if (op == three) goto prune; 
-					if (op == two) goto ok;
-					if (op == one) goto ok;
-					if (op == six) goto ok;
-				}
-			}
-
-			if (op == three) {
-				take_side(3);
-				if (op == five) goto prune; 
-				if (op == three) goto prune; 
-				if (op == two) {
-					take_side(3);
-					if (op == five) goto prune; 
-					if (op == three) goto prune; 
-					if (op == two) goto ok;
-					if (op == one) goto ok;
-					if (op == six) goto ok;
-				}
-				if (op == one) {
-					take_side(2);
-					if (op == five) goto prune; 
-					if (op == one) goto prune;
-					if (op == three) goto ok;
-					if (op == two) goto ok;
-					if (op == six) goto ok;
-				}
-	
-				if (op == six) { 
-					take_side(1);
-					if (op == three) goto prune;
-					if (op == five) goto prune; 
-					if (op == six) goto prune;
-					if (op == one) goto ok;	
-					if (op == two) goto ok;
-				}
-			}
-
-		} else if (op == three) {
-			take_side(1);
-			if (op == three) goto prune; 
-			if (op == five) goto prune; 
-			if (op == six) goto prune; 
-
-			if (op == one) {
-				take_side(3);
-				if (op == five) goto prune; 
-				if (op == six) goto prune; 
-				if (op == one) goto prune; 
-
-				if (op == two) {
-					take_side(2);
-					if (op == five) goto prune; 
-					if (op == six) goto prune;
-					if (op == one) goto prune;
-					if (op == two) goto ok;
-					if (op == three) goto ok;
-				}
-				if (op == three) {
-					take_side(1);
-					if (op == three) goto prune;
-					if (op == six) goto prune;
-					if (op == one) goto ok;
-					if (op == two) goto ok;
-					if (op == five) goto ok; 
-				}
-			}
+		take_side(1);
+		if (op == one) {
+			take_side(3);
 			if (op == two) {
-				take_side(3);
-				if (op == three) goto prune;
-				if (op == five) goto prune; 
-				if (op == six) goto prune; 
-
-				if (op == one) {
-					take_side(2);
-					if (op == one) goto prune;
-					if (op == three) goto prune;
-					if (op == five) goto prune; 
-					if (op == two) goto ok;
-					if (op == six) goto ok;
-				}
-
-				if (op == two) {
-					take_side(2);
-					if (op == three) goto prune;
-					if (op == five) goto prune; 
-					if (op == six) goto prune;
-					if (op == one) goto ok;
-					if (op == two) goto ok;
-				}
+				take_side(2);
+				if (op == two) goto ok;
+				if (op == three) goto ok;
+			} else if (op == three) {
+				take_side(1);
+				if (op == one) goto ok;
+				if (op == two) goto ok;
+				if (op == five) goto ok;
+			}
+		} else if (op == two) {
+			take_side(3);
+			if (op == one) {
+				take_side(2);
+				if (op == two) goto ok;
+				if (op == three) goto ok;
+				if (op == six) goto ok;
+			} else if (op == two) {
+				take_side(2);
+				if (op == one) goto ok;
 			}
 		}
-
-	ok:;
-		nat ttp = 0;
+		continue;
+	ok:;	nat ttp = 0;
 		const nat pm = execute_graph_starting_at(o >> 2, g0, g1, array, &at, &ttp);
+
+		atomic_store_explicit(progress + 2 * thread_index + 0, g0, memory_order_relaxed);
+		atomic_store_explicit(progress + 2 * thread_index + 1, g1, memory_order_relaxed);
+
 		counts[pm]++;
-		
 		if (ttp > largest_ttp) largest_ttp = ttp;
 		global_ttp_sum += ttp;
 		global_ttp_count++;
-		if (ttp < 32) ttp_histogram[ttp]++;		
+		if (ttp < 32) ttp_histogram[ttp]++;
 		if (not pm) { *origin = o; return 0; }
-		continue;
-
-	prune:;
-		const byte pa = 4 * la;
-		const byte dla = (here >> (4 * side)) & 0xf;
-		if (editable(pa + side) and at > pa + side) at = pa + side;
-		if (editable(pa) and at > pa) at = pa;
-		if (editable(4 * dla) and at > 4 * dla) at = 4 * dla;
 		continue;
 	}
 
-	if (at == graph_count) at = 1;
-
-	// if (at < 32) rtega_histogram[at]++;
+	rtega_zskip_histogram[at]++;
 
 	return at;
 }
 
-
-
-		//atomic_store_explicit(&execution_counter, 0, memory_order_relaxed);
+//static const nat stoppingpoint_g0 = 0x1173546232017710;
+//static const nat stoppingpoint_g1 = 0x861000100001404;
 
 static void* worker_thread(void* raw_thread_index) {
 	const nat thread_index = *(nat*) raw_thread_index;
@@ -943,12 +624,20 @@ static void* worker_thread(void* raw_thread_index) {
 pull_job_from_queue:;
 	const nat n = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
 	if ((int64_t) n <= 0) goto terminate;
-	const u16 msb = queue[n - 1];
-	g0 = (1LLU << 16LLU) | (2LLU << 32LLU) | (3LLU << 48LLU);
-	g1 = (((nat)msb) << 48LLU) | 4LLU | (4LLU << 8LLU);	
+
+	g0 = 	(1LLU << 4) |
+		(1LLU << (4 * 4)) | 
+		(2LLU << (8 * 4)) | 
+		(3LLU << (12 * 4));
+	g1 = 	4LLU | (4LLU << 8) |
+		((nat) queue[n - 1] << (12 * 4));
 	goto init;
 
 	loop:
+		////////////////////////////////////////////////////////////////////////////////
+		//if (g0 == stoppingpoint_g0 and g1 == stoppingpoint_g1) goto terminate;
+		////////////////////////////////////////////////////////////////////////////////
+
 		if (gi(g0, g1, pointer) < ((pointer & 3) ? operation_count - 1 : 4)) goto increment;
 		if (pointer < graph_count - 5) goto reset_;
 		goto pull_job_from_queue;
@@ -1035,7 +724,7 @@ pull_job_from_queue:;
 				goto bad;
 			}
 
-			{const byte loops[5 * 16] = {
+			{const byte loops[5 * 18] = {
 				two, 2, two, 2, pm_ga_il,
 				one, 1, three, 1, pm_ga_h,
 				one, 1, six, 1, pm_ga_zr6,
@@ -1052,9 +741,11 @@ pull_job_from_queue:;
 				five, 3, two, 2, pm_ga_zr5,
 				six, 3, three, 1, pm_ga_ndi,
 				two, 3, three, 1, pm_ga_ndi,
+				three, 2, six, 1, pm_ga_ndi,
+				three, 2, two, 2, pm_ga_ndi,
 			};
 
-			for (byte i = 0; i < 5 * 16; i += 5) {
+			for (byte i = 0; i < 5 * 18; i += 5) {
 
 				const byte A = loops[i + 0];
 				const byte x = loops[i + 1];
@@ -1207,11 +898,8 @@ pull_job_from_queue:;
 			}
 		}
 
-		atomic_store_explicit(progress + 2 * thread_index + 0, g0, memory_order_relaxed);
-		atomic_store_explicit(progress + 2 * thread_index + 1, g1, memory_order_relaxed);
-
 		byte origin = 0;
-		at = execute_graph(g0, g1, array, &origin, counts);
+		at = execute_graph(g0, g1, array, &origin, counts, thread_index);
 
 		if (not at) {
 			append_to_file(filenames[thread_index], 4096, g0, g1, origin);
@@ -1313,6 +1001,8 @@ init:	pointer = 0;
 	const byte l  = gi(g0, 0, 1);
 	const byte g  = gi(g0, 0, 2);
 	const byte e  = gi(g0, 0, 3);
+	if (op == one and l == 7 and g == 7 and e == 7) goto loop;
+	if (op == two and l == 7) goto loop;
 	if (op == two and g == 7) goto loop;
 	if (op == three and l == 7) goto loop;
 	if (op == three and g == 7) goto loop;
@@ -1414,6 +1104,10 @@ done:; }
 
 			const nat g0 = atomic_load_explicit(progress + 2 * i + 0, memory_order_relaxed);
 			const nat g1 = atomic_load_explicit(progress + 2 * i + 1, memory_order_relaxed);
+
+			//////////////////////////////////////////////////////////////////////////////////////////
+			//if (g0 == stoppingpoint_g0 and g1 == stoppingpoint_g1) goto terminate;
+			//////////////////////////////////////////////////////////////////////////////////////////
 	
 			nat difference = 0;
 			//printf("\n diff: ");
@@ -1429,8 +1123,6 @@ done:; }
 			difference_sum += (double) difference;
 			difference_count++;
 
-			//puts("");
-
 			previous_g0 = g0;
 			previous_g1 = g1;
 
@@ -1442,28 +1134,43 @@ done:; }
 			printf(". counter: %llu, ", counter);
 			printf(". maxttp: %llu, ", largest_ttp);
 			printf(". avgttp: %5.5lf, ", (double) global_ttp_sum / (double) global_ttp_count);
-			printf(". speed (Z / 100ms): %5.5lf\n", difference_sum / difference_count);
-
+			printf(". speed (Z / s): %5.5lf\n", difference_sum / difference_count);
 		}
 		puts("");
 
-		nat max = 0, sum = 0;
+		const nat hg_width = 64;
+		nat ttp_max = 0, ttp_sum = 0;
 		for (nat i = 0; i < 32; i++) {
-			if (max < ttp_histogram[i]) 
-				max = ttp_histogram[i];
-			sum += ttp_histogram[i];
+			if (ttp_max < ttp_histogram[i]) 
+				ttp_max = ttp_histogram[i];
+			ttp_sum += ttp_histogram[i];
 		}
-		const nat resolution = max / 64;
+		nat ttp_resolution = ttp_max / hg_width ? ttp_max / hg_width : 1 ;
+
+		nat at_max = 0, at_sum = 0;
+		for (nat i = 0; i < 32; i++) {
+			if (at_max < rtega_zskip_histogram[i]) 
+				at_max = rtega_zskip_histogram[i];
+			at_sum += rtega_zskip_histogram[i];
+		}
+		nat at_resolution = at_max / hg_width ? at_max / hg_width : 1 ;
 
 		for (nat i = 0; i < 32; i++) {
-			const nat value = ttp_histogram[i];
-			printf("%4llu: %1.6lf : %10llu : ", i, sum ? ((double) value / (double) sum) : 0, value);
-			for (nat _ = 0; _ < value / resolution; _++) putchar('#');
+			{ const nat value = ttp_histogram[i];
+			printf("%4llu: %1.6lf : %10llu : ", i, ttp_sum ? ((double) value / (double) ttp_sum) : 0, value);
+			for (nat _ = 0; _ < value / ttp_resolution and _ < hg_width; _++) putchar('#');
+			for (nat _ = 0; (int64_t) _ < (int64_t) (hg_width - value / ttp_resolution) ; _++) putchar('.'); } 
+
+			{ const nat value = rtega_zskip_histogram[i];
+			printf("%4llu: %1.6lf : %10llu : ", i, at_sum ? ((double) value / (double) at_sum) : 0, value);
+			for (nat _ = 0; _ < value / at_resolution and _ < hg_width; _++) putchar('#');
+			for (nat _ = 0; (int64_t) _ < (int64_t) (hg_width - value / at_resolution); _++) putchar('.'); }
+
 			puts("");
 		}	
 		puts("");
 		//sleep(1 << display_rate);
-		usleep(100000);
+		usleep(10000);
 	}
 
 terminate:
@@ -1564,6 +1271,280 @@ terminate:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// why using 512 jobs is not sufficient:
+
+// 8^3 = 512
+
+// oc = 8
+// la is are in lrs(8) 
+// log2(8) = 3
+// 3 bits per la
+// 3 * 3 = 9,  9 bits per job
+// we'll still be using a u16 for each job.
+
+// 64 cores  /  10 cores
+
+// (512/2)/64 = 4 jobs per core          (512/2)/10 = 26 or 25 jobs per core
+
+
+
+// ------------------------------------------------------------
+// 1202508144.204759:
+// instead, we are going to be using:
+
+//      5 * 8^3 = 2560    jobs     
+
+
+//      2560 / 2 = 1280   jobs in the queue for both machines
+
+// machines:
+
+//    (2560 / 2) / 64 = 20      jobs per core on the riscv machine
+
+//    (2560 / 2) / 10 = 128    jobs per core on the mac mini
+
+
+  //     queue size is at maximum:   (5 * 8^3) / 2 jobs  and i'll round it up to 2048.
+
+
+
+
+
+
+/*
+
+
+
+
+1l3,3l1   1l6,6l1   3l2,2l3   3l5,5l3    
+3l6,6l3   5l6,6l5   5g6,6l5   5g2,2g5    
+6e3,3l6   5e6,6l5   5e3,3l5   2e3,3l2
+3e6,6l3   3e2,2g3   5e2,2g5   
+
+
+
+1202509125.221238
+TABLE:
+
+legend:
+----------------------------------------------------------------------------
+
+	~ = already had it in GA
+
+	* = added, done, added a new GA PM
+
+	E = ...error, ignoring this element in the table....
+
+	? = i dont know if this is good or bad lol.. look into this?...
+
+
+----------------------------------------------------------------------------
+
+A ----x----> B      B -----y-----> A
+
+5 -----(=)-----> 2
+2 -----(>)-----> 5
+
+A 5
+B 6
+x =
+y <
+
+
+       x
+      B1   2   3   5   6        1   2   3   5   6        1   2   3   5   6    
+A    +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+y    | . |   |   |   |   |    | . | . | . | ~ | . |    | . | . | . | ~ | . |   
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | . | ~ |   |   |   |    | . | - | - | E | ~ |    | . | - | * | E | ~ | 
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+   
+     | * | * | ~ |   |   |    | . | - | ~ | E | E |    | . | - | ~ | E | * | 
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | ~ | E | * | ~ |   |    | ~ | E | E | ~ | * |    | ~ | E | * | ~ | * |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | * | ? | * | * | ~ |    | ~ | ~ | ~ | ~ | ~ |    | ~ | ~ | * | ~ | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . |   |   |   |   |    | . | . | . | ~ | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | ~ |   |   |   |    | . | - | - | E | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | ? | ~ |   |   |    | . | * | ~ | E | * |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | ~ | * | ? | ~ |   |    | ~ | * | E | ~ | ~ |  
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | ~ | ~ | ~ | ~ | ~ |    | ~ | ~ | E | ~ | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . |   |   |   |   |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | - |   |   |   |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | - | ~ |   |   |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | ~ | E | E | ~ |   |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | ~ | ~ | E | ~ | ~ |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+
+A ----x----> B      B -----y-----> A
+
+2 -----(>)-----> 5 
+5 -----(<)-----> 2
+
+
+A 2
+B 5
+
+x >
+y <
+
+
+
+
+
+COPY OF THE TABLE: ORIGINAL:
+0000000000000000000000000000000000000
+
+
+
+      B1   2   3   5   6        1   2   3   5   6        1   2   3   5   6    
+A    +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | . | / | / | / | / |    | . | . | . | P | . |    | . | . | . | P | . |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | . | s | / | / | / |    | . | - | - | p | S |    | . | - | n | p | S |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | h | n | n | / | / |    | . | - | n | p | n |    | . | - | n | p | n |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | P | p | p | p | / |    | P | p | p | p | p |    | P | p | p | p | p |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     | 6 | S | 6 | 6 | 6 |    | g | S | g | g | 6 |    | 0 | S | 6 | 0 | 6 |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | / | / | / | / |    | . | . | . | P | g |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | s | / | / | / |    | . | - | - | p | S |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | . | n | n | / | / |    | . | n | n | 5 | g |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | P | p | p | p | / |    | P | p | p | p | g |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    | g | S | g | g | 6 |    | 0 | S | 6 | 0 | 6 |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | / | / | / | / |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | - | / | / | / |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | . | - | n | / | / |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | P | p | p | p | / |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+     |   |   |   |   |   |    |   |   |   |   |   |    | 0 | S | 6 | 0 | 6 |    
+     +---+---+---+---+---+    +---+---+---+---+---+    +---+---+---+---+---+    
+
+
+
+
+
+
+
+
+terminating...
+total_count = 225
+LEGEND:
+   -  :   z_is_good
+   i  :   pm_infinite_loop
+   5  :   pm_zr5
+   6  :   pm_zr6
+   n  :   pm_ndi
+   s  :   pm_sndi
+   p  :   pm_pco
+   e  :   pm_per
+   0  :   pm_ns0
+   o  :   pm_oer
+   r  :   pm_rsi
+   h  :   pm_h0
+   k  :   pm_h0s
+   1  :   pm_h1
+   2  :   pm_h2
+   a  :   pm_pair
+
+
+
+
+
+1l3,3l1   1l6,6l1   3l2,2l3   3l5,5l3    
+3l6,6l3   5l6,6l5   5g6,6l5   5g2,2g5    
+6e3,3l6   5e6,6l5   5e3,3l5   2e3,3l2
+3e6,6l3   3e2,2g3   5e2,2g5   
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		/*if ((1)) {
 			printf("EXG: trying: (origin = %d) : \n", pa >> 2);
 			print_graph_raw(g0, g1); putchar(10);
@@ -1601,6 +1582,45 @@ terminate:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+	const byte pa = 4 * la;
+		const byte dla = (here >> (4 * side)) & 0xf;
+
+		if (editable(pa + side) and at > pa + side) at = pa + side;
+		if (editable(pa) and at > pa) at = pa;
+		if (editable(4 * dla) and at > 4 * dla) at = 4 * dla;
+
+
+
+//if (editable(4 * la) and at > 4 * la) at = 4 * la; \
+//if (editable(4 * la + side) and at > 4 * la + side) at = 4 * la + side; \
+
+//atomic_store_explicit(&execution_counter, 0, memory_order_relaxed);
+
+
+
+*/
 
 
 

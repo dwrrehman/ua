@@ -684,7 +684,7 @@ int main(int argc, const char** argv) {
 				}
 
 				if (key[SDL_SCANCODE_K]) { if (speed > 1) speed >>= 1; printf("speed = %llu\n", speed); }
-				if (key[SDL_SCANCODE_L]) { speed <<= 1; printf("speed = %llu\n", speed); }
+				if (key[SDL_SCANCODE_L]) { if (speed < 16 * 4096) speed <<= 1; printf("speed = %llu\n", speed); }
 
 				if (key[SDL_SCANCODE_4]) {
 					viz_method = 3;
