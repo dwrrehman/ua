@@ -40,8 +40,8 @@ static nat largest_ttp = 0;
 static nat global_ttp_sum = 0;
 static nat global_ttp_count = 0;
 
-static nat ttp_histogram[32] = {0};
-static nat rtega_zskip_histogram[32 + 1] = {0};
+//static nat ttp_histogram[32] = {0};
+//static nat rtega_zskip_histogram[32 + 1] = {0};
 
 static char** filenames = NULL;
 
@@ -65,6 +65,9 @@ enum pruning_metrics {
 
 	pm_erp1, pm_erp2,
 
+
+
+
 	pm_ga_sdol, 
 
 	pm_ga_6g,    pm_ga_ns0, 
@@ -77,7 +80,9 @@ enum pruning_metrics {
 	pm_ga_5u1,   pm_ga_6u2,
 	pm_ga_3u5,   pm_ga_3u1,
 
-	pm_ga_sndi,  pm_ga_h,
+	pm_ga_sndi,  pm_ga_h,	
+
+	pm_ga_sci,
 
 	pm_count
 };
@@ -101,6 +106,7 @@ static const char* pm_spelling[pm_count] = {
 	"pm_erp1", "pm_erp2",
 
 
+
 	"pm_ga_sdol", 
 
 	"pm_ga_6g",    "pm_ga_ns0", 
@@ -113,7 +119,9 @@ static const char* pm_spelling[pm_count] = {
 	"pm_ga_5u1",   "pm_ga_6u2",
 	"pm_ga_3u5",   "pm_ga_3u1",
 
-	"pm_ga_sndi",
+	"pm_ga_sndi",  "pm_ga_h",
+	
+	"pm_ga_sci",
 };
 
 #define D 3
@@ -156,8 +164,6 @@ static void get_graphs_z_value(char string[64], nat g0, nat g1) {
 	string[graph_count] = 0;
 }
 
-
-
 static void get_datetime(char datetime[32]) {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -171,7 +177,7 @@ static void append_to_file(
 ) {
 	char dt[32] = {0};   get_datetime(dt);
 	char z[64] = {0};    get_graphs_z_value(z, g0, g1);
-	char o[16] = {0};    snprintf(o, sizeof o, "%hhu", origin);
+	char o[16] = {0};    snprintf(o, sizeof o, " %hhu ", origin);
 
 	int flags = O_WRONLY | O_APPEND;
 	mode_t permissions = 0;
@@ -193,11 +199,9 @@ try_open:;
 		goto try_open;
 	}
 
-	write(file, z, strlen(z));
-	write(file, " ", 1);
-	write(file, o, strlen(o));
-	write(file, " ", 1);
-	write(file, dt, strlen(dt));
+	write(file, z, graph_count);
+	write(file, o, 3);
+	write(file, dt, 17);
 	write(file, "\n", 1);
 	close(file);
 
@@ -278,6 +282,8 @@ static nat execute_graph_starting_at(
 		const byte op = gi(g0, g1, ip * 4);
 		//printf("[op = %hhu]\n", op);
 
+		if (editable(ip * 4) and *zskip_at > ip * 4) *zskip_at = ip * 4;
+		
 		if (op == one) {
 			if (pointer == n) {
 				puts("FEA condition violated by a z value: "); 
@@ -510,10 +516,9 @@ static nat execute_graph_starting_at(
 		if (array[n] < array[pointer]) state = 1;
 		if (array[n] > array[pointer]) state = 2;
 		if (array[n] == array[pointer]) state = 3;
-		const byte pa = ip * 4;
-		if (editable(pa) and *zskip_at > pa) *zskip_at = pa; 
-		if (editable(pa + state) and *zskip_at > pa + state) *zskip_at = pa + state;
-		ip = gi(g0, g1, pa + state);
+
+		if (editable(ip * 4 + state) and *zskip_at > ip * 4 + state) *zskip_at = ip * 4 + state;
+		ip = gi(g0, g1, ip * 4 + state);
 	}
 
 	if (xw < 11) return pm_fse;
@@ -542,12 +547,6 @@ static nat execute_graph_starting_at(
 	return z_is_good;
 }
 
-#define take_side(x) \
-	if (editable(pa + x) and at > pa + x) at = pa + x; \
-	pa = (byte) (((instruction_data >> (x << 2)) & 0xf) << 2); \
-	instruction_data = gi16(g0, g1, pa); \
-	op = instruction_data & 0xf; \
-	if (editable(pa) and at > pa) at = pa; \
 		
 static byte execute_graph(nat g0, nat g1, nat* array, byte* origin, nat* counts, const nat thread_index) {
 
@@ -555,62 +554,37 @@ static byte execute_graph(nat g0, nat g1, nat* array, byte* origin, nat* counts,
 	uint16_t instruction_data = 0;
 
 	for (byte o = 0; o < graph_count; o += 4) {
-
 		pa = o;
 		instruction_data = gi16(g0, g1, pa);
 		op = instruction_data & 0xf;
-		if (editable(pa) and at > pa) at = pa;
+
+		//if (editable(pa) and at > pa) at = pa;
 		
 		if (op != three) continue;
-
-		take_side(1);
-		if (op == one) {
-			take_side(3);
-			if (op == two) {
-				take_side(2);
-				if (op == two) goto ok;
-				if (op == three) goto ok;
-			} else if (op == three) {
-				take_side(1);
-				if (op == one) goto ok;
-				if (op == two) goto ok;
-				if (op == five) goto ok;
-			}
-		} else if (op == two) {
-			take_side(3);
-			if (op == one) {
-				take_side(2);
-				if (op == two) goto ok;
-				if (op == three) goto ok;
-				if (op == six) goto ok;
-			} else if (op == two) {
-				take_side(2);
-				if (op == one) goto ok;
-			}
-		}
-		continue;
-	ok:;	nat ttp = 0;
+		nat ttp = 0;
 		const nat pm = execute_graph_starting_at(o >> 2, g0, g1, array, &at, &ttp);
 
 		atomic_store_explicit(progress + 2 * thread_index + 0, g0, memory_order_relaxed);
 		atomic_store_explicit(progress + 2 * thread_index + 1, g1, memory_order_relaxed);
 
 		counts[pm]++;
-		if (ttp > largest_ttp) largest_ttp = ttp;
-		global_ttp_sum += ttp;
-		global_ttp_count++;
-		if (ttp < 32) ttp_histogram[ttp]++;
+
+		//if (ttp > largest_ttp) largest_ttp = ttp;
+		//global_ttp_sum += ttp;
+		//global_ttp_count++;
+		//if (ttp < 32) ttp_histogram[ttp]++;
+
 		if (not pm) { *origin = o; return 0; }
 		continue;
 	}
 
-	rtega_zskip_histogram[at]++;
+	//rtega_zskip_histogram[at]++;
 
 	return at;
 }
 
-//static const nat stoppingpoint_g0 = 0x1173546232017710;
-//static const nat stoppingpoint_g1 = 0x861000100001404;
+static const nat stoppingpoint_g0 = 0x2473551263017410;
+static const nat stoppingpoint_g1 = 0x7561000100002424;
 
 static void* worker_thread(void* raw_thread_index) {
 	const nat thread_index = *(nat*) raw_thread_index;
@@ -670,6 +644,15 @@ pull_job_from_queue:;
 			const byte g = gi(g0, g1, pa + 2);
 			const byte e = gi(g0, g1, pa + 3);
 
+			if (gi(g0, g1, 4 * g) == two) {
+				at = graph_count;
+				if (editable(pa + 2) and at > pa + 2) at = pa + 2;
+				if (editable(4 * g) and at > 4 * g) at = 4 * g;
+				if (at == graph_count) abort();
+				counts[pm_ga_sci]++;
+				goto bad;
+			}
+
 			if (op == six and gi(g0, g1, 4 * e) == one) {
 				at = graph_count;
 				if (editable(pa + 3) and at > pa + 3) at = pa + 3;
@@ -689,7 +672,6 @@ pull_job_from_queue:;
 				counts[pm_ga_ns0]++;
 				goto bad;
 			}
-
 		
 			if (op == two and g == pa >> 2) {
 				at = graph_count;
@@ -901,6 +883,20 @@ pull_job_from_queue:;
 		byte origin = 0;
 		at = execute_graph(g0, g1, array, &origin, counts, thread_index);
 
+		nat difference2 = 0;
+		for (byte pa = graph_count; pa--;) {
+			const byte a = gi(g0, g1, pa);
+			const byte b = gi(stoppingpoint_g0, stoppingpoint_g1, pa);
+			nat place = 1;
+			for (nat e = 0; e < pa; e++) place *= (e & 3) ? operation_count : 5;
+			difference2 += (b - a) * place;
+		}
+
+		if ((int64_t) difference2 < 0) goto terminate;
+
+
+
+
 		if (not at) {
 			append_to_file(filenames[thread_index], 4096, g0, g1, origin);
 			goto loop;
@@ -930,6 +926,8 @@ pull_job_from_queue:;
 
 terminate:
 	free(array);
+	atomic_store_explicit(progress + 2 * thread_index + 0, g0, memory_order_relaxed);
+	atomic_store_explicit(progress + 2 * thread_index + 1, g1, memory_order_relaxed);
 	return counts;
 }
 
@@ -1001,6 +999,8 @@ init:	pointer = 0;
 	const byte l  = gi(g0, 0, 1);
 	const byte g  = gi(g0, 0, 2);
 	const byte e  = gi(g0, 0, 3);
+
+	if (g == two) goto loop;
 	if (op == one and l == 7 and g == 7 and e == 7) goto loop;
 	if (op == two and l == 7) goto loop;
 	if (op == two and g == 7) goto loop;
@@ -1073,6 +1073,9 @@ done:; }
 	double difference_sum = 0;
 	nat display_counter = 0;
 
+
+	sleep(1);
+
 	while (1) {
 		display_counter++;
 		if (display_counter >= 1200) {
@@ -1110,16 +1113,24 @@ done:; }
 			//////////////////////////////////////////////////////////////////////////////////////////
 	
 			nat difference = 0;
-			//printf("\n diff: ");
 			for (byte pa = graph_count; pa--;) {
 				const byte a = gi(g0, g1, pa);
 				const byte b = gi(previous_g0, previous_g1, pa);
-				//printf("%u:%d ", pa, a - b);
 				nat place = 1;
 				for (nat e = 0; e < pa; e++) place *= (e & 3) ? operation_count : 5;
 				difference += (a - b) * place;
 			}
 
+
+			nat difference2 = 0;
+			for (byte pa = graph_count; pa--;) {
+				const byte a = gi(g0, g1, pa);
+				const byte b = gi(stoppingpoint_g0, stoppingpoint_g1, pa);
+				nat place = 1;
+				for (nat e = 0; e < pa; e++) place *= (e & 3) ? operation_count : 5;
+				difference2 += (b - a) * place;
+			}
+			
 			difference_sum += (double) difference;
 			difference_count++;
 
@@ -1128,6 +1139,10 @@ done:; }
 
 			printf(" %5llu : ", i);
 			print_graph_raw(g0, g1);
+			printf("\ng0 = 0x%llx, g1 = 0x%llx\n", g0, g1);
+
+			printf("\nstill going...  [difference til stoppingpoint = %lld]\n", difference2);
+			if ((int64_t) difference2 <= (int64_t) 0) goto terminate;
 
 			const nat counter = atomic_load_explicit(&execution_counter, memory_order_relaxed);
 
@@ -1137,6 +1152,8 @@ done:; }
 			printf(". speed (Z / s): %5.5lf\n", difference_sum / difference_count);
 		}
 		puts("");
+
+		/*
 
 		const nat hg_width = 64;
 		nat ttp_max = 0, ttp_sum = 0;
@@ -1169,6 +1186,8 @@ done:; }
 			puts("");
 		}	
 		puts("");
+
+		*/
 		//sleep(1 << display_rate);
 		usleep(10000);
 	}
@@ -1243,6 +1262,102 @@ terminate:
 
 
 
+
+
+
+
+/*#define take_side(x) \
+	if (editable(pa + x) and at > pa + x) at = pa + x; \
+	pa = (byte) (((instruction_data >> (x << 2)) & 0xf) << 2); \
+	instruction_data = gi16(g0, g1, pa); \
+	op = instruction_data & 0xf; \
+	if (editable(pa) and at > pa) at = pa; \
+
+*/
+
+/*
+	...
+
+	if (editable(pa + x) and at > pa + x) at = pa + x; \
+	pa = (byte) (((instruction_data >> (x << 2)) & 0xf) << 2); \
+
+
+	------
+
+	instruction_data = gi16(g0, g1, pa); \
+	op = instruction_data & 0xf; \
+
+
+	if (editable(pa) and at > pa) at = pa; \
+	
+	...
+
+*/
+
+/*
+
+		goto ok;
+
+		take_side(1);
+		if (op == one) {
+			take_side(3);
+			if (op == two) {
+				take_side(2);
+				if (op == three) { 
+					take_side(3);
+					if (op == one) goto ok;
+					if (op == two) goto ok;
+					if (op == five) goto ok;
+					if (op == six) goto ok;
+				}
+			} else if (op == three) {
+				take_side(1);
+				if (op == one) {
+					take_side(3);
+					if (op == two) goto ok;
+					if (op == three) goto ok;
+
+				} else if (op == two) {
+					take_side(3);
+					if (op == two) goto ok;
+					if (op == one) goto ok;
+					if (op == five) goto ok;
+
+				} else if (op == five) { 
+					take_side(1);
+					if (op == two) goto ok;
+					if (op == one) goto ok;
+					if (op == three) goto ok;
+				}
+			}
+
+		} else if (op == two) {
+			take_side(3);
+			if (op == one) {
+				take_side(2);
+				if (op == three) {
+					take_side(3);
+					if (op == one) goto ok;
+					if (op == two) goto ok;
+					if (op == six) goto ok;
+					if (op == five) goto ok;
+				} else if (op == six) {
+					take_side(3);
+					if (op == two) goto ok;
+					if (op == three) goto ok;
+				}
+			} else if (op == two) {
+				take_side(2);
+				if (op == one) {
+					take_side(2);
+					if (op == three) goto ok;
+					if (op == six) goto ok;
+				}
+			}
+		}
+		continue; 
+
+*/
 
 
 
