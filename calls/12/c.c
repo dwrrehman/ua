@@ -3,6 +3,9 @@
 // and also optimize GA more, and add more 
 // GA checks to help 3sp search happen faster
 // written on 1202508144.203248 by dwrr
+
+// made D general on 1202510293.025431
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -20,11 +23,11 @@ typedef uint8_t byte;
 typedef uint16_t u16;
 typedef uint64_t nat;
 
-#define D 3
+#define D 2
 
 #define machine_count 1
 #define machine_index 0
-#define thread_count 1
+#define thread_count 10
 
 #define machine0_throughput 1
 #define machine1_throughput 1
@@ -36,15 +39,6 @@ typedef uint64_t nat;
 static u16 queue[4096] = {0};
 static _Atomic nat queue_count = 0;
 static _Atomic nat progress[thread_count * 2] = {0};
-
-static _Atomic nat execution_counter = 0;
-static nat largest_ttp = 0;
-static nat global_ttp_sum = 0;
-static nat global_ttp_count = 0;
-
-//static nat ttp_histogram[32] = {0};
-//static nat rtega_zskip_histogram[32 + 1] = {0};
-
 static char** filenames = NULL;
 
 enum operations { one, two, three, five, six };
@@ -106,7 +100,6 @@ static const char* pm_spelling[pm_count] = {
 	"pm_erp1", "pm_erp2",
 
 
-
 	"pm_ga_sdol", 
 
 	"pm_ga_6g",    "pm_ga_ns0", 
@@ -151,7 +144,6 @@ static u16 gi16(nat graph0, nat graph1, byte pa) {
 		((pa & 15) << 2)
 	) & 0xffff;
 }
-
 
 static void print_graph_raw(nat g0, nat g1) { 
 	for (byte i = 0; i < graph_count; i++) 
@@ -221,9 +213,6 @@ static byte noneditable(byte pa) {
 __attribute__((always_inline))
 static byte editable(byte pa) { return not noneditable(pa); }
 
-static nat total_graphs_ran = 0;
-static nat total_graphs = 0;
-
 #define max_erp_count 20
 #define max_rsi_count 512
 #define max_oer_repetions 50
@@ -242,11 +231,8 @@ static nat execute_graph_starting_at(
 	const byte origin, 
 	const nat g0, const nat g1, 
 	nat* array, 
-	byte* zskip_at,
-	nat* time_till_prune
-) {
-	total_graphs_ran++;
-	
+	byte* zskip_at
+) {	
 	const nat n = array_size;
 	array[0] = 0; 
 	array[n] = 0;
@@ -273,14 +259,9 @@ static nat execute_graph_starting_at(
  	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
 	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
 
-
 	for (nat e = 0; e < execution_limit; e++) {
 
-		*time_till_prune = e;
-		atomic_fetch_add_explicit(&execution_counter, 1, memory_order_relaxed);
 		const byte op = gi(g0, g1, ip * 4);
-		//printf("[op = %hhu]\n", op);
-
 		if (editable(ip * 4) and *zskip_at > ip * 4) *zskip_at = ip * 4;
 		
 		if (op == one) {
@@ -545,45 +526,24 @@ static nat execute_graph_starting_at(
 	}
 	return z_is_good;
 }
-
 		
 static byte execute_graph(nat g0, nat g1, nat* array, byte* origin, nat* counts, const nat thread_index) {
-
 	byte at = graph_count, op = 0, pa = 0;
 	uint16_t instruction_data = 0;
-
 	for (byte o = 0; o < graph_count; o += 4) {
 		pa = o;
 		instruction_data = gi16(g0, g1, pa);
 		op = instruction_data & 0xf;
-
-		//if (editable(pa) and at > pa) at = pa;
-		
 		if (op != three) continue;
-		nat ttp = 0;
-		const nat pm = execute_graph_starting_at(o >> 2, g0, g1, array, &at, &ttp);
-
+		const nat pm = execute_graph_starting_at(o >> 2, g0, g1, array, &at);
 		atomic_store_explicit(progress + 2 * thread_index + 0, g0, memory_order_relaxed);
 		atomic_store_explicit(progress + 2 * thread_index + 1, g1, memory_order_relaxed);
-
 		counts[pm]++;
-
-		//if (ttp > largest_ttp) largest_ttp = ttp;
-		//global_ttp_sum += ttp;
-		//global_ttp_count++;
-		//if (ttp < 32) ttp_histogram[ttp]++;
-
 		if (not pm) { *origin = o; return 0; }
 		continue;
 	}
-
-	//rtega_zskip_histogram[at]++;
-
 	return at;
 }
-
-static const nat stoppingpoint_g0 = 0x5253451273010010;
-static const nat stoppingpoint_g1 = 0x7561001100002404;
 
 static void* worker_thread(void* raw_thread_index) {
 	const nat thread_index = *(nat*) raw_thread_index;
@@ -603,20 +563,15 @@ pull_job_from_queue:;
 		(2LLU << (8 * 4)) | 
 		(3LLU << (12 * 4));
 	g1 = 	4LLU | (4LLU << 8) |
-		((nat) queue[n - 1] << (12 * 4));
+		((nat) queue[n - 1] << ((4 * D) * 4));
 	goto init;
 
 	loop:
-		////////////////////////////////////////////////////////////////////////////////
-		//if (g0 == stoppingpoint_g0 and g1 == stoppingpoint_g1) goto terminate;
-		////////////////////////////////////////////////////////////////////////////////
-
 		if (gi(g0, g1, pointer) < ((pointer & 3) ? operation_count - 1 : 4)) goto increment;
 		if (pointer < graph_count - 5) goto reset_;
 		goto pull_job_from_queue;
 
 	increment:
-
 		if (pointer < 16) g0 += 1LLU << ((pointer & 15LLU) << 2LLU);
 		else              g1 += 1LLU << ((pointer & 15LLU) << 2LLU);
 
@@ -624,10 +579,6 @@ pull_job_from_queue:;
 		u16 was_utilized = 0;
 		byte at = lsepa;
 
-		total_graphs++;
-
-		//printf("nf: "); print_graph_raw(g0, g1); puts("");
-	
 		for (byte pa = 20; pa < graph_count; pa += 4) {
 			if (pa < graph_count - 4 and gi(g0, g1, pa) > gi(g0, g1, pa + 4)) {
 				at = pa;
@@ -635,10 +586,6 @@ pull_job_from_queue:;
 				goto bad;
 			} 
 		}
-
-
-		//0100 1007 2103 3421    4644 1000 1000 1357
-
 
 		for (byte pa = graph_count; pa -= 4; ) {
 	
@@ -765,7 +712,6 @@ pull_job_from_queue:;
 				}
 			}}
 
-
 			{const byte pairs[3 * 4] = {
 				three, three, pm_ga_ndi,
 				five, one,  pm_ga_pco,
@@ -834,7 +780,6 @@ pull_job_from_queue:;
 			goto bad;
 		} } 
 		skip_5_1_check:; 
-
 
 		for (byte pa = 20; pa < graph_count; pa += 4) {
 			if (gi(g0, g1, pa) == six) goto skip_6_2_check;
@@ -919,19 +864,6 @@ pull_job_from_queue:;
 		byte origin = 0;
 		at = execute_graph(g0, g1, array, &origin, counts, thread_index);
 
-		/*nat difference2 = 0;
-		for (byte pa = graph_count; pa--;) {
-			const byte a = gi(g0, g1, pa);
-			const byte b = gi(stoppingpoint_g0, stoppingpoint_g1, pa);
-			nat place = 1;
-			for (nat e = 0; e < pa; e++) place *= (e & 3) ? operation_count : 5;
-			difference2 += (b - a) * place;
-		}*/
-
-
-		//if ((int64_t) difference2 < 0) { abort(); goto terminate; }
-
-
 		if (not at) {
 			append_to_file(filenames[thread_index], 4096, g0, g1, origin);
 			goto loop;
@@ -942,55 +874,7 @@ pull_job_from_queue:;
 			abort();
 		}
 
-
-		/*if (at >= 20) { 
-		printf("\n----------------- jobs remaining %llu -------------------\n", 
-			n			
-		);
-
-
-		puts("\n"); puts("\n");
-		printf("PERFORMING ZSKIP AT DOL! [at = %hhu]\n", at);
-
-		printf("\t zv = "); 
-		print_graph_raw(g0, g1);
-		printf("\n\tg0 = 0x%llx, g1 = 0x%llx\n", g0, g1);
-
-		puts("\n");
-		for (byte i = 0; i < graph_count; i++) {
-			if (i % 4 == 0) printf("  ");
-			printf("[\033[32;1m%hhu\033[0m]", gi(g0, g1, i));
-		} puts(""); 
-
-		for (byte i = 0; i < at; i++) {
-			if (i % 4 == 0) printf("  ");
-			printf("   ");
-
-		} 
-
-		if (at % 4 == 0) printf("  ");
-		printf(" ^\n");
-
-		//puts("\n");//puts("\n");puts("\n");puts("\n"); 
-
-		printf("\npm counts:\n");
-	        for (nat i = 0; i < pm_count; i++) {
-	                if (i and not (i % 2)) {
-				printf("\n");				
-			}
-			printf("%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
-	        }
-	        printf("[done]\n");
-
-		//puts("\n");puts("\n");puts("\n");puts("\n"); 
-
-		fflush(stdout);
-		//sleep(1);
-		getchar();
-
-		}*/
-
-		if (at >= 28) goto pull_job_from_queue;
+		if (at >= graph_count - 4) goto pull_job_from_queue;
 
 		for (byte i = lsepa; i < at; i++) {
 			if (editable(i)) {
@@ -1150,128 +1034,24 @@ done:; }
 
 	nat counts[pm_count] = {0};
 	const bool disable_main = 0;
-	nat previous_g0 = 0;
-	nat previous_g1 = 0;
-	double difference_count = 0;
-	double difference_sum = 0;
-	nat display_counter = 0;
-
-	sleep(1);
-
 	while (1) {
-		display_counter++;
-		if (display_counter >= 1200) {
-			difference_count = 0; 
-			difference_sum = 0;
-			display_counter = 0;
-		}
 
 		const nat amount_remaining = atomic_load_explicit(&queue_count, memory_order_relaxed);
 		if (amount_remaining <= 0 or disable_main) goto terminate;
 
 		printf("\033[H\033[2J");
-		printf("\n----------------- ran %llu / %llu -------------------\n", 
-			total_graphs_ran, total_graphs
-		);
-		printf("\n----------------- jobs remaining %llu / %llu -------------------\n", 
+		printf("----------------- jobs remaining %llu / %llu -------------------\n", 
 			amount_remaining, total_job_count
 		);
-
-		printf("\n----------------- %llu : difference %lf / %lf -------------------\n", 
-			display_counter, difference_sum, difference_count
-		);
 		printf("\n\t complete %1.10lf%%\n\n", (double) (total_job_count - amount_remaining) / (double) total_job_count);
-
-		printf("\n\t executed %1.10lf%%\n\n", (double) (total_graphs_ran) / (double) total_graphs);
-
-
 		for (nat i = 0; i < thread_count; i++) {
-
 			const nat g0 = atomic_load_explicit(progress + 2 * i + 0, memory_order_relaxed);
 			const nat g1 = atomic_load_explicit(progress + 2 * i + 1, memory_order_relaxed);
-
-			//////////////////////////////////////////////////////////////////////////////////////////
-			//if (g0 == stoppingpoint_g0 and g1 == stoppingpoint_g1) goto terminate;
-			//////////////////////////////////////////////////////////////////////////////////////////
-	
-			nat difference = 0;
-			for (byte pa = graph_count; pa--;) {
-				const byte a = gi(g0, g1, pa);
-				const byte b = gi(previous_g0, previous_g1, pa);
-				nat place = 1;
-				for (nat e = 0; e < pa; e++) place *= (e & 3) ? operation_count : 5;
-				difference += (a - b) * place;
-			}
-
-
-			nat difference2 = 0;
-			for (byte pa = graph_count; pa--;) {
-				const byte a = gi(g0, g1, pa);
-				const byte b = gi(stoppingpoint_g0, stoppingpoint_g1, pa);
-				nat place = 1;
-				for (nat e = 0; e < pa; e++) place *= (e & 3) ? operation_count : 5;
-				difference2 += (b - a) * place;
-			}
-			
-			difference_sum += (double) difference;
-			difference_count++;
-
-			previous_g0 = g0;
-			previous_g1 = g1;
-
 			printf(" %5llu : ", i);
-			print_graph_raw(g0, g1);
-			printf("\ng0 = 0x%llx, g1 = 0x%llx\n", g0, g1);
-
-			printf("\nstill going...  [difference til stoppingpoint = %lld]\n", difference2);
-			//if ((int64_t) difference2 <= (int64_t) 0) goto terminate;
-
-			const nat counter = atomic_load_explicit(&execution_counter, memory_order_relaxed);
-
-			printf(". counter: %llu, ", counter);
-			printf(". maxttp: %llu, ", largest_ttp);
-			printf(". avgttp: %5.5lf, ", (double) global_ttp_sum / (double) global_ttp_count);
-			printf(". speed (Z / s): %5.5lf\n", difference_sum / difference_count);
+			print_graph_raw(g0, g1); puts("");
 		}
 		puts("");
-
-		/*
-
-		const nat hg_width = 64;
-		nat ttp_max = 0, ttp_sum = 0;
-		for (nat i = 0; i < 32; i++) {
-			if (ttp_max < ttp_histogram[i]) 
-				ttp_max = ttp_histogram[i];
-			ttp_sum += ttp_histogram[i];
-		}
-		nat ttp_resolution = ttp_max / hg_width ? ttp_max / hg_width : 1 ;
-
-		nat at_max = 0, at_sum = 0;
-		for (nat i = 0; i < 32; i++) {
-			if (at_max < rtega_zskip_histogram[i]) 
-				at_max = rtega_zskip_histogram[i];
-			at_sum += rtega_zskip_histogram[i];
-		}
-		nat at_resolution = at_max / hg_width ? at_max / hg_width : 1 ;
-
-		for (nat i = 0; i < 32; i++) {
-			{ const nat value = ttp_histogram[i];
-			printf("%4llu: %1.6lf : %10llu : ", i, ttp_sum ? ((double) value / (double) ttp_sum) : 0, value);
-			for (nat _ = 0; _ < value / ttp_resolution and _ < hg_width; _++) putchar('#');
-			for (nat _ = 0; (int64_t) _ < (int64_t) (hg_width - value / ttp_resolution) ; _++) putchar('.'); } 
-
-			{ const nat value = rtega_zskip_histogram[i];
-			printf("%4llu: %1.6lf : %10llu : ", i, at_sum ? ((double) value / (double) at_sum) : 0, value);
-			for (nat _ = 0; _ < value / at_resolution and _ < hg_width; _++) putchar('#');
-			for (nat _ = 0; (int64_t) _ < (int64_t) (hg_width - value / at_resolution); _++) putchar('.'); }
-
-			puts("");
-		}	
-		puts("");
-
-		*/
-		//sleep(1 << display_rate);
-		usleep(10000);
+		sleep(1 << display_rate);
 	}
 
 terminate:
@@ -1328,6 +1108,34 @@ terminate:
 	print(output_filename, 4096, output_string);
 
 } // main
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
