@@ -23,9 +23,9 @@ typedef uint8_t byte;
 typedef uint16_t u16;
 typedef uint64_t nat;
 
-#define D 2
+#define D 3
 
-#define machine_count 1
+#define machine_count 2
 #define machine_index 0
 #define thread_count 10
 

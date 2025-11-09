@@ -61,7 +61,7 @@ static const byte D = 2;        // the duplication count (operation_count = 5 + 
 static const bool should_deduplicate_z_list = true;
 
 static const nat execution_limit  = (nat) -1;
-static const nat pre_run_duration = 1000000000;
+static const nat pre_run_duration = 1000000;
 
 static const nat array_size = 16384; // (must be divisible by 8)
 static const nat lifetime_length = 16384;
@@ -203,7 +203,13 @@ static void generate_lifetime(struct z_value* z) {
 	const nat width = n + 1;
 	nat pointer = 0;
 	nat timestep = 1;
-	byte ip = (byte) z->origin;
+
+
+	/////////////////////////////////////////////////////////////////////////////
+	byte ip = (byte) z->origin; /// TODO: DONT DO THISSSS   remove the divide by 4
+	/////////////////////////////////////////////////////////////////////////////
+
+
 
 	memset(array, 0, sizeof(nat) * (array_size + 1));
 	set_graph(z->value);
@@ -293,7 +299,7 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 		const byte o = (byte) atoi(zend + 1);
 		
 		list = realloc(list, sizeof(struct z_value) * (count + 1));
-		list[count++] = (struct z_value) {.value = g, .origin = o};
+		list[count++] = (struct z_value) {.value = g, .origin = o / 4};
 	}
 	fclose(file);
 	*list_count = count;

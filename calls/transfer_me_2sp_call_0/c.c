@@ -555,15 +555,15 @@ static void* worker_thread(void* raw_thread_index) {
 	register byte pointer = 0;
 
 pull_job_from_queue:;
-	const nat jobs_left = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
-	if ((int64_t) jobs_left <= 0) goto terminate;
+	const nat n = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
+	if ((int64_t) n <= 0) goto terminate;
 
 	g0 = 	(1LLU << 4) |
 		(1LLU << (4 * 4)) | 
 		(2LLU << (8 * 4)) | 
 		(3LLU << (12 * 4));
 	g1 = 	4LLU | (4LLU << 8) |
-		((nat) queue[jobs_left - 1] << ((4 * D) * 4));
+		((nat) queue[n - 1] << ((4 * D) * 4));
 	goto init;
 
 	loop:
@@ -581,7 +581,7 @@ pull_job_from_queue:;
 
 		for (byte pa = 20; pa < graph_count; pa += 4) {
 			if (pa < graph_count - 4 and gi(g0, g1, pa) > gi(g0, g1, pa + 4)) {
-				at = pa + 1;
+				at = pa;
 				counts[pm_ga_sdol]++;
 				goto bad;
 			} 
@@ -825,19 +825,28 @@ pull_job_from_queue:;
 		skip_3_15_check:; 
 
 		for (byte pa = graph_count; pa -= 4;) {
+
 			if (gi(g0, g1, pa) != six) continue;
+
 			for (byte i = 20; i < graph_count; i += 4) {
 				if (
 					gi(g0, g1, i) == one
 						and
 					gi(g0, g1, i + 2) == pa >> 2
 				) goto skip_6e_check;
-			}	
+			}
+	
 			if (gi(g0, g1, pa + 3) != six) {
-				at = lsepa;
+
+				at = graph_count;
+				if (editable(pa + 3) and at > pa + 3) at = pa + 3;
+				if (editable(pa) and at > pa) at = pa;
+				if (at == graph_count) abort();
+
 				counts[pm_ga_6e]++;
 				goto bad;
 			}
+
 			skip_6e_check:;
 		}
 
@@ -1028,7 +1037,7 @@ done:; }
 	while (1) {
 
 		const nat amount_remaining = atomic_load_explicit(&queue_count, memory_order_relaxed);
-		if ((int64_t) amount_remaining <= 0 or disable_main) goto terminate;
+		if (amount_remaining <= 0 or disable_main) goto terminate;
 
 		printf("\033[H\033[2J");
 		printf("----------------- jobs remaining %llu / %llu -------------------\n", 
