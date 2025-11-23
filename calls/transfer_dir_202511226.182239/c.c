@@ -78,8 +78,6 @@ enum pruning_metrics {
 
 	pm_ga_sci,   pm_ga_6e,
 
-	pm_ga_lb,
-
 	pm_count
 };
 
@@ -101,6 +99,7 @@ static const char* pm_spelling[pm_count] = {
 
 	"pm_erp1", "pm_erp2",
 
+
 	"pm_ga_sdol", 
 
 	"pm_ga_6g",    "pm_ga_ns0", 
@@ -116,15 +115,13 @@ static const char* pm_spelling[pm_count] = {
 	"pm_ga_sndi",  "pm_ga_h",
 	
 	"pm_ga_sci",   "pm_ga_6e",
-
-	"pm_ga_lb",
 };
 
 #define operation_count (5 + D)
 #define graph_count (operation_count * 4)
 
 static void print_binary(nat x) {
-	for (nat i = 0; i < 16; i++) {
+	for (nat i = 0; i < 64; i++) {
 		if (not (i & 3)) putchar('_');
 		printf("%llu", (x >> i) & 1);
 	}
@@ -531,17 +528,18 @@ static nat execute_graph_starting_at(
 }
 		
 static byte execute_graph(nat g0, nat g1, nat* array, byte* origin, nat* counts, const nat thread_index) {
-	byte at = graph_count, op = 0;
+	byte at = graph_count, op = 0, pa = 0;
 	uint16_t instruction_data = 0;
 	for (byte o = 0; o < graph_count; o += 4) {
-		instruction_data = gi16(g0, g1, o);
+		pa = o;
+		instruction_data = gi16(g0, g1, pa);
 		op = instruction_data & 0xf;
 		if (op != three) continue;
 		const nat pm = execute_graph_starting_at(o >> 2, g0, g1, array, &at);
 		atomic_store_explicit(progress + 2 * thread_index + 0, g0, memory_order_relaxed);
 		atomic_store_explicit(progress + 2 * thread_index + 1, g1, memory_order_relaxed);
 		counts[pm]++;
-		if (not pm) { *origin = o >> 2; return 0; }
+		if (not pm) { *origin = o; return 0; }
 		continue;
 	}
 	return at;
@@ -566,7 +564,6 @@ pull_job_from_queue:;
 		(3LLU << (12 * 4));
 	g1 = 	4LLU | (4LLU << 8) |
 		((nat) queue[jobs_left - 1] << ((4 * D) * 4));
-
 	goto init;
 
 	loop:
@@ -590,20 +587,13 @@ pull_job_from_queue:;
 			} 
 		}
 
-		//puts("in GA right now ");
-		
-		{ byte pa = graph_count; 
-		GA_loop: 
-			pa -= 4;
-
-			//printf("in iteration %hhu of GA\n", pa);
+		for (byte pa = graph_count; pa -= 4; ) {
 	
 			const nat op = gi(g0, g1, pa);
 			const byte l = gi(g0, g1, pa + 1);
 			const byte g = gi(g0, g1, pa + 2);
 			const byte e = gi(g0, g1, pa + 3);
 
-	
 			if (gi(g0, g1, 4 * g) == two) {
 				at = graph_count;
 				if (editable(pa + 2) and at > pa + 2) at = pa + 2;
@@ -613,25 +603,6 @@ pull_job_from_queue:;
 				goto bad;
 			}
 
-			if (op == one and gi(g0, g1, 4 * e) == one) {
-				at = graph_count;
-				if (editable(pa + 3) and at > pa + 3) at = pa + 3;
-				if (editable(pa) and at > pa) at = pa;
-				if (editable(4 * e) and at > 4 * e) at = 4 * e;
-				if (at == graph_count) abort();
-				counts[pm_ga_ns0]++;
-				goto bad;
-			}
-
-			if (op == one and gi(g0, g1, 4 * g) == one) {
-				at = graph_count;
-				if (editable(pa + 2) and at > pa + 2) at = pa + 2;
-				if (editable(pa) and at > pa) at = pa;
-				if (editable(4 * g) and at > 4 * g) at = 4 * g;
-				if (at == graph_count) abort();
-				counts[pm_ga_ns0]++;
-				goto bad;
-			}
 
 			if (op == six and gi(g0, g1, 4 * l) == six) {
 				at = graph_count;
@@ -672,22 +643,12 @@ pull_job_from_queue:;
 				goto bad;
 			}
 
- 			if (op == two and l == pa >> 2) {
+			if (op == two and l == pa >> 2) {
 				at = graph_count;
 				if (editable(pa + 1) and at > pa + 1) at = pa + 1;
 				if (editable(pa) and at > pa) at = pa;
 				if (at == graph_count) abort();
 				counts[pm_ga_sndi]++;
-				goto bad;
-			}
-
-
-			if (op == one and l == pa >> 2) {
-				at = graph_count;
-				if (editable(pa + 1) and at > pa + 1) at = pa + 1;
-				if (editable(pa) and at > pa) at = pa;
-				if (at == graph_count) abort();
-				counts[pm_ga_lb]++;
 				goto bad;
 			}
 
@@ -776,6 +737,10 @@ pull_job_from_queue:;
 				} 
 			}}
 
+			if (l != pa >> 2) was_utilized |= 1 << l;
+			if (g != pa >> 2) was_utilized |= 1 << g;
+			if (e != pa >> 2) was_utilized |= 1 << e;
+
 			for (byte i = graph_count - 4; i >= 20 and pa < i; i -= 4) {
 				if (gi16(g0, g1, i) == gi16(g0, g1, pa)) {
 					at = graph_count;
@@ -787,28 +752,8 @@ pull_job_from_queue:;
 					goto bad;
 				}
 			}
+		}
 
-			//printf("pa = %hhu\n", pa);
-			//printf("l = %hhu\n", l);
-			//printf("g = %hhu\n", g);
-			//printf("e = %hhu\n", e);
-			//fflush(stdout);
- 			//getchar();
-
-			//abort();
-
-			if (l != pa >> 2) was_utilized |= 1 << l;
-			if (g != pa >> 2) was_utilized |= 1 << g;
-			if (e != pa >> 2) was_utilized |= 1 << e;
-
-			if (not pa) goto end_of_GA_loop;
-			goto GA_loop;
-
-		end_of_GA_loop:; } 
-
-		//print_binary(was_utilized);
-		//puts("");
-	
 		for (byte la = 0; la < operation_count; la++) {
 			if (not ((was_utilized >> la) & 1)) { 
 				at = lsepa;
@@ -910,19 +855,12 @@ pull_job_from_queue:;
 		byte origin = 0;
 		at = execute_graph(g0, g1, array, &origin, counts, thread_index);
 
-		//puts("finished running it");
-		//abort();
-
 		if (not at) {
 			append_to_file(filenames[thread_index], 4096, g0, g1, origin);
 			goto loop;
 		}
 
-	bad:	
-		//printf("arrived in BAD with AT = %hhu\n", at);
-		//getchar();
-
-		if (noneditable(at)) {
+	bad:	if (noneditable(at)) {
 			printf("internal programming error: at was set to the value of %hhu, which is not an valid hole\n", at);
 			abort();
 		}
@@ -935,12 +873,7 @@ pull_job_from_queue:;
 				else        g1 &= ~(0xfLLU << ((i & 15LLU) << 2LLU));
 			}
 		}
-		pointer = at; 
-
-		//puts("pruned zv via goto bad");
-		//abort();
-
-		goto loop;
+		pointer = at; goto loop;
 
 	reset_:
 		if (pointer < 16) g0 &= ~(0xfLLU << ((pointer & 15LLU) << 2LLU));
@@ -1026,10 +959,7 @@ init:	pointer = 0;
 	const byte e  = gi(g0, 0, 3);
 
 	if (g == two) goto loop;
-
-	if (op == one and l == 7) goto loop;
-	if (op == one and g == 7) goto loop;
-	if (op == one and e == 7) goto loop;
+	if (op == one and l == 7 and g == 7 and e == 7) goto loop;
 	if (op == two and l == 7) goto loop;
 	if (op == two and g == 7) goto loop;
 	if (op == three and l == 7) goto loop;
@@ -1042,9 +972,6 @@ init:	pointer = 0;
 	if (op == six and e == 7) goto loop;
 	if (op == six and e == one) goto loop;
 	if (op == six and e == five) goto loop;
-	if (op == one and l == one) goto loop;
-	if (op == one and g == one) goto loop;
-	if (op == one and e == one) goto loop;
 	if (op == one and l == five) goto loop;
 	if (op == one and g == five) goto loop;
 	if (op == one and e == five) goto loop;
@@ -1060,7 +987,6 @@ init:	pointer = 0;
 	if (op == six and l == six) goto loop;
 	if (op == six and g != six) goto loop;
 	if (op == six and e == six) goto loop;
-	
 
 	mi = (mi + 1) % machine_count;
 	if (mi != machine_index) goto loop;
