@@ -20,126 +20,11 @@ typedef uint8_t byte;
 typedef uint16_t u16;
 typedef uint64_t nat;
 
-#define D 1
-
-
-
-
-
-#define dol   ((one << 0) | (two << 4) | (five << 8))
-
-
-
-/* const byte pas_pa = pa_map[pa] */
-
-
-const byte value = ((decode[pas_pa] >> (nfarray[pas_pa] << 2)) & 0xf;
-
-
-
-pas_pa = 0  MEANS    opi0.g
-pas_pa = 1  MEANS    opi0.e
-pas_pa = 2  MEANS    opi1.g
-pas_pa = 3  MEANS    opi1.e
-pas_pa = 4  MEANS    opi2.l
-
-...
-
-pas_pa = 22   MEANS   addr8.opi4.e
-
-
-
-
-/*   DOL = {  1, 2, 5, 6,  }    */
-
-
-
-static const nat decode[] = {
-
-
-0123456789ABCDEFGHIJKLM
-
-
---------------------
-	PA_MAP:
---------------------
-ad | opi  <   >   =
---------------------
- 0 | 0 |  /   0   1 
---------------------
- 1 | 1 |  /   2   3 
---------------------
- 2 | 2 |  4   5   6
---------------------
- 3 | 3 |  7   8   9
---------------------
- 4 | 4 |  A   /   B
---------------------
- 5 | 0 |  C   D   E
---------------------
- 6 | 1 |  F   G   H
---------------------
- 7 | 3 |  I   J   K
---------------------
- 8 | 4 |  L   /   M
---------------------
-
-23 digits, aka  23 nat's   each nat encodes up to 16 possible address
-
-
-
-opi0:
-	pas[pa=0] = 0    :  MEANS     address 0  --(g)-->  address 2   
-
-
-
-
-
-                                                   
-/* paspa 0 */	{   
-
-	0 out [ns0],   
-	1 out [sci],   
-	2 in,   
-	3 out [pco],  
-	4 in,   
-	5 out  [ns0],   
-	6 
-
-
-
-
-
-/* paspa 1 */	{3, 5, 6, 7, 8}
-/* paspa 2 */	{3, 5, 6, 7, 8}
-/* paspa 3 */	{3, 5, 6, 7, 8}
-/* paspa 4 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-/* paspa 2 */	{}
-
-
-};
-
-
-
-
+#define D 4
 
 #define machine_count 1
 #define machine_index 0
-#define thread_count 10
+#define thread_count 1
 
 #define machine0_throughput 1
 #define machine1_throughput 1
@@ -151,9 +36,61 @@ opi0:
 #define operation_count (5 + D)
 #define graph_count (operation_count * 4)
 
-static u16 queue[4096] = {0};
+#define pas_count 	   23
+#define job_digit_count    4
+
+static uint16_t partial_graph[operation_count] = {0x0010, 0x0001, 0x0002, 0x0003, 0x0404,    0x0000, 0x0001, 0x0003, 0x0404, };
+
+#define mod0 0x6537777378887553
+#define mod1 0x0000000003777775
+
+static byte pas_map[pas_count] = {
+	2, 3,   6, 7,   9, 10, 11,   13, 14, 15,    17, 19,        21, 22, 23,    25, 26, 27,    29, 30, 31,    33, 35, 
+};
+
+static nat decode[pas_count] = {
+	0x842,
+	0x86421,
+
+	0x75320,
+	0x7653210,
+	
+	0x87654310,
+	0x87654310,
+	0x87654310,
+
+	0x8654210,
+	0x8654210,
+	0x8654210,
+
+	0x7653210,
+	0x621,
+	
+
+	0x8654210,
+	0x842,
+	0x86421,
+
+	0x753210,
+	0x75320,
+	0x7653210,
+
+	0x8654210,
+	0x8654210,
+	0x8654210,
+
+	0x7653210,
+	0x621,
+};
+
+#define job_placement_in_PAS   (4 * ((pas_count - 16) - (job_digit_count)))
+#define job_modulus   		((mod1 >> job_placement_in_PAS) & 0xffff)
+
+
+static u16 queue[2048] = {0};
+
 static _Atomic nat queue_count = 0;
-static _Atomic nat progress[thread_count * 2] = {0};
+static _Atomic u16 progress[thread_count * operation_count] = {0};
 static char** filenames = NULL;
 
 
@@ -176,12 +113,11 @@ enum pruning_metrics {
 	pm_erp1, pm_erp2,
 
 
-	pm_ga_ns0,  pm_ga_pco, 
+
 	pm_ga_rdo,  pm_ga_uo, 
 	pm_ga_5u1,  pm_ga_6u2,
 	pm_ga_3u5,  pm_ga_3u1,
 	pm_ga_sndi, pm_ga_h,
-	pm_ga_6e,
 
 	pm_count
 };
@@ -204,23 +140,10 @@ static const char* pm_spelling[pm_count] = {
 
 	"pm_erp1", "pm_erp2",
 
-	"pm_ga_sdol", 
-
-	"pm_ga_6g",    "pm_ga_ns0", 
-	"pm_ga_zr5",   "pm_ga_pco", 
-	"pm_ga_ndi",   "pm_ga_snco",  
-	"pm_ga_zr6",   "pm_ga_rdo", 
-
-	"pm_ga_uo",    "pm_ga_il",
-
-	"pm_ga_5u1",   "pm_ga_6u2",
-	"pm_ga_3u5",   "pm_ga_3u1",
-
-	"pm_ga_sndi",  "pm_ga_h",
-	
-	"pm_ga_sci",   "pm_ga_6e",
-
-	"pm_ga_lb",
+	"pm_ga_rdo",  "pm_ga_uo", 
+	"pm_ga_5u1",  "pm_ga_6u2",
+	"pm_ga_3u5",  "pm_ga_3u1",
+	"pm_ga_sndi", "pm_ga_h",
 };
 
 static void print_binary(nat x) {
@@ -239,6 +162,38 @@ static byte gi(nat graph0, nat graph1, byte pa) {
 	) & 0xf;
 }
 
+static void print_graph_raw(u16* graph) { 
+	for (u16 i = 0; i < graph_count; i++) 
+		printf("%hhu", (byte)
+			((
+				graph[i / 4LLU] 
+				>> 
+				(
+					(
+						(i % 4LLU) 
+						* 
+						4LLU
+					)
+				)
+			) & 0xfLLU)
+		); 
+}
+
+static void get_graphs_z_value(char string[64], u16* graph) {
+	for (byte i = 0; i < graph_count; i++) string[i] = (char) (((
+				graph[i / 4LLU] 
+				>> 
+				(
+					(
+						(i % 4LLU) 
+						* 
+						4LLU
+					)
+				)
+			) & 0xfLLU)) + '0';
+	string[graph_count] = 0;
+}
+
 
 static void get_datetime(char datetime[32]) {
 	struct timeval tv;
@@ -248,11 +203,10 @@ static void get_datetime(char datetime[32]) {
 }
 
 static void append_to_file(
-	char* filename, size_t filename_size, 
-	nat g0, nat g1, byte origin
+	char* filename, size_t filename_size, u16* graph, byte origin
 ) {
 	char dt[32] = {0};   get_datetime(dt);
-	char z[64] = {0};    get_graphs_z_value(z, g0, g1);
+	char z[64] = {0};    get_graphs_z_value(z, graph);
 	char o[16] = {0};    snprintf(o, sizeof o, " %hhu ", origin);
 
 	int flags = O_WRONLY | O_APPEND;
@@ -287,39 +241,463 @@ try_open:;
 }
 
 
+#define max_erp_count 20
+#define max_rsi_count 512
+#define max_oer_repetions 50
+#define max_rmv_modnat_repetions 15
+#define max_ormv_modnat_repetions 15
+#define max_imv_modnat_repetions 40
+#define max_consecutive_small_modnats 230
+#define max_consecutive_s0_incr 30
+#define max_consecutive_h0_bouts 10
+#define max_consecutive_h1_bouts 16
+#define max_consecutive_h2_bouts 24
+#define max_consecutive_h0s_bouts 7
+#define max_consecutive_pairs 8
+
+static nat execute_graph_starting_at(
+	const byte origin, 
+	u16* graph,
+	nat* array
+) {	
+	const nat n = array_size;
+	array[0] = 0; 
+	array[n] = 0;
+
+	nat 	xw = 0,  pointer = 0,  bout_length = 0, 
+		OER_ier_at = 0,
+		BDL_ier_at = 0,
+		PER_ier_at = (nat) ~0;
+
+	byte	H0_counter = 0,  H0S_counter = 0, SNDI_counter = 0,
+		H1_counter = 0, H2_counter = 0, OER_counter = 0,
+		BDL1_counter = 0, BDL2_counter = 0,
+		BDL3_counter = 0, BDL4_counter = 0,
+		BDL5_counter = 0, BDL6_counter = 0,
+		BDL7_counter = 0, BDL8_counter = 0,
+		BDL9_counter = 0, BDL10_counter = 0, 
+		BDL11_counter = 0, BDL12_counter = 0,
+		pair_index = 0, pair_count = 0;
+	
+	byte ip = origin;
+	byte last_mcal_op = 255;
+
+	nat performed_er_at = 0;
+ 	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
+	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
+
+	for (nat e = 0; e < execution_limit; e++) {
+
+		const byte op = graph[ip] & 0xf;
+		
+		if (op == one) {
+			if (pointer == n) {
+				puts("FEA condition violated by a z value: "); 
+				print_graph_raw(graph);
+				puts(""); 
+				abort(); 
+			}
+  
+			if (not array[pointer]) return pm_ns0; 
+			if (last_mcal_op == one)  H0_counter = 0;
+			if (last_mcal_op == one)  H0S_counter = 0;
+
+			if (pointer < max_rsi_count) {
+				if (last_mcal_op == three) {
+					rsi_counter[pointer]++;
+					if (rsi_counter[pointer] >= max_consecutive_s0_incr) return pm_rsi;
+				} else rsi_counter[pointer] = 0;
+			}
+
+			if (pair_index == 1) pair_index = 2;
+			else if (pair_index == 3) pair_index = 4;
+			else if (pair_index == 4) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
+			else if (pair_index) { pair_count = 0; pair_index = 0; }
+
+			SNDI_counter = 0;
+
+			bout_length++;
+			pointer++;
+
+			if (pointer > xw and pointer < n) { 
+				xw = pointer; 
+				array[pointer] = 0; 
+				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
+				if (pointer < max_erp_count) small_erp_array[pointer] = 0;
+			}
+		}
+
+		else if (op == five) {
+			if (last_mcal_op != three) return pm_pco;
+			if (not pointer) return pm_zr5; 
+			
+			if (pointer == OER_ier_at or pointer == OER_ier_at + 1) {
+				OER_counter++;
+				if (OER_counter >= max_oer_repetions) return pm_oer;
+			} else { OER_ier_at = pointer; OER_counter = 0; }
+
+
+			byte CSM_counter = 0;
+			byte RMV_counter = 0;
+			nat RMV_value = (nat) -1;
+
+			byte ORMV_counter = 0;
+			nat ORMV_value = (nat) -1;
+			byte ORMV_state = 0;
+
+			nat IMV_value = (nat) -1;
+			byte IMV_counter = 0;
+
+			nat IMV2_value = (nat) -1;
+			byte IMV2_counter = 0;
+
+			for (nat i = 0; i < xw + 1; i++) {
+
+				{ const nat a = array[i];
+				const nat b = array[i + 1];
+				const bool which = a < b;
+				const nat difference = which ? b - a : a - b;
+				const nat min = which ? a : b;
+				nat above_minimum_size = which ? (b >= 200) : (a >= 200);
+				if (above_minimum_size and difference >= min / 3) return pm_lmv; }
+
+				if (array[i] < 8) CSM_counter++; else CSM_counter = 0;
+				if (CSM_counter > max_consecutive_small_modnats) return pm_csm;
+				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
+				if (RMV_counter >= max_rmv_modnat_repetions) return pm_rmv;
+
+				if (array[i] == ORMV_value + ORMV_state) { 
+					ORMV_state = not ORMV_state;
+					ORMV_counter++;
+					if (ORMV_counter >= max_ormv_modnat_repetions) return pm_ormv; 
+				} else { 
+					ORMV_value = array[i]; 
+					ORMV_counter = 0; 
+					ORMV_state = 0;
+				}
+
+				if (array[i] == IMV_value + 1) { IMV_counter++; IMV_value++; } else { IMV_value = array[i]; IMV_counter = 0; }
+				if (IMV_counter >= max_imv_modnat_repetions) return pm_imv;
+
+				if (i & 1) continue;
+
+				if (array[i] == IMV2_value + 1) { IMV2_counter++; IMV2_value++; } else { IMV2_value = array[i]; IMV2_counter = 0; }
+				if (IMV2_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
+			}
+
+			if (pointer + 1 == BDL_ier_at) {
+				BDL1_counter++; 
+				if (BDL1_counter >= 8) return pm_bdl1; 
+			} else BDL1_counter = 0;
+
+			if (pointer + 2 == BDL_ier_at) {
+				BDL2_counter++; 
+				if (BDL2_counter >= 8) return pm_bdl2; 
+			} else BDL2_counter = 0;
+
+			if (pointer + 3 == BDL_ier_at) {
+				BDL3_counter++;
+				if (BDL3_counter >= 30) return pm_bdl3; 
+			} else BDL3_counter = 0;
+
+			if (	pointer     == BDL_ier_at or 
+				pointer + 1 == BDL_ier_at or 
+				pointer + 2 == BDL_ier_at or
+				pointer + 3 == BDL_ier_at or
+				pointer + 4 == BDL_ier_at
+			) {
+				BDL4_counter++; 
+				if (BDL4_counter >= 150 and e >= 500000) return pm_bdl4; 
+			} else BDL4_counter = 0;
+
+
+			if (pointer + 5 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL5_counter++; 
+				if (BDL5_counter >= 80 and e >= 500000) return pm_bdl5; 
+			} else BDL5_counter = 0;
+
+			if (pointer + 6 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL6_counter++; 
+				if (BDL6_counter >= 80 and e >= 500000) return pm_bdl6; 
+			} else BDL6_counter = 0;
+
+			if (pointer + 7 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL7_counter++; 
+				if (BDL7_counter >= 80 and e >= 500000) return pm_bdl7; 
+			} else BDL7_counter = 0;
+
+			if (pointer + 8 == BDL_ier_at or pointer == BDL_ier_at) { 
+				BDL8_counter++; 
+				if (BDL8_counter >= 80 and e >= 500000) return pm_bdl8; 
+			} else BDL8_counter = 0;
+
+
+			if (pointer + 9 == BDL_ier_at) { 
+				BDL9_counter++; 
+				if (BDL9_counter >= 30 and e >= 500000) return pm_bdl9; 
+			} else BDL9_counter = 0;
+
+			if (pointer + 10 == BDL_ier_at) { 
+				BDL10_counter++; 
+				if (BDL10_counter >= 30 and e >= 500000) return pm_bdl10; 
+			} else BDL10_counter = 0;
+
+			if (pointer + 11 == BDL_ier_at) { 
+				BDL11_counter++; 
+				if (BDL11_counter >= 30 and e >= 500000) return pm_bdl11; 
+			} else BDL11_counter = 0;
+
+			if (pointer + 12 == BDL_ier_at) { 
+				BDL12_counter++; 
+				if (BDL12_counter >= 30 and e >= 500000) return pm_bdl12; 
+			} else BDL12_counter = 0;
+
+			if (pair_index == 3) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
+			else if (pair_index) { pair_count = 0; pair_index = 0; }
+		
+			if (pointer < 64) performed_er_at |= (1LLU << pointer);
+			if (pointer < max_erp_count and small_erp_array[pointer] < 250) {
+				small_erp_array[pointer]++;
+			}
+
+			SNDI_counter = 0;
+
+			BDL_ier_at = pointer;
+			PER_ier_at = pointer;
+			pointer = 0;
+		}
+
+		else if (op == two) {
+			SNDI_counter++;
+			if (SNDI_counter >= 10) return pm_sndi;
+			array[n]++;
+		}
+
+		else if (op == six) {  
+			if (not array[n]) return pm_zr6;
+			SNDI_counter = 0;
+			array[n] = 0;
+		}
+		else if (op == three) {
+			if (last_mcal_op == three) return pm_ndi;
+
+			if (last_mcal_op == one) {
+				H0_counter++;
+				if (H0_counter >= max_consecutive_h0_bouts) return pm_h0; 
+			}
+
+			if (last_mcal_op == one) {
+				H0S_counter++;
+				if (H0S_counter >= max_consecutive_h0s_bouts and e >= 100000) return pm_h0s; 
+			}
+
+			if (bout_length == 2) {
+				H1_counter++;
+				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
+			} else H1_counter = 0;
+
+			if (bout_length == 3) {
+				H2_counter++;
+				if (H2_counter >= max_consecutive_h2_bouts) return pm_h2; 
+			} else H2_counter = 0;
+
+			if (PER_ier_at != (nat) ~0) {
+				if (pointer >= PER_ier_at) return pm_per; 
+				PER_ier_at = (nat) ~0;
+			}
+
+			if (not pair_index) pair_index = 1;
+			else if (pair_index == 2) pair_index = 3;
+			else { pair_count = 0; pair_index = 0; }
+
+			SNDI_counter = 0;
+
+			bout_length = 0;
+			array[pointer]++;
+		}
+
+		if (op == three or op == one or op == five) last_mcal_op = op;
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1 * 4;
+		if (array[n] > array[pointer]) state = 2 * 4;
+		if (array[n] == array[pointer]) state = 3 * 4;
+		ip = (graph[ip] >> state) & 0xf;
+	}
+
+	if (xw < 11) return pm_fse;
+	for (nat i = 0; i < 10; i++) {
+		if (array[i] < 20) return pm_fse;
+	}
+
+	const nat average = ((array[3] + array[4] + array[5] + array[6]) / 4);
+	const nat max_modnat_value = (average * 3) / 2;
+	const bool l0 = array[0] > max_modnat_value;
+	const bool l1 = array[1] > max_modnat_value;
+	const bool l2 = array[2] > max_modnat_value;
+	const bool should_prune = (l0 or l1 or l2) and (max_modnat_value >= 100);
+	if (should_prune) return pm_ls0;
+
+	if (xw >= 100) {
+		const nat max_position = xw < 64 ? xw : 64;
+		for (nat i = 1; i < max_position; i++) {
+			if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
+		}
+		const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
+		for (nat i = 1; i < max_position2; i++) {
+			if (small_erp_array[i] < 5) return pm_erp2;
+		}
+	}
+	return z_is_good;
+}
+
+		
+static byte execute_graph(
+	u16* graph, 
+	nat* array, 
+	byte* origin, 
+	nat* counts, 
+	const nat thread_index
+) {
+	for (byte o = 0; o < operation_count; o++) {
+		byte op = graph[o] & 0xf;
+		if (op != three) continue;
+		const nat pm = execute_graph_starting_at(o, graph, array);
+
+		for (byte i = 0; i < operation_count; i++) 
+			atomic_store_explicit(progress + operation_count * thread_index + i, graph[i], memory_order_relaxed);
+	
+		counts[pm]++;
+		if (not pm) { *origin = o >> 2; return 0; }
+		continue;
+	}
+	return 1;
+}
+
+
+static void* worker_thread(void* raw_thread_index) {
+
+	const nat thread_index = *(nat*) raw_thread_index;
+	nat* counts = calloc(pm_count, sizeof(nat));
+	nat* array = calloc(array_size + 1, sizeof(nat));
+	u16* graph = calloc(operation_count, sizeof(u16));
+
+	register nat g0 = 0;  
+	register nat g1 = 0;
+	register byte pointer = 0;
+
+pull_job_from_queue:;
+	const nat jobs_left = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
+	if ((int64_t) jobs_left <= 0) goto terminate;
+	g0 = 0;
+	g1 = (nat) queue[jobs_left - 1] << job_placement_in_PAS;
+	goto init;
+loop:
+	if (gi(g0, g1, pointer) < (gi(mod0, mod1, pointer) - 1)) goto increment;
+	if (pointer < pas_count - 1) goto reset_;
+	goto pull_job_from_queue;
+reset_:
+	if (pointer < 16) g0 &= ~(0xfLLU << ((pointer & 15LLU) << 2LLU));
+	else              g1 &= ~(0xfLLU << ((pointer & 15LLU) << 2LLU));
+	pointer++;
+	goto loop;
+increment:
+	if (pointer < 16) g0 += 1LLU << ((pointer & 15LLU) << 2LLU);
+	else              g1 += 1LLU << ((pointer & 15LLU) << 2LLU);
+init:  	pointer = 0;
 
 
 
+	// all PAS GA here     (skip for now)
+	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
+	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
+	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
+	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
 
 
+	memcpy(graph, partial_graph, sizeof(u16) * operation_count);
+	for (byte i = 0; i < pas_count; i++) {
+		const byte pa = pas_map[i];
+		graph[pa / 4] |= ((decode[i] >> (gi(g0, g1, i) << 2)) & 0xf) << ((pa % 4) << 2);
+	}
+		
+	//puts("debug:");
+	//print_graph_raw(graph); puts("");
+	//printf("g0 = %016llx, g0 = %016llx\n", g0, g1);
+	//puts("");
+	//getchar();
+	
+	u16 was_utilized = 0;
+	for (nat i = 0; i < operation_count; i++) {
+		byte l = 0xf & (graph[i] >> 4);
+		byte g = 0xf & (graph[i] >> 8);
+		byte e = 0xf & (graph[i] >> 12);
+		if (l != i) was_utilized |= 1 << l;
+		if (g != i) was_utilized |= 1 << g;
+		if (e != i) was_utilized |= 1 << e;
+	}
+	for (byte la = 0; la < operation_count; la++) {
+		if (not ((was_utilized >> la) & 1)) { 
 
+			//printf("pruned by uo...  use:  %016hx\n", was_utilized);
 
+			counts[pm_ga_uo]++; 
+			pointer = 0; goto bad; 
+		} 
+	}
+	//puts("trying to run graph...\n");
+	byte origin = 0;
+	const byte is_bad = execute_graph(graph, array, &origin, counts, thread_index);
+	//puts("run graph.\n");
+	if (not is_bad) {
+		//puts("graph was good!\n");
+		append_to_file(filenames[thread_index], 4096, graph, origin);
+	} 
+	goto loop;
+bad:	
+	if (pointer + job_digit_count >= pas_count) goto pull_job_from_queue;
 
+	for (byte i = 0; i < pointer; i++) {
+		if (i < 16) g0 &= ~(0xfLLU << ((i & 15LLU) << 2LLU));
+		else        g1 &= ~(0xfLLU << ((i & 15LLU) << 2LLU));
+	}		
+	goto loop;
 
+terminate:
+	free(array);
+	free(graph);
+	atomic_store_explicit(progress + 2 * thread_index + 0, g0, memory_order_relaxed);
+	atomic_store_explicit(progress + 2 * thread_index + 1, g1, memory_order_relaxed);
+	return counts;
+}
 
+static void print(char* filename, size_t size, const char* string) {
+	char dt[32] = {0};   get_datetime(dt);
 
+	int flags = O_WRONLY | O_APPEND;
+	mode_t permissions = 0;
+try_open:;
+	const int file = open(filename, flags, permissions);
+	if (file < 0) {
+		if (permissions) {
+			perror("create openat file");
+			printf("print: [%s]: failed to create filename = \"%s\"\n", dt, filename);
+			fflush(stdout);
+			abort();
+		}
+		snprintf(filename, size, "%s_D%u_%08x%08x%08x%08x_output.txt", dt, D,
+			rand(), rand(), rand(), rand()
+		);
+		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		goto try_open;
+	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	write(file, string, strlen(string));
+	close(file);
+	printf("%s", string);
+	fflush(stdout);
+}
 
 int main(void) {
 	srand((unsigned) time(0));
@@ -344,81 +722,28 @@ int main(void) {
 		);
 	}
 
-
-
-
-
-
-
-
 	nat total_job_count = 0;
-
 {	byte mi = 0, pointer = 0;
 	u16 g0 = 0;
 	goto init;
-loop:
-	if (gi(g0, 0, pointer) < (pointer ? operation_count - 1 : 4)) goto increment;
-	if (pointer < 4 - 1) goto reset_;
+loop:	if (((g0 >> (pointer << 2)) & 0xf) < ((job_modulus >> (pointer << 2)) & 0xf) - 1) goto increment;
+	if (pointer < job_digit_count - 1) goto reset_;
 	goto done;
+reset_:
+	g0 &= ~(0xfLLU << (pointer << 2));
+	pointer++;
+	goto loop;
 increment:
-	g0 += 1LLU << ((pointer & 15LLU) << 2LLU);
+	g0 += 1LLU << (pointer << 2);
 init:	pointer = 0;
-
-	const byte op = gi(g0, 0, 0);
-	const byte l  = gi(g0, 0, 1);
-	const byte g  = gi(g0, 0, 2);
-	const byte e  = gi(g0, 0, 3);
-
-	if (g == two) goto loop;
-
-	if (op == one and l == 7) goto loop;
-	if (op == one and g == 7) goto loop;
-	if (op == one and e == 7) goto loop;
-	if (op == two and l == 7) goto loop;
-	if (op == two and g == 7) goto loop;
-	if (op == three and l == 7) goto loop;
-	if (op == three and g == 7) goto loop;
-	if (op == three and e == 7) goto loop;
-	if (op == five and l == 7) goto loop;
-	if (op == five and g == 7) goto loop;
-	if (op == five and e == 7) goto loop;
-	if (op == six and l == 7) goto loop;
-	if (op == six and e == 7) goto loop;
-	if (op == six and e == one) goto loop;
-	if (op == six and e == five) goto loop;
-	if (op == one and l == one) goto loop;
-	if (op == one and g == one) goto loop;
-	if (op == one and e == one) goto loop;
-	if (op == one and l == five) goto loop;
-	if (op == one and g == five) goto loop;
-	if (op == one and e == five) goto loop;
-	if (op == two and l == six) goto loop;
-	if (op == two and g == six) goto loop;
-	if (op == two and e == six) goto loop;
-	if (op == three and l == three) goto loop;
-	if (op == three and g == three) goto loop;
-	if (op == three and e == three) goto loop;
-	if (op == five and l == five) goto loop;
-	if (op == five and g == five) goto loop;
-	if (op == five and e == five) goto loop;
-	if (op == six and l == six) goto loop;
-	if (op == six and g != six) goto loop;
-	if (op == six and e == six) goto loop;
-	
-
 	mi = (mi + 1) % machine_count;
 	if (mi != machine_index) goto loop;
 	const nat n = atomic_fetch_add_explicit(&queue_count, 1, memory_order_relaxed);
 	queue[n] = g0;
 	total_job_count++;
-
 	goto loop;
-reset_:
-	g0 &= ~(0xfLLU << ((pointer & 15LLU) << 2LLU));
-	pointer++;
-	goto loop;
-
 done:; }
+
 	printf("printing jobs: (%llu total jobs)\n", total_job_count);
 	for (nat i = 0; i < total_job_count; i++) {
 		if (not (i % 2)) putchar(' ');
@@ -431,36 +756,36 @@ done:; }
 
 	snprintf(output_string, 4096, "SU: searching [D=%u] space....\n", D);
 	print(output_filename, 4096, output_string);
-
 	struct timeval time_begin = {0};
 	gettimeofday(&time_begin, NULL);
-
 	for (nat i = 0; i < thread_count; i++) {
 		nat* arg = malloc(sizeof(nat));
 		*arg = i;
 		pthread_create(threads + i, NULL, worker_thread, arg);
 	}
 
-	nat counts[pm_count] = {0};
 	const bool disable_main = 0;
+	u16 graph[operation_count] = {0};
+	nat counts[pm_count] = {0};	
 	while (1) {
-
 		const nat amount_remaining = atomic_load_explicit(&queue_count, memory_order_relaxed);
 		if ((int64_t) amount_remaining <= 0 or disable_main) goto terminate;
-
 		printf("\033[H\033[2J");
 		printf("----------------- jobs remaining %llu / %llu -------------------\n", 
 			amount_remaining, total_job_count
 		);
 		printf("\n\t complete %1.10lf%%\n\n", (double) (total_job_count - amount_remaining) / (double) total_job_count);
-		for (nat i = 0; i < thread_count; i++) {
-			const nat g0 = atomic_load_explicit(progress + 2 * i + 0, memory_order_relaxed);
-			const nat g1 = atomic_load_explicit(progress + 2 * i + 1, memory_order_relaxed);
-			printf(" %5llu : ", i);
-			print_graph_raw(g0, g1); puts("");
+		for (nat thread = 0; thread < thread_count; thread++) {			
+			for (byte i = 0; i < operation_count; i++) 
+				graph[i] = atomic_load_explicit(progress + operation_count * thread + i, memory_order_relaxed);
+
+			printf(" %5llu : ", thread);
+			print_graph_raw(graph); 
+			puts("");
 		}
 		puts("");
-		sleep(1 << display_rate);
+		//sleep(1 << display_rate);
+		usleep(10000);
 	}
 
 terminate:
@@ -517,6 +842,719 @@ terminate:
 	print(output_filename, 4096, output_string);
 
 } // main
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+const byte op = gi(g0, 0, 0);
+	const byte l  = gi(g0, 0, 1);
+	const byte g  = gi(g0, 0, 2);
+	const byte e  = gi(g0, 0, 3);
+
+	if (g == two) goto loop;
+
+	if (op == one and l == 7) goto loop;
+	if (op == one and g == 7) goto loop;
+	if (op == one and e == 7) goto loop;
+	if (op == two and l == 7) goto loop;
+	if (op == two and g == 7) goto loop;
+	if (op == three and l == 7) goto loop;
+	if (op == three and g == 7) goto loop;
+	if (op == three and e == 7) goto loop;
+	if (op == five and l == 7) goto loop;
+	if (op == five and g == 7) goto loop;
+	if (op == five and e == 7) goto loop;
+	if (op == six and l == 7) goto loop;
+	if (op == six and e == 7) goto loop;
+	if (op == six and e == one) goto loop;
+	if (op == six and e == five) goto loop;
+	if (op == one and l == one) goto loop;
+	if (op == one and g == one) goto loop;
+	if (op == one and e == one) goto loop;
+	if (op == one and l == five) goto loop;
+	if (op == one and g == five) goto loop;
+	if (op == one and e == five) goto loop;
+	if (op == two and l == six) goto loop;
+	if (op == two and g == six) goto loop;
+	if (op == two and e == six) goto loop;
+	if (op == three and l == three) goto loop;
+	if (op == three and g == three) goto loop;
+	if (op == three and e == three) goto loop;
+	if (op == five and l == five) goto loop;
+	if (op == five and g == five) goto loop;
+	if (op == five and e == five) goto loop;
+	if (op == six and l == six) goto loop;
+	if (op == six and g != six) goto loop;
+	if (op == six and e == six) goto loop;
+
+
+
+
+
+
+
+
+
+
+#define dol   ((one << 0) | (two << 4) | (five << 8) | (six << 12))
+
+
+* const byte pas_pa = pa_map[pa] 
+const byte value = ((decode[pas_pa] >> (nfarray[pas_pa] << 2)) & 0xf;
+
+
+
+
+
+
+pas_pa = 0  MEANS    opi0.g
+pas_pa = 1  MEANS    opi0.e
+pas_pa = 2  MEANS    opi1.g
+pas_pa = 3  MEANS    opi1.e
+pas_pa = 4  MEANS    opi2.l
+
+...
+
+pas_pa = 22   MEANS   addr8.opi4.e
+
+
+
+
+
+
+
+*   DOL = {  1, 2, 5, 6,  }    *
+
+
+
+static const nat decode[] = {
+
+
+0123456789ABCDEFGHIJKLM
+
+
+--------------------
+	PA_MAP:
+--------------------
+ad | opi  <   >   =
+--------------------
+ 0 | 0 |  /   0   1 
+--------------------
+ 1 | 1 |  /   2   3 
+--------------------
+ 2 | 2 |  4   5   6
+--------------------
+ 3 | 3 |  7   8   9
+--------------------
+ 4 | 4 |  A   /   B
+--------------------
+ 5 | 0 |  C   D   E
+--------------------
+ 6 | 1 |  F   G   H
+--------------------
+ 7 | 3 |  I   J   K
+--------------------
+ 8 | 4 |  L   /   M
+--------------------
+
+23 digits, aka  23 nat's   each nat encodes up to 16 possible address
+
+
+
+opi0:
+	pas[pa=0] = 0    :  MEANS     address 0  --(g)-->  address 2   
+
+
+
+
+
+                                                   
+* paspa 0 *	{   
+
+	0 out [ns0],   
+	1 out [sci],   
+	2 in,   
+	3 out [pco],  
+	4 in,   
+	5 out  [ns0],   
+	6 
+
+
+
+iiiiiiiiiiiru
+
+* paspa 1 *	{3, 5, 6, 7, 8}
+* paspa 2 *	{3, 5, 6, 7, 8}
+* paspa 3 *	{3, 5, 6, 7, 8}
+* paspa 4 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 /	{}
+* paspa 2 	{}
+
+
+};
+
+
+
+
+
+//if (editable(ip * 4) and *zskip_at > ip * 4) *zskip_at = ip * 4;
+
+
+//if (editable(ip * 4 + state) and *zskip_at > ip * 4 + state) *zskip_at = ip * 4 + state;
+
+
+
+*/
+
+
+
+
+/*
+
+1202512291.093439
+
+	notes:
+
+	. first 16 paspa's are stored in g0.
+	
+	. the final remaining paspa's are stored in g1. 
+	
+	. g1 always contains the job data. 
+
+	. pas_count is the total number of  clumps of 4 bits   present when looking at g0 and g1 collectetively.
+
+	. job_digit_count is the number of paspa's which are part of the job. 
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------
+	PA_MAP:
+--------------------
+
+--------------------
+ad | opi  <   >   =
+--------------------
+
+--------------------
+ 0 | 0 |  /   0   1 
+--------------------
+ 1 | 1 |  /   2   3 
+--------------------
+ 2 | 2 |  4   5   6
+--------------------
+ 3 | 3 |  7   8   9
+--------------------
+ 4 | 4 |  A   /   B
+--------------------
+
+--------------------
+ 5 | 0 |  C   D   E
+--------------------
+ 6 | 1 |  F   G   H
+--------------------
+ 7 | 3 |  I   J   K
+--------------------
+ 8 | 4 |  L   /   M
+--------------------
+
+
+
+	0x842
+	0x86421
+
+	0x75320
+	0x7653210
+	
+	0x87654310
+	0x87654310
+	0x87654310
+
+	0x8654210
+	0x8654210
+	0x8654210
+
+	0x7653210
+	0x621
+	
+	0x8654210
+	0x842
+	0x86421
+
+	0x753210
+	0x75320
+	0x7653210
+
+	0x8654210
+	0x8654210
+	0x8654210
+
+	0x7653210
+	0x621
+
+
+
+
+paspa 0 : opi0.g
+
+	0 ns0
+	1 sci 
+	2 
+	3 pco
+	4 
+	5 ns0
+	6 sci
+	7 pco
+	8
+
+
+paspa 1 : opi0.e
+
+	0 ns0
+	1 
+	2
+	3 pco
+	4 
+	5 ns0
+	6
+	7 pco
+	8
+
+
+
+
+
+
+
+
+paspa 2 : opi1.g
+
+	0 
+	1 sci
+	2 
+	3
+	4 snco
+	5 
+	6 sci
+	7 
+	8 snco
+
+
+paspa 3 : opi1.e
+
+	0 
+	1
+	2 
+	3
+	4 snco
+	5 
+	6
+	7 
+	8 snco
+
+
+
+
+
+
+
+
+
+
+paspa 4 : opi2.l
+
+	0 
+	1 
+	2 ndi
+	3 
+	4
+	5 
+	6
+	7 
+	8
+
+paspa 5 : opi2.g
+
+	0 
+	1 
+	2 ndi
+	3 
+	4
+	5 
+	6
+	7 
+	8
+
+paspa 6 : opi2.e
+
+	0 
+	1 
+	2 ndi
+	3 
+	4
+	5 
+	6
+	7 
+	8
+
+
+
+
+
+
+paspa 7 : opi3.l
+
+	0 
+	1 
+	2
+	3 zr5
+	4 
+	5 
+	6 
+	7 zr5
+	8
+
+paspa 8 : opi3.g
+
+	0 
+	1 
+	2
+	3 zr5
+	4 
+	5 
+	6 
+	7 zr5
+	8
+
+paspa 9 : opi3.e
+
+	0 
+	1 
+	2
+	3 zr5
+	4 
+	5 
+	6 
+	7 zr5
+	8
+
+
+
+
+
+paspa 10 : opi4.l
+
+	0 
+	1 
+	2 
+	3
+	4 zr6
+	5 
+	6 
+	7
+	8 zr6
+
+paspa 11 : opi4.e
+
+	0 ns0
+	1 
+	2 
+	3 ns0
+	4 zr6
+	5 ns0
+	6 
+	7 ns0
+	8 zr6
+
+
+
+
+
+
+paspa 12 : addr5.l
+
+	0 
+	1
+	2 
+	3 pco 
+	4 
+	5 
+	6 
+	7 pco
+	8
+
+paspa 13 : addr5.g
+
+	0 ns0
+	1 sci
+	2 
+	3 pco
+	4 
+	5 ns0
+	6 sci
+	7 pco
+	8
+
+paspa 14 : addr5.e
+
+	0 ns0
+	1 
+	2 
+	3 pco
+	4 
+	5 ns0
+	6
+	7 pco
+	8
+
+
+
+
+
+
+paspa 15 : addr6.l
+
+	0
+	1
+	2
+	3
+	4 snco
+	5
+	6 sndi
+	7
+	8 snco
+
+paspa 16 : addr6.g
+
+	0
+	1 sci
+	2
+	3
+	4 snco
+	5
+	6 sci
+	7
+	8 snco
+
+
+paspa 17 : addr6.e
+
+	0
+	1
+	2
+	3
+	4 snco
+	5
+	6
+	7
+	8 snco
+
+
+
+
+
+
+paspa 18 : addr7.l
+
+	0 
+	1
+	2
+	3 zr5
+	4 
+	5
+	6
+	7 zr5
+	8 
+
+paspa 19 : addr7.g
+
+	0 
+	1
+	2
+	3 zr5
+	4 
+	5
+	6
+	7 zr5
+	8 
+
+paspa 20 : addr7.e
+
+	0 
+	1
+	2
+	3 zr5
+	4 
+	5
+	6
+	7 zr5
+	8 
+
+
+
+
+
+
+
+paspa 21 : addr8.l
+
+	0 
+	1 
+	2 
+	3
+	4 zr6
+	5 
+	6 
+	7
+	8 zr6
+
+paspa 22 : addr8.e
+
+	0 ns0
+	1 
+	2 
+	3 ns0
+	4 zr6
+	5 ns0
+	6 
+	7 ns0
+	8 zr6
+
+
+
+
+
+
+
+
+
+
+
+
+// 3 5   5 7   8 8 8   7 7 7    7 3     7 3 5     6 5 7     7 7 7   7 3 
+
+
+// 3 5 5 7   8 8 8 7    7 7 7 3   7 3 5 6             5 7 7  7 7 7 3 
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
