@@ -21,10 +21,12 @@ typedef uint16_t u16;
 typedef uint64_t nat;
 
 #define D 4
+#define DOL     (    (one << 0) | (two << 4) | (five << 8) | (six << 12)  ) 
 
 #define machine_count 1
 #define machine_index 0
 #define thread_count 1
+#define job_digit_count 4
 
 #define machine0_throughput 1
 #define machine1_throughput 1
@@ -36,63 +38,18 @@ typedef uint64_t nat;
 #define operation_count (5 + D)
 #define graph_count (operation_count * 4)
 
-#define pas_count 	   23
-#define job_digit_count    4
-
-static uint16_t partial_graph[operation_count] = {0x0010, 0x0001, 0x0002, 0x0003, 0x0404,    0x0000, 0x0001, 0x0003, 0x0404, };
-
-#define mod0 0x6537777378887553
-#define mod1 0x0000000003777775
-
-static byte pas_map[pas_count] = {
-	2, 3,   6, 7,   9, 10, 11,   13, 14, 15,    17, 19,        21, 22, 23,    25, 26, 27,    29, 30, 31,    33, 35, 
-};
-
-static nat decode[pas_count] = {
-	0x842,
-	0x86421,
-
-	0x75320,
-	0x7653210,
-	
-	0x87654310,
-	0x87654310,
-	0x87654310,
-
-	0x8654210,
-	0x8654210,
-	0x8654210,
-
-	0x7653210,
-	0x621,
-	
-
-	0x8654210,
-	0x842,
-	0x86421,
-
-	0x753210,
-	0x75320,
-	0x7653210,
-
-	0x8654210,
-	0x8654210,
-	0x8654210,
-
-	0x7653210,
-	0x621,
-};
-
-#define job_placement_in_PAS   (4 * ((pas_count - 16) - (job_digit_count)))
-#define job_modulus   		((mod1 >> job_placement_in_PAS) & 0xffff)
-
+static byte pas_count = 0;
+static nat mod0 = 0, mod1 = 0;
+static u16 partial_graph[operation_count] = {0};
+static nat decode[128] = {0};
+static byte pas_map[128] = {0};
+static byte job_placement_in_PAS = 0;   //    (4 * ((pas_count - 16) - (job_digit_count)))
+static nat job_modulus = 0;   		//	((mod1 >> job_placement_in_PAS) & 0xffff)
 
 static u16 queue[2048] = {0};
-
 static _Atomic nat queue_count = 0;
 static _Atomic u16 progress[thread_count * operation_count] = {0};
 static char** filenames = NULL;
-
 
 enum pruning_metrics {
 	z_is_good,
@@ -111,8 +68,6 @@ enum pruning_metrics {
 	pm_bdl10, pm_bdl11, pm_bdl12, 
 
 	pm_erp1, pm_erp2,
-
-
 
 	pm_ga_rdo,  pm_ga_uo, 
 	pm_ga_5u1,  pm_ga_6u2,
@@ -550,7 +505,6 @@ static nat execute_graph_starting_at(
 	}
 	return z_is_good;
 }
-
 		
 static byte execute_graph(
 	u16* graph, 
@@ -573,7 +527,6 @@ static byte execute_graph(
 	}
 	return 1;
 }
-
 
 static void* worker_thread(void* raw_thread_index) {
 
@@ -608,11 +561,26 @@ init:  	pointer = 0;
 
 
 
-	// all PAS GA here     (skip for now)
-	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
-	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
-	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
-	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
+
+	// GA ONLY APPLIES TO:   DOL: { 1, 2, 5, 6, } 
+
+
+	if (	(gi(g0, g1, 4) == 0 or gi(g0, g1, 4) == 4) and
+		(gi(g0, g1, 5) == 0 or gi(g0, g1, 5) == 3) and
+		(gi(g0, g1, 6) == 0 or gi(g0, g1, 6) == 4)
+	) { pointer = 4; goto bad; } 
+
+
+
+	if (	(gi(g0, g1, 4) == 2 or gi(g0, g1, 4) == 6) and
+		(gi(g0, g1, 5) == 1 or gi(g0, g1, 5) == 4) and
+		(gi(g0, g1, 6) == 2 or gi(g0, g1, 6) == 6)
+	) { pointer = 4; goto bad; } 
+
+
+
+
+
 
 
 	memcpy(graph, partial_graph, sizeof(u16) * operation_count);
@@ -699,9 +667,124 @@ try_open:;
 	fflush(stdout);
 }
 
+
+static byte banned_edges[] = {
+
+	// sci
+	one, 	2, 	two, 
+	two, 	2, 	two, 
+	three, 	2, 	two, 
+	five, 	2, 	two, 
+	six, 	2, 	two, 
+
+	// pco 
+	one, 	1, 	five, 
+	one, 	2, 	five, 
+	one, 	3, 	five, 
+
+	// snco 
+	two, 	1, 	six, 
+	two, 	2, 	six, 
+	two, 	3, 	six, 
+
+	// ndi 
+	three, 	1, 	three, 
+	three, 	2, 	three, 
+	three, 	3, 	three, 
+
+	// zr5 
+	five, 	1, 	five, 
+	five, 	2, 	five, 
+	five, 	3, 	five, 
+
+	// zr6 
+	six, 	1, 	six, 
+	six, 	3, 	six, 
+
+	// ns0
+	six, 	3, 	one, 
+	six, 	3, 	five, 
+	one, 	2, 	one, 
+	one, 	3, 	one, 
+
+};
+
+static byte banned_self_edges[] = {
+	// lb
+	one, 1,
+
+	// sndi
+	two, 1,
+};
+
 int main(void) {
-	srand((unsigned) time(0));
-	
+	{ pas_count = 12;
+	const byte zerosp_pas_map[32] = { 2, 3,   6, 7,   9, 10, 11,   13, 14, 15,    17, 19 };
+	const u16 actual_partial_graph[operation_count] = {0x0010, 0x0001, 0x0002, 0x0003, 0x0404, };
+	memcpy(partial_graph, actual_partial_graph, 5 * sizeof(u16));
+	memcpy(pas_map, zerosp_pas_map, pas_count * sizeof(byte));		
+	for (byte i = 0; i < D; i++) {
+		const byte value = (DOL >> (i << 2)) & 0xf;
+		partial_graph[5 + i] = value | (value == six ? 0x0400 : 0);
+		pas_map[pas_count++] = 4 * (5 + i) + 1;
+		if (value != six) pas_map[pas_count++] = 4 * (5 + i) + 2;
+		pas_map[pas_count++] = 4 * (5 + i) + 3;
+	}	
+	for (nat paspa = 0; paspa < pas_count; paspa++) {
+		const nat pa = pas_map[paspa];
+		const nat la = pa / 4;
+		const nat trich = pa % 4;
+		nat value = 0, count = 0;
+		for (nat option = 0; option < operation_count; option++) {
+			const byte actual_source = partial_graph[la] & 0xf;
+			const byte actual_dest = partial_graph[option] & 0xf;			
+			for (nat i = 0; i < sizeof banned_edges; i += 3) {
+				const byte source = banned_edges[i + 0];
+				const byte side   = banned_edges[i + 1];
+				const byte dest   = banned_edges[i + 2];
+				if (actual_source != source) continue;
+				if (side != trich) continue;
+				if (actual_dest != dest) continue;
+				goto skip_option;
+			}
+			if (la == option) {
+				for (nat i = 0; i < sizeof banned_self_edges; i += 2) {
+					const byte op   = banned_self_edges[i + 0];
+					const byte side = banned_self_edges[i + 1];
+					if (actual_source != op) continue;
+					if (side != trich) continue;
+					goto skip_option;
+				}
+			}
+			value |= (nat) (option << (count << 2LLU));
+			count++;
+			skip_option: continue;
+		}
+		decode[paspa] = value;
+		const nat loc = paspa % 16; 
+		if (paspa >= 16) mod1 |= (nat) (count << (loc << 2));
+		else 	         mod0 |= (nat) (count << (loc << 2));			
+	}	
+	job_placement_in_PAS = (4 * ((pas_count - 16) - (job_digit_count)));
+	job_modulus = ((mod1 >> job_placement_in_PAS) & 0xffff);
+	}
+
+	printf("pas_count = %hhu\n\n", pas_count);
+	printf("job_modulus = 0x%llx\n\n", job_modulus);
+	printf("job_placement_in_PAS = %hhu\n\n", job_placement_in_PAS);
+	printf("mod0 = 0x%016llx, mod1 = 0x%016llx \n\n", mod0, mod1);
+	printf("partial_graph[] = "); print_graph_raw(partial_graph); puts("");
+	printf("pas_map[] = { ");
+	for (nat i = 0; i < pas_count; i++) {
+		printf("%hhu, ", pas_map[i]);
+	} printf("}\n");
+	printf("decode[] = { ");
+	for (nat i = 0; i < pas_count; i++) {
+		if (i % 4 == 0) puts("");
+		printf("0x%llx, ", decode[i]);
+	} printf("}\n");
+
+	srand((unsigned) time(0));	
 	static char output_filename[4096] = {0};
 	static char output_string[4096] = {0};
 	
@@ -860,7 +943,127 @@ terminate:
 
 
 
+/*
 
+
+
+
+	// all PAS GA here     (skip for now)
+	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
+	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
+	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
+	//  if (gi[4] < gi[5]) { pointer = 4; goto bad; } 
+	// if (gi(g0, g1, 4) < gi(g0, g1, 4))
+
+
+
+
+
+
+
+
+1202601121.235253
+
+pas_count = 23
+
+job_modulus = 14197
+
+job_placement_in_PAS = 12
+
+mod0 = 0x9535377579799753, mod1 = 0x0000000003775797 
+
+partial_graph[] = 010010002000300040400000100030004040
+
+pas_map[] = { 2, 3, 6, 7, 9, 10, 11, 13, 14, 15, 17, 19, 21, 22, 23, 25, 26, 27, 29, 30, 31, 33, 35, }
+
+
+decode[] = { 
+	0x842, 0x86421, 0x8754320, 0x876543210, 
+	0x876543210, 0x8754320, 0x876543210, 0x8654210, 
+	0x85420, 0x8654210, 0x7653210, 0x621, 
+	0x86421, 0x842, 0x86421, 0x876543210, 
+	0x8754320, 0x876543210, 0x8654210, 0x85420, 
+	0x8654210, 0x7653210, 0x621, 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define pas_count 	   23
+#define job_digit_count    4
+
+static uint16_t partial_graph[operation_count] = {0x0010, 0x0001, 0x0002, 0x0003, 0x0404,    0x0000, 0x0001, 0x0003, 0x0404, };
+
+#define mod0 0x6537777378887553
+#define mod1 0x0000000003777775
+
+static byte pas_map[pas_count] = {
+	2, 3,   6, 7,   9, 10, 11,   13, 14, 15,    17, 19,        21, 22, 23,    25, 26, 27,    29, 30, 31,    33, 35, 
+};
+
+static nat decode[pas_count] = {
+	0x842,
+	0x86421,
+
+	0x75320,
+	0x7653210,
+	
+	0x87654310,
+	0x87654310,
+	0x87654310,
+
+	0x8654210,
+	0x8654210,
+	0x8654210,
+
+	0x7653210,
+	0x621,
+	
+
+	0x8654210,
+	0x842,
+	0x86421,
+
+	0x753210,
+	0x75320,
+	0x7653210,
+
+	0x8654210,
+	0x8654210,
+	0x8654210,
+
+	0x7653210,
+	0x621,
+};
+
+
+
+*/
 
 
 
@@ -1537,6 +1740,526 @@ paspa 22 : addr8.e
 
 
 // 3 5 5 7   8 8 8 7    7 7 7 3   7 3 5 6             5 7 7  7 7 7 3 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1202601132.002139
+
+corrected decode and mod0 and mod1:
+
+
+
+	3 5    5 7    8 6 8    7 5 7    7 3            6 3 5    6 5 7    7 5 7    7 3  
+
+
+
+
+	mod0   0x6536377578687553
+	mod1   0x3775775
+
+
+842
+86421
+
+75320
+7653210
+
+87654310
+875430
+87654310
+
+8654210
+85420
+8654210
+
+7653210
+621
+
+
+864210
+842
+86421
+
+753210
+75320
+7653210
+
+8654210
+85420
+8653210
+
+7653210
+621
+
+
+
+
+
+
+
+decode:
+computed ones:
+
+0x842, 
+0x86421, 
+
+0x75320, 
+0x7653210, 
+
+0x87654310, 
+0x875430, 
+0x87654310, 
+
+0x8654210, 
+0x85420, 
+0x8654210, 
+
+0x7653210, 
+0x621, 
+
+
+
+
+0x86421, 
+0x842, 
+0x86421, 
+
+0x75320, 
+0x75320, 
+0x7653210, 
+
+0x8654210, 
+0x85420, 
+0x8654210, 
+
+0x7653210, 
+0x621, 
+
+}
+
+
+
+
+
+
+paspa 0 : opi0.g
+
+	0 ns0
+	1 sci 
+	2 
+	3 pco
+	4 
+	5 ns0
+	6 sci
+	7 pco
+	8
+
+
+paspa 1 : opi0.e
+
+	0 ns0
+	1 
+	2
+	3 pco
+	4 
+	5 ns0
+	6
+	7 pco
+	8
+
+
+
+
+
+
+
+
+paspa 2 : opi1.g
+
+	0 
+	1 sci
+	2 
+	3 
+	4 snco
+	5 
+	6 sci
+	7 
+	8 snco
+
+
+paspa 3 : opi1.e
+
+	0 
+	1
+	2 
+	3
+	4 snco
+	5 
+	6
+	7 
+	8 snco
+
+
+
+
+
+
+
+
+
+
+paspa 4 : opi2.l
+
+	0 
+	1 
+	2 ndi
+	3 
+	4
+	5 
+	6
+	7 
+	8
+
+paspa 5 : opi2.g
+
+	0 
+	1 sci
+	2 ndi
+	3 
+	4
+	5 
+	6 sci
+	7 
+	8
+
+paspa 6 : opi2.e
+
+	0 
+	1 
+	2 ndi
+	3 
+	4
+	5 
+	6
+	7 
+	8
+
+
+
+
+
+
+paspa 7 : opi3.l
+
+	0 
+	1 
+	2
+	3 zr5
+	4 
+	5 
+	6 
+	7 zr5
+	8
+
+paspa 8 : opi3.g
+
+	0 
+	1 sci
+	2
+	3 zr5
+	4 
+	5 
+	6 sci
+	7 zr5
+	8
+
+paspa 9 : opi3.e
+
+	0 
+	1 
+	2
+	3 zr5
+	4 
+	5 
+	6 
+	7 zr5
+	8
+
+
+
+
+
+paspa 10 : opi4.l
+
+	0 
+	1 
+	2 
+	3
+	4 zr6
+	5 
+	6 
+	7
+	8 zr6
+
+paspa 11 : opi4.e
+
+	0 ns0
+	1 
+	2 
+	3 ns0
+	4 zr6
+	5 ns0
+	6 
+	7 ns0
+	8 zr6
+
+
+
+
+
+
+paspa 12 : addr5.l
+
+	0
+	1 
+	2 
+	3 pco 
+	4 
+	5 lb
+	6 
+	7 pco
+	8
+
+paspa 13 : addr5.g
+
+	0 ns0
+	1 sci
+	2 
+	3 pco
+	4 
+	5 ns0
+	6 sci
+	7 pco
+	8
+
+paspa 14 : addr5.e
+
+	0 ns0
+	1 
+	2 
+	3 pco
+	4 
+	5 ns0
+	6
+	7 pco
+	8
+
+
+
+
+paspa 15 : addr6.l
+
+	0
+	1
+	2
+	3
+	4 snco
+	5
+	6 sndi
+	7
+	8 snco
+
+paspa 16 : addr6.g
+
+	0
+	1 sci
+	2
+	3
+	4 snco
+	5
+	6 sci
+	7
+	8 snco
+
+
+paspa 17 : addr6.e
+
+	0
+	1
+	2
+	3
+	4 snco
+	5
+	6
+	7
+	8 snco
+
+
+
+
+
+
+paspa 18 : addr7.l
+
+	0 
+	1
+	2
+	3 zr5
+	4 
+	5
+	6
+	7 zr5
+	8 
+
+paspa 19 : addr7.g
+
+	0 
+	1 sci
+	2
+	3 zr5
+	4 
+	5
+	6 sci
+	7 zr5
+	8 
+
+paspa 20 : addr7.e
+
+	0 
+	1
+	2
+	3 zr5
+	4 
+	5
+	6
+	7 zr5
+	8 
+
+
+
+
+
+
+
+paspa 21 : addr8.l
+
+	0 
+	1 
+	2 
+	3
+	4 zr6
+	5 
+	6 
+	7
+	8 zr6
+
+paspa 22 : addr8.e
+
+	0 ns0
+	1 
+	2 
+	3 ns0
+	4 zr6
+	5 ns0
+	6 
+	7 ns0
+	8 zr6
+
+
+
+
+
+
+
+
+
+//     
+
+
+
+
+
+
+
 
 
 
