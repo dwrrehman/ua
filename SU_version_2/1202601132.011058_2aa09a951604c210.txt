@@ -1,0 +1,156 @@
+less than RDO examples, and calculations to find the impact it will have on the size of the search space:
+
+
+--------------------
+
+
+
+
+	0141.0.5............0222................	
+
+
+after switch:
+
+	0222.5.0............0141................	
+
+
+
+	0222.5.00141
+
+
+
+
+simpler example:
+
+	0012001
+
+
+adj list:
+---------------
+
+				(pa 0, 3, 6 are hardcoded to 0, 1, 0 resp.)
+0:	000
+1:	120
+2:	010
+
+
+the raw, totally brute forced full size of this z-space is:
+
+	
+
+moduli:
+	2 * 3 * 3  * 2 * 3 * 3  * 2 * 3 * 3 
+
+
+	18^3 =  5,832 total z-values in this space
+
+
+
+
+
+lets apply LT-RDO (less than rdo)  to  this z-space!
+
+
+
+
+
+
+
+0:	0aa      (a_0, a_1)
+1:	120
+2:	0bb      (b_0, b_1)
+
+
+
+each of the form;	aabb      ie, (a_0, a_1, b_0, b_1)
+
+
+		+  ----  ----  ----  ----
+
+		| {0000}{1000}{0100}{1100}
+
+		|  0010 {1010}{0110}{1110}
+
+		|  0001  1001 {0101}{1101}
+
+		|  0011  1011  0111 {1111}
+
+
+
+
+
+
+
+	
+	zv: adj
+		0522
+		1527
+		2130
+		3004
+		4642
+
+		0213
+		0101
+		3112
+		4142
+
+
+
+		each clump has size: 5 * 9 * 9 * 9      
+
+
+	but because of LTRDO,   we get: only        5 * 9 * 9 * 9 / 2
+		
+
+
+5 * 9 * 9 * 9 = 3,645
+
+5 * 9 * 9 * 9 / 2 = 1,822.5
+
+
+
+
+
+assuming DOL  of    { 1 2 5 6 } 
+
+
+	
+
+
+
+
+		0522  <----
+		1527  <----
+		2130
+		3004  <----
+		4642  <----
+
+		0213 
+		1101
+		3112
+		4142
+
+
+
+
+
+reducing ss by factor of 16 via LTRDO:
+
+	(5 * 9 * 9 * 9)^9 / 2^4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

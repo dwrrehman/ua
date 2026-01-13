@@ -559,28 +559,18 @@ increment:
 	else              g1 += 1LLU << ((pointer & 15LLU) << 2LLU);
 init:  	pointer = 0;
 
-
-
-
 	// GA ONLY APPLIES TO:   DOL: { 1, 2, 5, 6, } 
 
 
-	if (	(gi(g0, g1, 4) == 0 or gi(g0, g1, 4) == 4) and
+	/*if (	(gi(g0, g1, 4) == 0 or gi(g0, g1, 4) == 4) and
 		(gi(g0, g1, 5) == 0 or gi(g0, g1, 5) == 3) and
 		(gi(g0, g1, 6) == 0 or gi(g0, g1, 6) == 4)
 	) { pointer = 4; goto bad; } 
 
-
-
 	if (	(gi(g0, g1, 4) == 2 or gi(g0, g1, 4) == 6) and
 		(gi(g0, g1, 5) == 1 or gi(g0, g1, 5) == 4) and
 		(gi(g0, g1, 6) == 2 or gi(g0, g1, 6) == 6)
-	) { pointer = 4; goto bad; } 
-
-
-
-
-
+	) { pointer = 4; goto bad; } */
 
 
 	memcpy(graph, partial_graph, sizeof(u16) * operation_count);
@@ -588,7 +578,15 @@ init:  	pointer = 0;
 		const byte pa = pas_map[i];
 		graph[pa / 4] |= ((decode[i] >> (gi(g0, g1, i) << 2)) & 0xf) << ((pa % 4) << 2);
 	}
-		
+
+	// GA:
+	// .... 
+
+	// we're going to put GA here, temporarily,to really see 
+	// if putting GA before decode[] stage actaully has a 
+	// significant effect on performance at all.  
+	//at least, on paper, it should, becuase of LT-RDO.	
+
 	//puts("debug:");
 	//print_graph_raw(graph); puts("");
 	//printf("g0 = %016llx, g0 = %016llx\n", g0, g1);
@@ -737,7 +735,7 @@ int main(void) {
 		nat value = 0, count = 0;
 		for (nat option = 0; option < operation_count; option++) {
 			const byte actual_source = partial_graph[la] & 0xf;
-			const byte actual_dest = partial_graph[option] & 0xf;			
+			const byte actual_dest = partial_graph[option] & 0xf;
 			for (nat i = 0; i < sizeof banned_edges; i += 3) {
 				const byte source = banned_edges[i + 0];
 				const byte side   = banned_edges[i + 1];
@@ -925,6 +923,27 @@ terminate:
 	print(output_filename, 4096, output_string);
 
 } // main
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
