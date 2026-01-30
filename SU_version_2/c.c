@@ -23,10 +23,10 @@ typedef uint64_t nat;
 #define D 4
 #define DOL     (    (one << 0) | (two << 4) | (five << 8) | (six << 12)  ) 
 
+#define job_digit_count 4
 #define machine_count 1
 #define machine_index 0
 #define thread_count 1
-#define job_digit_count 4
 
 #define machine0_throughput 1
 #define machine1_throughput 1
@@ -41,10 +41,16 @@ typedef uint64_t nat;
 static byte pas_count = 0;
 static nat mod0 = 0, mod1 = 0;
 static u16 partial_graph[operation_count] = {0};
-static nat decode[128] = {0};
-static byte pas_map[128] = {0};
-static byte job_placement_in_PAS = 0;   //    (4 * ((pas_count - 16) - (job_digit_count)))
-static nat job_modulus = 0;   		//	((mod1 >> job_placement_in_PAS) & 0xffff)
+static nat decode[64] = {0};
+static byte rev_pas_map[64] = {0};
+static byte pas_map[64] = {0};
+static byte job_placement_in_PAS = 0;
+static nat job_modulus = 0;
+static nat ltrdo_count = 0;
+static byte ltrdo[2048] = {0};
+
+static nat uncondga_count = 0;
+static byte uncondga[2048] = {0};
 
 static u16 queue[2048] = {0};
 static _Atomic nat queue_count = 0;
@@ -56,7 +62,8 @@ enum pruning_metrics {
 
 	pm_zr5, pm_zr6, pm_ndi, pm_sndi,
 	pm_pco, pm_per, pm_ns0,
-	pm_oer, pm_rsi,
+	pm_oer, pm_rsi, 
+	pm_mcal,
 
 	pm_h0, pm_h0s, pm_h1, pm_h2, 
 	pm_rmv, pm_ormv, pm_imv, pm_csm, pm_lmv, 
@@ -83,6 +90,7 @@ static const char* pm_spelling[pm_count] = {
 	"pm_zr5", "pm_zr6", "pm_ndi", "pm_sndi",
 	"pm_pco", "pm_per", "pm_ns0",
 	"pm_oer", "pm_rsi",
+	"pm_mcal",
 
 	"pm_h0", "pm_h0s", "pm_h1", "pm_h2", 
 	"pm_rmv", "pm_ormv", "pm_imv", "pm_csm", "pm_lmv", 
@@ -99,6 +107,74 @@ static const char* pm_spelling[pm_count] = {
 	"pm_ga_5u1",  "pm_ga_6u2",
 	"pm_ga_3u5",  "pm_ga_3u1",
 	"pm_ga_sndi", "pm_ga_h",
+};
+
+static byte banned_edges[] = {
+
+	// sci
+	one, 	2, 	two, 
+	two, 	2, 	two, 
+	three, 	2, 	two, 
+	five, 	2, 	two, 
+	six, 	2, 	two, 
+
+	// pco 
+	one, 	1, 	five, 
+	one, 	2, 	five, 
+	one, 	3, 	five, 
+
+	// snco 
+	two, 	1, 	six, 
+	two, 	2, 	six, 
+	two, 	3, 	six, 
+
+	// ndi 
+	three, 	1, 	three, 
+	three, 	2, 	three, 
+	three, 	3, 	three, 
+
+	// zr5 
+	five, 	1, 	five, 
+	five, 	2, 	five, 
+	five, 	3, 	five, 
+
+	// zr6 
+	six, 	1, 	six, 
+	six, 	3, 	six, 
+
+	// ns0
+	six, 	3, 	one, 
+	six, 	3, 	five, 
+	one, 	2, 	one, 
+	one, 	3, 	one, 
+};
+
+static byte banned_self_edges[] = {
+	// lb
+	one, 1,
+
+	// sndi
+	two, 1,
+};
+
+static const byte loops[4 * 17] = {
+	one, 1, three, 1,
+	one, 1, six, 1,
+	three, 1, two, 1, 
+	three, 1, five, 1, 
+	three, 3, two, 2,
+	three, 1, six, 1,
+	three, 3, six, 1,
+	five, 1, six, 1,
+	five, 2, six, 1,
+	five, 3, six, 1,
+	five, 2, two, 2,
+	five, 3, three, 1,
+	five, 3, two, 2,
+	six, 3, three, 1,
+	two, 3, three, 1,
+	three, 2, six, 1,
+	three, 2, two, 2,
 };
 
 static void print_binary(nat x) {
@@ -149,7 +225,6 @@ static void get_graphs_z_value(char string[64], u16* graph) {
 	string[graph_count] = 0;
 }
 
-
 static void get_datetime(char datetime[32]) {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -194,7 +269,6 @@ try_open:;
 		dt, permissions ? "created" : "wrote", z, filename
 	);
 }
-
 
 #define max_erp_count 20
 #define max_rsi_count 512
@@ -241,6 +315,9 @@ static nat execute_graph_starting_at(
  	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
 	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
 
+	byte has_executed_5 = 0;
+	byte has_executed_6 = 0;
+	
 	for (nat e = 0; e < execution_limit; e++) {
 
 		const byte op = graph[ip] & 0xf;
@@ -283,6 +360,8 @@ static nat execute_graph_starting_at(
 		}
 
 		else if (op == five) {
+			if (not has_executed_5) { if (pointer > 1) return pm_mcal; }
+			has_executed_5 = 1;
 			if (last_mcal_op != three) return pm_pco;
 			if (not pointer) return pm_zr5; 
 			
@@ -428,7 +507,9 @@ static nat execute_graph_starting_at(
 			array[n]++;
 		}
 
-		else if (op == six) {  
+		else if (op == six) {
+			if (not has_executed_6) { if (array[n] > 1) return pm_mcal; }
+			has_executed_6 = 1;
 			if (not array[n]) return pm_zr6;
 			SNDI_counter = 0;
 			array[n] = 0;
@@ -517,10 +598,8 @@ static byte execute_graph(
 		byte op = graph[o] & 0xf;
 		if (op != three) continue;
 		const nat pm = execute_graph_starting_at(o, graph, array);
-
 		for (byte i = 0; i < operation_count; i++) 
 			atomic_store_explicit(progress + operation_count * thread_index + i, graph[i], memory_order_relaxed);
-	
 		counts[pm]++;
 		if (not pm) { *origin = o >> 2; return 0; }
 		continue;
@@ -543,58 +622,142 @@ pull_job_from_queue:;
 	const nat jobs_left = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
 	if ((int64_t) jobs_left <= 0) goto terminate;
 	g0 = 0;
-	g1 = (nat) queue[jobs_left - 1] << job_placement_in_PAS;
+	g1 = (nat) queue[(jobs_left - 1)] << job_placement_in_PAS;
+
+	//puts("pulled job::");
+	//printf("g0 = %016llx, g1 = %016llx\n", g0, g1);
+	//puts("");
+	//getchar();
+
 	goto init;
 loop:
+	//puts("AT NF LOOP");
 	if (gi(g0, g1, pointer) < (gi(mod0, mod1, pointer) - 1)) goto increment;
 	if (pointer < pas_count - 1) goto reset_;
 	goto pull_job_from_queue;
 reset_:
+	//puts("AT NF RESET");
 	if (pointer < 16) g0 &= ~(0xfLLU << ((pointer & 15LLU) << 2LLU));
 	else              g1 &= ~(0xfLLU << ((pointer & 15LLU) << 2LLU));
 	pointer++;
 	goto loop;
 increment:
+	//puts("AT NF INCR");
 	if (pointer < 16) g0 += 1LLU << ((pointer & 15LLU) << 2LLU);
 	else              g1 += 1LLU << ((pointer & 15LLU) << 2LLU);
 init:  	pointer = 0;
 
-	// GA ONLY APPLIES TO:   DOL: { 1, 2, 5, 6, } 
+	//if ((g0 & 0xFFFFFFFF) == 0) { 
+		//puts("debug:");
+		//print_graph_raw(graph); putchar(9); putchar(9); printf("g0 = %016llx, g1 = %016llx\n", g0, g1);
+		//puts("");
+		//getchar();
+	//}
 
+	//puts("AT INIT, DOING GA:");
+	//printf("g0 = %016llx, g1 = %016llx\n", g0, g1);
+	//puts("");
 
-	/*if (	(gi(g0, g1, 4) == 0 or gi(g0, g1, 4) == 4) and
-		(gi(g0, g1, 5) == 0 or gi(g0, g1, 5) == 3) and
-		(gi(g0, g1, 6) == 0 or gi(g0, g1, 6) == 4)
-	) { pointer = 4; goto bad; } 
+	//getchar();
 
-	if (	(gi(g0, g1, 4) == 2 or gi(g0, g1, 4) == 6) and
-		(gi(g0, g1, 5) == 1 or gi(g0, g1, 5) == 4) and
-		(gi(g0, g1, 6) == 2 or gi(g0, g1, 6) == 6)
-	) { pointer = 4; goto bad; } */
+	for (nat i = 0; i < ltrdo_count; i += 9) {
+		const byte x0 = ltrdo[i + 0];
+		const byte x1 = ltrdo[i + 1];
+		const byte x2 = ltrdo[i + 2];
+		const byte x3 = ltrdo[i + 3];
+		const byte x4 = ltrdo[i + 4];
+		const byte x5 = ltrdo[i + 5];
+		const byte x6 = ltrdo[i + 6];
+		const byte x7 = ltrdo[i + 7];
+		const byte x8 = ltrdo[i + 8];
 
+		if (x7 != 255) {
+			//puts("PRE CHECK ENABLED!!!");
+			if (gi(g0, g1, x6) != x7) {
+				//printf("LTRDO PRE-PG-CHECK SUCCEEDED!! :   "
+				//	"gi(g0, g1, x6) = %hhu,   x7 = %hhu\n", 
+				//	gi(g0, g1, x6), x7
+				//);
+				continue;
+			}
+			//printf("LTRDO PRE-PG-CHECK SUCCEEDED!! :   "
+			//	"gi(g0, g1, x6) = %hhu,   x7 = %hhu\n", 
+			//	gi(g0, g1, x6), x7
+			//);
+			//puts("PASSED PRE CHECK!");
+			//getchar();
+		}
+
+		if (gi(g0, g1, x0) > gi(g0, g1, x1)) goto badltrdo;
+		if (gi(g0, g1, x0) < gi(g0, g1, x1)) continue;
+		if (gi(g0, g1, x2) > gi(g0, g1, x3)) goto badltrdo;
+		if (gi(g0, g1, x2) < gi(g0, g1, x3)) continue;
+		if (gi(g0, g1, x4) > gi(g0, g1, x5)) goto badltrdo;
+		if (gi(g0, g1, x4) < gi(g0, g1, x5)) continue;
+	badltrdo: 
+		pointer = x8; 
+		//printf("PRUNED VIA LT-RDO: pointer = %hhu\n", pointer);
+		//printf("g0 = %016llx, g1 = %016llx\n", g0, g1);
+		//if (x7 != 255) getchar();
+		goto bad; 
+	}
+
+	for (nat i = 0; i < uncondga_count; i += 7) {
+		const byte x0 = uncondga[i + 0];
+		const byte x1 = uncondga[i + 1];
+		const byte x2 = uncondga[i + 2];
+		const byte x3 = uncondga[i + 3];
+		const byte x4 = uncondga[i + 4];
+		const byte x5 = uncondga[i + 5];
+		const byte x6 = uncondga[i + 6];
+		if (	(gi(g0, g1, x0 + 0) == x1 or gi(g0, g1, x0 + 0) == x2) and
+			(gi(g0, g1, x0 + 1) == x3 or gi(g0, g1, x0 + 1) == x4) and 
+			(gi(g0, g1, x0 + 2) == x5 or gi(g0, g1, x0 + 2) == x6)
+		) { pointer = x0; goto bad; }
+	}
 
 	memcpy(graph, partial_graph, sizeof(u16) * operation_count);
 	for (byte i = 0; i < pas_count; i++) {
 		const byte pa = pas_map[i];
 		graph[pa / 4] |= ((decode[i] >> (gi(g0, g1, i) << 2)) & 0xf) << ((pa % 4) << 2);
 	}
-
-	// GA:
-	// .... 
-
-	// we're going to put GA here, temporarily,to really see 
-	// if putting GA before decode[] stage actaully has a 
-	// significant effect on performance at all.  
-	//at least, on paper, it should, becuase of LT-RDO.	
-
+	
 	//puts("debug:");
 	//print_graph_raw(graph); puts("");
-	//printf("g0 = %016llx, g0 = %016llx\n", g0, g1);
+	//printf("g0 = %016llx, g1 = %016llx\n", g0, g1);
 	//puts("");
 	//getchar();
 	
 	u16 was_utilized = 0;
-	for (nat i = 0; i < operation_count; i++) {
+	for (byte i = 0; i < operation_count; i++) {
+
+		for (byte j = 0; j < 4 * 17; j += 4) {
+
+			const byte A = loops[j + 0];
+			const byte x = loops[j + 1];
+			const byte B = loops[j + 2];
+			const byte y = loops[j + 3];
+			const byte K = (graph[i] >> (x << 2)) & 0xf;
+
+			if (	(graph[i] & 0xf) == A and
+				(graph[K] & 0xf) == B and 
+				((graph[K] >> (y << 2)) & 0xf) == i
+			) {
+				byte at = graph_count - 1;
+				if (rev_pas_map[4 * i + x] != 255 and at > 4 * i + x) at = 4 * i + x;							if (rev_pas_map[4 * K + y] != 255 and at > 4 * K + y) at = 4 * K + y;
+				pointer = rev_pas_map[at];
+
+				/*printf("pruned zv via 2-loops: \n"
+					"pointer = %hhu, at = %hhu, j = %hhu\n", 
+					pointer, at, (byte) (j / 4)
+				);*/
+
+				//getchar();
+
+				goto bad;
+			}
+		}
+
 		byte l = 0xf & (graph[i] >> 4);
 		byte g = 0xf & (graph[i] >> 8);
 		byte e = 0xf & (graph[i] >> 12);
@@ -602,23 +765,44 @@ init:  	pointer = 0;
 		if (g != i) was_utilized |= 1 << g;
 		if (e != i) was_utilized |= 1 << e;
 	}
+
 	for (byte la = 0; la < operation_count; la++) {
 		if (not ((was_utilized >> la) & 1)) { 
 
 			//printf("pruned by uo...  use:  %016hx\n", was_utilized);
+			//getchar();
 
 			counts[pm_ga_uo]++; 
 			pointer = 0; goto bad; 
 		} 
 	}
+
 	//puts("trying to run graph...\n");
+	//getchar();
+
 	byte origin = 0;
 	const byte is_bad = execute_graph(graph, array, &origin, counts, thread_index);
+
+	/*if ((g0 & 0xFFFFF) == 0) { 
+		printf("\033[H\033[2J");
+		printf("\npm counts:\n");
+        	for (nat i = 0; i < pm_count; i++) {
+                	if (i and not (i % 2)) puts("");
+			printf("%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
+ 	       }
+ 	       puts("\n[done]");
+	}*/
+
+
 	//puts("run graph.\n");
+
 	if (not is_bad) {
 		//puts("graph was good!\n");
+		//getchar();
+
 		append_to_file(filenames[thread_index], 4096, graph, origin);
 	} 
+
 	goto loop;
 bad:	
 	if (pointer + job_digit_count >= pas_count) goto pull_job_from_queue;
@@ -665,69 +849,51 @@ try_open:;
 	fflush(stdout);
 }
 
+static byte pas_encode(byte paspa, byte la) {
+	nat count = 0;
+	if (paspa >= 16) count = (mod1 >> ((paspa % 16) << 2)) & 0xf;
+	else count = (mod0 >> (paspa << 2)) & 0xf;
+	const nat array = decode[paspa];
+	for (nat i = 0; i < count; i++) {
+		const nat value = (array >> (i << 2)) & 0xf;
+		if (value == la) return (byte) i;
+	}
+	printf("pas_encode: (paspa=%hhu, la=%hhu): invalid arguments to encode\n", paspa, la);
+	abort();
+}
 
-static byte banned_edges[] = {
-
-	// sci
-	one, 	2, 	two, 
-	two, 	2, 	two, 
-	three, 	2, 	two, 
-	five, 	2, 	two, 
-	six, 	2, 	two, 
-
-	// pco 
-	one, 	1, 	five, 
-	one, 	2, 	five, 
-	one, 	3, 	five, 
-
-	// snco 
-	two, 	1, 	six, 
-	two, 	2, 	six, 
-	two, 	3, 	six, 
-
-	// ndi 
-	three, 	1, 	three, 
-	three, 	2, 	three, 
-	three, 	3, 	three, 
-
-	// zr5 
-	five, 	1, 	five, 
-	five, 	2, 	five, 
-	five, 	3, 	five, 
-
-	// zr6 
-	six, 	1, 	six, 
-	six, 	3, 	six, 
-
-	// ns0
-	six, 	3, 	one, 
-	six, 	3, 	five, 
-	one, 	2, 	one, 
-	one, 	3, 	one, 
-
-};
-
-static byte banned_self_edges[] = {
-	// lb
-	one, 1,
-
-	// sndi
-	two, 1,
-};
+#define disable_main 0
 
 int main(void) {
-	{ pas_count = 12;
-	const byte zerosp_pas_map[32] = { 2, 3,   6, 7,   9, 10, 11,   13, 14, 15,    17, 19 };
+
+	{ pas_count = 12; 
+	nat k = 20;
 	const u16 actual_partial_graph[operation_count] = {0x0010, 0x0001, 0x0002, 0x0003, 0x0404, };
+	const byte zerosp_pas_map[32] = { 2, 3,   6, 7,   9, 10, 11,   13, 14, 15,    17, 19 };
+	const byte zerosp_rev_pas_map[20] = {
+		255, 	255, 	0, 	1,
+		255, 	255, 	2, 	3, 
+		255, 	4, 	5, 	6,
+		255, 	7, 	8, 	9,
+		255, 	10, 	255, 	11,
+	};
 	memcpy(partial_graph, actual_partial_graph, 5 * sizeof(u16));
-	memcpy(pas_map, zerosp_pas_map, pas_count * sizeof(byte));		
+	memcpy(pas_map, zerosp_pas_map, pas_count * sizeof(byte));
+	memcpy(rev_pas_map, zerosp_rev_pas_map, 20 * sizeof(byte));
 	for (byte i = 0; i < D; i++) {
 		const byte value = (DOL >> (i << 2)) & 0xf;
-		partial_graph[5 + i] = value | (value == six ? 0x0400 : 0);
+		partial_graph[5 + i] = value | (value == six ? 0x0400 : 0);		
+
+		rev_pas_map[k++] = 255;
+		rev_pas_map[k++] = pas_count + 0;
+		rev_pas_map[k++] = (value == six) ? 255 : pas_count + 1;
+		rev_pas_map[k++] = pas_count + 2;
+		
 		pas_map[pas_count++] = 4 * (5 + i) + 1;
 		if (value != six) pas_map[pas_count++] = 4 * (5 + i) + 2;
 		pas_map[pas_count++] = 4 * (5 + i) + 3;
-	}	
+	}
+
 	for (nat paspa = 0; paspa < pas_count; paspa++) {
 		const nat pa = pas_map[paspa];
 		const nat la = pa / 4;
@@ -767,7 +933,74 @@ int main(void) {
 	job_modulus = ((mod1 >> job_placement_in_PAS) & 0xffff);
 	}
 
+
+	// 1202601294.164259 note:    its possible  that LT RDO   can be integrated 
+	//	into  the NF itself, to make for a dynamic moduli array,  
+	//	making us skip the repetitive NF incr's  
+	//	for situations where LT RDO is used constantly. 
+
+
+	// generating uncond ga data/checks:
+
+
+	// 3u1
+	uncondga[uncondga_count++] = rev_pas_map[4 * three + 1];
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], one);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], 5);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], one);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], 5);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], one);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], 5);
+
+	// 3u5
+	uncondga[uncondga_count++] = rev_pas_map[4 * three + 1];
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], five);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], 7);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], five);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], 7);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], five);
+	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], 7);
+
+
+
+	// generating LT-RDO GA data:
+
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 3];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 5 + 3];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 2];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 5 + 2];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 2];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 5 + 2];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 5 + 1];
+	ltrdo[ltrdo_count++] = pas_encode(rev_pas_map[4 * 5 + 1], two);
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 2];
+	
+
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 3];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 7 + 3];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 2];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 7 + 2];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 1];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 7 + 1];
+	ltrdo[ltrdo_count++] = 0;
+	ltrdo[ltrdo_count++] = 255;
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 1];
+
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 3];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 8 + 3];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 2];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 8 + 2];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 1];
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * 8 + 1];
+	ltrdo[ltrdo_count++] = 0;
+	ltrdo[ltrdo_count++] = 255;
+	ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 1];
+
+
+
+
 	printf("pas_count = %hhu\n\n", pas_count);
+	printf("graph_count = %u\n\n", graph_count);
 	printf("job_modulus = 0x%llx\n\n", job_modulus);
 	printf("job_placement_in_PAS = %hhu\n\n", job_placement_in_PAS);
 	printf("mod0 = 0x%016llx, mod1 = 0x%016llx \n\n", mod0, mod1);
@@ -776,12 +1009,30 @@ int main(void) {
 	for (nat i = 0; i < pas_count; i++) {
 		printf("%hhu, ", pas_map[i]);
 	} printf("}\n");
+	printf("rev_pas_map[] = { ");
+	for (nat i = 0; i < graph_count; i++) {
+		if (i % 4 == 0) puts("");
+		printf("%hhu, ", rev_pas_map[i]);
+	} printf("}\n");
 	printf("decode[] = { ");
 	for (nat i = 0; i < pas_count; i++) {
 		if (i % 4 == 0) puts("");
 		printf("0x%llx, ", decode[i]);
 	} printf("}\n");
 
+
+	printf("ltrdo[] = { ");
+	for (nat i = 0; i < ltrdo_count; i++) {
+		if (i % 4 == 0) puts("");
+		printf("%hhu, ", ltrdo[i]);
+	} printf("}\n");
+
+	printf("uncondga[] = { ");
+	for (nat i = 0; i < uncondga_count; i++) {
+		if (i % 4 == 0) puts("");
+		printf("%hhu, ", uncondga[i]);
+	} printf("}\n");
+	
 	srand((unsigned) time(0));	
 	static char output_filename[4096] = {0};
 	static char output_string[4096] = {0};
@@ -845,7 +1096,6 @@ done:; }
 		pthread_create(threads + i, NULL, worker_thread, arg);
 	}
 
-	const bool disable_main = 0;
 	u16 graph[operation_count] = {0};
 	nat counts[pm_count] = {0};	
 	while (1) {
@@ -866,7 +1116,7 @@ done:; }
 		}
 		puts("");
 		//sleep(1 << display_rate);
-		usleep(10000);
+		usleep(100000);
 	}
 
 terminate:
@@ -943,6 +1193,24 @@ terminate:
 
 
 
+/*
+
+AT NF LOOP
+AT NF INCR
+AT INIT, DOING GA:
+g0 = 0000000103154341, g1 = 0000000002653000
+
+PRE CHECK ENABLED!!!
+LTRDO PRE-PG-CHECK SUCCEEDED!! :   gi(g0, g1, x6) = 0,   x7 = 1
+debug:
+
+
+01481055263430204041 0021 100030564746
+
+g0 = 0000
+
+*/
+
 
 
 
@@ -963,6 +1231,100 @@ terminate:
 
 
 /*
+
+
+XXXXXX
+
+	// todo:    code up the version of ltrdo which has the partial graph accounting for  in it, 
+
+	//        so that we can apply ltrdo   to   the instructions/operations  1 and 2  
+
+
+
+
+
+
+uncond ga pms:
+
+	5u1    (not needed becuase of our DOL)
+	6u2    (not needed becuase of our DOL)
+
+	3u1
+	3u5
+*/
+
+
+
+
+/*
+
+reverse pas map array:
+example:
+
+
+---------------
+op   <  >  =
+---------------
+-1   -1 0  1
+---------------
+-1   -1 2  3
+---------------
+-1   4  5  6
+---------------
+-1   7  8  9
+---------------
+-1   10  -1  11
+---------------
+
+
+---------------
+-1   12  13  14
+---------------
+-1   15  16  17
+---------------
+-1   18  19  20
+---------------
+-1   21  -1  22
+---------------
+
+
+
+
+
+
+
+
+
+	// GA ONLY APPLIES TO:   DOL: { 1, 2, 5, 6, } 
+
+
+
+
+
+	for (i) {	
+		if (	(gi(g0, g1, my_array[i + 0]) == my_array[i + 1] 
+			or gi(g0, g1, my_array[i + 2]) == my_array[i + 3]) and
+			(gi(g0, g1, 5) == 0 or gi(g0, g1, 5) == 3) and
+			(gi(g0, g1, 6) == 0 or gi(g0, g1, 6) == 4)
+		) { pointer = 4; goto bad; } 
+	}
+
+
+	*if (	(gi(g0, g1, 4) == 2 or gi(g0, g1, 4) == 6) and
+		(gi(g0, g1, 5) == 1 or gi(g0, g1, 5) == 4) and
+		(gi(g0, g1, 6) == 2 or gi(g0, g1, 6) == 6)
+	) { pointer = 4; goto bad; } *
+
+// GA:
+	// .... 
+
+	// we're going to put GA here, temporarily,to really see 
+	// if putting GA before decode[] stage actaully has a 
+	// significant effect on performance at all.  
+	//at least, on paper, it should, becuase of LT-RDO.	
+
+
+
 
 
 

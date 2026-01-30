@@ -149,6 +149,79 @@ reducing ss by factor of 16 via LTRDO:
 
 
 
+1202601294.143058
+--------------------
+
+x	0. write out the DOL-invariant code for each GA PM   before decode[] stage
+
+x	1. adjusting the SU to use   beginning-of-main-runtime     version of   CT GA
+
+
+
+
+d	2. making the SU step through DOLs automatically
+
+	
+
+
+
+
+
+
+1202601294.172448
+
+
+the affect that partial graph elements have on the logic of LT RDO is:
+
+
+
+	0141      0222
+
+
+
+
+
+
+	0141      0122
+
+
+
+
+
+	if (thingy has partial grpah element at that one position) { 
+
+		do ltrdo the regular way that we are already doing lol 
+	}
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
