@@ -1,0 +1,36 @@
+SU: searching [D=1] space....
+su: D = 1 space:
+	 thread_count = 3
+	 machine_index = 0
+	 machine0_throughput = 1
+	 machine1_throughput = 1
+	 display_rate = 2
+	 execution_limit = 100000000
+	 array_size = 1000000
+	 in      73.00s [1202602091.004203:1202602091.004316]
+
+
+pm counts:
+z_is_good: 1       		pm_zr5: 336296637		
+pm_zr6: 252821249		pm_ndi: 8220311 		
+pm_sndi: 0       		pm_pco: 45575323		
+pm_per: 20781325		pm_ns0: 76308410		
+pm_oer: 23731   		pm_rsi: 377540  		
+pm_mcal: 23749768		 pm_h0: 177914722		
+pm_h0s: 1473    		 pm_h1: 8311    		
+ pm_h2: 0       		pm_rmv: 9330    		
+pm_ormv: 1985    		pm_imv: 2       		
+pm_csm: 1040    		pm_lmv: 83375   		
+pm_fse: 0       		pm_pair: 6860486 		
+pm_ls0: 0       		pm_bdl1: 24762   		
+pm_bdl2: 9       		pm_bdl3: 0       		
+pm_bdl4: 0       		pm_bdl5: 0       		
+pm_bdl6: 0       		pm_bdl7: 0       		
+pm_bdl8: 0       		pm_bdl9: 0       		
+pm_bdl10: 0       		pm_bdl11: 0       		
+pm_bdl12: 0       		pm_erp1: 0       		
+pm_erp2: 0       		pm_ga_rdo: 0       		
+pm_ga_uo: 469409714		pm_ga_5u1: 0       		
+pm_ga_6u2: 0       		pm_ga_3u5: 0       		
+pm_ga_3u1: 0       		pm_ga_sndi: 0       		
+pm_ga_h: 0       		[done]

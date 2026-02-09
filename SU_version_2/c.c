@@ -18,23 +18,23 @@
 enum operations { one, two, three, five, six };
 typedef uint8_t byte;
 typedef uint16_t u16;
+typedef uint32_t u32;
 typedef uint64_t nat;
 
-#define D 4
-#define DOL     (    (one << 0) | (two << 4) | (five << 8) | (six << 12)  ) 
+#define D 2
+static const u32 DOL_array[] = {   0x10,  };
 
-#define job_digit_count 4
+#define job_digit_count 5
 #define machine_count 1
 #define machine_index 0
-#define thread_count 1
+#define thread_count 3
+#define debug 1
 
 #define machine0_throughput 1
 #define machine1_throughput 1
-
 #define execution_limit 100000000LLU
 #define array_size 1000000LLU
 #define display_rate 2
-
 #define operation_count (5 + D)
 #define graph_count (operation_count * 4)
 
@@ -44,17 +44,21 @@ static u16 partial_graph[operation_count] = {0};
 static nat decode[64] = {0};
 static byte rev_pas_map[64] = {0};
 static byte pas_map[64] = {0};
-static byte job_placement_in_PAS = 0;
+static nat job_placement_in_PAS_g0 = 0;
+static nat job_placement_in_PAS_g1 = 0;
+static nat job_in_PAS_g0_bits = 0;
+static nat job_in_PAS_g1_bits = 0;
 static nat job_modulus = 0;
+static nat job_shift_amount = 0;
 static nat ltrdo_count = 0;
 static byte ltrdo[2048] = {0};
-
 static nat uncondga_count = 0;
 static byte uncondga[2048] = {0};
-
-static u16 queue[2048] = {0};
+static u32 queue[8192] = {0};
 static _Atomic nat queue_count = 0;
 static _Atomic u16 progress[thread_count * operation_count] = {0};
+static _Atomic nat pas_progress[thread_count * 2] = {0};
+
 static char** filenames = NULL;
 
 enum pruning_metrics {
@@ -152,30 +156,41 @@ static byte banned_edges[] = {
 static byte banned_self_edges[] = {
 	// lb
 	one, 1,
-
 	// sndi
 	two, 1,
 };
 
 static const byte loops[4 * 17] = {
-	one, 1, three, 1,
-	one, 1, six, 1,
-	three, 1, two, 1, 
-	three, 1, five, 1, 
+	five, 3, two, 2,
 	three, 3, two, 2,
+	two, 3, three, 1,
+	six, 3, three, 1,
+
+	one, 1, three, 1,
+	five, 3, three, 1,
+	three, 1, five, 1, 
 	three, 1, six, 1,
+	three, 2, six, 1,
 	three, 3, six, 1,
 	five, 1, six, 1,
 	five, 2, six, 1,
 	five, 3, six, 1,
+	one, 1, six, 1,
+	three, 1, two, 1, 
 	five, 2, two, 2,
-	five, 3, three, 1,
-	five, 3, two, 2,
-	six, 3, three, 1,
-	two, 3, three, 1,
-	three, 2, six, 1,
 	three, 2, two, 2,
 };
+
+static void clear_screen(void) { printf("\033[H\033[2J"); } 
+
+static void print_counts(nat* counts) {
+	printf("\npm counts:\n");
+        for (nat i = 0; i < pm_count; i++) {
+                if (i and not (i % 2)) puts("");
+		printf("%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
+	}
+	puts("\n[done]");
+}
 
 static void print_binary(nat x) {
 	for (nat i = 0; i < 16; i++) {
@@ -186,42 +201,17 @@ static void print_binary(nat x) {
 
 __attribute__((always_inline))
 static byte gi(nat graph0, nat graph1, byte pa) {
-	return (
-		(pa < 16 ? graph0 : graph1) 
-		>> 
-		((pa & 15) << 2)
-	) & 0xf;
+	return ((pa < 16 ? graph0 : graph1) >> ((pa & 15) << 2)) & 0xf;
 }
 
 static void print_graph_raw(u16* graph) { 
 	for (u16 i = 0; i < graph_count; i++) 
-		printf("%hhu", (byte)
-			((
-				graph[i / 4LLU] 
-				>> 
-				(
-					(
-						(i % 4LLU) 
-						* 
-						4LLU
-					)
-				)
-			) & 0xfLLU)
-		); 
+		printf("%hhu", (byte) ((graph[i / 4] >> (((i % 4) * 4))) & 0xf)); 
 }
 
 static void get_graphs_z_value(char string[64], u16* graph) {
-	for (byte i = 0; i < graph_count; i++) string[i] = (char) (((
-				graph[i / 4LLU] 
-				>> 
-				(
-					(
-						(i % 4LLU) 
-						* 
-						4LLU
-					)
-				)
-			) & 0xfLLU)) + '0';
+	for (byte i = 0; i < graph_count; i++) 
+		string[i] = (char) (((graph[i / 4] >> (((i % 4) * 4))) & 0xf)) + '0';
 	string[graph_count] = 0;
 }
 
@@ -621,8 +611,10 @@ static void* worker_thread(void* raw_thread_index) {
 pull_job_from_queue:;
 	const nat jobs_left = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
 	if ((int64_t) jobs_left <= 0) goto terminate;
-	g0 = 0;
-	g1 = (nat) queue[(jobs_left - 1)] << job_placement_in_PAS;
+	const nat job = queue[jobs_left - 1];
+
+	g0 = (job << job_placement_in_PAS_g0) & job_in_PAS_g0_bits;
+	g1 = ((job >> job_shift_amount) << job_placement_in_PAS_g1) & job_in_PAS_g1_bits;
 
 	//puts("pulled job::");
 	//printf("g0 = %016llx, g1 = %016llx\n", g0, g1);
@@ -647,6 +639,9 @@ increment:
 	else              g1 += 1LLU << ((pointer & 15LLU) << 2LLU);
 init:  	pointer = 0;
 
+	//atomic_store_explicit(pas_progress + 2 * thread_index + 0, g0, memory_order_relaxed);
+	//atomic_store_explicit(pas_progress + 2 * thread_index + 1, g1, memory_order_relaxed);
+
 	//if ((g0 & 0xFFFFFFFF) == 0) { 
 		//puts("debug:");
 		//print_graph_raw(graph); putchar(9); putchar(9); printf("g0 = %016llx, g1 = %016llx\n", g0, g1);
@@ -660,7 +655,7 @@ init:  	pointer = 0;
 
 	//getchar();
 
-	for (nat i = 0; i < ltrdo_count; i += 9) {
+	for (nat i = 0; i < ltrdo_count; i += 8) {
 		const byte x0 = ltrdo[i + 0];
 		const byte x1 = ltrdo[i + 1];
 		const byte x2 = ltrdo[i + 2];
@@ -669,7 +664,6 @@ init:  	pointer = 0;
 		const byte x5 = ltrdo[i + 5];
 		const byte x6 = ltrdo[i + 6];
 		const byte x7 = ltrdo[i + 7];
-		const byte x8 = ltrdo[i + 8];
 
 		if (x7 != 255) {
 			//puts("PRE CHECK ENABLED!!!");
@@ -684,22 +678,19 @@ init:  	pointer = 0;
 			//	"gi(g0, g1, x6) = %hhu,   x7 = %hhu\n", 
 			//	gi(g0, g1, x6), x7
 			//);
+			//printf("PRUNED VIA LT-RDO: pointer = %hhu    ", pointer);
+			//printf("g0 = %016llx, g1 = %016llx\n", g0, g1);		
 			//puts("PASSED PRE CHECK!");
 			//getchar();
 		}
 
-		if (gi(g0, g1, x0) > gi(g0, g1, x1)) goto badltrdo;
+		if (gi(g0, g1, x0) > gi(g0, g1, x1)) { pointer = x0 + 1; goto bad; } 
 		if (gi(g0, g1, x0) < gi(g0, g1, x1)) continue;
-		if (gi(g0, g1, x2) > gi(g0, g1, x3)) goto badltrdo;
+		if (gi(g0, g1, x2) > gi(g0, g1, x3)) { pointer = x0 + 1; goto bad; } 
 		if (gi(g0, g1, x2) < gi(g0, g1, x3)) continue;
-		if (gi(g0, g1, x4) > gi(g0, g1, x5)) goto badltrdo;
+		if (gi(g0, g1, x4) > gi(g0, g1, x5)) { pointer = x0 + 1; goto bad; } 
 		if (gi(g0, g1, x4) < gi(g0, g1, x5)) continue;
-	badltrdo: 
-		pointer = x8; 
-		//printf("PRUNED VIA LT-RDO: pointer = %hhu\n", pointer);
-		//printf("g0 = %016llx, g1 = %016llx\n", g0, g1);
-		//if (x7 != 255) getchar();
-		goto bad; 
+		pointer = x4; goto bad; 		
 	}
 
 	for (nat i = 0; i < uncondga_count; i += 7) {
@@ -712,7 +703,7 @@ init:  	pointer = 0;
 		const byte x6 = uncondga[i + 6];
 		if (	(gi(g0, g1, x0 + 0) == x1 or gi(g0, g1, x0 + 0) == x2) and
 			(gi(g0, g1, x0 + 1) == x3 or gi(g0, g1, x0 + 1) == x4) and 
-			(gi(g0, g1, x0 + 2) == x5 or gi(g0, g1, x0 + 2) == x6)
+			(x5 == 255 or gi(g0, g1, x0 + 2) == x5 or gi(g0, g1, x0 + 2) == x6)
 		) { pointer = x0; goto bad; }
 	}
 
@@ -730,30 +721,24 @@ init:  	pointer = 0;
 	
 	u16 was_utilized = 0;
 	for (byte i = 0; i < operation_count; i++) {
-
 		for (byte j = 0; j < 4 * 17; j += 4) {
-
 			const byte A = loops[j + 0];
 			const byte x = loops[j + 1];
 			const byte B = loops[j + 2];
 			const byte y = loops[j + 3];
 			const byte K = (graph[i] >> (x << 2)) & 0xf;
-
 			if (	(graph[i] & 0xf) == A and
 				(graph[K] & 0xf) == B and 
 				((graph[K] >> (y << 2)) & 0xf) == i
 			) {
 				byte at = graph_count - 1;
-				if (rev_pas_map[4 * i + x] != 255 and at > 4 * i + x) at = 4 * i + x;							if (rev_pas_map[4 * K + y] != 255 and at > 4 * K + y) at = 4 * K + y;
+				if (rev_pas_map[4 * i + x] != 255 and at > 4 * i + x) at = 4 * i + x;
+				if (rev_pas_map[4 * K + y] != 255 and at > 4 * K + y) at = 4 * K + y;
 				pointer = rev_pas_map[at];
-
-				/*printf("pruned zv via 2-loops: \n"
-					"pointer = %hhu, at = %hhu, j = %hhu\n", 
-					pointer, at, (byte) (j / 4)
-				);*/
-
-				//getchar();
-
+				//histogram[j / 4]++;
+				//printf("2:p%2hhua%2hhuj%2hhu: ", pointer, at, (byte) (j / 4));
+				//for (nat _ = 0; _ < 17; _++) printf("%llu:%llu ", _, histogram[_]);
+				//puts("");
 				goto bad;
 			}
 		}
@@ -776,21 +761,18 @@ init:  	pointer = 0;
 			pointer = 0; goto bad; 
 		} 
 	}
-
 	//puts("trying to run graph...\n");
 	//getchar();
+
+	atomic_store_explicit(pas_progress + 2 * thread_index + 0, g0, memory_order_relaxed);
+	atomic_store_explicit(pas_progress + 2 * thread_index + 1, g1, memory_order_relaxed);
 
 	byte origin = 0;
 	const byte is_bad = execute_graph(graph, array, &origin, counts, thread_index);
 
 	/*if ((g0 & 0xFFFFF) == 0) { 
-		printf("\033[H\033[2J");
-		printf("\npm counts:\n");
-        	for (nat i = 0; i < pm_count; i++) {
-                	if (i and not (i % 2)) puts("");
-			printf("%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
- 	       }
- 	       puts("\n[done]");
+		clear_screen();
+		print_counts(counts);
 	}*/
 
 
@@ -865,6 +847,48 @@ static byte pas_encode(byte paspa, byte la) {
 #define disable_main 0
 
 int main(void) {
+	srand((unsigned) time(0));
+	filenames = calloc(thread_count, sizeof(char*));
+	for (nat i = 0; i < thread_count; i++) {
+		filenames[i] = calloc(4096, 1);
+		char dt[32] = {0};
+		get_datetime(dt);
+		snprintf(filenames[i], 4096, "%s_%08x%08x%08x%08x_z.txt", dt, 
+			rand(), rand(), rand(), rand()
+		);
+	}
+
+	static char output_filename[4096] = {0};
+	static char output_string[4096] = {0};
+	snprintf(output_string, 4096, "SU: searching [D=%u] space....\n", D);
+	print(output_filename, 4096, output_string);	
+	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
+	struct timeval time_begin = {0};
+	gettimeofday(&time_begin, NULL);
+
+	nat counts[pm_count] = {0};	
+
+for (nat dol_index = 0; dol_index < sizeof(DOL_array) / sizeof(*DOL_array); dol_index++) {
+
+	const u32 DOL = DOL_array[dol_index];
+	pas_count = 0; mod0 = 0; mod1 = 0;
+	job_placement_in_PAS_g0 = 0; job_placement_in_PAS_g1 = 0;
+	job_in_PAS_g0_bits = 0; job_in_PAS_g1_bits = 0;
+	job_modulus = 0; job_shift_amount = 0;
+	ltrdo_count = 0; uncondga_count = 0;
+	memset(partial_graph, 0, sizeof *partial_graph * operation_count);
+	memset(decode, 0, sizeof *decode * 64);
+	memset(rev_pas_map, 0, sizeof *rev_pas_map * 64);
+	memset(pas_map, 0, sizeof *pas_map * 64);
+	memset(ltrdo, 0, sizeof *ltrdo * 2048);
+	memset(uncondga, 0, sizeof *uncondga * 2048);
+	memset(queue, 0, sizeof *queue * 8192);
+	atomic_init(&queue_count, 0);
+
+	for (nat i = 0; i < thread_count * operation_count; i++) 
+		atomic_store_explicit(progress + i, 0, memory_order_relaxed);
+	for (nat i = 0; i < thread_count * 2; i++) 
+		atomic_store_explicit(pas_progress + i, 0, memory_order_relaxed);
 
 	{ pas_count = 12; 
 	nat k = 20;
@@ -882,15 +906,13 @@ int main(void) {
 	memcpy(rev_pas_map, zerosp_rev_pas_map, 20 * sizeof(byte));
 	for (byte i = 0; i < D; i++) {
 		const byte value = (DOL >> (i << 2)) & 0xf;
-		partial_graph[5 + i] = value | (value == six ? 0x0400 : 0);		
-
+		partial_graph[5 + i] = value | (value == six ? 0x0400 : 0);
 		rev_pas_map[k++] = 255;
-		rev_pas_map[k++] = pas_count + 0;
-		rev_pas_map[k++] = (value == six) ? 255 : pas_count + 1;
-		rev_pas_map[k++] = pas_count + 2;
-		
+		rev_pas_map[k++] = pas_count;
 		pas_map[pas_count++] = 4 * (5 + i) + 1;
+		rev_pas_map[k++] = (value == six) ? 255 : pas_count;
 		if (value != six) pas_map[pas_count++] = 4 * (5 + i) + 2;
+		rev_pas_map[k++] = pas_count;
 		pas_map[pas_count++] = 4 * (5 + i) + 3;
 	}
 
@@ -928,81 +950,75 @@ int main(void) {
 		const nat loc = paspa % 16; 
 		if (paspa >= 16) mod1 |= (nat) (count << (loc << 2));
 		else 	         mod0 |= (nat) (count << (loc << 2));			
-	}	
-	job_placement_in_PAS = (4 * ((pas_count - 16) - (job_digit_count)));
-	job_modulus = ((mod1 >> job_placement_in_PAS) & 0xffff);
 	}
 
+	const nat jm = (0x1 << (4 * job_digit_count)) - 1;
+	const nat r = pas_count - job_digit_count;
+	const nat jc = job_digit_count;
+	if (r < 16) {
+		job_placement_in_PAS_g0 = r * 4;
+		job_placement_in_PAS_g1 = 0;
+		if (r + jc < 16) {
+			job_shift_amount = 0;
+			job_in_PAS_g0_bits = jm;
+			job_in_PAS_g1_bits = 0;			
+		} else {
+			const nat ag0 = 16 - r, ag1 = jc - ag0;
+			printf("ag0 = %llu, ag1 = %llu\n", ag0, ag1);
+			job_in_PAS_g0_bits = (1 << (4 * ag0)) - 1;
+			job_in_PAS_g1_bits = (1 << (4 * ag1)) - 1;
+			job_shift_amount = ag0 * 4;
+		}
+	} else {	
+		job_placement_in_PAS_g1 = (r - 16) * 4;
+		job_in_PAS_g1_bits = jm;
+		job_placement_in_PAS_g0 = 0;
+		job_in_PAS_g0_bits = 0;
+		job_shift_amount = 0;
+	}
+	job_in_PAS_g0_bits <<= job_placement_in_PAS_g0;
+	job_in_PAS_g1_bits <<= job_placement_in_PAS_g1; 
 
-	// 1202601294.164259 note:    its possible  that LT RDO   can be integrated 
-	//	into  the NF itself, to make for a dynamic moduli array,  
-	//	making us skip the repetitive NF incr's  
-	//	for situations where LT RDO is used constantly. 
+	for (byte i = 0; i < job_digit_count; i++) 
+		job_modulus |=  ((nat) gi(mod0, mod1, (pas_count - 1) - i)) << (((job_digit_count - 1) - i) << 2);
+	}
 
+	byte duplicate_1_la = 255;
+	byte duplicate_2_la = 255;
+	byte duplicate_3_la = 255;
+	byte duplicate_5_la = 255;
+	byte duplicate_6_la = 255;
+	for (byte i = 0; i < D; i++) {
+		const byte value = (DOL >> (i << 2)) & 0xf;
+		     if (value == one) 		duplicate_1_la = 5 + i;
+		else if (value == two) 		duplicate_2_la = 5 + i;
+		else if (value == three) 	duplicate_3_la = 5 + i;
+		else if (value == five) 	duplicate_5_la = 5 + i;
+		else if (value == six) 		duplicate_6_la = 5 + i;
+	}
 
-	// generating uncond ga data/checks:
-
-
-	// 3u1
-	uncondga[uncondga_count++] = rev_pas_map[4 * three + 1];
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], one);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], 5);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], one);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], 5);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], one);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], 5);
-
-	// 3u5
-	uncondga[uncondga_count++] = rev_pas_map[4 * three + 1];
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], five);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], 7);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], five);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], 7);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], five);
-	uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], 7);
-
-
-
-	// generating LT-RDO GA data:
-
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 3];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 5 + 3];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 2];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 5 + 2];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 2];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 5 + 2];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 5 + 1];
-	ltrdo[ltrdo_count++] = pas_encode(rev_pas_map[4 * 5 + 1], two);
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 2];
-	
-
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 3];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 7 + 3];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 2];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 7 + 2];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 1];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 7 + 1];
-	ltrdo[ltrdo_count++] = 0;
-	ltrdo[ltrdo_count++] = 255;
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 1];
-
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 3];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 8 + 3];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 2];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 8 + 2];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 1];
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * 8 + 1];
-	ltrdo[ltrdo_count++] = 0;
-	ltrdo[ltrdo_count++] = 255;
-	ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 1];
-
-
-
-
+if (debug) {
+	puts("");
+	printf("duplicate_1_la = %hhu\n", duplicate_1_la);
+	printf("duplicate_2_la = %hhu\n", duplicate_2_la);
+	printf("duplicate_3_la = %hhu\n", duplicate_3_la);
+	printf("duplicate_5_la = %hhu\n", duplicate_5_la);
+	printf("duplicate_6_la = %hhu\n", duplicate_6_la);
+	puts("");
 	printf("pas_count = %hhu\n\n", pas_count);
 	printf("graph_count = %u\n\n", graph_count);
+
 	printf("job_modulus = 0x%llx\n\n", job_modulus);
-	printf("job_placement_in_PAS = %hhu\n\n", job_placement_in_PAS);
+	printf("job_digit_count = 0x%x\n\n", job_digit_count);
+
+
+	printf("job_placement_in_PAS_g0 = %llu\n\n", job_placement_in_PAS_g0);
+	printf("job_placement_in_PAS_g1 = %llu\n\n", job_placement_in_PAS_g1);
+
+	printf("job_in_PAS_g0_bits = %016llx\n\n", job_in_PAS_g0_bits);
+	printf("job_in_PAS_g1_bits = %016llx\n\n", job_in_PAS_g1_bits);
+	printf("job_shift_amount = %llu\n\n", job_shift_amount);
+
 	printf("mod0 = 0x%016llx, mod1 = 0x%016llx \n\n", mod0, mod1);
 	printf("partial_graph[] = "); print_graph_raw(partial_graph); puts("");
 	printf("pas_map[] = { ");
@@ -1019,8 +1035,111 @@ int main(void) {
 		if (i % 4 == 0) puts("");
 		printf("0x%llx, ", decode[i]);
 	} printf("}\n");
+	}
+
+	// 3u1
+	if (duplicate_3_la == 255 and duplicate_1_la != 255) {
+		uncondga[uncondga_count++] = rev_pas_map[4 * three + 1];
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], one);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], duplicate_1_la);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], one);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], duplicate_1_la);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], one);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], duplicate_1_la);
+	}
+
+	// 3u5
+	if (duplicate_3_la == 255 and duplicate_5_la != 255) {
+		uncondga[uncondga_count++] = rev_pas_map[4 * three + 1];
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], five);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 1], duplicate_5_la);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], five);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 2], duplicate_5_la);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], five);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * three + 3], duplicate_5_la);
+	}
+
+	// 5u1
+	if (duplicate_5_la == 255 and duplicate_1_la != 255) {
+		uncondga[uncondga_count++] = rev_pas_map[4 * five + 1];
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * five + 1], one);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * five + 1], duplicate_1_la);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * five + 2], one);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * five + 2], duplicate_1_la);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * five + 3], one);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * five + 3], duplicate_1_la);
+	}
 
 
+	// 6u2
+	if (duplicate_6_la == 255 and duplicate_2_la != 255) {
+		uncondga[uncondga_count++] = rev_pas_map[4 * six + 1];
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * six + 1], two);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * six + 1], duplicate_2_la);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * six + 3], two);
+		uncondga[uncondga_count++] = pas_encode(rev_pas_map[4 * six + 3], duplicate_2_la);
+		uncondga[uncondga_count++] = 255;
+		uncondga[uncondga_count++] = 0;
+	}
+
+	
+	if (duplicate_1_la != 255) {
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_1_la + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_1_la + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * one + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_1_la + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_1_la + 1];
+		ltrdo[ltrdo_count++] = pas_encode(rev_pas_map[4 * duplicate_1_la + 1], two);
+	}
+
+	if (duplicate_2_la != 255) {
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * two + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_2_la + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * two + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_2_la + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * two + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_2_la + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_2_la + 1];
+		ltrdo[ltrdo_count++] = pas_encode(rev_pas_map[4 * duplicate_2_la + 1], one);
+	}
+
+	
+	if (duplicate_3_la != 255) {
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * three + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_3_la + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * three + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_3_la + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * three + 1];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_3_la + 1];
+		ltrdo[ltrdo_count++] = 0;
+		ltrdo[ltrdo_count++] = 255;
+	}
+		
+	if (duplicate_5_la != 255) {
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_5_la + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_5_la + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * five + 1];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_5_la + 1];
+		ltrdo[ltrdo_count++] = 0;
+		ltrdo[ltrdo_count++] = 255;
+	}
+
+	if (duplicate_6_la != 255) {
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_6_la + 3];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_6_la + 2];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * six + 1];
+		ltrdo[ltrdo_count++] = rev_pas_map[4 * duplicate_6_la + 1];
+		ltrdo[ltrdo_count++] = 0;
+		ltrdo[ltrdo_count++] = 255;
+	}
+
+	if (debug) { 
 	printf("ltrdo[] = { ");
 	for (nat i = 0; i < ltrdo_count; i++) {
 		if (i % 4 == 0) puts("");
@@ -1032,31 +1151,11 @@ int main(void) {
 		if (i % 4 == 0) puts("");
 		printf("%hhu, ", uncondga[i]);
 	} printf("}\n");
-	
-	srand((unsigned) time(0));	
-	static char output_filename[4096] = {0};
-	static char output_string[4096] = {0};
-	
-	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
-	atomic_init(&queue_count, 0);
-	for (nat i = 0; i < thread_count; i++) {
-		atomic_init(progress + 2 * i + 0, 0);
-		atomic_init(progress + 2 * i + 1, 0);
 	}
-
-	filenames = calloc(thread_count, sizeof(char*));
-	for (nat i = 0; i < thread_count; i++) {
-		filenames[i] = calloc(4096, 1);
-		char dt[32] = {0};
-		get_datetime(dt);
-		snprintf(filenames[i], 4096, "%s_%08x%08x%08x%08x_z.txt", dt, 
-			rand(), rand(), rand(), rand()
-		);
-	}
-
+	
 	nat total_job_count = 0;
 {	byte mi = 0, pointer = 0;
-	u16 g0 = 0;
+	nat g0 = 0;
 	goto init;
 loop:	if (((g0 >> (pointer << 2)) & 0xf) < ((job_modulus >> (pointer << 2)) & 0xf) - 1) goto increment;
 	if (pointer < job_digit_count - 1) goto reset_;
@@ -1071,33 +1170,32 @@ init:	pointer = 0;
 	mi = (mi + 1) % machine_count;
 	if (mi != machine_index) goto loop;
 	const nat n = atomic_fetch_add_explicit(&queue_count, 1, memory_order_relaxed);
-	queue[n] = g0;
+	queue[n] = (u32) g0;
 	total_job_count++;
 	goto loop;
 done:; }
 
-	printf("printing jobs: (%llu total jobs)\n", total_job_count);
-	for (nat i = 0; i < total_job_count; i++) {
-		if (not (i % 2)) putchar(' ');
-		if (not (i % 4)) putchar(' ');
-		if (not (i % 8)) putchar(10);
-		printf("%04hx ", queue[i]);
-	}
-	puts("");
-	getchar();
+	if (debug) {
+		printf("printing jobs: (%llu total jobs)\n", total_job_count);
+		for (nat i = 0; i < total_job_count; i++) {
+			if (not (i % 2)) putchar(' ');
+			if (not (i % 4)) putchar(' ');
+			if (not (i % 8)) putchar(10);
+			printf("%x ", queue[i]);
+		}
+		puts("");
+		printf("printing jobs: (%llu total jobs)\n", total_job_count);
 
-	snprintf(output_string, 4096, "SU: searching [D=%u] space....\n", D);
-	print(output_filename, 4096, output_string);
-	struct timeval time_begin = {0};
-	gettimeofday(&time_begin, NULL);
+		getchar();
+	}
+
 	for (nat i = 0; i < thread_count; i++) {
-		nat* arg = malloc(sizeof(nat));
-		*arg = i;
+		nat* arg = malloc(sizeof(nat)); *arg = i;
 		pthread_create(threads + i, NULL, worker_thread, arg);
 	}
 
 	u16 graph[operation_count] = {0};
-	nat counts[pm_count] = {0};	
+
 	while (1) {
 		const nat amount_remaining = atomic_load_explicit(&queue_count, memory_order_relaxed);
 		if ((int64_t) amount_remaining <= 0 or disable_main) goto terminate;
@@ -1110,8 +1208,13 @@ done:; }
 			for (byte i = 0; i < operation_count; i++) 
 				graph[i] = atomic_load_explicit(progress + operation_count * thread + i, memory_order_relaxed);
 
+			const nat local_g0 = atomic_load_explicit(pas_progress + 2 * thread + 0, memory_order_relaxed);
+			const nat local_g1 = atomic_load_explicit(pas_progress + 2 * thread + 1, memory_order_relaxed);
 			printf(" %5llu : ", thread);
-			print_graph_raw(graph); 
+			print_graph_raw(graph); printf("  :  ");
+			for (byte i = 0; i < pas_count; i++) {
+				printf("%hhu", gi(local_g0, local_g1, i));
+			}
 			puts("");
 		}
 		puts("");
@@ -1127,6 +1230,8 @@ terminate:
 		for (nat j = 0; j < pm_count; j++) counts[j] += local_counts[j];
 		free(local_counts);
 	}
+
+} // DOL_array loop
 
 	struct timeval time_end = {0};
 	gettimeofday(&time_end, NULL);
@@ -1193,7 +1298,311 @@ terminate:
 
 
 
+
+
+
+
+	//job_placement_in_PAS_g0 = (4 * ((pas_count - 16) - (job_digit_count)));
+	//job_placement_in_PAS_g1 = (4 * ((pas_count - 16) - (job_digit_count)));
+	//job_in_PAS_g0_bits = 0xfffff;
+	//job_in_PAS_g1_bits = 0xff;
+
+
+
+	//0000000001 111100000
+	//pas_count - job_digit_count
+	//job_modulus = ((mod1 >> job_placement_in_PAS) & ((0x1 << (4 * job_digit_count)) - 1));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
+
+
+
+
+original:
+
+static const byte loops[4 * 17] = {
+
+0	one, 1, three, 1,
+1	one, 1, six, 1,
+2	three, 1, two, 1, 
+3	three, 1, five, 1, 
+4	three, 3, two, 2,
+5	three, 1, six, 1,
+6	three, 3, six, 1,
+7	five, 1, six, 1,
+8	five, 2, six, 1,
+9	five, 3, six, 1,
+10	five, 2, two, 2,
+11	five, 3, three, 1,
+12	five, 3, two, 2,
+13	six, 3, three, 1,
+14	two, 3, three, 1,
+15	three, 2, six, 1,
+16	three, 2, two, 2,
+
+};
+
+
+
+
+
+
+final reordered array for 2-loops!
+-----------------------------------
+
+static const byte loops[4 * 17] = {
+
+
+12	five, 3, two, 2,
+4	three, 3, two, 2,
+14	two, 3, three, 1,
+13	six, 3, three, 1,
+
+0	one, 1, three, 1,
+11	five, 3, three, 1,
+3	three, 1, five, 1, 
+5	three, 1, six, 1,
+
+15	three, 2, six, 1,
+6	three, 3, six, 1,
+7	five, 1, six, 1,
+8	five, 2, six, 1,
+
+9	five, 3, six, 1,
+1	one, 1, six, 1,
+2	three, 1, two, 1, 
+10	five, 2, two, 2,
+
+16	three, 2, two, 2,
+
+};
+
+
+
+
+
+
+
+ordering:
+
+12
+4
+14
+13
+
+0
+11
+3
+5
+
+15
+6
+7
+8
+
+9
+1
+2
+10
+
+16
+
+
+
+
+
+4960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 2a 6j 0: 0:2105497 1:1500355 2:247173 3:71040 4:72461 5:34960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 2a 6j 0: 0:2105498 1:1500355 2:247173 3:71040 4:72461 5:34960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 2a 6j 0: 0:2105499 1:1500355 2:247173 3:71040 4:72461 5:34960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 2a 6j 0: 0:2105500 1:1500355 2:247173 3:71040 4:72461 5:34960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 2a 6j 0: 0:2105501 1:1500355 2:247173 3:71040 4:72461 5:34960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 3a 7j 2: 0:2105501 1:1500355 2:247174 3:71040 4:72461 5:34960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 2a 6j 0: 0:2105502 1:1500355 2:247174 3:71040 4:72461 5:34960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 2a 6j 0: 0:2105503 1:1500355 2:247174 3:71040 4:72461 5:34960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 2a 6j 0: 0:2105504 1:1500355 2:247174 3:71040 4:72461 5:34960 6:32698 7:28869 8:5774 9:825 10:72 11:22 12:8 13:0 14:0 15:0 16:0 
+2:p 2a 6j 0: 0:2105505 1:1500355 2:247174 3:71040 4:72461 5:3
+
+
+
+*/
+
+/*
+TEST
+
+
+
+
+
+	PRUNED VIA LT-RDO: pointer = 2    
+
+	      d6  d5  d2  d1       o6  o5  o3    o2 o1 
+------------------------------------------------------------
+	g01 = 26 640 120 000       02 641 623    62 00
+
+
+	00
+	01
+	02
+	03
+	04
+	10
+	11
+
+
+*/
+
+
+
+/*
+
+
+// 1202601294.164259 note:    its possible  that LT RDO   can be integrated 
+	//	into  the NF itself, to make for a dynamic moduli array,  
+	//	making us skip the repetitive NF incr's  
+	//	for situations where LT RDO is used constantly. 
+
 
 AT NF LOOP
 AT NF INCR
