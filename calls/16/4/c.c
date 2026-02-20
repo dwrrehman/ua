@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <iso646.h>
 
-#define machine_index 0
+#define machine_index 4
 
 enum operations { one, two, three, five, six };
 typedef uint8_t byte;

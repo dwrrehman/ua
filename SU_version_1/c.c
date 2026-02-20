@@ -23,11 +23,11 @@ typedef uint8_t byte;
 typedef uint16_t u16;
 typedef uint64_t nat;
 
-#define D 2
+#define D 1
 
 #define machine_count 1
 #define machine_index 0
-#define thread_count 10
+#define thread_count 4
 
 #define machine0_throughput 1
 #define machine1_throughput 1
@@ -879,7 +879,9 @@ pull_job_from_queue:;
 		} }
 		skip_3_15_check:; 
 
-		for (byte pa = graph_count; pa -= 4;) {
+
+
+		/*for (byte pa = graph_count; pa -= 4;) {
 			if (gi(g0, g1, pa) != six) continue;
 			for (byte i = 20; i < graph_count; i += 4) {
 				if (
@@ -894,7 +896,10 @@ pull_job_from_queue:;
 				goto bad;
 			}
 			skip_6e_check:;
-		}
+		}*/
+
+
+
 
 		for (byte pa = graph_count; pa -= 4;) { 
 			if (gi(g0, g1, pa) == six and gi(g0, g1, pa + 2) != six) {

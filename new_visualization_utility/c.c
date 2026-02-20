@@ -46,7 +46,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 3;        // the duplication count (operation_count = 5 + D)
+static const byte D = 1;        // the duplication count (operation_count = 5 + D)
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
@@ -61,7 +61,7 @@ static const byte D = 3;        // the duplication count (operation_count = 5 + 
 static const bool should_deduplicate_z_list = true;
 
 static const nat execution_limit  = (nat) -1;
-static const nat pre_run_duration = 1000000;
+static const nat pre_run_duration = 0;
 
 static const nat array_size = 16384; // (must be divisible by 8)
 static const nat lifetime_length = 16384;
@@ -226,6 +226,8 @@ static void generate_lifetime(struct z_value* z) {
 	for (nat e = 0; e < execution_limit; e++) {
 		const byte I = ip * 4, op = graph[I];
 
+		//printf("op = %hhu\n", op); getchar();
+
 		if (op == one) { 
 			if (pointer == n) { goto done; }  //  puts("fea pointer overflow"); 
 			pointer++; 
@@ -285,6 +287,9 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 
 	char buffer[1024] = {0};
 	while (fgets(buffer, sizeof buffer, file)) {
+
+		//printf("ENTERED THE FUNCTION?\n");
+	
 		char* zend = strchr(buffer, ' ');
 		if (not zend) { puts("zend: could not z value..."); abort(); }
 		buffer[zend - buffer] = 0;
@@ -298,8 +303,12 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 		buffer[oend - buffer] = 0;
 		const byte o = (byte) atoi(zend + 1);
 		
+		//printf("read: origin = %hhu, graph = ", o);
+		//print_graph_raw(g);
+		//puts("");
+
 		list = realloc(list, sizeof(struct z_value) * (count + 1));
-		list[count++] = (struct z_value) {.value = g, .origin = o / 4};
+		list[count++] = (struct z_value) {.value = g, .origin = o };
 	}
 	fclose(file);
 	*list_count = count;
@@ -335,11 +344,18 @@ int main(int argc, const char** argv) {
 			printf(", o = %2llu] generating lifetime...", list[i].origin);
 			fflush(stdout);
 		} 
+
+		
+		if (list[i].origin == 0) abort();
+
 		generate_lifetime(list + i);
 	}
 
 	printf("loading lifetime data for zlist...\n");
 	print_z_list(list, count);
+
+
+	
 
 	if (should_deduplicate_z_list) {
 
