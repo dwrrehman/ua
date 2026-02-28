@@ -1,0 +1,15 @@
+mkdir root/
+mkdir root/projects/
+cd root/projects/
+git clone https://gitlab.com/dwrrehman/ua.git
+
+
+
+
+cd root/projects/ua/calls/16
+#
+b release
+screen ./run
+
+(detach)
+
