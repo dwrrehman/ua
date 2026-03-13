@@ -17,7 +17,6 @@
 #include <stdbool.h>
 #include <iso646.h>
 
-#define machine_index 0
 #define D 2
 
 enum operations { one, two, three, five, six };
@@ -26,15 +25,20 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t nat;
 
-#define machine_count 10
-#define thread_count 10
-#define job_digit_count 3
+#define machine_count 1
+#define thread_count 3
 
-#define debug 0
-#define display_rate 2
+#define job_digit_count 4
+
+#define debug 1
+#define display_rate 0
 
 #define execution_limit 100000000LLU
 #define array_size 1000000LLU
+
+#define pg0  0x0003000200010010 
+#define pg1  0x0000000000000404 
+#define pg2  0x0
 
 #define operation_count (5 + D)
 #define graph_count (operation_count * 4)
@@ -103,29 +107,23 @@ static const byte loops[4 * 15] = {
 
 static void clear_screen(void) { printf("\033[H\033[2J"); } 
 
-static void print_counts(nat* counts) {
+/*static void print_counts(nat* counts) {
 	printf("\npm counts:\n");
         for (nat i = 0; i < pm_count; i++) {
                 if (i and not (i % 2)) puts("");
 		printf("%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
 	}
 	puts("\n[done]");
-}
+}*/
 
 static void print_binary(nat x) {
-	for (nat i = 0; i < 16; i++) {
+	for (nat i = 0; i < 64; i++) {
 		if (not (i & 3)) putchar('_');
 		printf("%llu", (x >> i) & 1);
 	}
 }
 
-
-
 #define g(x)   (gi(g0, g1, g2, x))
-
-#define pg0  0x0003000200010010 
-#define pg1  0x0000000000000404 
-#define pg2  0x0
 
 #define lsepa 2
 __attribute__((always_inline)) static bool editable(nat p) {
@@ -139,12 +137,10 @@ static byte gi(nat g0, nat g1, nat g2,  byte pa) {
 	return ((pa < 16 ? g0 : pa < 32 ? g1 : g2) >> ((pa & 15) << 2)) & 0xf;
 }
 
-
 __attribute__((always_inline))
 static u16 gi16(nat g0, nat g1, nat g2,  byte pa) {
 	return ((pa < 16 ? g0 : pa < 32 ? g1 : g2) >> ((pa & 15) << 2)) & 0xffff;
 }
-
 
 static void print_graph_raw(nat g0, nat g1, nat g2) { 
 	for (byte i = 0; i < graph_count; i++) 
@@ -524,6 +520,8 @@ static byte execute_graph(
 	return true;
 }
 
+#define printit  print_graph_raw(g0, g1, g2); puts("");
+
 static void* worker_thread(void* raw_thread_index) {
 
 	const nat thread_index = *(nat*) raw_thread_index;
@@ -539,15 +537,34 @@ pull_job_from_queue:;
 	const nat jobs_left = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
 	if ((int64_t) jobs_left <= 0) goto terminate;
 	const nat job_pos = 3 * (jobs_left - 1);
+
 	g0 = queue[job_pos + 0];
 	g1 = queue[job_pos + 1];
 	g2 = queue[job_pos + 2];
+
+	//printf("pulled job: "); printit
+	//getchar();
+
 	goto init;
-loop: 
+bad:	
+	//printf("at bad, zskipping at %u: ", pointer); printit
+	//getchar();
+
+	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
+	for (byte i = 0; i < pointer; i++) {
+		if (not editable(i)) continue;
+		const nat mask = ~(0xfLLU << ((i & 15) << 2));
+		     if (i < 16) g0 &= mask;
+		else if (i < 32) g1 &= mask;
+		else             g2 &= mask;
+	}
+loop:
+ 	//puts("NF LOOP");
 	if (g(pointer) < ((pointer & 3) ? operation_count - 1 : 4)) goto increment;
 	if (pointer < graph_count - 1) goto reset_;
 	goto pull_job_from_queue;
 reset_:;
+	//puts("RESET");
 	const nat mask = ~(0xfLLU << ((pointer & 15) << 2));
 	     if (pointer < 16) g0 &= mask;
 	else if (pointer < 32) g1 &= mask;
@@ -555,32 +572,15 @@ reset_:;
 	do pointer++; while (not editable(pointer));
 	goto loop;
 increment:;
-	const nat addend = 1LLU << ((pointer & 15LLU) << 2LLU);
+	//puts("INCR");
+	const nat addend = 1LLU << ((pointer & 15) << 2);
 	     if (pointer < 16) g0 += addend;
 	else if (pointer < 32) g1 += addend;
 	else                   g2 += addend;
 init:  	pointer = lsepa;
-		
-	if (g(4 * g(4 * six   + 3)) == one)   { pointer = 4 * six + 3; goto bad; } 	// ns0.6e1
-	if (g(4 * g(4 * six   + 3)) == five)  { pointer = 4 * six + 3; goto bad; } 	// ns0.6e5
-	if (g(4 * g(4 * six   + 3)) == six)   { pointer = 4 * six + 3; goto bad; } 	// zr6.e
-	if (g(4 * g(4 * six   + 1)) == six)   { pointer = 4 * six + 1; goto bad; }  	// zr6.l
-	if (g(4 * g(4 * five  + 3)) == five)  { pointer = 4 * five + 3; goto bad; }	// zr5.e
-	if (g(4 * g(4 * five  + 2)) == five)  { pointer = 4 * five + 2; goto bad; } 	// zr5.g
-	if (g(4 * g(4 * five  + 2)) == two)   { pointer = 4 * five + 2; goto bad; }	// sci.5g
-	if (g(4 * g(4 * five  + 1)) == five)  { pointer = 4 * five + 1; goto bad; }	// zr5.l
-	if (g(4 * g(4 * three + 3)) == three) { pointer = 4 * three + 3; goto bad; }	// ndi.e
-	if (g(4 * g(4 * three + 2)) == three) { pointer = 4 * three + 2; goto bad; }	// ndi.g
-	if (g(4 * g(4 * three + 2)) == two)   { pointer = 4 * three + 2; goto bad; }	// sci.3g
-	if (g(4 * g(4 * three + 1)) == three) { pointer = 4 * three + 1; goto bad; }	// ndi.l
-	if (g(4 * g(4 * two   + 3)) == six)   { pointer = 4 * two + 3; goto bad; } 	// snco.e
-	if (g(4 * g(4 * two   + 2)) == six)   { pointer = 4 * two + 2; goto bad; } 	// snco.g
-	if (g(4 * g(4 * two   + 2)) == two)   { pointer = 4 * two + 2; goto bad; } 	// sci.2g
-	if (g(4 * g(4 * one   + 3)) == one)   { pointer = 4 * one + 3; goto bad; } 	// ns0.1e1
-	if (g(4 * g(4 * one   + 2)) == one)   { pointer = 4 * one + 2; goto bad; } 	// ns0.1g1
-	if (g(4 * g(4 * one   + 3)) == five)  { pointer = 4 * one + 2; goto bad; } 	// pco.e
-	if (g(4 * g(4 * one   + 2)) == five)  { pointer = 4 * one + 2; goto bad; } 	// pco.g
-	if (g(4 * g(4 * one   + 2)) == two)   { pointer = 4 * one + 2; goto bad; } 	// sci.1g
+
+	//printf("dol:"); printit
+	//getchar();
 
 	for (byte i = D; i--;) {
 		const byte pa = 4 * (5 + i);
@@ -625,11 +625,39 @@ init:  	pointer = lsepa;
 
 		continue; prune_edge:;
 		const byte k = 4 * g(pa + side);
+		pointer = graph_count;
 		if (editable(pa + side) and pointer > pa + side) pointer = pa + side; 
 		if (editable(pa) and pointer > pa) pointer = pa; 
 		if (editable(k) and pointer > k) pointer = k;
 		goto bad;
 	}
+
+	//printf("0sp: "); printit
+	//getchar();
+
+	if (g(4 * g(4 * six   + 3)) == one)   { pointer = 4 * six + 3; goto bad; } 	// ns0.6e1
+	if (g(4 * g(4 * six   + 3)) == five)  { pointer = 4 * six + 3; goto bad; } 	// ns0.6e5
+	if (g(4 * g(4 * six   + 3)) == six)   { pointer = 4 * six + 3; goto bad; } 	// zr6.e
+	if (g(4 * g(4 * six   + 1)) == six)   { pointer = 4 * six + 1; goto bad; }  	// zr6.l
+	if (g(4 * g(4 * five  + 3)) == five)  { pointer = 4 * five + 3; goto bad; }	// zr5.e
+	if (g(4 * g(4 * five  + 2)) == five)  { pointer = 4 * five + 2; goto bad; } 	// zr5.g
+	if (g(4 * g(4 * five  + 2)) == two)   { pointer = 4 * five + 2; goto bad; }	// sci.5g
+	if (g(4 * g(4 * five  + 1)) == five)  { pointer = 4 * five + 1; goto bad; }	// zr5.l
+	if (g(4 * g(4 * three + 3)) == three) { pointer = 4 * three + 3; goto bad; }	// ndi.e
+	if (g(4 * g(4 * three + 2)) == three) { pointer = 4 * three + 2; goto bad; }	// ndi.g
+	if (g(4 * g(4 * three + 2)) == two)   { pointer = 4 * three + 2; goto bad; }	// sci.3g
+	if (g(4 * g(4 * three + 1)) == three) { pointer = 4 * three + 1; goto bad; }	// ndi.l
+	if (g(4 * g(4 * two   + 3)) == six)   { pointer = 4 * two + 3; goto bad; } 	// snco.e
+	if (g(4 * g(4 * two   + 2)) == six)   { pointer = 4 * two + 2; goto bad; } 	// snco.g
+	if (g(4 * g(4 * two   + 2)) == two)   { pointer = 4 * two + 2; goto bad; } 	// sci.2g
+	if (g(4 * g(4 * one   + 3)) == one)   { pointer = 4 * one + 3; goto bad; } 	// ns0.1e1
+	if (g(4 * g(4 * one   + 2)) == one)   { pointer = 4 * one + 2; goto bad; } 	// ns0.1g1
+	if (g(4 * g(4 * one   + 3)) == five)  { pointer = 4 * one + 2; goto bad; } 	// pco.e
+	if (g(4 * g(4 * one   + 2)) == five)  { pointer = 4 * one + 2; goto bad; } 	// pco.g
+	if (g(4 * g(4 * one   + 2)) == two)   { pointer = 4 * one + 2; goto bad; } 	// sci.1g
+
+	//printf(" ga:"); printit
+	//getchar();
 
 	u16 was_utilized = 0;
 	{ byte pa = graph_count; 
@@ -651,7 +679,8 @@ init:  	pointer = lsepa;
 			if (	op == A and
 				g(4 * K) == B and
 				g(E) == pa >> 2
-			) {				
+			) {
+				pointer = graph_count;
 				if (editable(pa) and pointer > pa) pointer = pa;
 				if (editable(pa + x) and pointer > pa + x) pointer = pa + x;
 				if (editable(4 * K) and pointer > 4 * K) pointer = 4 * K;
@@ -661,7 +690,7 @@ init:  	pointer = lsepa;
 		}
 	
 		if (l != pa >> 2) 			was_utilized |= 1 << l;
-		if (g != pa >> 2 and op != six) 		was_utilized |= 1 << g;
+		if (g != pa >> 2 and op != six) 	was_utilized |= 1 << g;
 		if (e != pa >> 2) 			was_utilized |= 1 << e;
 
 		if (pa) goto GA_loop; } 
@@ -693,17 +722,18 @@ init:  	pointer = lsepa;
 	) {pointer = 4 * three + 1; goto bad; }
 	skip_3_15_check:; 
 
+	//printf("exg:"); printit
+	//getchar();
+
+	//abort();
+
 	byte origin = 255;
 	const byte is_bad = execute_graph(g0, g1, g2, &origin, array, counts, thread_index);
-	if (not is_bad) append_to_file(filenames[thread_index], 4096, g1, g2, g2, origin);
-	goto loop;
-bad:	
-	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
 
-	for (byte i = 0; i < pointer; i++) {
-		if (i < 16) g0 &= ~(0xfLLU << ((i & 15LLU) << 2LLU));
-		else        g1 &= ~(0xfLLU << ((i & 15LLU) << 2LLU));
-	}		
+	//printf("at finished exg, appending: "); printit
+	//getchar();
+
+	if (not is_bad) append_to_file(filenames[thread_index], 4096, g0, g1, g2, origin);
 	goto loop;
 
 terminate:
@@ -714,13 +744,217 @@ terminate:
 	return counts;
 }
 
+static void print(char* filename, size_t size, const char* string) {
+	char dt[32] = {0};   get_datetime(dt);
+
+	int flags = O_WRONLY | O_APPEND;
+	mode_t permissions = 0;
+try_open:;
+	const int file = open(filename, flags, permissions);
+	if (file < 0) {
+		if (permissions) {
+			perror("create openat file");
+			printf("print: [%s]: failed to create filename = \"%s\"\n", dt, filename);
+			fflush(stdout);
+			abort();
+		}
+		snprintf(filename, size, "%s_D%u_%08x%08x%08x%08x_output.txt", dt, D,
+			rand(), rand(), rand(), rand()
+		);
+		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		goto try_open;
+	}
+
+	write(file, string, strlen(string));
+	close(file);
+	printf("%s", string);
+	fflush(stdout);
+}
+
+#define disable_main 0
+
+int main(int argc, const char** argv) {
+	if (argc != 2) usage_error: return puts("usage: ./run <machine index>");
+	char* end = NULL;
+	const nat machine_index = strtoull(argv[1], &end, 10);
+	if (not *argv[1] or *end) goto usage_error;
+	
+	srand(20000000);
+
+	static char output_filename[4096] = {0};
+	static char output_string[4096] = {0};
+
+	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
+
+	nat counts[pm_count] = {0};
+	memset(queue, 0, sizeof *queue * 65536);
+	atomic_store(&queue_count, 0);
+
+	for (nat i = 0; i < thread_count * 3; i++) 
+		atomic_store_explicit(progress + i, 0, memory_order_relaxed);
 
 
+	nat total_job_count = 0;
+{	byte pointer = 0;
+	register nat g0 = pg0;
+	register nat g1 = pg1;
+	register nat g2 = pg2;
+	goto init;
+
+loop: 	if (g(pointer) < ((pointer & 3) ? operation_count - 1 : 4)) goto increment;
+	if (pointer < graph_count - 1) goto reset_;
+	goto done;
+reset_:;
+	const nat mask = ~(0xfLLU << ((pointer & 15) << 2));
+	     if (pointer < 16) g0 &= mask;
+	else if (pointer < 32) g1 &= mask;
+	else                   g2 &= mask;
+	do pointer++; while (not editable(pointer));
+	goto loop;
+
+increment:;
+	const nat addend = 1LLU << ((pointer & 15) << 2);
+	     if (pointer < 16) g0 += addend;
+	else if (pointer < 32) g1 += addend;
+	else                   g2 += addend;
 
 
+init:	pointer = graph_count - job_digit_count;
+	while (not editable(pointer)) pointer++; 
+
+	if ((nat) rand() % machine_count != machine_index) goto loop;
+
+	const nat n = atomic_fetch_add_explicit(&queue_count, 1, memory_order_relaxed);
+	queue[3 * n + 0] = g0;
+	queue[3 * n + 1] = g1;
+	queue[3 * n + 2] = g2;
+	total_job_count++;
 
 
+	goto loop;
 
+done:; }
+	if (debug) {
+		printf("printing jobs: (%llu total jobs)\n", total_job_count);
+		for (nat i = 0; i < total_job_count; i++) {
+
+			if (not (i % 2)) putchar(' ');
+			if (not (i % 4)) putchar(10);
+			if (not (i % 8)) putchar(10);
+
+			const nat g0 = queue[3 * i + 0];
+			const nat g1 = queue[3 * i + 1];
+			const nat g2 = queue[3 * i + 2];
+			print_graph_raw(g0, g1, g2); putchar(' ');
+		}
+		puts("");
+
+		
+		printf("printing jobs: (%llu total jobs)\n", total_job_count);
+		printf("executing machine index : %llu\n\n", machine_index);
+		getchar();
+	}
+
+	srand((unsigned) time(0));
+	filenames = calloc(thread_count, sizeof(char*));
+	for (nat i = 0; i < thread_count; i++) {
+		filenames[i] = calloc(4096, 1);
+		char dt[32] = {0};
+		get_datetime(dt);
+		snprintf(filenames[i], 4096, "%s_%08x%08x%08x%08x_z.txt", dt, 
+			rand(), rand(), rand(), rand()
+		);
+	}
+
+	snprintf(output_string, 4096, "SU: searching [D=%u] space....\n", D);
+	print(output_filename, 4096, output_string);
+
+	struct timeval time_begin = {0};
+	gettimeofday(&time_begin, NULL);
+
+	for (nat i = 0; i < thread_count; i++) {
+		nat* arg = malloc(sizeof(nat)); *arg = i;
+		pthread_create(threads + i, NULL, worker_thread, arg);
+	}
+
+	while (1) {
+
+		const nat amount_remaining = atomic_load_explicit(&queue_count, memory_order_relaxed);
+		if ((int64_t) amount_remaining <= 0 or disable_main) goto terminate;
+
+		clear_screen();
+		printf("[D = %u] executing machine index : %llu\n\n", D, machine_index);
+
+		printf("array_size = %llu\n", array_size); 
+		printf("graph_count = %u\n", graph_count); 
+		printf("thread_count = %u\n", thread_count); 
+		printf("machine_count = %u\n", machine_count); 
+		printf("job_digit_count = %u\n", job_digit_count); 
+		printf("execution_limit = %llu\n", execution_limit); 
+		printf("operation_count = %u\n", operation_count); 
+		
+		printf("----------------- jobs %llu / %llu -------------------\n", amount_remaining, total_job_count);
+		printf("\n\t complete %1.3lf%%\n\n", 100 * ((double) (total_job_count - amount_remaining) / (double) total_job_count));
+		for (nat thread = 0; thread < thread_count; thread++) {
+			const nat g0 = atomic_load_explicit(progress + 3 * thread + 0, memory_order_relaxed);
+			const nat g1 = atomic_load_explicit(progress + 3 * thread + 1, memory_order_relaxed);
+			const nat g2 = atomic_load_explicit(progress + 3 * thread + 2, memory_order_relaxed);
+			printf(" %5llu : ", thread); print_graph_raw(g0, g1, g2); puts("");
+		}
+		puts("");
+		if (not display_rate) usleep(100000); else sleep(1 << display_rate);
+	}
+terminate:
+	puts("\nmain: joining threads...\n");
+	for (nat i = 0; i < thread_count; i++) {
+		nat* local_counts = NULL;
+		pthread_join(threads[i], (void**) &local_counts);
+		for (nat j = 0; j < pm_count; j++) counts[j] += local_counts[j];
+		free(local_counts);
+	}
+
+	struct timeval time_end = {0};
+	gettimeofday(&time_end, NULL);
+
+	const double seconds = difftime(time_end.tv_sec, time_begin.tv_sec);
+	char time_begin_dt[32] = {0}, time_end_dt[32] = {0};
+	strftime(time_end_dt,   32, "1%Y%m%d%u.%H%M%S", localtime(&time_end.tv_sec));
+	strftime(time_begin_dt, 32, "1%Y%m%d%u.%H%M%S", localtime(&time_begin.tv_sec));
+
+	snprintf(output_string, 4096,
+		"su: D = %u space:\n"
+		"\t thread_count = %u\n"
+		"\t machine_index = %llu\n"
+		"\t display_rate = %u\n"
+		"\t execution_limit = %llu\n"
+                "\t array_size = %llu\n"
+		"\t in %10.2lfs [%s:%s]\n"
+		"\n",
+		D, thread_count,
+		machine_index,
+		display_rate,
+		execution_limit,
+		array_size,
+		seconds, time_begin_dt, time_end_dt
+	);
+	print(output_filename, 4096, output_string);
+
+        snprintf(output_string, 4096, "\npm counts:\n");
+	print(output_filename, 4096, output_string);
+
+        for (nat i = 0; i < pm_count; i++) {
+                if (i and not (i % 2)) {
+			snprintf(output_string, 4096, "\n");
+			print(output_filename, 4096, output_string);
+		}
+		snprintf(output_string, 4096, "%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
+		print(output_filename, 4096, output_string);
+        }
+        snprintf(output_string, 4096, "[done]\n");
+	print(output_filename, 4096, output_string);
+
+} // main
 
 
 
