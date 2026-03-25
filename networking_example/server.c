@@ -28,6 +28,11 @@ static void print_binary(nat x) {
 }
 
 
+
+#define get_ack     char ack = 0; printf("[%s:%u] awaiting ack...\n", addresses[i], ports[i]); recv(this, &ack, 1, 0);
+
+
+
 int main(void) {
 
 	int server = socket(AF_INET6, SOCK_STREAM, 0);
@@ -59,7 +64,6 @@ int main(void) {
 	nat connection_count = 0;
 
 	while (connection_count < required_client_count) {
-
 		clients[connection_count] = client_address;
 		int length = sizeof client_address;
 		connections[connection_count] = accept(server, (struct sockaddr *) (clients + connection_count), (socklen_t*) &length);
@@ -74,50 +78,84 @@ int main(void) {
 		ports[connection_count] = port;
 		connection_count++;
 	}
-
 	char running = 1;
 	char buffer[4096] = {0};
-
 	const nat N = connection_count;
-
 	while (running) {
-
-		clear_screen();
-		printf("connected clients:\n");
-		for (nat i = 0; i < connection_count; i++) {
-			printf("%llu: %s:%u\n", i, addresses[i], ports[i]);
-		}
-		puts("");
-
 		memset(buffer, 0, sizeof buffer);
 		printf(":: "); fflush(stdout);
 		fgets(buffer, sizeof buffer, stdin);
 
-		if (	not strncmp(buffer, "execute ", strlen("execute ")) or 
+		if (strlen(buffer)) buffer[strlen(buffer) - 1] = 0;
+
+		if (not strcmp(buffer, "")) {} 
+		else if (not strcmp(buffer, "clear")) clear_screen();
+
+		else if (not strcmp(buffer, "list")) {
+			printf("connected clients:\n");
+			for (nat i = 0; i < connection_count; i++) {
+				printf("%llu: %s:%u\n", i, addresses[i], ports[i]);
+			}
+			puts("");
+
+
+		} else if (	not strncmp(buffer, "execute ", strlen("execute ")) or 
 			not strcmp(buffer, "execute")
 		) { 
-
 			char* command = buffer + strlen("execute ");
-			const nat command_length = (strlen(buffer) - strlen("execute ")) - 1;
-
+			const nat command_length = strlen(buffer) - strlen("execute ");
 			for (nat i = 0; i < connection_count; i++) {
-
 				printf("sending/executing shell command %s (%llu chars) to %s:%u client...\n", command, command_length, addresses[i], ports[i]);
-
 				const int this = connections[i];
-
-				char operation[16] = "EXECUTE";	
-				operation[14] = command_length & 0xff;
-				operation[15] = (command_length >> 8) & 0xff;
-				
+				char operation[16] = {0};
+				operation[0] = 'E';
+				operation[1] = command_length & 0xff;
+				operation[2] = (command_length >> 8) & 0xff;				
 				send(this, operation, 16, 0);
-				send(this, command, command_length, 0);
-				
-				char ack = 0;
-				recv(this, &ack, 1, 0);
+				send(this, command, command_length, 0);				
+
+				nat output_length = 0; 
+				printf("[%s:%u] awaiting shell output...\n", addresses[i], ports[i]);
+				recv(this, &output_length, sizeof output_length , 0);
+
+				const nat packet_count = output_length / 512;
+				char* output = calloc(output_length + 1, 1);
+				nat length = 0;
+				for (nat p = 0; p < packet_count; p++) {
+					char packet_buffer[512] = {0};
+					recv(this, packet_buffer, 512, 0);
+					memcpy(output + length, packet_buffer, 512);
+					length += 512;
+				}
+				get_ack;
+
+				printf("received shell command output: (%llu bytes) <<<%s>>>\n", output_length, output);
 			}
 
+		} else if (not strcmp(buffer, "disconnect")) {
+			for (nat i = 0; i < connection_count; i++) {
+				printf("sending disconnect command to %s:%u client...\n", addresses[i], ports[i]);
+				const int this = connections[i];
+				char operation[16] = {0};
+				operation[0] = 'D';
+				send(this, operation, 16, 0);
+				get_ack;
+			}
+			running = 0;
+
+		} else if (not strcmp(buffer, "terminate")) {
+			for (nat i = 0; i < connection_count; i++) {
+				printf("sending disconnect command to %s:%u client...\n", addresses[i], ports[i]);
+				const int this = connections[i];
+				char operation[16] = {0};
+				operation[0] = 'K';
+				send(this, operation, 16, 0);
+				get_ack;
+			}
+			running = 0;
+
 		} else printf("error: unknown comand: %s\n", buffer);
+
 	}
 	close(server);
 }
