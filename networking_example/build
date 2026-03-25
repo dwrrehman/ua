@@ -1,0 +1,11 @@
+#!/bin/zsh
+
+clang server.c -o start_server
+
+clang client.c -o start_client
+
+
+
+
+
+

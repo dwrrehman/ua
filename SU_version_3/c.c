@@ -17,7 +17,7 @@
 #include <stdbool.h>
 #include <iso646.h>
 
-#define D 2
+#define D 1
 
 enum operations { one, two, three, five, six };
 typedef uint8_t byte;
@@ -611,17 +611,22 @@ init:  	pointer = lsepa;
 		if (op == one and g(pa + 1) == pa >> 2) { side = 1; goto prune_edge; } // lb
 
 		for (byte opi = 5; opi--;) {
-			if (op == opi and gi16(g0,g1,g2, 4 * opi) >= gi16(g0,g1,g2, pa)) { 
-				pointer = 4 * (opi + 1);
-				while (not editable(pointer)) pointer++;
-			} 
+			if (	(opi != one and opi != two)
+					or
+				g(4 * opi + 1) == g(pa + 1)
+			) {
+				if (op == opi and gi16(g0,g1,g2, 4 * opi) >= gi16(g0,g1,g2, pa)) { 
+					pointer = 4 * (opi + 1);
+					while (not editable(pointer)) pointer++;
+				}
+			}
 			for (byte j = 0; j < i; j++) {
 				if (op == opi and gi16(g0,g1,g2, 4 * (5 + j)) >= gi16(g0,g1,g2, pa)) {
 					pointer = 4 * (5 + j + 1);
 					while (not editable(pointer)) pointer++;
 				} 
 			}
-		}		
+		}
 
 		continue; prune_edge:;
 		const byte k = 4 * g(pa + side);
@@ -830,7 +835,6 @@ init:	pointer = graph_count - job_digit_count;
 	queue[3 * n + 1] = g1;
 	queue[3 * n + 2] = g2;
 	total_job_count++;
-
 
 	goto loop;
 
