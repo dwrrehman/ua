@@ -859,6 +859,9 @@ done:; }
 
 	printf("printing jobs: (%llu total jobs)\n", total_job_count);
 	printf("executing machine index : %llu\n\n", machine_index);
+
+	fflush(stdout);
+
 	getchar();
 	
 	srand((unsigned) time(0));
