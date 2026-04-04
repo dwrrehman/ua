@@ -31,7 +31,7 @@ typedef uint64_t nat;
 #define job_digit_count 6
 
 #define debug 1
-#define display_rate 2
+#define display_rate 3
 
 #define execution_limit 100000000LLU
 #define array_size 1000000LLU
@@ -105,7 +105,7 @@ static const byte loops[4 * 15] = {
 	three, 1, two, 1, 
 };
 
-static void clear_screen(void) { printf("\033[H\033[2J"); } 
+//static void clear_screen(void) { printf("\033[H\033[2J"); } 
 
 /*static void print_counts(nat* counts) {
 	printf("\npm counts:\n");
@@ -887,7 +887,7 @@ done:; }
 		const nat amount_remaining = atomic_load_explicit(&queue_count, memory_order_relaxed);
 		if ((int64_t) amount_remaining <= 0 or disable_main) goto terminate;
 
-		clear_screen();
+		//clear_screen();
 		printf("[D = %u] executing machine index : %llu\n\n", D, machine_index);
 
 		printf("array_size = %llu\n", array_size); 
