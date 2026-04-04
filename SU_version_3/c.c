@@ -25,13 +25,13 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t nat;
 
-#define machine_count 1
-#define thread_count 3
+#define machine_count 10
+#define thread_count 10
 
-#define job_digit_count 4
+#define job_digit_count 6
 
 #define debug 1
-#define display_rate 0
+#define display_rate 2
 
 #define execution_limit 100000000LLU
 #define array_size 1000000LLU

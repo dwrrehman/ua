@@ -1,0 +1,11 @@
+#!/bin/zsh
+
+clang -Weverything -Wno-declaration-after-statement server.c -o start_server -O0 -fsanitize=address,undefined
+
+clang -Weverything -Wno-declaration-after-statement client.c -o start_client -O0 -fsanitize=address,undefined
+
+
+
+
+
+

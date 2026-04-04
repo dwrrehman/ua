@@ -162,19 +162,19 @@ int main(void) {
 			}
 
 			for (nat i = 0; i < connection_count; i++) {
-				/*printf("sending/writing shell command %s (%llu chars) "
+				printf("sending/writing shell command %s (%llu chars) "
 					"to %s:%u client...\n", 
 					command, command_length, 
 					addresses[i], ports[i]
-				);*/
+				);
 				const int this = connections[i];
 				send_command(this, c);
 				send_string(this, command, command_length);
-				//print_string("sent shell command", command, command_length);
-				//printf("[%s:%u] awaiting response...\n", addresses[i], ports[i]);
+				print_string("sent shell command", command, command_length);
+				printf("[%s:%u] awaiting response...\n", addresses[i], ports[i]);
 				nat response_length = 0;
 				char* response = get_string(this, &response_length);
-				print_string("", response, response_length);
+				print_string("received response", response, response_length);
 			}
 
 		} else if (not strcmp(buffer, "read")) {
@@ -183,19 +183,19 @@ int main(void) {
 			const nat message_length = strlen(message);
 
 			for (nat i = 0; i < connection_count; i++) {
-				/*printf("reading output from shell commands %s (%llu chars) "
+				printf("reading output from shell commands %s (%llu chars) "
 					"from %s:%u client...\n", 
 					message, message_length, 
 					addresses[i], ports[i]
-				);*/
+				);
 				const int this = connections[i];
 				send_command(this, 'R');
 				send_string(this, message, message_length);
-				//print_string("sent ", message, message_length);
-				//printf("[%s:%u] awaiting response...\n", addresses[i], ports[i]);
+				print_string("sent ", message, message_length);
+				printf("[%s:%u] awaiting response...\n", addresses[i], ports[i]);
 				nat output_length = 0;
 				char* output = get_string(this, &output_length);
-				print_string("", output, output_length);
+				print_string("received shell command output", output, output_length);
 			}
 
 		} else if (not strcmp(buffer, "disconnect") or not strcmp(buffer, "exit")) {
