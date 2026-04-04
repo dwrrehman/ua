@@ -62,16 +62,7 @@ disconnect
 typedef uint64_t nat;
 
 static const int server_port = 32768;
-
-
-
-
-static const nat required_client_count = 1; // 10          change this back to 10!
-
-
-
-
-
+static const nat required_client_count = 10;
 
 static void clear_screen(void) { printf("\033[H\033[2J"); } 
 
