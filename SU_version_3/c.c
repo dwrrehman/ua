@@ -17,7 +17,7 @@
 #include <stdbool.h>
 #include <iso646.h>
 
-#define D 1
+#define D 2
 
 enum operations { one, two, three, five, six };
 typedef uint8_t byte;
@@ -31,7 +31,7 @@ typedef uint64_t nat;
 #define job_digit_count 6
 
 #define debug 1
-#define display_rate 3
+#define display_rate 4
 
 #define execution_limit 100000000LLU
 #define array_size 1000000LLU
@@ -839,7 +839,9 @@ init:	pointer = graph_count - job_digit_count;
 	goto loop;
 
 done:; }
-	if (debug) {
+
+
+	/*if (debug) {
 		printf("printing jobs: (%llu total jobs)\n", total_job_count);
 		for (nat i = 0; i < total_job_count; i++) {
 
@@ -853,13 +855,12 @@ done:; }
 			print_graph_raw(g0, g1, g2); putchar(' ');
 		}
 		puts("");
+	}*/
 
-		
-		printf("printing jobs: (%llu total jobs)\n", total_job_count);
-		printf("executing machine index : %llu\n\n", machine_index);
-		getchar();
-	}
-
+	printf("printing jobs: (%llu total jobs)\n", total_job_count);
+	printf("executing machine index : %llu\n\n", machine_index);
+	getchar();
+	
 	srand((unsigned) time(0));
 	filenames = calloc(thread_count, sizeof(char*));
 	for (nat i = 0; i < thread_count; i++) {
@@ -907,6 +908,8 @@ done:; }
 			printf(" %5llu : ", thread); print_graph_raw(g0, g1, g2); puts("");
 		}
 		puts("");
+		fflush(stdout);
+
 		if (not display_rate) usleep(100000); else sleep(1 << display_rate);
 	}
 terminate:

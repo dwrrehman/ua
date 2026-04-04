@@ -145,7 +145,9 @@ int main(void) {
 			char c = 0;
 
 			if (not strcmp(buffer, "write")) {
-				command = strdup("\n");
+				puts("(newline)");
+				command = calloc(512, 1);
+				command[0] = 10;
 				command_length = 1;
 				c = 'W';
 
