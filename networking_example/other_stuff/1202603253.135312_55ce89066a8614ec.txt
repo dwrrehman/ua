@@ -1,0 +1,90 @@
+specification of the networked shell:
+------------------------------------------
+written on 1202603253.134802 by dwrr
+
+(used for distributing the search utility 
+and other commands over to all 10 m4 mac mini's)
+
+
+	we want:
+---------------------------------------------------------------------
+
+	
+	- a comamnd line utility which is able to simulateously connect to all 10 macs at once, 
+		and list their ip addresses
+
+	- a set of commands as follows:
+
+		connect_to_all
+
+		disconnect_from_all
+
+		send_file <local_filepath>
+
+		execute <shell_command>
+
+		gather_z_lists <directory/>
+
+		sleep_all_clients
+
+
+	- executing the search call itself  should allow for control-c'ing the call, and normal shell things
+
+
+	- we want to be able to tab through the same output of the same command happening on all 10 mac mini's simulatesoously
+
+	- we want to be able to give "#"   to mean   a stand in for the  mac mini's identification cluster-index, ie, a number 0 through 9 specific to each mac mini.
+			the utility will sub in that number in replace of  "#"    in the shell comamnd that we execute. 
+ 
+
+	- we should have a connected status for each mac mini, and be able to disconnect all at once.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

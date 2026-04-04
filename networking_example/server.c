@@ -140,7 +140,6 @@ int main(void) {
 			not strncmp(buffer, "write ", strlen("write ")) or not strcmp(buffer, "write") or 
 			not strncmp(buffer, "send ", strlen("send "))
 		) { 
-
 			char* command = NULL;
 			nat command_length = 0;
 			char c = 0;
@@ -148,12 +147,12 @@ int main(void) {
 			if (not strcmp(buffer, "write")) {
 				command = strdup("\n");
 				command_length = 1;
-				c = 'E';
+				c = 'W';
 
 			} else if (buffer[0] == 'w') {
 				command = buffer + strlen("write ");
 				command_length = strlen(buffer) - strlen("write ");
-				c = 'E';
+				c = 'W';
 
 			} else {
 				command = load_file(buffer + strlen("send "), &command_length);
@@ -180,7 +179,7 @@ int main(void) {
 
 		} else if (not strcmp(buffer, "read")) {
 
-			char message[512] = "<reading the output from shell command!>";
+			char message[512] = "<read>";
 			const nat message_length = strlen(message);
 
 			for (nat i = 0; i < connection_count; i++) {

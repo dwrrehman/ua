@@ -57,16 +57,6 @@ extern char** environ;
 
 #include "common.c"
 
-
-
-static void change_directory(const char* d) {
-	if (chdir(d) < 0) {
-		printf("crp:err\""); printf("%s\n", d); printf("\"chdir\""); 
-		printf("%s\n", strerror(errno)); 
-		return;
-	}	
-}
-
 static char** parse_arguments(const char* string, const nat length) {
 
 	const char delimiter = ' ';
@@ -121,7 +111,7 @@ static char* path_lookup(const char* executable_name) {
 			memcpy(file + argument_length + 1, executable_name, executable_length);
 			printf("testing: %s  ---> ", file);
 			if (not access(file, X_OK)) {
-				printf("\033[32mGOOD\033[0m");
+				printf("\033[32mGOOD\033[0m\n");
 				return file;
 			} else {
 				printf("\033[31mERROR\033[0m");
@@ -135,8 +125,6 @@ static char* path_lookup(const char* executable_name) {
 	if (argument_length) goto push;
 	return NULL;
 }
-
-
 
 struct job {
 	char** arguments;
@@ -158,15 +146,36 @@ static char* execute_shell_command(
 ) {
 
 	char message[4096] = {0};
+
+
+
+	if (this->status) {
+		ssize_t nbytes = write(this->rfd[1], command, command_length);
+		if (nbytes <= 0) {
+			printf("CHILD ERROR write(). \n");
+			printf("error: %s\n", strerror(errno));
+			fflush(stdout);
+		}
+		this->output = realloc(this->output, this->length + (size_t) nbytes);
+		memcpy(this->output + this->length, command, (size_t) nbytes);
+		this->length += (size_t) nbytes;
+		goto finish_execution;
+	}
+
+
+	
 	char** arguments = parse_arguments(command, command_length);
 	debug_argument_list(arguments);
 
 	if (not strcmp(arguments[0], "cd")) {
 		const char* path = arguments[1] ? arguments[1] : getenv("HOME");
-		change_directory(path);
-		snprintf(message, sizeof message, "changed directories to %s", path);
-		goto finish_execution;
-
+		if (chdir(path) < 0) {
+			snprintf(message, sizeof message, "chdir: [path=%s]: %s\n", path, strerror(errno));
+			goto finish_execution;
+		} else {
+			snprintf(message, sizeof message, "chdir: successfully changed directories to \"%s/\"\n", path);
+			goto finish_execution;
+		}
 	} 
 
 	if (arguments[0][0] != '.' and arguments[0][0] != '/') {
@@ -222,14 +231,10 @@ finish_execution:
 	return strdup(message);
 }
 
-
-
 static char* read_shell_command_output(struct job* this, nat* output_length) {
 
 	char message[4096] = {0};
-
 	if (this->status != 1) goto done_with_waiting;
-
 
 	char buffer[65536] = {0};
 	if (poll(&(struct pollfd){ .fd = this->fd[0], .events = POLLIN }, 1, 0) == 1) {
@@ -299,7 +304,43 @@ done_with_waiting:
 	return this->output;
 }
 
+
+static char* get_command_output(const char* input_command) {
+	char command[4096] = {0};
+	snprintf(command, sizeof command, "%s 2>&1", input_command);
+	FILE* f = popen(command, "r");
+	if (not f) { perror("popen"); abort(); }
+	char* string = NULL;
+	size_t length = 0;
+	char line[2048] = {0};
+	while (fgets(line, sizeof line, f)) {
+		size_t l = strlen(line);
+		string = realloc(string, length + l);
+		memcpy(string + length, line, l);
+		length += l;
+	}
+	pclose(f);
+	return strndup(string, length);
+}
+
+static nat translate(char* s) {
+	if (not strcmp(s, "dwrr-mini.local\n")) return 0;
+	if (not strcmp(s, "dwrr-mini1.local\n")) return 1;
+	if (not strcmp(s, "dwrr-mini2.local\n")) return 2;
+	if (not strcmp(s, "dwrr-mini3.local\n")) return 3;
+	if (not strcmp(s, "dwrr-mini4.local\n")) return 4;
+	if (not strcmp(s, "dwrr-mini5.local\n")) return 5;
+	if (not strcmp(s, "dwrr-mini6.local\n")) return 6;
+	if (not strcmp(s, "dwrr-mini7.local\n")) return 7;
+	if (not strcmp(s, "dwrr-mini8.local\n")) return 8;
+	if (not strcmp(s, "dwrr-mini9.local\n")) return 9;
+	if (not strcmp(s, "dwrr.local\n")) return 0;
+	puts(s); abort();
+}
+
 int main(void) {
+	const nat machine_index = translate(get_command_output("hostname"));
+	printf("client: running shell with machine_index set to %llu\n", machine_index);
 
 	signal(SIGPIPE, SIG_IGN);
 
@@ -341,49 +382,54 @@ int main(void) {
 
 			char op = operation[0];
 
-			if (op == 'W' or op == 'S') {
+			if (op == 'W') {
 
 				nat command_length = 0;
 				char* command = get_string(connection, &command_length);
 				print_string("received shell command", command, command_length);
 
-				if (op == 'W') {
-					char* message = execute_shell_command(&current_job, command, command_length);
-					char response[4096] = {0};
-					memcpy(response, message, strlen(message));
-					send_string(connection, response, strlen(response));
-					print_string("sent response", response, strlen(response));
+				char* message = execute_shell_command(&current_job, command, command_length);
+				char response[4096] = {0};
+				memcpy(response, message, strlen(message));
+				send_string(connection, response, strlen(response));
+				print_string("sent response", response, strlen(response));
+			
+			} else if (op == 'S') {
 
-				} else {
-					print_string("generating file with file contents", command, command_length);
-					write_to_file(command, command_length);
-					char message[1024] = "file wrote to client local disk.";
-					nat message_length = strlen(message);
-					send_string(connection, message, message_length);
-					print_string("write confirmation", message, message_length);
-				}
+				nat command_length = 0;
+				char* command = get_string(connection, &command_length);
+				print_string("received shell command", command, command_length);
+
+				print_string("generating file with file contents", command, command_length);
+				write_to_file(command, command_length);
+				char message[1024] = "file wrote to client local disk.";
+				nat message_length = strlen(message);
+				send_string(connection, message, message_length);
+				print_string("write confirmation", message, message_length);			
 
 			} else if (op == 'R') {
 				nat message_length = 0;
 				char* message = get_string(connection, &message_length);
-				print_string("received message", message, message_length);			
+				print_string("received message", message, message_length);
 				nat output_length = 0;
 				char* output = read_shell_command_output(&current_job, &output_length);
-				send_string(connection, output, output_length);
-				print_string("sent shell command output", output, output_length);
-	
 
+				nat packet_count = (output_length / 512) + 1;
+				char* response = calloc(packet_count, 512);
+				memcpy(response, output, output_length);
+				send_string(connection, response, output_length);
+				print_string("sent shell command output", response, output_length);
+				free(response);
+				current_job.length = 0;
+	
 			} else if (op == 'D') {					
 				puts("client: received DISCONNECT COMMAND");
 				running = 0;
-
-
 
 			} else if (op == 'K') {
 				puts("client: received KILL COMMAND");
 				running = 0;
 				killed = 1;
-
 
 			} else {
 				printf("client received erroneous command %u", op);

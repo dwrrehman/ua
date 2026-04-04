@@ -11,8 +11,8 @@ static void print_binary(nat x) {
 static void send_string(int con, char* string, nat length) {
 	send(con, &length, sizeof(nat), 0);
 	printf("SEND_STRING: info: send(8 bytes) call sent a string length of %llu\n", length);
-	nat packet_count = length / 512;
-	if (not packet_count) packet_count = 1;
+	nat packet_count = (length / 512) + 1;	
+	printf("SEND_STRING: info: sending %llu packets...\n", packet_count);
 	nat pointer = 0;
 	for (nat p = 0; p < packet_count; p++) {
 		send(con, string + pointer, 512, 0);
@@ -24,8 +24,8 @@ static void send_string(int con, char* string, nat length) {
 static char* get_string(int con, nat* output_length) {
 	recv(con, output_length, sizeof(nat), 0);
 	printf("GET_STRING: info: recv(8 bytes) call received a string length of %llu\n", *output_length);
-	nat packet_count = *output_length / 512;
-	if (not packet_count) packet_count = 1;
+	nat packet_count = (*output_length / 512) + 1;
+	printf("GET_STRING: info: receiving %llu packets...\n", packet_count);
 	char* output = calloc(packet_count, 512);
 	nat pointer = 0;
 	for (nat p = 0; p < packet_count; p++) {
