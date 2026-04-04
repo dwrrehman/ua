@@ -1,40 +1,75 @@
 // tcp networking example in c!
+// this is the server
 // written on 1202603242.145705 by dwrr
+
+/*
+
+
+
+./start_server                        ("./attach")
+
+write mkdir search_calls
+write mkdir search_calls/0/
+write cd search_calls/0/
+
+send c.c
+
+write ls
+read
+
+write mv 1202604035.211652_0193501842.txt c.c
+read
+
+send build
+
+write ls
+read
+
+write mv 1202604035.211652_10928405972.txt build
+read
+
+write ./build release
+read
+
+write screen ./run #
+read
+
+write
+read
+
+write <control-A + 'd'>
+read
+
+disconnect
+
+*/
 
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <iso646.h>
 
 typedef uint64_t nat;
-
 static const int server_port = 32768;
-
 static const nat required_client_count = 1; // 10
-
 static void clear_screen(void) { printf("\033[H\033[2J"); } 
 
-static void print_binary(nat x) {
-	for (nat i = 0; i < 64; i++) {
-		if (not (i & 3)) putchar('_');
-		printf("%llu", (x >> i) & 1);
-	}
-}
-
-
-
-#define get_ack     char ack = 0; printf("[%s:%u] awaiting ack...\n", addresses[i], ports[i]); recv(this, &ack, 1, 0);
+#include "common.c"
 
 
 
 int main(void) {
-
+	srand((unsigned) time(NULL));
 	int server = socket(AF_INET6, SOCK_STREAM, 0);
 	if (server < 0) { perror("socket"); exit(1); }
 
@@ -78,13 +113,16 @@ int main(void) {
 		ports[connection_count] = port;
 		connection_count++;
 	}
+
 	char running = 1;
-	char buffer[4096] = {0};
-	const nat N = connection_count;
+	const nat buffer_size = 65536 * 4;
+	char* buffer = calloc(buffer_size, 1);
+
 	while (running) {
-		memset(buffer, 0, sizeof buffer);
+
+		memset(buffer, 0, buffer_size);
 		printf(":: "); fflush(stdout);
-		fgets(buffer, sizeof buffer, stdin);
+		fgets(buffer, buffer_size, stdin);
 
 		if (strlen(buffer)) buffer[strlen(buffer) - 1] = 0;
 
@@ -98,59 +136,80 @@ int main(void) {
 			}
 			puts("");
 
-
-		} else if (	not strncmp(buffer, "execute ", strlen("execute ")) or 
-			not strcmp(buffer, "execute")
+		} else if (
+			not strncmp(buffer, "write ", strlen("write ")) or not strcmp(buffer, "write") or 
+			not strncmp(buffer, "send ", strlen("send "))
 		) { 
-			char* command = buffer + strlen("execute ");
-			const nat command_length = strlen(buffer) - strlen("execute ");
-			for (nat i = 0; i < connection_count; i++) {
-				printf("sending/executing shell command %s (%llu chars) to %s:%u client...\n", command, command_length, addresses[i], ports[i]);
-				const int this = connections[i];
-				char operation[16] = {0};
-				operation[0] = 'E';
-				operation[1] = command_length & 0xff;
-				operation[2] = (command_length >> 8) & 0xff;				
-				send(this, operation, 16, 0);
-				send(this, command, command_length, 0);				
 
-				nat output_length = 0; 
-				printf("[%s:%u] awaiting shell output...\n", addresses[i], ports[i]);
-				recv(this, &output_length, sizeof output_length , 0);
+			char* command = NULL;
+			nat command_length = 0;
+			char c = 0;
 
-				const nat packet_count = output_length / 512;
-				char* output = calloc(output_length + 1, 1);
-				nat length = 0;
-				for (nat p = 0; p < packet_count; p++) {
-					char packet_buffer[512] = {0};
-					recv(this, packet_buffer, 512, 0);
-					memcpy(output + length, packet_buffer, 512);
-					length += 512;
-				}
-				get_ack;
+			if (not strcmp(buffer, "write")) {
+				command = strdup("\n");
+				command_length = 1;
+				c = 'E';
 
-				printf("received shell command output: (%llu bytes) <<<%s>>>\n", output_length, output);
+			} else if (buffer[0] == 'w') {
+				command = buffer + strlen("write ");
+				command_length = strlen(buffer) - strlen("write ");
+				c = 'E';
+
+			} else {
+				command = load_file(buffer + strlen("send "), &command_length);
+				memcpy(buffer, command, command_length);
+				command = buffer;
+				c = 'S';
 			}
 
-		} else if (not strcmp(buffer, "disconnect")) {
+			for (nat i = 0; i < connection_count; i++) {
+				printf("sending/writing shell command %s (%llu chars) "
+					"to %s:%u client...\n", 
+					command, command_length, 
+					addresses[i], ports[i]
+				);
+				const int this = connections[i];
+				send_command(this, c);
+				send_string(this, command, command_length);
+				print_string("sent shell command", command, command_length);
+				printf("[%s:%u] awaiting response...\n", addresses[i], ports[i]);
+				nat response_length = 0;
+				char* response = get_string(this, &response_length);
+				print_string("received response", response, response_length);
+			}
+
+		} else if (not strcmp(buffer, "read")) {
+
+			char message[512] = "<reading the output from shell command!>";
+			const nat message_length = strlen(message);
+
+			for (nat i = 0; i < connection_count; i++) {
+				printf("reading output from shell commands %s (%llu chars) "
+					"from %s:%u client...\n", 
+					message, message_length, 
+					addresses[i], ports[i]
+				);
+				const int this = connections[i];
+				send_command(this, 'R');
+				send_string(this, message, message_length);
+				print_string("sent ", message, message_length);
+				printf("[%s:%u] awaiting response...\n", addresses[i], ports[i]);
+				nat output_length = 0;
+				char* output = get_string(this, &output_length);
+				print_string("received shell command output", output, output_length);
+			}
+
+		} else if (not strcmp(buffer, "disconnect") or not strcmp(buffer, "exit")) {
 			for (nat i = 0; i < connection_count; i++) {
 				printf("sending disconnect command to %s:%u client...\n", addresses[i], ports[i]);
-				const int this = connections[i];
-				char operation[16] = {0};
-				operation[0] = 'D';
-				send(this, operation, 16, 0);
-				get_ack;
+				send_command(connections[i], 'D');
 			}
 			running = 0;
 
 		} else if (not strcmp(buffer, "terminate")) {
 			for (nat i = 0; i < connection_count; i++) {
 				printf("sending disconnect command to %s:%u client...\n", addresses[i], ports[i]);
-				const int this = connections[i];
-				char operation[16] = {0};
-				operation[0] = 'K';
-				send(this, operation, 16, 0);
-				get_ack;
+				send_command(connections[i], 'K');
 			}
 			running = 0;
 

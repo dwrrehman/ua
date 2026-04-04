@@ -1,8 +1,35 @@
 // tcp networking example: client code
+// this is the client code.
 // written on 1202603242.151031 by dwrr
 
+
+#include <errno.h>
+#include <poll.h>
+#include <signal.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/time.h> 
+#include <sys/wait.h> 
+#include <fcntl.h>
+#include <termios.h>
+#include <time.h>
+#include <stdbool.h>
+#include <ctype.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/time.h> 
+#include <sys/wait.h> 
+#include <stdint.h>
+#include <signal.h>
+#include <stdnoreturn.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <iso646.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdio.h>
@@ -11,6 +38,11 @@
 #include <stdbool.h>
 #include <iso646.h>
 #include <errno.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <time.h>
+#include <sys/time.h>
+#include <fcntl.h>
 
 typedef uint64_t nat;
 
@@ -18,7 +50,13 @@ static const char* server_ip_address = "::1";
 static const int server_port = 32768;
 static const int try_connect_delay = 5;
 
-#define send_ack     operation[0] = 1; send(connection, operation, 1, 0); puts("[SENT ACK]");
+//static struct winsize window = {0};
+//static struct termios terminal = {0};
+
+extern char** environ;
+
+#include "common.c"
+
 
 
 static void change_directory(const char* d) {
@@ -29,14 +67,13 @@ static void change_directory(const char* d) {
 	}	
 }
 
+static char** parse_arguments(const char* string, const nat length) {
 
-
-static char** parse_arguments(const char* string) {
-	const char delimiter = 27;
-	const size_t length = strlen(string);
+	const char delimiter = ' ';
 	char** arguments = NULL;
 	size_t argument_count = 0;
 	size_t start = 0, argument_length = 0;
+
 	for (size_t index = 0; index < length; index++) {
 		if (string[index] != delimiter) {
 			if (not argument_length) start = index;
@@ -56,13 +93,21 @@ static char** parse_arguments(const char* string) {
 }
 
 
+static void debug_argument_list(char** arguments) {
+	printf("debugging argument list:\n");
+	for (nat i = 0; arguments[i]; i++) {
+		printf("\targuments[%llu] = \"%s\"\n", i, arguments[i]);
+	}
+	puts("[done]");
+}
+
+
 static char* path_lookup(const char* executable_name) {
 	const nat executable_length = (nat) strlen(executable_name);
 	if (not executable_length) return NULL;
-
 	const char* path = getenv("PATH");
 	const nat length = (nat) strlen(path);
-	//puts(path);
+	puts(path);
 	size_t start = 0, argument_length = 0;
 	for (size_t index = 0; index < length; index++) {
 		if (path[index] != ':') {
@@ -74,16 +119,15 @@ static char* path_lookup(const char* executable_name) {
 			memcpy(file, path + start, argument_length);
 			file[argument_length] = '/';
 			memcpy(file + argument_length + 1, executable_name, executable_length);
-			//printf("testing: %s  ---> ", file);
+			printf("testing: %s  ---> ", file);
 			if (not access(file, X_OK)) {
-				//printf("\033[32mGOOD\033[0m");
+				printf("\033[32mGOOD\033[0m");
 				return file;
 			} else {
-				//printf("\033[31mERROR\033[0m");
+				printf("\033[31mERROR\033[0m");
 				free(file);
 			}
-			//puts("");
-
+			puts("");
 			start = index;
 			argument_length = 0; 
 		}
@@ -92,6 +136,168 @@ static char* path_lookup(const char* executable_name) {
 	return NULL;
 }
 
+
+
+struct job {
+	char** arguments;
+	char* output;
+	nat status;
+	nat length;
+	int fd[2];
+	int rfd[2];
+	int fdm[2];
+	int padding;
+	pid_t pid;
+};
+
+
+static char* execute_shell_command(
+	struct job* this, 
+	const char* command, 
+	const nat command_length
+) {
+
+	char message[4096] = {0};
+	char** arguments = parse_arguments(command, command_length);
+	debug_argument_list(arguments);
+
+	if (not strcmp(arguments[0], "cd")) {
+		const char* path = arguments[1] ? arguments[1] : getenv("HOME");
+		change_directory(path);
+		snprintf(message, sizeof message, "changed directories to %s", path);
+		goto finish_execution;
+
+	} 
+
+	if (arguments[0][0] != '.' and arguments[0][0] != '/') {
+		char* path = path_lookup(arguments[0]);
+		if (not path) {
+			snprintf(message, sizeof message, 
+				"error: shell executable not found: \"%s\".", 
+				arguments[0]
+			);
+			goto finish_execution;
+		}
+		free(arguments[0]);
+		arguments[0] = path;
+	}
+
+	pipe(this->fd);
+	pipe(this->rfd);
+	pipe(this->fdm);
+
+	const pid_t pid = fork();
+	if (pid < 0) { 
+		printf("crp:*:fork\""); printf("%s\n", strerror(errno)); 
+		fflush(stdout);
+		sleep(4);
+
+	} else if (not pid) {
+		close(this->fd[0]);
+		dup2(this->fd[1], 1);
+		close(this->fd[1]);
+		close(this->fdm[0]);
+		dup2(this->fdm[1], 2);
+		close(this->fdm[1]);
+		close(this->rfd[1]);
+		dup2(this->rfd[0], 0);
+		close(this->rfd[0]);
+		execve(arguments[0], arguments, environ);
+		printf("error: could not execute \"%s\": %s", 
+			arguments[0], strerror(errno)
+		);
+		fflush(stdout);
+		sleep(4);
+		exit(1);
+
+	} else {
+		close(this->fd[1]);
+		close(this->fdm[1]);
+		close(this->rfd[0]);
+		this->status = 1;
+		this->arguments = arguments;
+		this->pid = pid;
+	}
+finish_execution:
+	return strdup(message);
+}
+
+
+
+static char* read_shell_command_output(struct job* this, nat* output_length) {
+
+	char message[4096] = {0};
+
+	if (this->status != 1) goto done_with_waiting;
+
+
+	char buffer[65536] = {0};
+	if (poll(&(struct pollfd){ .fd = this->fd[0], .events = POLLIN }, 1, 0) == 1) {
+		ssize_t nbytes = read(this->fd[0], buffer, sizeof buffer);
+		if (nbytes <= 0) {
+			printf("CHILD ERROR stdout read(). \n");
+			printf("error: %s\n", strerror(errno));
+		} else {
+			this->output = realloc(this->output, this->length + (size_t) nbytes);
+			memcpy(this->output + this->length, buffer, (size_t) nbytes);
+			this->length += (size_t) nbytes;
+		}
+	}
+	if (poll(&(struct pollfd){ .fd = this->fdm[0], .events = POLLIN }, 1, 0) == 1) {
+		ssize_t nbytes = read(this->fdm[0], buffer, sizeof buffer);
+		if (nbytes <= 0) {
+			printf("CHILD ERROR stderr read(). \n");
+			printf("error: %s\n", strerror(errno));
+		} else {
+			this->output = realloc(this->output, this->length + (size_t) nbytes);
+			memcpy(this->output + this->length, buffer, (size_t) nbytes);
+			this->length += (size_t) nbytes;
+		}
+	}
+
+	int s = 0;
+	pid_t pid = this->pid;
+	int r = waitpid(pid, &s, WNOHANG);
+
+	if (r == -1) { 
+		printf("crp:*:wait\""); printf("%s\n", strerror(errno)); 
+	} else if (r == 0) goto done_with_waiting;
+
+	char dt[32] = {0};
+	struct timeval t = {0};
+	gettimeofday(&t, NULL);
+	struct tm* tm = localtime(&t.tv_sec);
+	strftime(dt, 32, "1%Y%m%d%u.%H%M%S", tm);
+	if (WIFEXITED(s)) 
+		snprintf(message, sizeof message, 
+			"[%s:(%d) exited with code %d]\n", 
+			dt, pid, WEXITSTATUS(s)
+		);
+	else if (WIFSIGNALED(s)) 
+		snprintf(message, sizeof message, 
+			"[%s:(%d) was terminated by signal %s]\n", 
+			dt, pid, strsignal(WTERMSIG(s))
+		);
+	else if (WIFSTOPPED(s)) 
+		snprintf(message, sizeof message, 
+			"[%s:(%d) was stopped by signal %s]\n", 	
+			dt, pid, strsignal(WSTOPSIG(s))
+		);
+	else snprintf(message, sizeof message, 
+		"[%s:(%d) terminated for an unknown reason]\n", 
+		dt, pid
+	);
+	this->status = 0;
+	this->arguments = NULL;
+
+done_with_waiting:
+	this->output = realloc(this->output, this->length + strlen(message));
+	memcpy(this->output + this->length, message, strlen(message));
+	this->length += strlen(message);
+
+	*output_length = this->length;
+	return this->output;
+}
 
 int main(void) {
 
@@ -120,58 +326,71 @@ int main(void) {
 	        inet_ntop(AF_INET6, &server_address.sin6_addr, ip, sizeof ip);
 		const int port = ntohs(server_address.sin6_port);
 		printf("[connected to server %s:%d]\n", ip, port);
+
+		struct job current_job = {0};
 		
 		char running = 1;
 		while (running) {
-			char operation[16] = {0};
 			printf("[%s:%u]: receiving...\n", ip, port);
+
+			char operation[16] = {0};
 			recv(connection, operation, 16, 0);
-			printf("[%s:%u]: received: ", ip, port);
-			for (nat i = 0; i < 16; i++) printf("%02x(%c) ", operation[i], operation[i]); puts("");
+
+			printf("[%s:%u]: received: %c", ip, port, operation[0]);
+			print_array(operation, 16);
+
 			char op = operation[0];
-			if (op == 'E') {
-				nat length = operation[1] | (operation[1] << 8);
-				char* command = calloc(length + 1, 1);
-				recv(connection, command, length, 0);
 
-				printf("info: received shell command (sized %llu), <<<%s>>>\n", length, command);
+			if (op == 'W' or op == 'S') {
 
+				nat command_length = 0;
+				char* command = get_string(connection, &command_length);
+				print_string("received shell command", command, command_length);
 
-				// execute the shell command, and get the output from it!
+				if (op == 'W') {
+					char* message = execute_shell_command(&current_job, command, command_length);
+					char response[4096] = {0};
+					memcpy(response, message, strlen(message));
+					send_string(connection, response, strlen(response));
+					print_string("sent response", response, strlen(response));
 
+				} else {
+					print_string("generating file with file contents", command, command_length);
+					write_to_file(command, command_length);
+					char message[1024] = "file wrote to client local disk.";
+					nat message_length = strlen(message);
+					send_string(connection, message, message_length);
+					print_string("write confirmation", message, message_length);
+				}
 
-				char command_output[1024] = "hello there from space!";
-				nat output_length = 1024; 
-
-
-				send(connection, &output_length, sizeof output_length , 0);
-				const nat packet_count = output_length / 512;
-				nat output_pointer = 0;
-				for (nat p = 0; p < packet_count; p++) {
-					char packet_buffer[512] = {0};
-					memcpy(packet_buffer, command_output + output_pointer, 512);
-					send(connection, packet_buffer, 512, 0);
-					output_pointer += 512;
-				}		
-				printf("sent shell command output: (%llu bytes) <<<%s>>>\n", output_length, command_output);
-				send_ack;
+			} else if (op == 'R') {
+				nat message_length = 0;
+				char* message = get_string(connection, &message_length);
+				print_string("received message", message, message_length);			
+				nat output_length = 0;
+				char* output = read_shell_command_output(&current_job, &output_length);
+				send_string(connection, output, output_length);
+				print_string("sent shell command output", output, output_length);
+	
 
 			} else if (op == 'D') {					
 				puts("client: received DISCONNECT COMMAND");
-				send_ack;
 				running = 0;
+
+
 
 			} else if (op == 'K') {
 				puts("client: received KILL COMMAND");
-				send_ack;
 				running = 0;
 				killed = 1;
+
 
 			} else {
 				printf("client received erroneous command %u", op);
 				running = 0;
 			}
 		}
+
 		close(connection);
 		sleep(1);
 	}	
