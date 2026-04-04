@@ -46,7 +46,7 @@
 
 typedef uint64_t nat;
 
-static const char* server_ip_address = "::1";
+static const char* server_ip_address = "2601:1c2:4482:ea00:8e1:40d8:a26e:adf7";
 static const int server_port = 32768;
 static const int try_connect_delay = 5;
 
