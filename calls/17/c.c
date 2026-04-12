@@ -810,12 +810,50 @@ static void hangup_signal_handler(int sig) {
 	publish();
 }
 
-int main(int argc, const char** argv) {
-	if (argc != 2) usage_error: return puts("usage: ./run <machine index>");
-	char* end = NULL;
-	machine_index = strtoull(argv[1], &end, 10);
-	if (not *argv[1] or *end) goto usage_error;
+static char* get_command_output(const char* input_command) {
+	char command[4096] = {0};
+	snprintf(command, sizeof command, "%s 2>&1", input_command);
+	FILE* f = popen(command, "r");
+	if (not f) { perror("popen"); abort(); }
+	char* string = NULL;
+	size_t length = 0;
+	char line[2048] = {0};
+	while (fgets(line, sizeof line, f)) {
+		size_t l = strlen(line);
+		string = realloc(string, length + l);
+		memcpy(string + length, line, l);
+		length += l;
+	}
+	pclose(f);
+	return strndup(string, length);
+}
+
+static nat translate_hostname_to_machine_index(char* s) {
+	if (not strcmp(s, "dwrr-mini.local\n")) return 0;
+	if (not strcmp(s, "dwrr-mini1.local\n")) return 1;
+	if (not strcmp(s, "dwrr-mini2.local\n")) return 2;
+	if (not strcmp(s, "dwrr-mini3.local\n")) return 3;
+	if (not strcmp(s, "dwrr-mini4.local\n")) return 4;
+	if (not strcmp(s, "dwrr-mini5.local\n")) return 5;
+	if (not strcmp(s, "dwrr-mini6.local\n")) return 6;
+	if (not strcmp(s, "dwrr-mini7.local\n")) return 7;
+	if (not strcmp(s, "dwrr-mini8.local\n")) return 8;
+	if (not strcmp(s, "dwrr-mini9.local\n")) return 9;
+	if (not strcmp(s, "dwrr.local\n")) return 0;
+	puts(s); abort();
+}
+	
+int main(void) { // int argc, const char** argv
+
+	//if (argc != 2) usage_error: return puts("usage: ./run <machine index>");
+	//char* end = NULL;
+	//machine_index = strtoull(argv[1], &end, 10);
+	//if (not *argv[1] or *end) goto usage_error;
+
+	machine_index = translate_hostname_to_machine_index(get_command_output("hostname"));
+
 	signal(SIGHUP, hangup_signal_handler);
+
 	srand(20000000);
 	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
 	nat counts[pm_count] = {0};
