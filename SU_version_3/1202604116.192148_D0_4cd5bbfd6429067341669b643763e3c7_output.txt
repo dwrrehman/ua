@@ -1,0 +1,37 @@
+1202604116.192148 :: SU: [PID 32119]: [D 0]: [machine 0]: starting search call...
+1202604116.192151 :: ------------ mi 0 on signal 0: file 1202604116.192148_D0_4cd5bbfd6429067341669b643763e3c7_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 5, total_job_count = 125
+graph_count = 20, operation_count = 5
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 18446744073709551615 / 125 : 14757395258967642112.000% remaining
+   0 : 01001000200030004040
+
+SU: [PID = 32119]: searching [D = 0] space...
+1202604116.192151 :: SU: finished searching [D = 0] space:
+	 search took       3.00 seconds
+	 from 1202604116.192148
+	 to   1202604116.192151
+
+
+pm counts:
+z_is_good: 0       		pm_zr5: 262332  		
+pm_zr6: 243572  		pm_ndi: 20368   		
+pm_sndi: 0       		pm_pco: 42655   		
+pm_per: 14036   		pm_ns0: 38307   		
+pm_oer: 16      		pm_rsi: 888     		
+pm_mcal: 21846   		 pm_h0: 136274  		
+pm_h0s: 0       		 pm_h1: 0       		
+ pm_h2: 0       		pm_rmv: 96      		
+pm_ormv: 0       		pm_imv: 0       		
+pm_csm: 0       		pm_lmv: 0       		
+pm_fse: 0       		pm_pair: 11250   		
+pm_ls0: 0       		pm_bdl1: 48      		
+pm_bdl2: 0       		pm_bdl3: 0       		
+pm_bdl4: 0       		pm_bdl5: 0       		
+pm_bdl6: 0       		pm_bdl7: 0       		
+pm_bdl8: 0       		pm_bdl9: 0       		
+pm_erp1: 0       		pm_erp2: 0       		[done]
+
+

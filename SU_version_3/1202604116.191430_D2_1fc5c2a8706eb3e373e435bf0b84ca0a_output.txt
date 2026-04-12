@@ -1,0 +1,21 @@
+1202604116.191430 :: SU: [PID 31124]: [D 2]: [machine 0]: starting search call...
+1202604116.191924 :: ------------ mi 0 on signal 1: file 1202604116.191430_D2_1fc5c2a8706eb3e373e435bf0b84ca0a_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 5, total_job_count = 12005
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 11703 / 12005 : 97.484% remaining
+   0 : 0144105323513506404201261556
+
+SU: [PID = 31124]: searching [D = 2] space...
+1202604116.192002 :: ------------ mi 0 on signal 1: file 1202604116.191430_D2_1fc5c2a8706eb3e373e435bf0b84ca0a_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 5, total_job_count = 12005
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 11703 / 12005 : 97.484% remaining
+   0 : 0146105326503651464201261556
+
+SU: [PID = 31124]: searching [D = 2] space...
