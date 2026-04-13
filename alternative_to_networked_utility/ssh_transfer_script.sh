@@ -2,7 +2,7 @@
 # useful ssh script to execute commands on all mac minis. 
 # written on 1202604046.203804
 
-scp commands_executed_on_mini.sh dwrr-mini.local:/Users/dwrr/root/
+scp commands_executed_on_mini.sh dwrr-mini0.local:/Users/dwrr/root/
 scp commands_executed_on_mini.sh dwrr-mini1.local:/Users/dwrr/root/
 scp commands_executed_on_mini.sh dwrr-mini2.local:/Users/dwrr/root/
 scp commands_executed_on_mini.sh dwrr-mini3.local:/Users/dwrr/root/
@@ -13,7 +13,7 @@ scp commands_executed_on_mini.sh dwrr-mini7.local:/Users/dwrr/root/
 scp commands_executed_on_mini.sh dwrr-mini8.local:/Users/dwrr/root/
 scp commands_executed_on_mini.sh dwrr-mini9.local:/Users/dwrr/root/
 
-ssh dwrr-mini.local "./root/commands_executed_on_mini.sh"
+ssh dwrr-mini0.local "./root/commands_executed_on_mini.sh"
 ssh dwrr-mini1.local "./root/commands_executed_on_mini.sh"
 ssh dwrr-mini2.local "./root/commands_executed_on_mini.sh"
 ssh dwrr-mini3.local "./root/commands_executed_on_mini.sh"

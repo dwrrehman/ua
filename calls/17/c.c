@@ -503,6 +503,8 @@ static byte execute_graph(
 
 static void* worker_thread(void* raw_thread_index) {
 
+	pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+
 	const nat thread_index = *(nat*) raw_thread_index;
 	nat* counts = calloc(pm_count, sizeof(nat));
 	nat* array = calloc(array_size + 1, sizeof(nat));
@@ -829,7 +831,7 @@ static char* get_command_output(const char* input_command) {
 }
 
 static nat translate_hostname_to_machine_index(char* s) {
-	if (not strcmp(s, "dwrr-mini.local\n")) return 0;
+	if (not strcmp(s, "dwrr-mini0.local\n")) return 0;
 	if (not strcmp(s, "dwrr-mini1.local\n")) return 1;
 	if (not strcmp(s, "dwrr-mini2.local\n")) return 2;
 	if (not strcmp(s, "dwrr-mini3.local\n")) return 3;
@@ -959,18 +961,6 @@ done:; }
 	publish();
 	puts("[search call complete]");
 } // main
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

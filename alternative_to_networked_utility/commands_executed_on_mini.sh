@@ -4,17 +4,17 @@
 
 cd root/projects/ua
 
-#git pull
+git pull
 
 cd calls/17/
 
-#./build release
+./build release
 
-#screen -dmS search_call "./run"
+screen -dmS search_call "./run"
 
-#ls -l
+ls -l
 
-#sleep 1
+sleep 1
 
 cat *output*
 
