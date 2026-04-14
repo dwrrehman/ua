@@ -7,9 +7,45 @@ cd root/projects/ua/calls/17/
 kill -s HUP $(pgrep run)
 sleep 1
 cat *output*
-hostinfo
 cd ~
 exit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

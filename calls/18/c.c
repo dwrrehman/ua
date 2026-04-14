@@ -958,10 +958,7 @@ done:; }
 		D, seconds, time_begin_dt, time_end_dt,
 		pm_string
 	);
-	publish();
-	puts(output_string);
-	puts("[search call complete]");
-	getchar();
+	publish();	
 } // main
 
 
