@@ -2,6 +2,7 @@
 # useful script executing commands on a mac mini. 
 # written on 1202604046.204915
 
+hostinfo
 cd root/projects/ua
 git pull
 cd calls/18/
