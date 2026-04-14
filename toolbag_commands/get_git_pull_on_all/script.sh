@@ -2,15 +2,9 @@
 # useful script executing commands on a mac mini. 
 # written on 1202604046.204915
 
-top -l 1 | head -n 16
-hostinfo
-screen -ls
-
-
 cd root/projects/ua/
-cd calls/18/
-ls -l
 
+git pull
 
 cd ~
 exit
@@ -18,21 +12,22 @@ exit
 
 
 
+#cd calls/18/
+#ls -l
+#top -l 1 | head -n 16
+#hostinfo
+#screen -ls
 
 
-
-
-
-
-
-
-
-
-#git pull
 #git pull
 #./build release
 #screen -dmS search_call sh -c "./run; exec bash"
 #cat *output*
+
+
+
+
+
 
 
 
