@@ -6,7 +6,7 @@ input_file=c.c
 output_file=run
 
 if [ "release" = "$1" ]; then
-	clang -Ofast $input_file -o $output_file
+	clang -O3 -flto -march=native -DNDEBUG $input_file -o $output_file
 
 elif [ "small" = "$1" ]; then
 	clang -Os $input_file -o $output_file

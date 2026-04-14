@@ -5,8 +5,12 @@
 cd root/projects/ua
 git pull
 cd calls/18/
+
 ./build release
-./search_run &
+
+nohup ./search_run >/dev/null 2>&1 </dev/null &
+disown
+
 exit
 
 

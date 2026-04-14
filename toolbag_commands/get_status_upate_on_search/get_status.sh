@@ -4,7 +4,7 @@
 # written on 1202604116.200127
 
 cd root/projects/ua/calls/18/
-kill -s HUP $(pgrep run)
+kill -s USR1 $(pgrep search_run)
 sleep 1
 cat *output*
 screen -ls

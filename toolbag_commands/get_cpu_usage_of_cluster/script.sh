@@ -4,17 +4,15 @@
 
 cd root/projects/ua/
 
-git pull
+#git pull
+
+cd calls/18/
+ls -l
+top -l 1 | head -n 16
+hostinfo
+screen -ls
 
 
-
-
-
-
-#top -l 1 | head -n 16
-#ls -l
-#hostinfo
-#screen -ls
 
 
 #git pull

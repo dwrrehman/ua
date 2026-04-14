@@ -18,8 +18,8 @@
 #include <stdbool.h>
 #include <iso646.h>
 
-#define D 2
-#define machine_count 10
+#define D 1
+#define machine_count 1
 #define thread_count 10
 #define job_digit_count 6
 
@@ -764,7 +764,7 @@ try_open:;
 static nat machine_index = (nat) -1;
 static nat total_job_count = 0;
 
-static void hangup_signal_handler(int sig) {
+static void signal_handler(int sig) {
 
 	nat local_progress[3 * thread_count] = {0};
 	char progress_string[4096] = {0};
@@ -855,7 +855,7 @@ int main(void) { // int argc, const char** argv
 
 	machine_index = translate_hostname_to_machine_index(get_command_output("hostname"));
 
-	signal(SIGHUP, hangup_signal_handler);
+	signal(SIGUSR1, signal_handler);
 
 	srand(20000000);
 	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
@@ -937,7 +937,7 @@ done:; }
 	strftime(time_end_dt,   32, "1%Y%m%d%u.%H%M%S", localtime(&time_end.tv_sec));
 	strftime(time_begin_dt, 32, "1%Y%m%d%u.%H%M%S", localtime(&time_begin.tv_sec));
 
-	hangup_signal_handler(0);
+	signal_handler(0);
 
 	int length = 0;
 	length += snprintf(pm_string + length, sizeof pm_string - (size_t) length, "\npm counts:\n");
