@@ -19,7 +19,7 @@
 #include <iso646.h>
 
 #define D 2
-#define machine_count 1
+#define machine_count 10
 #define thread_count 10
 #define job_digit_count 6
 
@@ -963,7 +963,6 @@ done:; }
 	puts("[search call complete]");
 	getchar();
 } // main
-
 
 
 

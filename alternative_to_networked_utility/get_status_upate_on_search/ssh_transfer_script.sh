@@ -2,28 +2,27 @@
 # useful ssh script to execute commands on all mac minis. 
 # written on 1202604046.203804
 
-scp 0/get_progress_update.sh dwrr-mini.local:/Users/dwrr/root/
-scp 1/get_progress_update.sh dwrr-mini1.local:/Users/dwrr/root/
-scp 2/get_progress_update.sh dwrr-mini2.local:/Users/dwrr/root/
-scp 3/get_progress_update.sh dwrr-mini3.local:/Users/dwrr/root/
-scp 4/get_progress_update.sh dwrr-mini4.local:/Users/dwrr/root/
-scp 5/get_progress_update.sh dwrr-mini5.local:/Users/dwrr/root/
-scp 6/get_progress_update.sh dwrr-mini6.local:/Users/dwrr/root/
-scp 7/get_progress_update.sh dwrr-mini7.local:/Users/dwrr/root/
-scp 8/get_progress_update.sh dwrr-mini8.local:/Users/dwrr/root/
-scp 9/get_progress_update.sh dwrr-mini9.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini0.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini1.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini2.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini3.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini4.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini5.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini6.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini7.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini8.local:/Users/dwrr/root/
+scp get_status.sh dwrr-mini9.local:/Users/dwrr/root/
 
-ssh dwrr-mini.local "./root/get_progress_update.sh"
-ssh dwrr-mini1.local "./root/get_progress_update.sh"
-ssh dwrr-mini2.local "./root/get_progress_update.sh"
-ssh dwrr-mini3.local "./root/get_progress_update.sh"
-ssh dwrr-mini4.local "./root/get_progress_update.sh"
-ssh dwrr-mini5.local "./root/get_progress_update.sh"
-ssh dwrr-mini6.local "./root/get_progress_update.sh"
-ssh dwrr-mini7.local "./root/get_progress_update.sh"
-ssh dwrr-mini8.local "./root/get_progress_update.sh"
-ssh dwrr-mini9.local "./root/get_progress_update.sh"
-
+ssh dwrr-mini0.local "./root/get_status.sh"
+ssh dwrr-mini1.local "./root/get_status.sh"
+ssh dwrr-mini2.local "./root/get_status.sh"
+ssh dwrr-mini3.local "./root/get_status.sh"
+ssh dwrr-mini4.local "./root/get_status.sh"
+ssh dwrr-mini5.local "./root/get_status.sh"
+ssh dwrr-mini6.local "./root/get_status.sh"
+ssh dwrr-mini7.local "./root/get_status.sh"
+ssh dwrr-mini8.local "./root/get_status.sh"
+ssh dwrr-mini9.local "./root/get_status.sh"
 
 
 

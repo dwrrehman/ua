@@ -1,0 +1,65 @@
+1202604131.222328 :: SU: [PID 8255]: [D 1]: [machine 0]: starting search call...
+1202604131.222344 :: ------------ mi 0 on signal 1: file 1202604131.222328_D1_67aca21d76c75317182047ed6f5224fa_output.txt------------
+thread_count = 10, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 578 / 6480 : 8.920% remaining
+   0 : 012410232543344040421130
+   1 : 014510032100314241411230
+   2 : 014510302105304041421101
+   3 : 014410052041340241411330
+   4 : 014210052401320441451330
+   5 : 012210002143340440451130
+   6 : 012410252133300442420021
+   7 : 014510322503342241421330
+   8 : 014110032335350042451230
+   9 : 014110002300352142421230
+
+SU: [PID = 8255]: searching [D = 1] space...
+1202604131.222346 :: ------------ mi 0 on signal 0: file 1202604131.222328_D1_67aca21d76c75317182047ed6f5224fa_output.txt------------
+thread_count = 10, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 18446744073709551606 / 6480 : 284671976446135040.000% remaining
+   0 : 010010002000300040402100
+   1 : 010010002000300040402120
+   2 : 010010002000300040431100
+   3 : 010010002000300040431000
+   4 : 010010002000300040400000
+   5 : 010010002000300040431300
+   6 : 010010002000300040431100
+   7 : 010010002000300040402300
+   8 : 010010002000300040431120
+   9 : 010010002000300040431200
+
+SU: [PID = 8255]: searching [D = 1] space...
+1202604131.222346 :: SU: finished searching [D = 1] space:
+	 search took      18.00 seconds
+	 from 1202604131.222328
+	 to   1202604131.222346
+
+
+pm counts:
+z_is_good: 1       		pm_zr5: 151621308		
+pm_zr6: 96899662		pm_ndi: 25572540		
+pm_sndi: 0       		pm_pco: 19665531		
+pm_per: 8319882 		pm_ns0: 22491681		
+pm_oer: 9117    		pm_rsi: 248808  		
+pm_mcal: 18446160		 pm_h0: 64755790		
+pm_h0s: 178     		 pm_h1: 720     		
+ pm_h2: 0       		pm_rmv: 8037    		
+pm_ormv: 89      		pm_imv: 531     		
+pm_csm: 786     		pm_lmv: 17068   		
+pm_fse: 0       		pm_pair: 3316157 		
+pm_ls0: 0       		pm_bdl1: 14789   		
+pm_bdl2: 4       		pm_bdl3: 0       		
+pm_bdl4: 0       		pm_bdl5: 0       		
+pm_bdl6: 0       		pm_bdl7: 0       		
+pm_bdl8: 0       		pm_bdl9: 0       		
+pm_erp1: 0       		pm_erp2: 0       		[done]
+
+

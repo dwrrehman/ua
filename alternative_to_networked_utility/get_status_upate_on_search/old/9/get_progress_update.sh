@@ -4,12 +4,11 @@
 # written on 1202604116.200127
 
 cd root/projects/ua/calls/17/
-kill -s HUP 97626
+kill -s HUP $(pgrep run)
 sleep 1
 cat *output*
 cd ~
 exit
-
 
 
 
