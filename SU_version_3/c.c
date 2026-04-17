@@ -20,7 +20,8 @@
 
 #define D 1
 #define machine_count 1
-#define thread_count 10
+#define thread_count 6         // from a 10 to a 6....   changes whether we see :   
+				//	014110052133314442420124 (o=2)   this zv.    very bad. bug. 
 #define job_digit_count 6
 
 enum operations { one, two, three, five, six };
@@ -31,7 +32,7 @@ typedef uint32_t u32;
 typedef uint64_t nat;
 
 #define execution_limit 100000000LLU
-#define array_size 1000000LLU
+#define array_size 3000LLU
 
 #define pg0  0x0003000200010010 
 #define pg1  0x0000000000000404 
@@ -179,7 +180,8 @@ try_open:;
 	);
 }
 
-#define max_erp_count 20
+//#define max_erp_count 20
+
 #define max_rsi_count 512
 #define max_oer_repetions 50
 #define max_rmv_modnat_repetions 15
@@ -197,10 +199,22 @@ static nat execute_graph_starting_at(
 	nat g0, nat g1, nat g2, 
 	const byte origin, 
 	nat* array
-) {	
-	const nat n = array_size;
+) {
+
+	nat comparator = 0;
+
+
+	const nat N = array_size;
 	array[0] = 0; 
-	array[n] = 0;
+
+
+///////////////////// fix lazy zeroing ///////////////////////////
+
+
+	memset(array, 0, (array_size + 1) * sizeof(nat));   // figure out some way that we could not do this.....
+
+
+
 
 	nat 	xw = 0,  pointer = 0,  bout_length = 0, 
 		OER_ier_at = 0,
@@ -209,17 +223,16 @@ static nat execute_graph_starting_at(
 
 	byte	H0_counter = 0,  H0S_counter = 0, SNDI_counter = 0,
 		H1_counter = 0, H2_counter = 0, OER_counter = 0,
-		BDL1_counter = 0, BDL2_counter = 0,
-		BDL3_counter = 0, BDL4_counter = 0,
-		BDL5_counter = 0, BDL6_counter = 0,
-		BDL7_counter = 0, BDL8_counter = 0,
-		BDL9_counter = 0, pair_index = 0, pair_count = 0;
+		BDL1_counter = 0, BDL2_counter = 0, BDL3_counter = 0, 
+		pair_index = 0, pair_count = 0;
 	
 	byte ip = origin;
 	byte last_mcal_op = 255;
 
-	nat performed_er_at = 0;
- 	byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
+	//nat performed_er_at = 0;
+ 	//byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
+
+
 	byte rsi_counter[max_rsi_count]; rsi_counter[0] = 0;
 
 	byte has_executed_5 = 0;
@@ -230,7 +243,7 @@ static nat execute_graph_starting_at(
 		const byte op = g(4 * ip);
 		
 		if (op == one) {
-			if (pointer == n) {
+			if (pointer == N) {
 				puts("FEA condition violated by a z value: "); 
 				print_graph_raw(g0, g1, g2);
 				puts(""); 
@@ -258,11 +271,12 @@ static nat execute_graph_starting_at(
 			bout_length++;
 			pointer++;
 
-			if (pointer > xw and pointer < n) { 
+			if (pointer > xw and pointer < N) { 
 				xw = pointer; 
 				array[pointer] = 0; 
 				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
-				if (pointer < max_erp_count) small_erp_array[pointer] = 0;
+
+				//if (pointer < max_erp_count) small_erp_array[pointer] = 0;
 			}
 		}
 
@@ -341,49 +355,15 @@ static nat execute_graph_starting_at(
 				if (BDL3_counter >= 30) return pm_bdl3; 
 			} else BDL3_counter = 0;
 
-			if (	pointer     == BDL_ier_at or 
-				pointer + 1 == BDL_ier_at or 
-				pointer + 2 == BDL_ier_at or
-				pointer + 3 == BDL_ier_at or
-				pointer + 4 == BDL_ier_at
-			) {
-				BDL4_counter++; 
-				if (BDL4_counter >= 150 and e >= 500000) return pm_bdl4; 
-			} else BDL4_counter = 0;
-
-
-			if (pointer + 5 == BDL_ier_at or pointer == BDL_ier_at) { 
-				BDL5_counter++; 
-				if (BDL5_counter >= 80 and e >= 500000) return pm_bdl5; 
-			} else BDL5_counter = 0;
-
-			if (pointer + 6 == BDL_ier_at or pointer == BDL_ier_at) { 
-				BDL6_counter++; 
-				if (BDL6_counter >= 80 and e >= 500000) return pm_bdl6; 
-			} else BDL6_counter = 0;
-
-			if (pointer + 7 == BDL_ier_at or pointer == BDL_ier_at) { 
-				BDL7_counter++; 
-				if (BDL7_counter >= 80 and e >= 500000) return pm_bdl7; 
-			} else BDL7_counter = 0;
-
-			if (pointer + 8 == BDL_ier_at or pointer == BDL_ier_at) { 
-				BDL8_counter++; 
-				if (BDL8_counter >= 80 and e >= 500000) return pm_bdl8; 
-			} else BDL8_counter = 0;
-
-			if (pointer + 9 == BDL_ier_at) { 
-				BDL9_counter++; 
-				if (BDL9_counter >= 30 and e >= 500000) return pm_bdl9; 
-			} else BDL9_counter = 0;
 
 			if (pair_index == 3) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
 			else if (pair_index) { pair_count = 0; pair_index = 0; }
 		
-			if (pointer < 64) performed_er_at |= (1LLU << pointer);
-			if (pointer < max_erp_count and small_erp_array[pointer] < 250) {
-				small_erp_array[pointer]++;
-			}
+			//if (pointer < 64) performed_er_at |= (1LLU << pointer);
+
+			//if (pointer < max_erp_count and small_erp_array[pointer] < 250) {
+			//	small_erp_array[pointer]++;
+			//}
 
 			SNDI_counter = 0;
 
@@ -395,15 +375,15 @@ static nat execute_graph_starting_at(
 		else if (op == two) {
 			SNDI_counter++;
 			if (SNDI_counter >= 10) return pm_sndi;
-			array[n]++;
+			comparator++;
 		}
 
 		else if (op == six) {
-			if (not has_executed_6) { if (array[n] > 1) return pm_mcal; }
+			if (not has_executed_6) { if (comparator > 1) return pm_mcal; }
 			has_executed_6 = 1;
-			if (not array[n]) return pm_zr6;
+			if (not comparator) return pm_zr6;
 			SNDI_counter = 0;
-			array[n] = 0;
+			comparator = 0;
 		}
 		else if (op == three) {
 			if (last_mcal_op == three) return pm_ndi;
@@ -446,11 +426,15 @@ static nat execute_graph_starting_at(
 		if (op == three or op == one or op == five) last_mcal_op = op;
 
 		byte state = 0;
-		if (array[n] < array[pointer]) state = 1;
-		if (array[n] > array[pointer]) state = 2;
-		if (array[n] == array[pointer]) state = 3;
+		if (comparator < array[pointer]) state = 1;
+		if (comparator > array[pointer]) state = 2;
+		if (comparator == array[pointer]) state = 3;
 		ip = g(4 * ip + state);
 	}
+
+
+
+	/*
 
 	if (xw < 11) return pm_fse;
 	for (nat i = 0; i < 10; i++) {
@@ -474,7 +458,12 @@ static nat execute_graph_starting_at(
 		for (nat i = 1; i < max_position2; i++) {
 			if (small_erp_array[i] < 5) return pm_erp2;
 		}
-	}
+	}	
+
+	*/
+
+
+
 	return z_is_good;
 }
 		
@@ -484,6 +473,10 @@ static byte execute_graph(
 	nat* array, 
 	nat* counts, 
 	const nat thread_index
+
+	//const nat job_g0, 
+	//const nat job_g1, 
+	//const nat job_g2
 ) {
 	for (byte o = 0; o < operation_count; o++) {
 		byte op = g(4 * o);
@@ -493,7 +486,14 @@ static byte execute_graph(
 		atomic_store_explicit(progress + 3 * thread_index + 1, g1, memory_order_relaxed);
 		atomic_store_explicit(progress + 3 * thread_index + 2, g2, memory_order_relaxed);
 		counts[pm]++;
-		if (not pm) { *origin = o; return false; }
+
+		if (not pm) { 
+			//printf("FOUND GOOD GRAPH:  INSIDE JOB: "); 
+			//print_graph_raw(job_g0, job_g1, job_g2); puts(""); 
+
+			*origin = o; return false; 
+		}
+
 		continue;
 	}
 	return true;
@@ -509,12 +509,29 @@ static void* worker_thread(void* raw_thread_index) {
 	nat* counts = calloc(pm_count, sizeof(nat));
 	nat* array = calloc(array_size + 1, sizeof(nat));
 
+	///int found_good_zv_in_this_job = 0;
+
 	register nat g0 = 0;  
 	register nat g1 = 0;
 	register nat g2 = 0;
 	register byte pointer = 0;
 
 pull_job_from_queue:;
+
+
+
+
+	//if (found_good_zv_in_this_job) {
+		//printf("AND THIS IS THE END OF THE JOB "); 
+		//print_graph_raw(g0, g1, g2); 
+		//puts(""); 
+	//}
+
+	//found_good_zv_in_this_job = 0;
+
+
+
+
 	const nat jobs_left = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
 	if ((int64_t) jobs_left <= 0) goto terminate;
 	const nat job_pos = 3 * (jobs_left - 1);
@@ -522,6 +539,10 @@ pull_job_from_queue:;
 	g0 = queue[job_pos + 0];
 	g1 = queue[job_pos + 1];
 	g2 = queue[job_pos + 2];
+
+	//const nat job_g0 = g0;
+	//const nat job_g1 = g1;
+	//const nat job_g2 = g2;
 
 	//printf("pulled job: "); printit
 	//getchar();
@@ -532,6 +553,7 @@ bad:
 	//getchar();
 
 	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
+
 	for (byte i = 0; i < pointer; i++) {
 		if (not editable(i)) continue;
 		const nat mask = ~(0xfLLU << ((i & 15) << 2));
@@ -540,9 +562,12 @@ bad:
 		else             g2 &= mask;
 	}
 loop:
+	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
+
  	//puts("NF LOOP");
 	if (g(pointer) < ((pointer & 3) ? operation_count - 1 : 4)) goto increment;
 	if (pointer < graph_count - 1) goto reset_;
+	
 	goto pull_job_from_queue;
 reset_:;
 	//puts("RESET");
@@ -551,6 +576,9 @@ reset_:;
 	else if (pointer < 32) g1 &= mask;
 	else                   g2 &= mask;
 	do pointer++; while (not editable(pointer));
+
+	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
+
 	goto loop;
 increment:;
 	//puts("INCR");
@@ -558,7 +586,8 @@ increment:;
 	     if (pointer < 16) g0 += addend;
 	else if (pointer < 32) g1 += addend;
 	else                   g2 += addend;
-init:  	pointer = lsepa;
+init:  
+	pointer = lsepa;
 
 	//printf("dol:"); printit
 	//getchar();
@@ -714,12 +743,15 @@ init:  	pointer = lsepa;
 	//abort();
 
 	byte origin = 255;
-	const byte is_bad = execute_graph(g0, g1, g2, &origin, array, counts, thread_index);
+	const byte is_bad = execute_graph(g0, g1, g2, &origin, array, counts, thread_index); //job_g0, job_g1, job_g2);
 
 	//printf("at finished exg, appending: "); printit
 	//getchar();
 
-	if (not is_bad) append_to_file(filenames[thread_index], 4096, g0, g1, g2, origin);
+	if (not is_bad) { 
+		append_to_file(filenames[thread_index], 4096, g0, g1, g2, origin); 
+		//found_good_zv_in_this_job = 1; 
+	} 
 	goto loop;
 
 terminate:
@@ -887,8 +919,8 @@ increment:;
 	else if (pointer < 32) g1 += addend;
 	else                   g2 += addend;
 init:	pointer = graph_count - job_digit_count;
-	while (not editable(pointer)) pointer++; 
-	if ((nat) rand() % machine_count != machine_index) goto loop;
+	while (not editable(pointer)) pointer++;
+	if ((nat) rand() % machine_count != machine_index) goto loop; 
 	const nat n = atomic_fetch_add_explicit(&queue_count, 1, memory_order_relaxed);
 	queue[3 * n + 0] = g0;
 	queue[3 * n + 1] = g1;

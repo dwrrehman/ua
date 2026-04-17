@@ -1,0 +1,37 @@
+get_status_upate_on_search: cat output1.txt | grep "took"
+	 search took   16020.00 seconds
+	 search took   15070.00 seconds
+	 search took   13909.00 seconds
+	 search took   17430.00 seconds
+	 search took   14219.00 seconds
+	 search took   14710.00 seconds
+	 search took   14095.00 seconds
+	 search took   14051.00 seconds
+	 search took   16888.00 seconds
+	 search took   13948.00 seconds
+
+get_status_upate_on_search: cat output1.txt | grep "to   12"
+	 to   1202604142.050553
+	 to   1202604142.045005
+	 to   1202604142.043045
+	 to   1202604142.052927
+	 to   1202604142.043558
+	 to   1202604142.044410
+	 to   1202604142.043356
+	 to   1202604142.043314
+	 to   1202604142.052032
+	 to   1202604142.043134
+
+get_status_upate_on_search: cat output1.txt | grep "z_is_good"
+z_is_good: 8       		pm_zr5: 202219920680		
+z_is_good: 5       		pm_zr5: 198615013917		
+z_is_good: 6       		pm_zr5: 192313445043		
+z_is_good: 6       		pm_zr5: 233436125673		
+z_is_good: 8       		pm_zr5: 190337472663		
+z_is_good: 5       		pm_zr5: 195787017755		
+z_is_good: 7       		pm_zr5: 190967957853		
+z_is_good: 6       		pm_zr5: 196167773817		
+z_is_good: 9       		pm_zr5: 223220872393		
+z_is_good: 12      		pm_zr5: 192109092546		
+
+get_status_upate_on_search: 

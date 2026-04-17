@@ -1,0 +1,107 @@
+1202604164.183820 :: SU: [PID 28419]: [D 1]: [machine 0]: starting search call...
+1202604164.183855 :: ------------ mi 0 on signal 30: file 1202604164.183820_D1_4b812c3b0d7efc370be085cd41705bd2_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 4093 / 6480 : 63.164% remaining
+   0 : 015110252400302543412443
+
+SU: [PID = 28419]: searching [D = 1] space...
+1202604164.183911 :: ------------ mi 0 on signal 30: file 1202604164.183820_D1_4b812c3b0d7efc370be085cd41705bd2_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 3281 / 6480 : 50.633% remaining
+   0 : 012410012540304041451103
+
+SU: [PID = 28419]: searching [D = 1] space...
+1202604164.183926 :: ------------ mi 0 on signal 30: file 1202604164.183820_D1_4b812c3b0d7efc370be085cd41705bd2_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 2642 / 6480 : 40.772% remaining
+   0 : 014210552351344041420422
+
+SU: [PID = 28419]: searching [D = 1] space...
+1202604164.183936 :: ------------ mi 0 on signal 30: file 1202604164.183820_D1_4b812c3b0d7efc370be085cd41705bd2_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 2258 / 6480 : 34.846% remaining
+   0 : 014510212134300140421302
+
+SU: [PID = 28419]: searching [D = 1] space...
+1202604164.183940 :: ------------ mi 0 on signal 30: file 1202604164.183820_D1_4b812c3b0d7efc370be085cd41705bd2_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 1922 / 6480 : 29.660% remaining
+   0 : 014110012553345540420441
+
+SU: [PID = 28419]: searching [D = 1] space...
+1202604164.184003 :: ------------ mi 0 on signal 30: file 1202604164.183820_D1_4b812c3b0d7efc370be085cd41705bd2_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 1442 / 6480 : 22.253% remaining
+   0 : 012210012534315043420021
+
+SU: [PID = 28419]: searching [D = 1] space...
+1202604164.184011 :: ------------ mi 0 on signal 30: file 1202604164.183820_D1_4b812c3b0d7efc370be085cd41705bd2_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 637 / 6480 : 9.830% remaining
+   0 : 012410202133354442411330
+
+SU: [PID = 28419]: searching [D = 1] space...
+1202604164.184022 :: ------------ mi 0 on signal 0: file 1202604164.183820_D1_4b812c3b0d7efc370be085cd41705bd2_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 18446744073709551615 / 6480 : 284671976446135040.000% remaining
+   0 : 010010002000300040400000
+
+SU: [PID = 28419]: searching [D = 1] space...
+1202604164.184022 :: SU: finished searching [D = 1] space:
+	 search took     122.00 seconds
+	 from 1202604164.183820
+	 to   1202604164.184022
+
+
+pm counts:
+z_is_good: 0       		pm_zr5: 151621369		
+pm_zr6: 96899664		pm_ndi: 25572540		
+pm_sndi: 0       		pm_pco: 19665531		
+pm_per: 8320475 		pm_ns0: 22491683		
+pm_oer: 9117    		pm_rsi: 251288  		
+pm_mcal: 18446160		 pm_h0: 64755969		
+pm_h0s: 228     		 pm_h1: 710     		
+ pm_h2: 0       		pm_rmv: 6247    		
+pm_ormv: 64      		pm_imv: 1289    		
+pm_csm: 60      		pm_lmv: 15778   		
+pm_fse: 0       		pm_pair: 3315858 		
+pm_ls0: 0       		pm_bdl1: 14804   		
+pm_bdl2: 5       		pm_bdl3: 0       		
+pm_bdl4: 0       		pm_bdl5: 0       		
+pm_bdl6: 0       		pm_bdl7: 0       		
+pm_bdl8: 0       		pm_bdl9: 0       		
+pm_erp1: 0       		pm_erp2: 0       		[done]
+
+

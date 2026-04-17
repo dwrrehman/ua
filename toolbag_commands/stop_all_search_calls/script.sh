@@ -2,45 +2,35 @@
 # useful script executing commands on a mac mini. 
 # written on 1202604046.204915
 
-top -l 3 | grep "CPU usage"
+cd root/projects/ua/calls/18/
 
-top -l 3 | grep "search_run" | cut -c 1-50
+mkdir old
+mv 12* old
 
-hostinfo
+pkill search_run
 
-pmset -g
-
-pmset -g assertions
-
+cd ~
 exit
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-#top -l 10 | head -n 18
-#hostinfo
-#screen -ls
-#cd root/projects/ua/
 #cd calls/18/
 #ls -l
-#cd ~
-#exit
+#top -l 1 | head -n 16
+#hostinfo
+#screen -ls
 
-#git pull
+
 #git pull
 #./build release
 #screen -dmS search_call sh -c "./run; exec bash"
 #cat *output*
+
+
+
+
+
 
 
 

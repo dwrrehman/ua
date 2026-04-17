@@ -7,9 +7,6 @@ cd root/projects/ua/calls/18/
 kill -s USR1 $(pgrep search_run)
 sleep 1
 cat *output*
-screen -ls
-hostinfo
-top -l 1 | grep "CPU usage"
 cd ~
 exit
 

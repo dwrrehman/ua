@@ -1,0 +1,117 @@
+1202604164.184114 :: SU: [PID 28807]: [D 1]: [machine 0]: starting search call...
+1202604164.184136 :: ------------ mi 0 on signal 30: file 1202604164.184114_D1_254be6f41a27b04d23a79ca5511d26ec_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 5041 / 6480 : 77.793% remaining
+   0 : 014110302541314441420044
+
+SU: [PID = 28807]: searching [D = 1] space...
+1202604164.184159 :: ------------ mi 0 on signal 30: file 1202604164.184114_D1_254be6f41a27b04d23a79ca5511d26ec_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 3671 / 6480 : 56.651% remaining
+   0 : 012410222033350041451223
+
+SU: [PID = 28807]: searching [D = 1] space...
+1202604164.184204 :: ------------ mi 0 on signal 30: file 1202604164.184114_D1_254be6f41a27b04d23a79ca5511d26ec_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 3307 / 6480 : 51.034% remaining
+   0 : 012210252044312445421203
+
+SU: [PID = 28807]: searching [D = 1] space...
+1202604164.184237 :: ------------ mi 0 on signal 30: file 1202604164.184114_D1_254be6f41a27b04d23a79ca5511d26ec_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 1915 / 6480 : 29.552% remaining
+   0 : 012110302101355243420441
+
+SU: [PID = 28807]: searching [D = 1] space...
+1202604164.184256 :: ------------ mi 0 on signal 30: file 1202604164.184114_D1_254be6f41a27b04d23a79ca5511d26ec_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 1447 / 6480 : 22.330% remaining
+   0 : 012410302534340441421021
+
+SU: [PID = 28807]: searching [D = 1] space...
+1202604164.184305 :: ------------ mi 0 on signal 30: file 1202604164.184114_D1_254be6f41a27b04d23a79ca5511d26ec_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 637 / 6480 : 9.830% remaining
+   0 : 014510022030322042421330
+
+SU: [PID = 28807]: searching [D = 1] space...
+1202604164.184309 :: ------------ mi 0 on signal 30: file 1202604164.184114_D1_254be6f41a27b04d23a79ca5511d26ec_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 457 / 6480 : 7.052% remaining
+   0 : 014510032331300541411320
+
+SU: [PID = 28807]: searching [D = 1] space...
+1202604164.184312 :: ------------ mi 0 on signal 30: file 1202604164.184114_D1_254be6f41a27b04d23a79ca5511d26ec_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 101 / 6480 : 1.559% remaining
+   0 : 012110222500324145451300
+
+SU: [PID = 28807]: searching [D = 1] space...
+1202604164.184316 :: ------------ mi 0 on signal 0: file 1202604164.184114_D1_254be6f41a27b04d23a79ca5511d26ec_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 18446744073709551615 / 6480 : 284671976446135040.000% remaining
+   0 : 010010002000300040400000
+
+SU: [PID = 28807]: searching [D = 1] space...
+1202604164.184316 :: SU: finished searching [D = 1] space:
+	 search took     122.00 seconds
+	 from 1202604164.184114
+	 to   1202604164.184316
+
+
+pm counts:
+z_is_good: 0       		pm_zr5: 151621369		
+pm_zr6: 96899664		pm_ndi: 25572540		
+pm_sndi: 0       		pm_pco: 19665531		
+pm_per: 8320475 		pm_ns0: 22491683		
+pm_oer: 9117    		pm_rsi: 251288  		
+pm_mcal: 18446160		 pm_h0: 64755969		
+pm_h0s: 228     		 pm_h1: 710     		
+ pm_h2: 0       		pm_rmv: 6247    		
+pm_ormv: 64      		pm_imv: 1289    		
+pm_csm: 60      		pm_lmv: 15778   		
+pm_fse: 0       		pm_pair: 3315858 		
+pm_ls0: 0       		pm_bdl1: 14804   		
+pm_bdl2: 5       		pm_bdl3: 0       		
+pm_bdl4: 0       		pm_bdl5: 0       		
+pm_bdl6: 0       		pm_bdl7: 0       		
+pm_bdl8: 0       		pm_bdl9: 0       		
+pm_erp1: 0       		pm_erp2: 0       		[done]
+
+

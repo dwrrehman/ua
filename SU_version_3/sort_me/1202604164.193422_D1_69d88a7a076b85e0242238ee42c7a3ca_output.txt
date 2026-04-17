@@ -1,0 +1,42 @@
+1202604164.193422 :: SU: [PID 35914]: [D 1]: [machine 0]: starting search call...
+1202604164.193459 :: ------------ mi 0 on signal 0: file 1202604164.193422_D1_69d88a7a076b85e0242238ee42c7a3ca_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 3000, execution_limit = 100000000
+
+queue count: jobs 18446744073709551610 / 6480 : 284671976446135040.000% remaining
+   0 : 010010002000300040411100
+   1 : 010010002000300040411200
+   2 : 010010002000300040451100
+   3 : 010010002000300040400000
+   4 : 010010002000300040411000
+   5 : 010010002000300040421100
+
+SU: [PID = 35914]: searching [D = 1] space...
+1202604164.193459 :: SU: finished searching [D = 1] space:
+	 search took      37.00 seconds
+	 from 1202604164.193422
+	 to   1202604164.193459
+
+
+pm counts:
+z_is_good: 1       		pm_zr5: 107255207		
+pm_zr6: 79565864		pm_ndi: 18888303		
+pm_sndi: 0       		pm_pco: 14455852		
+pm_per: 6008381 		pm_ns0: 15904867		
+pm_oer: 6716    		pm_rsi: 188830  		
+pm_mcal: 13257574		 pm_h0: 43265693		
+pm_h0s: 213     		 pm_h1: 545     		
+ pm_h2: 0       		pm_rmv: 11163   		
+pm_ormv: 93      		pm_imv: 1146    		
+pm_csm: 1880    		pm_lmv: 2453    		
+pm_fse: 0       		pm_pair: 2374334 		
+pm_ls0: 0       		pm_bdl1: 10996   		
+pm_bdl2: 4       		pm_bdl3: 0       		
+pm_bdl4: 0       		pm_bdl5: 0       		
+pm_bdl6: 0       		pm_bdl7: 0       		
+pm_bdl8: 0       		pm_bdl9: 0       		
+pm_erp1: 0       		pm_erp2: 0       		[done]
+
+
