@@ -3,7 +3,7 @@
 # status of each search call on each mac mini. 
 # written on 1202604116.200127
 
-cd root/projects/ua/calls/18/
+cd root/projects/ua/calls/19/
 kill -s USR1 $(pgrep search_run)
 sleep 1
 cat *output*

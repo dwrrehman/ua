@@ -4,7 +4,7 @@
 
 cd root/projects/ua
 git pull
-cd calls/18/
+cd calls/19/
 
 ./build release
 
