@@ -63,8 +63,8 @@ static const bool should_deduplicate_z_list = true;
 static const nat execution_limit  = (nat) -1;
 static const nat pre_run_duration = 0;
 
-static const nat array_size = 16384; // (must be divisible by 8)
-static const nat lifetime_length = 16384;
+static const nat array_size = 16384 / 8; // (must be divisible by 8)
+static const nat lifetime_length = 16384 / 8;
 
 static const nat generating_display_rate = 1;
 

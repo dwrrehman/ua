@@ -1,0 +1,166 @@
+1202604164.200404 :: SU: [PID 40009]: [D 1]: [machine 0]: starting search call...
+1202604164.200526 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4424 / 6480 : 68.272% remaining
+   0 : 012110532030344241422304
+   1 : 014410032153342042420024
+   2 : 015410002341342541412404
+   3 : 012510532330344042422404
+   4 : 012210352331304041452304
+   5 : 014110312504300441410024
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200529 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4423 / 6480 : 68.256% remaining
+   0 : 012510052443305040412304
+   1 : 012210232335312043420024
+   2 : 012210522304302143412404
+   3 : 015410202100355143422404
+   4 : 014410522300300442452304
+   5 : 012210212350312043410024
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200530 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4369 / 6480 : 67.423% remaining
+   0 : 014210512004310041412304
+   1 : 012410002305302045420024
+   2 : 014110512331304140413204
+   3 : 014410232154320040413104
+   4 : 012210312531340040423104
+   5 : 012410232443302543410024
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200531 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4364 / 6480 : 67.346% remaining
+   0 : 015410222043345141412304
+   1 : 014110232034344145420024
+   2 : 015110232303342140452104
+   3 : 012410312050300440413104
+   4 : 015410032001302040422104
+   5 : 014110332105304045410024
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200532 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4363 / 6480 : 67.330% remaining
+   0 : 015410322400345441412304
+   1 : 014110032105350445420024
+   2 : 014210002030342540452104
+   3 : 012510302001340540412104
+   4 : 012210322001304540422104
+   5 : 014210502341315145410024
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200533 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4363 / 6480 : 67.330% remaining
+   0 : 012510022031342142412304
+   1 : 014110212530312545420024
+   2 : 015210002033345141452104
+   3 : 012510312430345241412104
+   4 : 012210532103302441422104
+   5 : 012210502133300445410024
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200533 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4340 / 6480 : 66.975% remaining
+   0 : 015110032300342442412304
+   1 : 012410512301304140423004
+   2 : 012110222033342541452104
+   3 : 012110512131314042412104
+   4 : 012510232103345042422104
+   5 : 014410232053355445410024
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200534 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4337 / 6480 : 66.929% remaining
+   0 : 015210312441302243412304
+   1 : 014110502531300240413004
+   2 : 014510202033310142452104
+   3 : 012210302000305242412104
+   4 : 015410202003340442422104
+   5 : 012110222330310040452004
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200535 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4333 / 6480 : 66.867% remaining
+   0 : 015510032341300440422004
+   1 : 015510252133304140412004
+   2 : 015510012033325242452104
+   3 : 012110002303340542412104
+   4 : 015110522301304542422104
+   5 : 014510312143340240452004
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200535 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4333 / 6480 : 66.867% remaining
+   0 : 012510252133310041422004
+   1 : 012410052303302540412004
+   2 : 014410522333300542452104
+   3 : 015110312301302043412104
+   4 : 015210522033305143422104
+   5 : 012110302143345440452004
+
+SU: [PID = 40009]: searching [D = 1] space...
+1202604164.200536 :: ------------ mi 0 on signal 30: file 1202604164.200404_D1_592100ee05c436f914f51864671457fb_output.txt------------
+thread_count = 6, machine_count = 1
+job_digit_count = 6, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 30000, execution_limit = 100000000
+
+queue count: jobs 4094 / 6480 : 63.179% remaining
+   0 : 015410052330344441422004
+   1 : 015210022443304241412004
+   2 : 012510532303305043452104
+   3 : 012210022343302543412104
+   4 : 015410532130345040422443
+   5 : 015110502403342141452004
+
+SU: [PID = 40009]: searching [D = 1] space...
