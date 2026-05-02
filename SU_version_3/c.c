@@ -19,8 +19,8 @@
 #include <iso646.h>
 
 #define D 2
-#define machine_count 10
-#define thread_count 10
+#define machine_count 1
+#define thread_count 1
 				
 #define job_digit_count 7
 
@@ -242,6 +242,14 @@ static nat execute_graph_starting_at(
 
 
 		const byte op = g(4 * ip);
+
+		printf("%hhu  -- ", op);
+
+		if (op == one) printf("1\n");
+		if (op == two) printf("2\n");
+		if (op == three) printf("3\n");
+		if (op == five) printf("5\n");
+		if (op == six) printf("6\n");
 		
 		if (op == one) {
 			if (pointer == N) {
@@ -523,10 +531,13 @@ static byte execute_graph(
 		atomic_store_explicit(progress + 3 * thread_index + 2, g2, memory_order_relaxed);
 		counts[pm]++;
 
-		if (not pm) { 
-			//printf("FOUND GOOD GRAPH:  INSIDE JOB: "); 
-			//print_graph_raw(job_g0, job_g1, job_g2); puts(""); 
 
+		puts(pm_spelling[pm]);
+
+
+		if (not pm) { 
+			printf("FOUND GOOD GRAPH: "); 
+			print_graph_raw(g0, g1, g2); puts(""); 
 			*origin = o; return false; 
 		}
 
@@ -535,7 +546,7 @@ static byte execute_graph(
 	return true;
 }
 
-//#define printit  print_graph_raw(g0, g1, g2); puts("");
+#define printit  print_graph_raw(g0, g1, g2); puts("");
 
 static void* worker_thread(void* raw_thread_index) {
 
@@ -555,8 +566,6 @@ static void* worker_thread(void* raw_thread_index) {
 pull_job_from_queue:;
 
 
-
-
 	//if (found_good_zv_in_this_job) {
 		//printf("AND THIS IS THE END OF THE JOB "); 
 		//print_graph_raw(g0, g1, g2); 
@@ -564,8 +573,6 @@ pull_job_from_queue:;
 	//}
 
 	//found_good_zv_in_this_job = 0;
-
-
 
 
 	const nat jobs_left = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
@@ -580,13 +587,19 @@ pull_job_from_queue:;
 	//const nat job_g1 = g1;
 	//const nat job_g2 = g2;
 
-	//printf("pulled job: "); printit
-	//getchar();
+	//g0 = 0x4413031202514640;
+	//g1 = 0x312146106424;
+	//g2 = 0;
+	//0464 1520 2130 3144      4246 0164 1213  
+
+
+	printf("pulled job: "); printit
+	getchar();
 
 	goto init;
 bad:	
-	//printf("at bad, zskipping at %u: ", pointer); printit
-	//getchar();
+	printf("at bad, zskipping at %u: ", pointer); printit
+	getchar();
 
 	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
 
@@ -600,13 +613,13 @@ bad:
 loop:
 	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
 
- 	//puts("NF LOOP");
+ 	puts("NF LOOP");
 	if (g(pointer) < ((pointer & 3) ? operation_count - 1 : 4)) goto increment;
 	if (pointer < graph_count - 1) goto reset_;
 	
 	goto pull_job_from_queue;
 reset_:;
-	//puts("RESET");
+	puts("RESET");
 	const nat mask = ~(0xfLLU << ((pointer & 15) << 2));
 	     if (pointer < 16) g0 &= mask;
 	else if (pointer < 32) g1 &= mask;
@@ -617,7 +630,7 @@ reset_:;
 
 	goto loop;
 increment:;
-	//puts("INCR");
+	puts("INCR");
 	const nat addend = 1LLU << ((pointer & 15) << 2);
 	     if (pointer < 16) g0 += addend;
 	else if (pointer < 32) g1 += addend;
@@ -625,37 +638,38 @@ increment:;
 init:  
 	pointer = lsepa;
 
-	//printf("dol:"); printit
-	//getchar();
+	printf("dol:"); printit
+	getchar();
 
 	for (byte i = D; i--;) {
 		const byte pa = 4 * (5 + i);
 		const byte op = g(pa);
-		byte side = 0;
+		byte side = 0;		
 
-		if (op == six and g(4 * g(pa + 3)) == one) { side = 3; goto prune_edge; } // ns0.6e1
-		if (op == six and g(4 * g(pa + 3)) == five) { side = 3; goto prune_edge; } // ns0.6e5
-		if (op == six and g(4 * g(pa + 3)) == six) { side = 3; goto prune_edge; }  // zr6.e
-		if (op == six and g(pa + 2) != six)        { side = 2; goto prune_edge; }  // 6g
-		if (op == six and g(4 * g(pa + 1)) == six) { side = 1; goto prune_edge; }  // zr6.l 
-		if (op == five and g(4 * g(pa + 3)) == five) { side = 3; goto prune_edge; } // zr5.e
-		if (op == five and g(4 * g(pa + 2)) == five) { side = 2; goto prune_edge; } // zr5.g
-		if (op == five and g(4 * g(pa + 1)) == five) { side = 1; goto prune_edge; } // zr5.l
-		if (op == three and g(4 * g(pa + 3)) == three) { side = 3; goto prune_edge; } // ndi.e
-		if (op == three and g(4 * g(pa + 2)) == three) { side = 2; goto prune_edge; } // ndi.g
-		if (op == three and g(4 * g(pa + 1)) == three) { side = 1; goto prune_edge; } // ndi.l
-		if (op == two and g(4 * g(pa + 3)) == six) { side = 3; goto prune_edge; } // snco.e
-		if (op == two and g(4 * g(pa + 2)) == six) { side = 2; goto prune_edge; } // snco.g
-		if (op == two and g(4 * g(pa + 1)) == six) { side = 1; goto prune_edge; } // snco.l
-		if (g(4 * g(pa + 2)) == two) { side = 2; goto prune_edge; } // sci
-		if (op == one and g(4 * g(pa + 3)) == five) { side = 3; goto prune_edge; } // pco.e
-		if (op == one and g(4 * g(pa + 2)) == five) { side = 2; goto prune_edge; } // pco.g
-		if (op == one and g(4 * g(pa + 1)) == five) { side = 1; goto prune_edge; } // pco.l
-		if (op == one and g(4 * g(pa + 3)) == one) { side = 3; goto prune_edge; } // ns0.1e1
-		if (op == one and g(4 * g(pa + 2)) == one) { side = 2; goto prune_edge; } // ns0.1g1 
-		if (op == two and g(pa + 1) == pa >> 2) { side = 1; goto prune_edge; } // sndi
-		if (op == one and g(pa + 1) == pa >> 2) { side = 1; goto prune_edge; } // lb
+		if (op == six and g(4 * g(pa + 3)) == one) { puts("ns0.6e1"); side = 3; goto prune_edge; } // ns0.6e1
+		if (op == six and g(4 * g(pa + 3)) == five) { puts("ns0.6e5"); side = 3; goto prune_edge; } // ns0.6e5
+		if (op == six and g(4 * g(pa + 3)) == six) { puts("zr6.e"); side = 3; goto prune_edge; }  // zr6.e
+		if (op == six and g(pa + 2) != six)        { puts("6g"); side = 2; goto prune_edge; }  // 6g
+		if (op == six and g(4 * g(pa + 1)) == six) { puts("zr6.l "); side = 1; goto prune_edge; }  // zr6.l 
+		if (op == five and g(4 * g(pa + 3)) == five) { puts("zr5.e"); side = 3; goto prune_edge; } // zr5.e
+		if (op == five and g(4 * g(pa + 2)) == five) { puts("zr5.g"); side = 2; goto prune_edge; } // zr5.g
+		if (op == five and g(4 * g(pa + 1)) == five) { puts("zr5.l"); side = 1; goto prune_edge; } // zr5.l
+		if (op == three and g(4 * g(pa + 3)) == three) { puts("ndi.e"); side = 3; goto prune_edge; } // ndi.e
+		if (op == three and g(4 * g(pa + 2)) == three) { puts("ndi.g"); side = 2; goto prune_edge; } // ndi.g
+		if (op == three and g(4 * g(pa + 1)) == three) { puts("ndi.l"); side = 1; goto prune_edge; } // ndi.l
+		if (op == two and g(4 * g(pa + 3)) == six) { puts("snco.e"); side = 3; goto prune_edge; } // snco.e
+		if (op == two and g(4 * g(pa + 2)) == six) { puts("snco.g"); side = 2; goto prune_edge; } // snco.g
+		if (op == two and g(4 * g(pa + 1)) == six) { puts("snco.l"); side = 1; goto prune_edge; } // snco.l
+		if (g(4 * g(pa + 2)) == two) { puts("sci"); side = 2; goto prune_edge; } // sci
+		if (op == one and g(4 * g(pa + 3)) == five) { puts("pco.e"); side = 3; goto prune_edge; } // pco.e
+		if (op == one and g(4 * g(pa + 2)) == five) { puts("pco.g"); side = 2; goto prune_edge; } // pco.g
+		if (op == one and g(4 * g(pa + 1)) == five) { puts("pco.l"); side = 1; goto prune_edge; } // pco.l
+		if (op == one and g(4 * g(pa + 3)) == one) { puts("ns0.1e1"); side = 3; goto prune_edge; } // ns0.1e1
+		if (op == one and g(4 * g(pa + 2)) == one) { puts("ns0.1g1 "); side = 2; goto prune_edge; } // ns0.1g1 
+		if (op == two and g(pa + 1) == pa >> 2) { puts("sndi"); side = 1; goto prune_edge; } // sndi
+		if (op == one and g(pa + 1) == pa >> 2) { puts("lb"); side = 1; goto prune_edge; } // lb
 
+		
 		for (byte opi = 5; opi--;) {
 			if (	(opi != one and opi != two)
 					or
@@ -683,8 +697,8 @@ init:
 		goto bad;
 	}
 
-	//printf("0sp: "); printit
-	//getchar();
+	printf("0sp: "); printit
+	getchar();
 
 	if (g(4 * g(4 * six   + 3)) == one)   { pointer = 4 * six + 3; goto bad; } 	// ns0.6e1
 	if (g(4 * g(4 * six   + 3)) == five)  { pointer = 4 * six + 3; goto bad; } 	// ns0.6e5
@@ -707,8 +721,8 @@ init:
 	if (g(4 * g(4 * one   + 2)) == five)  { pointer = 4 * one + 2; goto bad; } 	// pco.g
 	if (g(4 * g(4 * one   + 2)) == two)   { pointer = 4 * one + 2; goto bad; } 	// sci.1g
 
-	//printf(" ga:"); printit
-	//getchar();
+	printf(" ga:"); printit
+	getchar();
 
 	u16 was_utilized = 0;
 	{ byte pa = graph_count; 
@@ -773,19 +787,23 @@ init:
 	) {pointer = 4 * three + 1; goto bad; }
 	skip_3_15_check:; 
 
-	//printf("exg:"); printit
-	//getchar();
+	printf("exg:"); printit
+	getchar();
 
 	//abort();
 
 	byte origin = 255;
 	const byte is_bad = execute_graph(g0, g1, g2, &origin, array, counts, thread_index); //job_g0, job_g1, job_g2);
 
-	//printf("at finished exg, appending: "); printit
-	//getchar();
+	printf("at finished exg, appending: "); printit
+	getchar();
 
 	if (not is_bad) { 
+
 		append_to_file(filenames[thread_index], 4096, g0, g1, g2, origin); 
+
+		puts("FOUND THAT THE ZV WAS GOOD!!!");
+
 		//found_good_zv_in_this_job = 1; 
 	} 
 	goto loop;

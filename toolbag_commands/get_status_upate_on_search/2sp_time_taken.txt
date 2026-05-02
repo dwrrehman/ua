@@ -1,0 +1,10 @@
+	 search took     963.00 seconds
+	 search took     948.00 seconds
+	 search took     931.00 seconds
+	 search took     854.00 seconds
+	 search took     956.00 seconds
+	 search took     899.00 seconds
+	 search took     908.00 seconds
+	 search took     912.00 seconds
+	 search took     988.00 seconds
+	 search took     928.00 seconds

@@ -6,7 +6,11 @@
 cd root/projects/ua/calls/19/
 kill -s USR1 $(pgrep search_run)
 sleep 1
-cat *output*
+
+#cat *output* | tail -n 20 | grep "remaining"
+
+cat *output* | tail -n 45
+
 cd ~
 exit
 

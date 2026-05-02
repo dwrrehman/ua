@@ -46,7 +46,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 1;        // the duplication count (operation_count = 5 + D)
+static const byte D = 2;        // the duplication count (operation_count = 5 + D)
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
@@ -61,16 +61,12 @@ static const byte D = 1;        // the duplication count (operation_count = 5 + 
 static const bool should_deduplicate_z_list = true;
 
 static const nat execution_limit  = (nat) -1;
-static const nat pre_run_duration = 0;
+static const nat pre_run_duration = 10000000;
 
-static const nat array_size = 16384 / 8; // (must be divisible by 8)
-static const nat lifetime_length = 16384 / 8;
+static const nat array_size = 2048; // (must be divisible by 8)
+static const nat lifetime_length = 2048;
 
 static const nat generating_display_rate = 1;
-
-
-
-
 
 
 
