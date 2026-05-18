@@ -60,13 +60,19 @@ static const byte D = 3;        // the duplication count (operation_count = 5 + 
 
 static const bool should_deduplicate_z_list = true;
 
-static const nat execution_limit  = (nat) -1;
+static const nat execution_limit  =   100000000LLU;  //(nat) -1;
+
 static const nat pre_run_duration = 10000000;
 
-static const nat array_size = 2048; // (must be divisible by 8)
-static const nat lifetime_length = 2048;
+static const nat array_size = 16384; // (must be divisible by 8)
+static const nat lifetime_length = 16384;
 
 static const nat generating_display_rate = 1;
+
+
+//#define execution_limit 100000000LLU
+//#define array_size 1000000LLU
+
 
 
 

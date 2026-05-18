@@ -13,19 +13,6 @@
 #include <math.h>
 #include <string.h>
 #include <unistd.h>
-#include <signal.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <time.h>
-#include <stdint.h>
-#include <stdatomic.h>
-#include <stdio.h>
-#include <string.h>
-#include <pthread.h>
-#include <stdbool.h>
-#include <iso646.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <iso646.h>
@@ -49,44 +36,67 @@
 #include <sys/wait.h>
 #include <termios.h>
 
+#define reset "\x1B[0m"
+#define red   "\x1B[31m"
+#define green   "\x1B[32m"
+#define yellow   "\x1B[33m"
+
 typedef uint8_t byte;
 typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-#define D 3
+#define D 2
+#define execution_limit 5000000LLU
+#define array_size 100000LLU
 
 enum operations { one, two, three, five, six };
 
-#define execution_limit 100000000LLU
-#define array_size 1000000LLU
-
 enum pruning_metrics {
 	z_is_good,
-
 	pm_zr5, pm_zr6, pm_ndi, pm_sndi,
 	pm_pco, pm_per, pm_ns0,
-	pm_oer, pm_rsi, pm_mcal,
+	pm_oer, pm_rsi,
 	pm_h0, pm_h0s, pm_h1, pm_h2, 
-	pm_rmv, pm_csm, pm_pair,
-	pm_bdl1, pm_bdl2, pm_bdl3, pm_xw,
-		
-	pm_mp,
+	pm_rmv, pm_ormv, pm_imv, pm_csm, pm_lmv,
+	pm_fse, pm_pair, pm_ls0, 
+	pm_bdl1, pm_bdl2, pm_bdl3, 
+	pm_bdl4, pm_bdl5, pm_bdl6, 
+	pm_bdl7, pm_bdl8, pm_bdl9, 
+	pm_bdl10, pm_bdl11, pm_bdl12, 
+	pm_erp1, pm_erp2,
 
+	pm_ga_sdol, 
+	pm_ga_6g,    pm_ga_ns0, 
+	pm_ga_zr5,   pm_ga_pco, 
+	pm_ga_ndi,   pm_ga_sndi, 
+	pm_ga_snco,  pm_ga_sn1, 
+	pm_ga_zr6,   pm_ga_rdo, 
+	pm_ga_uo, 
 	pm_count
 };
 
 static const char* pm_spelling[pm_count] = {
 	"z_is_good",
-
 	"pm_zr5", "pm_zr6", "pm_ndi", "pm_sndi",
 	"pm_pco", "pm_per", "pm_ns0",
-	"pm_oer", "pm_rsi", "pm_mcal",
+	"pm_oer", "pm_rsi",
 	"pm_h0", "pm_h0s", "pm_h1", "pm_h2", 
-	"pm_rmv", "pm_csm", "pm_pair",
-	"pm_bdl1", "pm_bdl2", "pm_bdl3", "pm_xw",
+	"pm_rmv", "pm_ormv", "pm_imv", "pm_csm", "pm_lmv",
+	"pm_fse", "pm_pair", "pm_ls0",
+	"pm_bdl1", "pm_bdl2", "pm_bdl3", 
+	"pm_bdl4", "pm_bdl5", "pm_bdl6", 
+	"pm_bdl7", "pm_bdl8", "pm_bdl9", 
+	"pm_bdl10", "pm_bdl11", "pm_bdl12", 
+	"pm_erp1",  "pm_erp2", 
 
-	"pm_mp",
+	"pm_ga_sdol", 
+	"pm_ga_6g",    "pm_ga_ns0", 
+	"pm_ga_zr5",   "pm_ga_pco", 
+	"pm_ga_ndi",   "pm_ga_sndi", 
+	"pm_ga_snco",  "pm_ga_sn1", 
+	"pm_ga_zr6",   "pm_ga_rdo", 
+	"pm_ga_uo", 
 };
 
 #define operation_count (5 + D)
@@ -126,24 +136,20 @@ static void print_bytes(byte* v, nat l) {
 	printf("] \n");
 }
 
-#define g(x)   (gi(g0, g1, g2, x))
-
-__attribute__((always_inline))
-static byte gi(nat g0, nat g1, nat g2,  byte pa) {
-	return ((pa < 16 ? g0 : pa < 32 ? g1 : g2) >> ((pa & 15) << 2)) & 0xf;
-}
-
-static void print_graph_raw_g(nat g0, nat g1, nat g2) { 
-	for (byte i = 0; i < graph_count; i++) printf("%hhu", gi(g0, g1, g2, i)); 
-}
-
 static void print_graph_raw(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); }
 static void print_graph(byte* graph) { for (byte i = 0; i < graph_count; i++) printf("%hhu", graph[i]); puts(""); }
 
-/*static void get_graphs_z_value(char string[64], byte* graph) {
+static void get_graphs_z_value(char string[64], byte* graph) {
 	for (byte i = 0; i < graph_count; i++) string[i] = (char) graph[i] + '0';
 	string[graph_count] = 0;
-}*/
+}
+
+static void get_datetime(char datetime[32]) {
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	struct tm* tm_info = localtime(&tv.tv_sec);
+	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
+}
 
 static void print_zlist(byte* graph, const char* s, nat d, struct zlist list) {
 	printf("%s . %llu . zlist (%llu){\n", s, d, list.count);
@@ -185,28 +191,10 @@ static void print_counts(void) {
         puts("\n[done]");
 }
 
-static void get_graphs_z_value_g(char* string, nat g0, nat g1, nat g2) {
-	for (byte i = 0; i < graph_count; i++) 
-		string[i] = (char) (gi(g0, g1, g2, i) + '0');
-	string[graph_count] = 0;
-}
-
-
-static void get_datetime(char datetime[32]) {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	struct tm* tm_info = localtime(&tv.tv_sec);
-	strftime(datetime, 32, "1%Y%m%d%u.%H%M%S", tm_info);
-}
-
-static void append_to_file(
-	char* filename, size_t filename_size, 
-	nat g0, nat g1, nat g2, 
-	byte origin
-) {
+static void append_to_file(char* filename, size_t size, byte* graph, byte origin) {
 	char dt[32] = {0};   get_datetime(dt);
-	char z[128] = {0};   get_graphs_z_value_g(z, g0, g1, g2);
-	char o[16] = {0};    snprintf(o, sizeof o, " %hhu ", origin);
+	char z[64] = {0};    get_graphs_z_value(z, graph); 
+	char o[16] = {0};    snprintf(o, sizeof o, "%hhu", origin);
 
 	int flags = O_WRONLY | O_APPEND;
 	mode_t permissions = 0;
@@ -220,7 +208,7 @@ try_open:;
 			fflush(stdout);
 			abort();
 		}
-		snprintf(filename, filename_size, "%s_%08x%08x%08x%08x_z.txt", dt, 
+		snprintf(filename, size, "%s_%08x%08x%08x%08x_z.txt", dt, 
 			rand(), rand(), rand(), rand()
 		);
 		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
@@ -228,471 +216,27 @@ try_open:;
 		goto try_open;
 	}
 
-	write(file, z, graph_count);
-	write(file, o, 3);
-	write(file, dt, 17);
+	write(file, z, strlen(z));
+	write(file, " ", 1);
+	write(file, o, strlen(o));
+	write(file, " ", 1);
+	write(file, dt, strlen(dt));
 	write(file, "\n", 1);
 	close(file);
 
-	printf("[%s]: write: %s z = %s to file \"%s\"\n",
-		dt, permissions ? "created" : "wrote", z, filename
-	);
-}
-
-#define max_rsi_count 512
-#define max_oer_repetions 50
-#define max_rmv_modnat_repetions 15
-#define max_consecutive_small_modnats 230
-
-#define max_consecutive_s0_incr 30
-#define max_consecutive_h0_bouts 10
-#define max_consecutive_h1_bouts 16
-#define max_consecutive_h2_bouts 24
-#define max_consecutive_h0s_bouts 7
-#define max_consecutive_pairs 8
-
-static nat execute_graph_starting_at(
-	nat g0, nat g1, nat g2, 
-	const byte origin, 
-	nat* array
-) {
-	nat comparator = 0;
-	const nat N = array_size;
-	array[0] = 0; 
-
-	nat 	xw = 0,  pointer = 0,  bout_length = 0, 
-		OER_ier_at = 0,
-		BDL_ier_at = 0,
-		PER_ier_at = (nat) ~0;
-
-	byte	H0_counter = 0,  H0S_counter = 0, SNDI_counter = 0,
-		H1_counter = 0, H2_counter = 0, OER_counter = 0,
-		BDL1_counter = 0, BDL2_counter = 0, BDL3_counter = 0, 
-		pair_index = 0, pair_count = 0;
-	
-	byte ip = origin;
-	byte last_mcal_op = 255;
-
-	byte rsi_counter[max_rsi_count];   rsi_counter[0] = 0;
-
-	byte has_executed_5 = 0;
-	byte has_executed_6 = 0;
-
-	//nat cached_xw = 0;	
-	
-	for (nat e = 0; e < execution_limit; e++) {
-
-		if (e == 100000 and xw >= 150) return pm_xw;
-		if (e == 20000 and xw < 8) return pm_xw;
-
-		const byte op = g(4 * ip);
-		//printf("%hhu  -- ", op);
-
-		//if (op == one) printf("1\n");
-		//if (op == two) printf("2\n");
-		//if (op == three) printf("3\n");
-		//if (op == five) printf("5\n");
-		//if (op == six) printf("6\n");
-		
-		if (op == one) {
-			if (pointer == N) {
-				puts("FEA condition violated by a z value: "); 
-				print_graph_raw_g(g0, g1, g2);
-				puts(""); 
-				abort(); 
-			}
-  
-			if (not array[pointer]) return pm_ns0; 
-			if (last_mcal_op == one)  H0_counter = 0;
-			if (last_mcal_op == one)  H0S_counter = 0;
-
-			if (pointer < max_rsi_count) {
-				if (last_mcal_op == three) {
-					rsi_counter[pointer]++;
-					if (rsi_counter[pointer] >= max_consecutive_s0_incr) return pm_rsi;
-				} else rsi_counter[pointer] = 0;
-			}
-
-			if (pair_index == 1) pair_index = 2;
-			else if (pair_index == 3) pair_index = 4;
-			else if (pair_index == 4) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
-			else if (pair_index) { pair_count = 0; pair_index = 0; }
-
-			SNDI_counter = 0;
-
-			bout_length++;
-			pointer++;
-
-			if (pointer > xw and pointer < N) { 
-				xw = pointer; 
-				array[pointer] = 0; 
-				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
-
-				//if (pointer < max_erp_count) small_erp_array[pointer] = 0;
-			}
-		}
-
-		else if (op == five) {
-			if (not has_executed_5) { if (pointer > 1) return pm_mcal; }
-			has_executed_5 = 1;
-			if (last_mcal_op != three) return pm_pco;
-			if (not pointer) return pm_zr5; 
-			
-			if (pointer == OER_ier_at or pointer == OER_ier_at + 1) {
-				OER_counter++;
-				if (OER_counter >= max_oer_repetions) return pm_oer;
-			} else { OER_ier_at = pointer; OER_counter = 0; }
-
-			byte CSM_counter = 0;
-			byte RMV_counter = 0;
-			nat RMV_value = (nat) -1;
-
-			for (nat i = 0; i < xw; i++) {
-				if (array[i] < 8) CSM_counter++; else CSM_counter = 0;
-				if (CSM_counter >= max_consecutive_small_modnats) return pm_csm;
-				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
-				if (RMV_counter >= max_rmv_modnat_repetions) return pm_rmv;
-			}
-
-
-			if (pointer + 1 == BDL_ier_at) {
-				BDL1_counter++; 
-				if (BDL1_counter >= 8) return pm_bdl1; 
-			} else BDL1_counter = 0;
-
-			if (pointer + 2 == BDL_ier_at) {
-				BDL2_counter++; 
-				if (BDL2_counter >= 8) return pm_bdl2; 
-			} else BDL2_counter = 0;
-
-			if (pointer + 3 == BDL_ier_at) {
-				BDL3_counter++;
-				if (BDL3_counter >= 30) return pm_bdl3; 
-			} else BDL3_counter = 0;
-
-
-			if (pair_index == 3) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
-			else if (pair_index) { pair_count = 0; pair_index = 0; }
-		
-			SNDI_counter = 0;
-
-			BDL_ier_at = pointer;
-			PER_ier_at = pointer;
-			pointer = 0;
-		}
-
-		else if (op == two) {
-			SNDI_counter++;
-			if (SNDI_counter >= 10) return pm_sndi;
-			comparator++;
-		}
-
-		else if (op == six) {
-			if (not has_executed_6) { if (comparator > 1) return pm_mcal; }
-			has_executed_6 = 1;
-			if (not comparator) return pm_zr6;
-			SNDI_counter = 0;
-			comparator = 0;
-		}
-		else if (op == three) {
-			if (last_mcal_op == three) return pm_ndi;
-
-			if (last_mcal_op == one) {
-				H0_counter++;
-				if (H0_counter >= max_consecutive_h0_bouts) return pm_h0; 
-			}
-
-			if (last_mcal_op == one) {
-				H0S_counter++;
-				if (H0S_counter >= max_consecutive_h0s_bouts and e >= 100000) return pm_h0s; 
-			}
-
-			if (bout_length == 2) {
-				H1_counter++;
-				if (H1_counter >= max_consecutive_h1_bouts) return pm_h1; 
-			} else H1_counter = 0;
-
-			if (bout_length == 3) {
-				H2_counter++;
-				if (H2_counter >= max_consecutive_h2_bouts) return pm_h2; 
-			} else H2_counter = 0;
-
-			if (PER_ier_at != (nat) ~0) {
-				if (pointer >= PER_ier_at) return pm_per; 
-				PER_ier_at = (nat) ~0;
-			}
-
-			if (not pair_index) pair_index = 1;
-			else if (pair_index == 2) pair_index = 3;
-			else { pair_count = 0; pair_index = 0; }
-
-			SNDI_counter = 0;
-
-			bout_length = 0;
-			array[pointer]++;
-
-			//MP:
-			if (pointer and array[pointer] > array[pointer - 1]) return pm_mp;
-		}
-
-		if (op == three or op == one or op == five) last_mcal_op = op;
-
-		byte state = 0;
-		if (comparator < array[pointer]) state = 1;
-		if (comparator > array[pointer]) state = 2;
-		if (comparator == array[pointer]) state = 3;
-		ip = g(4 * ip + state);
-	}
-
-	if (execution_limit == 100000000 and xw >= 1000) return pm_xw;
-
-	return z_is_good;
-}
-		
-static byte execute_graph(
-	nat g0, nat g1, nat g2, 
-	byte* origin, 
-	nat* array, 
-	nat* counts
-) {
-	for (byte o = 0; o < operation_count; o++) {
-		byte op = g(4 * o);
-		if (op != three) continue;
-		const nat pm = execute_graph_starting_at(g0, g1, g2, o, array);
-		counts[pm]++;
-
-		// puts(pm_spelling[pm]);
-
-		if (not pm) { 
-			printf("FOUND GOOD GRAPH: "); 
-			print_graph_raw_g(g0, g1, g2); puts(""); 
-			*origin = o; return false; 
-		}
-		continue;
-	}
-	return true;
-}
-
-static nat print_lifetime(
-	bool print_os, 
-	byte* graph,  nat* array,
-	byte origin,  nat print_count, nat er_count
-) {
-
-	nat n = array_size;
-	bool* modes = calloc(n + 1, sizeof(bool));
-
-	nat er = 0, E = 0, Eer = 0;
-	nat pointer = 0;
-	byte ip = origin;
-	if (print_count) puts("[starting lifetime...]");
-	nat e = 0;
-
-	nat* erp_array = calloc(array_size + 1, sizeof(nat));
-	memset(array, 0, (array_size + 1) * sizeof(nat));
-
-	for (; e < print_count; e++) {
-
-		const byte I = ip * 4, op = graph[I];
-
-		if (print_os) { printf("op = %hhu\n", op); getchar(); } 
-
-		if (op == one) { 
-			if (pointer == n) { puts("fea pointer overflow"); abort(); } 
-			pointer++; 
-
-		} else if (op == five) {
-			for (nat i = 0; i < n; i++) {
-				if (i < window_begin) continue;
-				if (i > window_end) break;
-				if (not array[i]) break;
-				if (not modes[i]) putchar(' ');
-				else if (i == pointer) putchar('@');
-				else putchar('#');
-			}
-			puts("");
-
-			if (timestep_delay) usleep(timestep_delay);
-			er++;
-			if (er == paging_row_count) Eer = E;
-			if (er > er_count) { puts("maxed out er count."); goto done; }
-
-			erp_array[pointer]++;
-			pointer = 0;
-			memset(modes, 0, sizeof(bool) * (n + 1));
-		}
-		else if (op == two) { array[n]++; }
-		else if (op == six) { array[n] = 0; }
-		else if (op == three) { array[pointer]++; modes[pointer] = 1; }
-
-		byte state = 0;
-		if (array[n] < array[pointer]) state = 1;
-		if (array[n] > array[pointer]) state = 2;
-		if (array[n] == array[pointer]) state = 3;
-		ip = graph[I + state];
-
-		E++;
-	}
-	if (print_count) {
-		for (nat i = 0; i < n; i++) {
-			if (i < window_begin) continue;
-			if (i > window_end) break;
-			if (not array[i]) break;
-			if (not modes[i]) putchar(' ');
-			else if (i == pointer) putchar('@');
-			else putchar('#');
-		}
-		puts("");
-	}
-	puts("finished lifetime via el.");
-done:	if (print_count) puts("[end of lifetime]");
-	nat xw = 0;
-	for (; xw < n and array[xw]; xw++) { }
-	puts("");
-	print_nats(array, xw);
-	puts("");
-	print_nats(erp_array, xw);
-	puts("");
-	free(modes);
-	return Eer;
-}
-
-static void visualize(bool b, byte* graph, nat* array, char* string) {
-	init_graph_from_string(graph, string);
-	char buffer[128] = {0};
-	printf("give the origin: ");
-	fgets(buffer, sizeof buffer, stdin);
-	byte o = (byte) atoi(buffer);
-	print_lifetime(b, graph, array, o, execution_limit, row_count);
-	printf("\nz = %.*s\n", (int) graph_count, string);
-	print_bytes(graph, graph_count); 
-	print_graph_as_adj(graph);
-}
-
-static void machine_prune(byte* graph, nat* array, struct zlist list) { //  const char* previous_filename, 
-
-	char filename[4096] = {0};
-	nat good = 0, bad = 0;
-	nat display_counter = 0;	
-	memset(pm_counts, 0, pm_count * sizeof(nat));
-
-	for (nat z = 0; z < list.count; z++) {
-		set_graph(graph, list.values[z]);
-
-		if (display_counter % 1 == 0) { //  32
-			printf("\r %1.5lf [ "
-				"%6llu / %6llu :: "
-				"good: %6llu, "
-				"bad: %6llu ] "
-				"trying z = ", 
-				((double) z) / ((double)list.count), 
-				z, list.count, good, bad
-			);
-
-			print_graph_raw(graph);
-			fflush(stdout);
-			display_counter = 0;
-		} 
-		display_counter++;
-		byte origin = 255;
-
-		nat g0 = 0, g1 = 0, g2 = 0;
-		for (nat i = 0; i < graph_count; i++) {
-			const nat value = graph[i];
-			const nat mask = value << ((i & 15) << 2);
-			     if (i < 16) g0 |= mask;
-			else if (i < 32) g1 |= mask;
-			else             g2 |= mask;
-		}
-
-
-
-
-		//putchar(10); printf("                                                                     "); 
-		//print_graph_raw_g(g0, g1, g2); putchar(10); getchar();
-
-
-		const byte is_bad = execute_graph(g0, g1, g2, &origin, array, pm_counts);
-		if (not is_bad) { 
-			good++;
-			append_to_file(filename, 4096, g0, g1, g2, origin); 
-		} else bad++;
-	}
-	print_counts();
-	printf("\n\n\t\t\tgood: %llu\n\t\t\tbad: %llu\n\n\n", good, bad);
-}
-
-static void print_help(void) {
-	printf("available commands:\n"
-		"\t quit \n"
-		"\t clear \n"
-		"\t help \n"
-		"\t list \n"
-		"\t viz \n"	
-		"\t synthesize graph (sg)\n"
-		"\t machine prune (m)\n"
-		"\t\n"
-	);
-}
-
-int main(int argc, const char** argv) {
-	srand((unsigned)time(0)); rand();
-
-	nat* array = calloc(array_size + 1, sizeof(nat));
-	byte* graph = calloc(graph_count, 1);
-	if (argc <= 1) return puts("give input z list filename as an argument!");
-
-	FILE* file = fopen(argv[1], "r");
-	if (not file) { perror("fopen"); exit(1); }	
-	struct zlist zlist = {0};
-	char buffer[1024] = {0};
-	while (fgets(buffer, sizeof buffer, file)) {
-		char* index = strchr(buffer, ' ');
-		if (not index) abort();
-		buffer[index - buffer] = 0;
-		if (graph_count != strlen(buffer)) { puts("graph count or dupilcation_count mismatch!"); abort(); }
-		init_graph_from_string(graph, buffer);
-		byte* g = calloc(graph_count, 1);
-		memcpy(g, graph, graph_count);
-		zlist.values = realloc(zlist.values, sizeof(nat*) * (zlist.count + 1));
-		zlist.values[zlist.count++] = g;
-	}
-	fclose(file);
-	char input[4096] = {0};
-loop:
-	printf(":%llu: ", zlist.count);
-	fgets(input, sizeof input, stdin);
-	if (not strcmp(input, "\n")) {}
-	else if (not strcmp(input, "quit\n")) exit(0);
-	else if (not strcmp(input, "exit\n")) exit(0);
-	else if (not strcmp(input, "q\n")) exit(0);
-	else if (not strcmp(input, "x\n")) exit(0);
-	else if (not strcmp(input, "clear\n") or not strcmp(input, "o\n")) printf("\033[H\033[2J");
-	else if (not strcmp(input, "help\n")) print_help();
-	else if (not strcmp(input, "list\n")) print_zlist(graph, "current z list", 0, zlist);
-	else if (not strncmp(input, "viz ", 4)) visualize(0, graph, array, input + 4);
-	else if (not strncmp(input, "os ", 3)) visualize(1, graph, array, input + 3);
-	else if (not strcmp(input, "machine prune\n") or not strcmp(input, "m\n")) machine_prune(graph, array, zlist);
-	else printf("unknown command %s\n", input);
-	goto loop;
+	//printf("[%s]: write: %s z = %s to file \"%s\"\n",
+	//	dt, permissions ? "created" : "wrote", z, filename
+	//);
 }
 
 
-
-
-
-
-
-
-
-
-/*
 
 static void print_array(nat* array, nat xw, nat location, bool print_whole_array) {
 
 	nat max = 0;
 	for (nat i = 0; i < xw + 5; i++) {
-		const nat difference = i < location ? location - i : i - location;		if (difference > 30 and not print_whole_array) continue;
+		const nat difference = i < location ? location - i : i - location;
+		if (difference > 30 and not print_whole_array) continue;
 		if (array[i] > max) max = array[i];
 	}
 
@@ -712,6 +256,11 @@ static void print_array(nat* array, nat xw, nat location, bool print_whole_array
 	}
 	putchar(10);
 }
+
+
+
+
+
 #define history_count (7000)
 static byte history[history_count] = {0};
 
@@ -734,533 +283,6 @@ static void debug_pm(byte origin, nat e, nat pm) {
 	fflush(stdout);
 	//getchar();
 }
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*for (byte origin = 0; origin < operation_count; origin++) {
-			if (graph[4 * origin] != three) continue;
-			byte at; 
-			const nat pm = execute_graph_starting_at(origin, graph, array, &at);
-			pm_counts[pm]++;
-			if (pm) bad++;
-			else { append_to_file(filename, sizeof filename, graph, origin); good++; }
-		}
-execute_graph();
-		append_to_file();
-*/
-
-		
-
-
-/*
-
-
-
-	{
-	nat* array = calloc(array_size + 1, sizeof(nat));
-	byte graph[graph_count] = {0};
-	init_graph_from_string(graph, "0415162626303546424101441501");	
-	byte zskip_at = 0;
-	const nat pm = execute_graph_starting_at(1, graph, array, &zskip_at);
-	printf("info: pruned zv via %s\n", pm_spelling[pm]);
-	exit(0);
-	}
-
-
-
-
-static void synthesize_graph_over_one_group(struct zlist zlist) {
-
-	nat* tallys = calloc((size_t) (graph_count * operation_count), sizeof(nat));
-
-	for (nat z = 0; z < zlist.count; z++) {
-		for (nat i = 0; i < graph_count; i++) {
-			tallys[i * operation_count + zlist.values[z][i]]++;
-		}
-	}
-
-	printf("synthesized graph [over %llu z values]:\n", zlist.count);
-
-	for (byte i = 0; i < graph_count; i += 4) {
-		printf("  " red "#%u" reset "  :: { \n", i / 4);
-
-		printf("\t\t.op={ ");
-		for (nat o = 0; o < operation_count; o++) {
-			const nat count = tallys[(i + 0) * operation_count + o];
-			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ?  green : yellow, (double) count / zlist.count, count); 
-		}
-		printf(" }, \n");
-		printf("\t\t.l={ ");
-		for (nat o = 0; o < operation_count; o++) {
-			const nat count = tallys[(i + 1) * operation_count + o];
-			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ?  green : yellow, (double) count / zlist.count, count); 
-		}
-		printf(" }, \n");
-		printf("\t\t.g={ ");
-		for (nat o = 0; o < operation_count; o++) {
-			const nat count = tallys[(i + 2) * operation_count + o];
-			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ? green : yellow, (double) count / zlist.count, count); 
-		}
-		printf(" }, \n");
-		printf("\t\t.e={ ");
-		for (nat o = 0; o < operation_count; o++) {
-			const nat count = tallys[(i + 3) * operation_count + o];
-			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ? green : yellow, (double) count / zlist.count, count); 
-		}
-		printf(" }, \n");
-		printf(" }   \n\n");
-	}
-
-	puts(
-	"static const byte _63R[5 * 4] = {" "\n"
-	"	0,  1, 4, _,      //        3" "\n"
-	"	1,  0, _, _,      //     6  7 " "\n"
-	"	2,  0, _, _,      //    10 11" "\n"
-	"	3,  _, _, _,      // 13 14 15" "\n"
-	"	4,  2, 0, _,      //       19" "\n"
-	"};"
-	);
-
-	puts(
-	"static const byte _36R[5 * 4] = {" "\n"
-	"	0,  1, 2, _,      //        3" "\n"
-	"	1,  0, _, _,      //     6  7 " "\n"
-	"	2,  _, 4, _,      //    10 11" "\n"
-	"	3,  _, _, _,      // 13 14 15" "\n"
-	"	4,  0, 0, _,      //       19" "\n"
-	"};"
-	);
-}
-
-static void find_major_groups(byte* graph, struct zlist list) {
-
-	struct zlist group = {
-		.values = calloc(list.count, sizeof(nat*)), 
-		.count = 0
-	};
-
-	for (nat i = 0; i < 6; i++) {
-
-		for (nat z = 0; z < list.count; z++) {
-			if (list.values[z][1 * 4 + 3] == 1) continue;
-			if (list.values[z][5 * 4 + 0] == i or i == 5) group.values[group.count++] = list.values[z];
-		}
-
-		printf("%llu op is new:   performing synthesize graph over %llu z values:\n", i, group.count); 
-		print_zlist(graph, "major group", i, group);
-
-		printf("%llu op is new:   performing synthesize graph over MAJOR GROUP %llu z values:\n", i, group.count); 
-
-		if (group.count) synthesize_graph_over_one_group(group);
-		else printf("ERROR: the group had no members!!! thus, synthesize_graph_over_one_group(group) was not called on it. \n");
-
-		getchar();
-		//partition_into_minor_groups(group);
-
-		group.count = 0;
-	}
-	puts("[finished all sythesized graphs over all groups.]");
-}
-
-
-
-
-
-
-
-
-
 
 static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte* zskip_at) {
 
@@ -1312,7 +334,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 
 		const byte I = ip * 4, op = graph[I];
 
-		/if (e >= 100000000) {
+		/*if (e >= 100000000) {
 			if (first) {
 				print_graph_raw(graph); puts("");
 				getchar();
@@ -1320,7 +342,7 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 			}
 			printf("%hhu ", op); fflush(stdout);
 			usleep(20000);
-		}*
+		}*/
 
 		if (op == one) {
 			if (pointer == n) { 
@@ -1558,10 +580,10 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 
 		if (op == three or op == one or op == five) last_mcal_op = op;
 	
-		/if (op == three or op == one or op == five) {
+		/*if (op == three or op == one or op == five) {
 			memmove(history, history + 1, history_count - 1 );
 			history[history_count - 1] = op;
-		}*
+		}*/
 
 
 
@@ -1601,7 +623,715 @@ static nat execute_graph_starting_at(byte origin, byte* graph, nat* array, byte*
 	return z_is_good;
 }
 
-*/
+static nat print_lifetime(
+	bool print_os, 
+	byte* graph,  nat* array,
+	byte origin,  nat print_count, nat er_count
+) {
+
+	nat n = array_size;
+	bool* modes = calloc(n + 1, sizeof(bool));
+
+	nat er = 0, E = 0, Eer = 0;
+	nat pointer = 0;
+	byte ip = origin;
+	if (print_count) puts("[starting lifetime...]");
+	nat e = 0;
+
+	nat* erp_array = calloc(array_size + 1, sizeof(nat));
+	memset(array, 0, (array_size + 1) * sizeof(nat));
+
+	for (; e < print_count; e++) {
+
+		const byte I = ip * 4, op = graph[I];
+
+		if (print_os) { printf("op = %hhu\n", op); getchar(); } 
+
+		if (op == one) { 
+			if (pointer == n) { puts("fea pointer overflow"); abort(); } 
+			pointer++; 
+
+		} else if (op == five) {
+			for (nat i = 0; i < n; i++) {
+				if (i < window_begin) continue;
+				if (i > window_end) break;
+				if (not array[i]) break;
+				if (not modes[i]) putchar(' ');
+				else if (i == pointer) putchar('@');
+				else putchar('#');
+			}
+			puts("");
+
+			if (timestep_delay) usleep(timestep_delay);
+			er++;
+			if (er == paging_row_count) Eer = E;
+			if (er > er_count) { puts("maxed out er count."); goto done; }
+
+			erp_array[pointer]++;
+			pointer = 0;
+			memset(modes, 0, sizeof(bool) * (n + 1));
+		}
+		else if (op == two) { array[n]++; }
+		else if (op == six) { array[n] = 0; }
+		else if (op == three) { array[pointer]++; modes[pointer] = 1; }
+
+		byte state = 0;
+		if (array[n] < array[pointer]) state = 1;
+		if (array[n] > array[pointer]) state = 2;
+		if (array[n] == array[pointer]) state = 3;
+		ip = graph[I + state];
+
+		E++;
+	}
+	if (print_count) {
+		for (nat i = 0; i < n; i++) {
+			if (i < window_begin) continue;
+			if (i > window_end) break;
+			if (not array[i]) break;
+			if (not modes[i]) putchar(' ');
+			else if (i == pointer) putchar('@');
+			else putchar('#');
+		}
+		puts("");
+	}
+	puts("finished lifetime via el.");
+done:
+	if (print_count) puts("[end of lifetime]");
+
+	nat xw = 0;
+	for (; xw < n and array[xw]; xw++) { }
+	puts("");
+	print_nats(array, xw);
+	puts("");
+	print_nats(erp_array, xw);
+	puts("");
+
+	free(modes);
+	return Eer;
+}
+
+static void synthesize_graph_over_one_group(struct zlist zlist) {
+
+	nat* tallys = calloc((size_t) (graph_count * operation_count), sizeof(nat));
+
+	for (nat z = 0; z < zlist.count; z++) {
+		for (nat i = 0; i < graph_count; i++) {
+			tallys[i * operation_count + zlist.values[z][i]]++;
+		}
+	}
+
+	printf("synthesized graph [over %llu z values]:\n", zlist.count);
+
+	for (byte i = 0; i < graph_count; i += 4) {
+		printf("  " red "#%u" reset "  :: { \n", i / 4);
+
+		printf("\t\t.op={ ");
+		for (nat o = 0; o < operation_count; o++) {
+			const nat count = tallys[(i + 0) * operation_count + o];
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ?  green : yellow, (double) count / zlist.count, count); 
+		}
+		printf(" }, \n");
+		printf("\t\t.l={ ");
+		for (nat o = 0; o < operation_count; o++) {
+			const nat count = tallys[(i + 1) * operation_count + o];
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ?  green : yellow, (double) count / zlist.count, count); 
+		}
+		printf(" }, \n");
+		printf("\t\t.g={ ");
+		for (nat o = 0; o < operation_count; o++) {
+			const nat count = tallys[(i + 2) * operation_count + o];
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ? green : yellow, (double) count / zlist.count, count); 
+		}
+		printf(" }, \n");
+		printf("\t\t.e={ ");
+		for (nat o = 0; o < operation_count; o++) {
+			const nat count = tallys[(i + 3) * operation_count + o];
+			if (count) printf(" ->%llu : %s%.2lf\033[0m[%llu]", o, count == zlist.count ? green : yellow, (double) count / zlist.count, count); 
+		}
+		printf(" }, \n");
+		printf(" }   \n\n");
+	}
+
+	puts(
+	"static const byte _63R[5 * 4] = {" "\n"
+	"	0,  1, 4, _,      //        3" "\n"
+	"	1,  0, _, _,      //     6  7 " "\n"
+	"	2,  0, _, _,      //    10 11" "\n"
+	"	3,  _, _, _,      // 13 14 15" "\n"
+	"	4,  2, 0, _,      //       19" "\n"
+	"};"
+	);
+
+	puts(
+	"static const byte _36R[5 * 4] = {" "\n"
+	"	0,  1, 2, _,      //        3" "\n"
+	"	1,  0, _, _,      //     6  7 " "\n"
+	"	2,  _, 4, _,      //    10 11" "\n"
+	"	3,  _, _, _,      // 13 14 15" "\n"
+	"	4,  0, 0, _,      //       19" "\n"
+	"};"
+	);
+}
+
+static void find_major_groups(byte* graph, struct zlist list) {
+
+	struct zlist group = {
+		.values = calloc(list.count, sizeof(nat*)), 
+		.count = 0
+	};
+
+	for (nat i = 0; i < 6; i++) {
+
+		for (nat z = 0; z < list.count; z++) {
+			if (list.values[z][1 * 4 + 3] == 1) continue;
+			if (list.values[z][5 * 4 + 0] == i or i == 5) group.values[group.count++] = list.values[z];
+		}
+
+		printf("%llu op is new:   performing synthesize graph over %llu z values:\n", i, group.count); 
+		print_zlist(graph, "major group", i, group);
+
+		printf("%llu op is new:   performing synthesize graph over MAJOR GROUP %llu z values:\n", i, group.count); 
+
+		if (group.count) synthesize_graph_over_one_group(group);
+		else printf("ERROR: the group had no members!!! thus, synthesize_graph_over_one_group(group) was not called on it. \n");
+
+		getchar();
+		//partition_into_minor_groups(group);
+
+		group.count = 0;
+	}
+	puts("[finished all sythesized graphs over all groups.]");
+}
+
+
+static void visualize(bool b, byte* graph, nat* array, char* string) {
+
+	init_graph_from_string(graph, string);
+
+	char buffer[128] = {0};
+	printf("give the origin: ");
+	fgets(buffer, sizeof buffer, stdin);
+	byte o = (byte) atoi(buffer);
+	print_lifetime(b, graph, array, o, execution_limit, row_count);
+	printf("\nz = %.*s\n", (int) graph_count, string);
+	print_bytes(graph, graph_count); 
+	print_graph_as_adj(graph);
+}
+
+static void machine_prune(byte* graph, nat* array, struct zlist list) { //  const char* previous_filename, 
+
+	char filename[4096] = {0};
+	nat good = 0, bad = 0;
+	nat display_counter = 0;
+	
+	memset(pm_counts, 0, pm_count * sizeof(nat));
+
+	for (nat z = 0; z < list.count; z++) {
+		set_graph(graph, list.values[z]);
+
+		if (display_counter % 1 == 0) { //  32
+			printf("\r %1.5lf [ %6llu / %6llu :: good: %6llu, bad: %6llu ] trying z = ", ((double) z) / ((double)list.count), z, list.count, good, bad);
+			print_graph_raw(graph);
+			fflush(stdout);
+			display_counter = 0;
+		} 
+		display_counter++;
+
+		for (byte origin = 0; origin < operation_count; origin++) {
+			if (graph[4 * origin] != three and graph[4 * origin] != two) continue;
+			byte at; 
+			const nat pm = execute_graph_starting_at(origin, graph, array, &at);
+			pm_counts[pm]++;
+			if (pm) bad++;
+			else { append_to_file(filename, sizeof filename, graph, origin); good++; }
+		}
+	}
+	print_counts();
+	printf("\n\n\t\t\tgood: %llu\n\t\t\tbad: %llu\n\n\n", good, bad);
+}
+
+static void print_help(void) {
+	printf("available commands:\n"
+		"\t quit \n"
+		"\t clear \n"
+		"\t help \n"
+		"\t list \n"
+		"\t viz \n"	
+		"\t synthesize graph (sg)\n"
+		"\t machine prune (m)\n"
+		"\t\n"
+	);
+}
+
+int main(int argc, const char** argv) {
+
+
+	/*{
+	nat* array = calloc(array_size + 1, sizeof(nat));
+	byte graph[graph_count] = {0};
+	init_graph_from_string(graph, "0415162626303546424101441501");	
+	byte zskip_at = 0;
+	const nat pm = execute_graph_starting_at(1, graph, array, &zskip_at);
+	printf("info: pruned zv via %s\n", pm_spelling[pm]);
+	exit(0);
+	}*/
+
+
+
+	// compiletime computation:
+	srand((unsigned)time(0)); rand();
+	// space_size = expn(5 + D, 9) * expn(5 * expn(5 + D, 3), D);
+
+	nat* array = calloc(array_size + 1, sizeof(nat));
+	byte* graph = calloc(graph_count, 1);
+
+	// runtime computation:
+	// printf("using [D=%hhu]: spacesize=%llu\n", D, space_size);
+
+	if (argc <= 1) return puts("give input z list filename as an argument!");
+
+	FILE* file = fopen(argv[1], "r");
+	if (not file) { perror("fopen"); exit(1); }
+	
+	struct zlist zlist = {0};
+
+	char buffer[1024] = {0};
+	while (fgets(buffer, sizeof buffer, file)) {
+		char* index = strchr(buffer, ' ');
+		if (not index) abort();
+		buffer[index - buffer] = 0;
+		if (graph_count != strlen(buffer)) { puts("graph count or dupilcation_count mismatch!"); abort(); }
+		init_graph_from_string(graph, buffer);
+		byte* g = calloc(graph_count, 1);
+		memcpy(g, graph, graph_count);
+		zlist.values = realloc(zlist.values, sizeof(nat*) * (zlist.count + 1));
+		zlist.values[zlist.count++] = g;
+
+	}
+	fclose(file);
+
+	char input[4096] = {0};
+loop:
+	printf(":%llu: ", zlist.count);
+	fgets(input, sizeof input, stdin);
+
+	if (not strcmp(input, "\n")) {}
+	else if (not strcmp(input, "quit\n")) exit(0);
+	else if (not strcmp(input, "exit\n")) exit(0);
+	else if (not strcmp(input, "q\n")) exit(0);
+	else if (not strcmp(input, "x\n")) exit(0);
+	else if (not strcmp(input, "clear\n") or not strcmp(input, "o\n")) printf("\033[H\033[2J");
+	else if (not strcmp(input, "help\n")) print_help();
+	else if (not strcmp(input, "list\n")) print_zlist(graph, "current z list", 0, zlist);
+	else if (not strncmp(input, "viz ", 4)) visualize(0, graph, array, input + 4);
+	else if (not strncmp(input, "os ", 3)) visualize(1, graph, array, input + 3);
+	else if (not strcmp(input, "synthesize graph\n") or not strcmp(input, "sg\n")) find_major_groups(graph, zlist);
+	else if (not strcmp(input, "machine prune\n") or not strcmp(input, "m\n")) machine_prune(graph, array, zlist);
+	else printf("unknown command %s\n", input);
+	goto loop;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

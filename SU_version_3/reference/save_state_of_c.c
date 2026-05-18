@@ -20,7 +20,7 @@
 
 #define D 2
 #define machine_count 1
-#define thread_count 5
+#define thread_count 1
 				
 #define job_digit_count 7
 
@@ -56,7 +56,6 @@ enum pruning_metrics {
 	pm_h0, pm_h0s, pm_h1, pm_h2, 
 	pm_rmv, pm_csm, pm_pair,
 	pm_bdl1, pm_bdl2, pm_bdl3, pm_xw,
-	pm_mp,
 
 	pm_count
 };
@@ -70,7 +69,6 @@ static const char* pm_spelling[pm_count] = {
 	"pm_h0", "pm_h0s", "pm_h1", "pm_h2", 
 	"pm_rmv", "pm_csm", "pm_pair",
 	"pm_bdl1", "pm_bdl2", "pm_bdl3", "pm_xw",
-	"pm_mp",
 };
 
 static const byte loops[4 * 15] = {
@@ -168,11 +166,17 @@ try_open:;
 	);
 }
 
+//#define max_erp_count 20
 
 #define max_rsi_count 512
 #define max_oer_repetions 50
 #define max_rmv_modnat_repetions 15
 #define max_consecutive_small_modnats 230
+
+//#define max_ormv_modnat_repetions 15
+//#define max_imv_modnat_repetions 40
+
+
 #define max_consecutive_s0_incr 30
 #define max_consecutive_h0_bouts 10
 #define max_consecutive_h1_bouts 16
@@ -185,9 +189,21 @@ static nat execute_graph_starting_at(
 	const byte origin, 
 	nat* array
 ) {
+
 	nat comparator = 0;
+
+
 	const nat N = array_size;
 	array[0] = 0; 
+
+
+///////////////////// fix lazy zeroing ///////////////////////////
+
+
+	//memset(array, 0, (array_size + 1) * sizeof(nat));   // figure out some way that we could not do this.....
+
+
+
 	nat 	xw = 0,  pointer = 0,  bout_length = 0, 
 		OER_ier_at = 0,
 		BDL_ier_at = 0,
@@ -196,18 +212,44 @@ static nat execute_graph_starting_at(
 	byte	H0_counter = 0,  H0S_counter = 0, SNDI_counter = 0,
 		H1_counter = 0, H2_counter = 0, OER_counter = 0,
 		BDL1_counter = 0, BDL2_counter = 0, BDL3_counter = 0, 
-		pair_index = 0, pair_count = 0;	
+		pair_index = 0, pair_count = 0;
+	
 	byte ip = origin;
 	byte last_mcal_op = 255;
+
+	//nat performed_er_at = 0;
+ 	//byte small_erp_array[max_erp_count]; small_erp_array[0] = 0;
+
+
 	byte rsi_counter[max_rsi_count];   rsi_counter[0] = 0;
+
 	byte has_executed_5 = 0;
 	byte has_executed_6 = 0;
 
+	//nat cached_xw = 0;	
+	
 	for (nat e = 0; e < execution_limit; e++) {
 
+
 		if (e == 100000 and xw >= 150) return pm_xw;
-		if (e == 20000 and xw < 8) return pm_xw;
+
+
+
+		/*if (e == 100000) {
+			cached_xw = xw;
+		}*/
+
+
+
 		const byte op = g(4 * ip);
+
+		printf("%hhu  -- ", op);
+
+		if (op == one) printf("1\n");
+		if (op == two) printf("2\n");
+		if (op == three) printf("3\n");
+		if (op == five) printf("5\n");
+		if (op == six) printf("6\n");
 		
 		if (op == one) {
 			if (pointer == N) {
@@ -234,6 +276,7 @@ static nat execute_graph_starting_at(
 			else if (pair_index) { pair_count = 0; pair_index = 0; }
 
 			SNDI_counter = 0;
+
 			bout_length++;
 			pointer++;
 
@@ -241,6 +284,8 @@ static nat execute_graph_starting_at(
 				xw = pointer; 
 				array[pointer] = 0; 
 				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
+
+				//if (pointer < max_erp_count) small_erp_array[pointer] = 0;
 			}
 		}
 
@@ -255,6 +300,7 @@ static nat execute_graph_starting_at(
 				if (OER_counter >= max_oer_repetions) return pm_oer;
 			} else { OER_ier_at = pointer; OER_counter = 0; }
 
+
 			byte CSM_counter = 0;
 			byte RMV_counter = 0;
 			nat RMV_value = (nat) -1;
@@ -265,6 +311,69 @@ static nat execute_graph_starting_at(
 				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
 				if (RMV_counter >= max_rmv_modnat_repetions) return pm_rmv;
 			}
+
+
+
+
+
+
+		/*	byte CSM_counter = 0;
+			byte RMV_counter = 0;
+			nat RMV_value = (nat) -1;
+
+			byte ORMV_counter = 0;
+			nat ORMV_value = (nat) -1;
+			byte ORMV_state = 0;
+
+			nat IMV_value = (nat) -1;
+			byte IMV_counter = 0;
+
+			nat IMV2_value = (nat) -1;
+			byte IMV2_counter = 0;
+
+
+			for (nat i = 0; i < xw; i++) {
+
+				{ const nat a = array[i];
+				const nat b = array[i + 1];
+				const bool which = a < b;
+				const nat difference = which ? b - a : a - b;
+				const nat min = which ? a : b;
+				nat above_minimum_size = which ? (b >= 200) : (a >= 200);
+				if (above_minimum_size and difference >= min / 3) return pm_lmv; }
+
+				if (array[i] < 8) CSM_counter++; else CSM_counter = 0;
+				if (CSM_counter > max_consecutive_small_modnats) return pm_csm;
+				if (array[i] == RMV_value) RMV_counter++; else { RMV_value = array[i]; RMV_counter = 0; }
+				if (RMV_counter >= max_rmv_modnat_repetions) return pm_rmv;
+
+				if (array[i] == ORMV_value + ORMV_state) { 
+					ORMV_state = not ORMV_state;
+					ORMV_counter++;
+					if (ORMV_counter >= max_ormv_modnat_repetions) return pm_ormv; 
+				} else { 
+					ORMV_value = array[i]; 
+					ORMV_counter = 0; 
+					ORMV_state = 0;
+				}
+
+				if (array[i] == IMV_value + 1) { IMV_counter++; IMV_value++; } else { IMV_value = array[i]; IMV_counter = 0; }
+				if (IMV_counter >= max_imv_modnat_repetions) return pm_imv;
+
+				if (i & 1) continue;
+
+				if (array[i] == IMV2_value + 1) { IMV2_counter++; IMV2_value++; } else { IMV2_value = array[i]; IMV2_counter = 0; }
+				if (IMV2_counter >= 2 * max_imv_modnat_repetions) return pm_imv;
+			}
+
+		*/
+
+
+
+
+
+
+
 
 			if (pointer + 1 == BDL_ier_at) {
 				BDL1_counter++; 
@@ -281,19 +390,29 @@ static nat execute_graph_starting_at(
 				if (BDL3_counter >= 30) return pm_bdl3; 
 			} else BDL3_counter = 0;
 
+
 			if (pair_index == 3) { pair_index = 0; pair_count++; if (pair_count >= max_consecutive_pairs) return pm_pair; } 
 			else if (pair_index) { pair_count = 0; pair_index = 0; }
+		
+			//if (pointer < 64) performed_er_at |= (1LLU << pointer);
+
+			//if (pointer < max_erp_count and small_erp_array[pointer] < 250) {
+			//	small_erp_array[pointer]++;
+			//}
 
 			SNDI_counter = 0;
+
 			BDL_ier_at = pointer;
 			PER_ier_at = pointer;
 			pointer = 0;
 		}
+
 		else if (op == two) {
 			SNDI_counter++;
 			if (SNDI_counter >= 10) return pm_sndi;
 			comparator++;
 		}
+
 		else if (op == six) {
 			if (not has_executed_6) { if (comparator > 1) return pm_mcal; }
 			has_executed_6 = 1;
@@ -334,13 +453,13 @@ static nat execute_graph_starting_at(
 			else { pair_count = 0; pair_index = 0; }
 
 			SNDI_counter = 0;
+
 			bout_length = 0;
 			array[pointer]++;
-
-			if (pointer and array[pointer] > array[pointer - 1]) return pm_mp;
 		}
 
 		if (op == three or op == one or op == five) last_mcal_op = op;
+
 		byte state = 0;
 		if (comparator < array[pointer]) state = 1;
 		if (comparator > array[pointer]) state = 2;
@@ -348,7 +467,47 @@ static nat execute_graph_starting_at(
 		ip = g(4 * ip + state);
 	}
 
+
+
+	/*
+
+	if (xw < 11) return pm_fse;
+	for (nat i = 0; i < 10; i++) {
+		if (array[i] < 20) return pm_fse;
+	}
+
+	const nat average = ((array[3] + array[4] + array[5] + array[6]) / 4);
+	const nat max_modnat_value = (average * 3) / 2;
+	const bool l0 = array[0] > max_modnat_value;
+	const bool l1 = array[1] > max_modnat_value;
+	const bool l2 = array[2] > max_modnat_value;
+	const bool should_prune = (l0 or l1 or l2) and (max_modnat_value >= 100);
+	if (should_prune) return pm_ls0;
+
+	if (xw >= 100) {
+		const nat max_position = xw < 64 ? xw : 64;
+		for (nat i = 1; i < max_position; i++) {
+			if (not ((performed_er_at >> i) & 1LLU)) return pm_erp1;
+		}
+		const nat max_position2 = xw < max_erp_count ? xw : max_erp_count;
+		for (nat i = 1; i < max_position2; i++) {
+			if (small_erp_array[i] < 5) return pm_erp2;
+		}
+	}
+
+	*/
+
+
 	if (execution_limit == 100000000 and xw >= 1000) return pm_xw;
+
+	/*printf("[finished EL] : ");
+	print_graph_raw(g0, g1, g2);
+	printf(" : ran graph with an XW = %llu\n", xw);
+
+	printf("[e = 100000] : ");
+	print_graph_raw(g0, g1, g2);
+	printf(" : ran graph with an XW = %llu\n", cached_xw);*/
+
 	return z_is_good;
 }
 		
@@ -358,6 +517,10 @@ static byte execute_graph(
 	nat* array, 
 	nat* counts, 
 	const nat thread_index
+
+	//const nat job_g0, 
+	//const nat job_g1, 
+	//const nat job_g2
 ) {
 	for (byte o = 0; o < operation_count; o++) {
 		byte op = g(4 * o);
@@ -367,32 +530,79 @@ static byte execute_graph(
 		atomic_store_explicit(progress + 3 * thread_index + 1, g1, memory_order_relaxed);
 		atomic_store_explicit(progress + 3 * thread_index + 2, g2, memory_order_relaxed);
 		counts[pm]++;
-		if (not pm) { *origin = o; return false; }
+
+
+		puts(pm_spelling[pm]);
+
+
+		if (not pm) { 
+			printf("FOUND GOOD GRAPH: "); 
+			print_graph_raw(g0, g1, g2); puts(""); 
+			*origin = o; return false; 
+		}
+
 		continue;
 	}
 	return true;
 }
 
-//#define printit  print_graph_raw(g0, g1, g2); puts("");
+#define printit  print_graph_raw(g0, g1, g2); puts("");
 
 static void* worker_thread(void* raw_thread_index) {
+
 	pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+
 	const nat thread_index = *(nat*) raw_thread_index;
 	nat* counts = calloc(pm_count, sizeof(nat));
 	nat* array = calloc(array_size + 1, sizeof(nat));
+
+	///int found_good_zv_in_this_job = 0;
+
 	register nat g0 = 0;  
 	register nat g1 = 0;
 	register nat g2 = 0;
 	register byte pointer = 0;
+
 pull_job_from_queue:;
+
+
+	//if (found_good_zv_in_this_job) {
+		//printf("AND THIS IS THE END OF THE JOB "); 
+		//print_graph_raw(g0, g1, g2); 
+		//puts(""); 
+	//}
+
+	//found_good_zv_in_this_job = 0;
+
+
 	const nat jobs_left = atomic_fetch_sub_explicit(&queue_count, 1, memory_order_relaxed);
 	if ((int64_t) jobs_left <= 0) goto terminate;
 	const nat job_pos = 3 * (jobs_left - 1);
+
 	g0 = queue[job_pos + 0];
 	g1 = queue[job_pos + 1];
 	g2 = queue[job_pos + 2];
+
+	//const nat job_g0 = g0;
+	//const nat job_g1 = g1;
+	//const nat job_g2 = g2;
+
+	//g0 = 0x4413031202514640;
+	//g1 = 0x312146106424;
+	//g2 = 0;
+	//0464 1520 2130 3144      4246 0164 1213  
+
+
+	printf("pulled job: "); printit
+	getchar();
+
 	goto init;
-bad:	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
+bad:	
+	printf("at bad, zskipping at %u: ", pointer); printit
+	getchar();
+
+	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
+
 	for (byte i = 0; i < pointer; i++) {
 		if (not editable(i)) continue;
 		const nat mask = ~(0xfLLU << ((i & 15) << 2));
@@ -400,52 +610,69 @@ bad:	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
 		else if (i < 32) g1 &= mask;
 		else             g2 &= mask;
 	}
-loop: 	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
+loop:
+	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
+
+ 	puts("NF LOOP");
 	if (g(pointer) < ((pointer & 3) ? operation_count - 1 : 4)) goto increment;
 	if (pointer < graph_count - 1) goto reset_;
+	
 	goto pull_job_from_queue;
-reset_:; const nat mask = ~(0xfLLU << ((pointer & 15) << 2));
+reset_:;
+	puts("RESET");
+	const nat mask = ~(0xfLLU << ((pointer & 15) << 2));
 	     if (pointer < 16) g0 &= mask;
 	else if (pointer < 32) g1 &= mask;
 	else                   g2 &= mask;
 	do pointer++; while (not editable(pointer));
+
 	if (pointer + job_digit_count >= graph_count) goto pull_job_from_queue;
+
 	goto loop;
 increment:;
+	puts("INCR");
 	const nat addend = 1LLU << ((pointer & 15) << 2);
 	     if (pointer < 16) g0 += addend;
 	else if (pointer < 32) g1 += addend;
 	else                   g2 += addend;
-init:   pointer = lsepa;
+init:  
+	pointer = lsepa;
+
+	printf("dol:"); printit
+	getchar();
+
 	for (byte i = D; i--;) {
 		const byte pa = 4 * (5 + i);
 		const byte op = g(pa);
 		byte side = 0;		
-		if (op == six and g(4 * g(pa + 3)) == one) { side = 3; goto prune_edge; } // ns0.6e1
-		if (op == six and g(4 * g(pa + 3)) == five) { side = 3; goto prune_edge; } // ns0.6e5
-		if (op == six and g(4 * g(pa + 3)) == six) { side = 3; goto prune_edge; }  // zr6.e
-		if (op == six and g(pa + 2) != six)        { side = 2; goto prune_edge; }  // 6g
-		if (op == six and g(4 * g(pa + 1)) == six) { side = 1; goto prune_edge; }  // zr6.l 
-		if (op == five and g(4 * g(pa + 3)) == five) { side = 3; goto prune_edge; } // zr5.e
-		if (op == five and g(4 * g(pa + 2)) == five) { side = 2; goto prune_edge; } // zr5.g
-		if (op == five and g(4 * g(pa + 1)) == five) { side = 1; goto prune_edge; } // zr5.l
-		if (op == three and g(4 * g(pa + 3)) == three) { side = 3; goto prune_edge; } // ndi.e
-		if (op == three and g(4 * g(pa + 2)) == three) { side = 2; goto prune_edge; } // ndi.g
-		if (op == three and g(4 * g(pa + 1)) == three) { side = 1; goto prune_edge; } // ndi.l
-		if (op == two and g(4 * g(pa + 3)) == six) { side = 3; goto prune_edge; } // snco.e
-		if (op == two and g(4 * g(pa + 2)) == six) { side = 2; goto prune_edge; } // snco.g
-		if (op == two and g(4 * g(pa + 1)) == six) { side = 1; goto prune_edge; } // snco.l
-		if (g(4 * g(pa + 2)) == two) { side = 2; goto prune_edge; } // sci
-		if (op == one and g(4 * g(pa + 3)) == five) { side = 3; goto prune_edge; } // pco.e
-		if (op == one and g(4 * g(pa + 2)) == five) { side = 2; goto prune_edge; } // pco.g
-		if (op == one and g(4 * g(pa + 1)) == five) { side = 1; goto prune_edge; } // pco.l
-		if (op == one and g(4 * g(pa + 3)) == one) { side = 3; goto prune_edge; } // ns0.1e1
-		if (op == one and g(4 * g(pa + 2)) == one) { side = 2; goto prune_edge; } // ns0.1g1 
-		if (op == two and g(pa + 1) == pa >> 2) { side = 1; goto prune_edge; } // sndi
-		if (op == one and g(pa + 1) == pa >> 2) { side = 1; goto prune_edge; } // lb
+
+		if (op == six and g(4 * g(pa + 3)) == one) { puts("ns0.6e1"); side = 3; goto prune_edge; } // ns0.6e1
+		if (op == six and g(4 * g(pa + 3)) == five) { puts("ns0.6e5"); side = 3; goto prune_edge; } // ns0.6e5
+		if (op == six and g(4 * g(pa + 3)) == six) { puts("zr6.e"); side = 3; goto prune_edge; }  // zr6.e
+		if (op == six and g(pa + 2) != six)        { puts("6g"); side = 2; goto prune_edge; }  // 6g
+		if (op == six and g(4 * g(pa + 1)) == six) { puts("zr6.l "); side = 1; goto prune_edge; }  // zr6.l 
+		if (op == five and g(4 * g(pa + 3)) == five) { puts("zr5.e"); side = 3; goto prune_edge; } // zr5.e
+		if (op == five and g(4 * g(pa + 2)) == five) { puts("zr5.g"); side = 2; goto prune_edge; } // zr5.g
+		if (op == five and g(4 * g(pa + 1)) == five) { puts("zr5.l"); side = 1; goto prune_edge; } // zr5.l
+		if (op == three and g(4 * g(pa + 3)) == three) { puts("ndi.e"); side = 3; goto prune_edge; } // ndi.e
+		if (op == three and g(4 * g(pa + 2)) == three) { puts("ndi.g"); side = 2; goto prune_edge; } // ndi.g
+		if (op == three and g(4 * g(pa + 1)) == three) { puts("ndi.l"); side = 1; goto prune_edge; } // ndi.l
+		if (op == two and g(4 * g(pa + 3)) == six) { puts("snco.e"); side = 3; goto prune_edge; } // snco.e
+		if (op == two and g(4 * g(pa + 2)) == six) { puts("snco.g"); side = 2; goto prune_edge; } // snco.g
+		if (op == two and g(4 * g(pa + 1)) == six) { puts("snco.l"); side = 1; goto prune_edge; } // snco.l
+		if (g(4 * g(pa + 2)) == two) { puts("sci"); side = 2; goto prune_edge; } // sci
+		if (op == one and g(4 * g(pa + 3)) == five) { puts("pco.e"); side = 3; goto prune_edge; } // pco.e
+		if (op == one and g(4 * g(pa + 2)) == five) { puts("pco.g"); side = 2; goto prune_edge; } // pco.g
+		if (op == one and g(4 * g(pa + 1)) == five) { puts("pco.l"); side = 1; goto prune_edge; } // pco.l
+		if (op == one and g(4 * g(pa + 3)) == one) { puts("ns0.1e1"); side = 3; goto prune_edge; } // ns0.1e1
+		if (op == one and g(4 * g(pa + 2)) == one) { puts("ns0.1g1 "); side = 2; goto prune_edge; } // ns0.1g1 
+		if (op == two and g(pa + 1) == pa >> 2) { puts("sndi"); side = 1; goto prune_edge; } // sndi
+		if (op == one and g(pa + 1) == pa >> 2) { puts("lb"); side = 1; goto prune_edge; } // lb
+
 		
 		for (byte opi = 5; opi--;) {
-			if (	(opi != one and opi != two) or
+			if (	(opi != one and opi != two)
+					or
 				g(4 * opi + 1) == g(pa + 1)
 			) {
 				if (op == opi and gi16(g0,g1,g2, 4 * opi) >= gi16(g0,g1,g2, pa)) { 
@@ -460,6 +687,7 @@ init:   pointer = lsepa;
 				} 
 			}
 		}
+
 		continue; prune_edge:;
 		const byte k = 4 * g(pa + side);
 		pointer = graph_count;
@@ -468,6 +696,10 @@ init:   pointer = lsepa;
 		if (editable(k) and pointer > k) pointer = k;
 		goto bad;
 	}
+
+	printf("0sp: "); printit
+	getchar();
+
 	if (g(4 * g(4 * six   + 3)) == one)   { pointer = 4 * six + 3; goto bad; } 	// ns0.6e1
 	if (g(4 * g(4 * six   + 3)) == five)  { pointer = 4 * six + 3; goto bad; } 	// ns0.6e5
 	if (g(4 * g(4 * six   + 3)) == six)   { pointer = 4 * six + 3; goto bad; } 	// zr6.e
@@ -489,6 +721,9 @@ init:   pointer = lsepa;
 	if (g(4 * g(4 * one   + 2)) == five)  { pointer = 4 * one + 2; goto bad; } 	// pco.g
 	if (g(4 * g(4 * one   + 2)) == two)   { pointer = 4 * one + 2; goto bad; } 	// sci.1g
 
+	printf(" ga:"); printit
+	getchar();
+
 	u16 was_utilized = 0;
 	{ byte pa = graph_count; 
 	GA_loop: 
@@ -497,6 +732,7 @@ init:   pointer = lsepa;
 		const byte l = g(pa + 1);
 		const byte g = g(pa + 2);
 		const byte e = g(pa + 3);
+
 		for (byte i = 0; i < 4 * 15; i += 4) {
 			const byte A = loops[i + 0];
 			const byte x = loops[i + 1];
@@ -516,12 +752,14 @@ init:   pointer = lsepa;
 				if (editable(E) and pointer > E) pointer = E;
 				goto bad;
 			}
-		}	
+		}
+	
 		if (l != pa >> 2) 			was_utilized |= 1 << l;
 		if (g != pa >> 2 and op != six) 	was_utilized |= 1 << g;
 		if (e != pa >> 2) 			was_utilized |= 1 << e;
-		if (pa) goto GA_loop; 
-	} 
+
+		if (pa) goto GA_loop; } 
+
 	for (byte la = 0; la < operation_count; la++) {
 		if (not ((was_utilized >> la) & 1)) { pointer = lsepa; goto bad; } 
 	}
@@ -549,12 +787,29 @@ init:   pointer = lsepa;
 	) {pointer = 4 * three + 1; goto bad; }
 	skip_3_15_check:; 
 
+	printf("exg:"); printit
+	getchar();
+
+	//abort();
+
 	byte origin = 255;
-	const byte is_bad = execute_graph(g0, g1, g2, &origin, array, counts, thread_index);
-	if (not is_bad) append_to_file(filenames[thread_index], 4096, g0, g1, g2, origin);
+	const byte is_bad = execute_graph(g0, g1, g2, &origin, array, counts, thread_index); //job_g0, job_g1, job_g2);
+
+	printf("at finished exg, appending: "); printit
+	getchar();
+
+	if (not is_bad) { 
+
+		append_to_file(filenames[thread_index], 4096, g0, g1, g2, origin); 
+
+		puts("FOUND THAT THE ZV WAS GOOD!!!");
+
+		//found_good_zv_in_this_job = 1; 
+	} 
 	goto loop;
 
-terminate: free(array);
+terminate:
+	free(array);
 	atomic_store_explicit(progress + 3 * thread_index + 0, g0, memory_order_relaxed);
 	atomic_store_explicit(progress + 3 * thread_index + 1, g1, memory_order_relaxed);
 	atomic_store_explicit(progress + 3 * thread_index + 2, g2, memory_order_relaxed);
@@ -564,8 +819,6 @@ terminate: free(array);
 static char output_filename[16384] = {0};
 static char output_string[16384] = {0};
 static char pm_string[16384] = {0};
-static nat machine_index = (nat) -1;
-static nat total_job_count = 0;
 
 static void publish(void) {
 	char dt[32] = {0};   get_datetime(dt);
@@ -580,7 +833,7 @@ try_open:;
 			fflush(stdout);
 			abort();
 		}
-		snprintf(output_filename, sizeof output_filename, "%s_D%u_M%llu_%08x%08x%08x%08x_output.txt", dt, D, machine_index,
+		snprintf(output_filename, sizeof output_filename, "%s_D%u_%08x%08x%08x%08x_output.txt", dt, D,
 			rand(), rand(), rand(), rand()
 		);
 		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
@@ -594,11 +847,15 @@ try_open:;
 	close(file);
 }
 
+static nat machine_index = (nat) -1;
+static nat total_job_count = 0;
+
 static void signal_handler(int sig) {
 
 	nat local_progress[3 * thread_count] = {0};
 	char progress_string[4096] = {0};
 	int string_length = 0;
+
 	const nat amount_remaining = atomic_load_explicit(&queue_count, memory_order_relaxed);
 
 	for (nat thread = 0; thread < thread_count; thread++) {
@@ -675,30 +932,43 @@ static nat translate_hostname_to_machine_index(char* s) {
 	puts(s); abort();
 }
 	
-int main(void) {
+int main(void) { // int argc, const char** argv
+
+	//if (argc != 2) usage_error: return puts("usage: ./run <machine index>");
+	//char* end = NULL;
+	//machine_index = strtoull(argv[1], &end, 10);
+	//if (not *argv[1] or *end) goto usage_error;
+
 	machine_index = translate_hostname_to_machine_index(get_command_output("hostname"));
+
 	signal(SIGUSR1, signal_handler);
+
 	srand(20000000);
 	pthread_t* threads = calloc(thread_count, sizeof(pthread_t));
 	nat counts[pm_count] = {0};
 	memset(queue, 0, sizeof *queue * 65536);
 	atomic_store(&queue_count, 0);
-	for (nat i = 0; i < thread_count * 3; i++) atomic_store_explicit(progress + i, 0, memory_order_relaxed);
+	for (nat i = 0; i < thread_count * 3; i++) 
+		atomic_store_explicit(progress + i, 0, memory_order_relaxed);
+
 {	byte pointer = 0;
 	register nat g0 = pg0;
 	register nat g1 = pg1;
 	register nat g2 = pg2;
 	goto init;
+
 loop: 	if (g(pointer) < ((pointer & 3) ? operation_count - 1 : 4)) goto increment;
 	if (pointer < graph_count - 1) goto reset_;
 	goto done;
-reset_:; const nat mask = ~(0xfLLU << ((pointer & 15) << 2));
+reset_:;
+	const nat mask = ~(0xfLLU << ((pointer & 15) << 2));
 	     if (pointer < 16) g0 &= mask;
 	else if (pointer < 32) g1 &= mask;
 	else                   g2 &= mask;
 	do pointer++; while (not editable(pointer));
 	goto loop;
-increment:; const nat addend = 1LLU << ((pointer & 15) << 2);
+increment:;
+	const nat addend = 1LLU << ((pointer & 15) << 2);
 	     if (pointer < 16) g0 += addend;
 	else if (pointer < 32) g1 += addend;
 	else                   g2 += addend;
@@ -730,17 +1000,21 @@ done:; }
 
 	struct timeval time_begin = {0};
 	gettimeofday(&time_begin, NULL);
+
 	for (nat i = 0; i < thread_count; i++) {
 		nat* arg = malloc(sizeof(nat)); *arg = i;
 		pthread_create(threads + i, NULL, worker_thread, arg);
 	}
+
 	puts("[search call running]\n");
+
 	for (nat i = 0; i < thread_count; i++) {
 		nat* local_counts = NULL;
 		pthread_join(threads[i], (void**) &local_counts);
 		for (nat j = 0; j < pm_count; j++) counts[j] += local_counts[j];
 		free(local_counts);
 	}
+
 	struct timeval time_end = {0};
 	gettimeofday(&time_end, NULL);
 
@@ -748,7 +1022,9 @@ done:; }
 	char time_begin_dt[32] = {0}, time_end_dt[32] = {0};
 	strftime(time_end_dt,   32, "1%Y%m%d%u.%H%M%S", localtime(&time_end.tv_sec));
 	strftime(time_begin_dt, 32, "1%Y%m%d%u.%H%M%S", localtime(&time_begin.tv_sec));
+
 	signal_handler(0);
+
 	int length = 0;
 	length += snprintf(pm_string + length, sizeof pm_string - (size_t) length, "\npm counts:\n");
         for (nat i = 0; i < pm_count; i++) {
@@ -756,6 +1032,7 @@ done:; }
 		length += snprintf(pm_string + length, sizeof pm_string - (size_t) length, "%6s: %-8lld\t\t", pm_spelling[i], counts[i]);
         }
         length += snprintf(pm_string + length, sizeof pm_string - (size_t) length, "\n[done]\n");
+
 	snprintf(output_string, sizeof output_string,
 		"SU: finished searching [D = %u] space:\n"
 		"\t search took %10.2lf seconds\n"

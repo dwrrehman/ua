@@ -1,0 +1,57 @@
+1202605181.002807 :: SU: [PID 45516]: [D 2]: [machine 0]: starting search call...
+1202605181.002830 :: ------------ mi 0 on signal 30: file 1202605181.002807_D2_50b8cec1150e0a4e4cc691ae00865de3_output.txt------------
+thread_count = 5, machine_count = 1
+job_digit_count = 7, total_job_count = 588245
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 573383 / 588245 : 97.474% remaining
+   0 : 0146103620403224464602261556
+   1 : 0142100525033051454606261556
+   2 : 0126103021313042404106441556
+   3 : 0144100526363525424601261556
+   4 : 0121103326363524404600261556
+
+SU: [PID = 45516]: searching [D = 2] space...
+1202605181.003052 :: ------------ mi 0 on signal 30: file 1202605181.002807_D2_50b8cec1150e0a4e4cc691ae00865de3_output.txt------------
+thread_count = 5, machine_count = 1
+job_digit_count = 7, total_job_count = 588245
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 569937 / 588245 : 96.888% remaining
+   0 : 0146102021043004414623341356
+   1 : 0122103120303044414106241356
+   2 : 0146103120543042404104241356
+   3 : 0142100025313422414600441356
+   4 : 0154102126033001414520341356
+
+SU: [PID = 45516]: searching [D = 2] space...
+1202605181.003138 :: ------------ mi 0 on signal 30: file 1202605181.002807_D2_50b8cec1150e0a4e4cc691ae00865de3_output.txt------------
+thread_count = 5, machine_count = 1
+job_digit_count = 7, total_job_count = 588245
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 569835 / 588245 : 96.870% remaining
+   0 : 0146100025303120424100221356
+   1 : 0142102526463440464204221356
+   2 : 0144103626053656424202221356
+   3 : 0126102620543624404606221356
+   4 : 0141103320013652454201221356
+
+SU: [PID = 45516]: searching [D = 2] space...
+1202605181.003242 :: ------------ mi 0 on signal 30: file 1202605181.002807_D2_50b8cec1150e0a4e4cc691ae00865de3_output.txt------------
+thread_count = 5, machine_count = 1
+job_digit_count = 7, total_job_count = 588245
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 568232 / 588245 : 96.598% remaining
+   0 : 0124100321053544404601441256
+   1 : 0122100320013656464602441256
+   2 : 0122100324313401414624441256
+   3 : 0154100223303421414126441256
+   4 : 0142100321563152434100441256
+
+SU: [PID = 45516]: searching [D = 2] space...

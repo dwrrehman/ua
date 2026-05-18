@@ -1,0 +1,49 @@
+thunderbolt4-bridge ipv6 addresses:
+-------------------------------------
+
+dwrr-mini0 : fe80::1877:af10:81a1:8958%bridge0
+dwrr-mini1 : fe80::1810:6533:e700:8cea%bridge0
+dwrr-mini2 : fe80::189d:bdb1:3329:74a2%bridge0
+dwrr-mini3 : fe80::1cd3:eee4:2e7b:5388%bridge0
+dwrr-mini4 : fe80::477:6428:f1b:fe14%bridge0
+dwrr-mini5 : fe80::a2:4887:966d:314%bridge0
+dwrr-mini6 : fe80::8ca:3b6c:79f9:96b9%bridge0
+dwrr-mini7 : fe80::c8d:ea22:241d:b853%bridge0
+dwrr-mini8 : fe80::cba:8581:75e:4de0%bridge0
+dwrr-mini9 : fe80::18a6:a12a:7302:d364%bridge0
+
+
+address list: 
+
+fe80::1877:af10:81a1:8958%bridge0
+fe80::1810:6533:e700:8cea%bridge0
+fe80::189d:bdb1:3329:74a2%bridge0
+fe80::1cd3:eee4:2e7b:5388%bridge0
+fe80::477:6428:f1b:fe14%bridge0
+fe80::a2:4887:966d:314%bridge0
+fe80::8ca:3b6c:79f9:96b9%bridge0
+fe80::c8d:ea22:241d:b853%bridge0
+fe80::cba:8581:75e:4de0%bridge0
+fe80::18a6:a12a:7302:d364%bridge0 
+
+
+	(use ping6 to ping them!)
+
+
+
+
+ifconfig raw output:
+
+	inet6 fe80::1877:af10:81a1:8958%bridge0 prefixlen 64 secured scopeid 0x10 
+	inet6 fe80::1810:6533:e700:8cea%bridge0 prefixlen 64 secured scopeid 0x10 
+	inet6 fe80::189d:bdb1:3329:74a2%bridge0 prefixlen 64 secured scopeid 0x10 
+	inet6 fe80::1cd3:eee4:2e7b:5388%bridge0 prefixlen 64 secured scopeid 0x10 
+	inet6 fe80::477:6428:f1b:fe14%bridge0 prefixlen 64 secured scopeid 0x10 
+	inet6 fe80::a2:4887:966d:314%bridge0 prefixlen 64 secured scopeid 0x10 
+	inet6 fe80::8ca:3b6c:79f9:96b9%bridge0 prefixlen 64 secured scopeid 0x10 
+	inet6 fe80::c8d:ea22:241d:b853%bridge0 prefixlen 64 secured scopeid 0x10 
+	inet6 fe80::cba:8581:75e:4de0%bridge0 prefixlen 64 secured scopeid 0x10 
+	inet6 fe80::18a6:a12a:7302:d364%bridge0 prefixlen 64 secured scopeid 0x10 
+
+
+
