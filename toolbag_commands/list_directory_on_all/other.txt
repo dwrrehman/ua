@@ -1,20 +1,19 @@
+#cd root/projects/ua/calls/20/
 #!/bin/zsh
 # useful script executing commands on a mac mini. 
 # written on 1202604046.204915
 
-
-
 cd root/projects/ua/calls/21/
-
-cat *z.txt
-
+ls -l
 
 
-#echo "-----------------------------------"
-#wc -l *z.txt
-#du -sh *z.txt
 
-
+#cd ~
+#echo "...."
+#ls -l root/staging/21
+#cd root/staging
+#mkdir 21/
+#mv c.c build 21/
 
 
 

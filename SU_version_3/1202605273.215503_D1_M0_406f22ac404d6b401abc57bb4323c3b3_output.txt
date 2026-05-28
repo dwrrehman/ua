@@ -1,0 +1,142 @@
+1202605273.215503 :: SU: [PID 52412]: [D 1]: [machine 0]: starting search call...
+1202605273.215544 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 24019 / 38880 : 61.777% remaining
+   0 : 015110002440345241412143
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215550 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 22183 / 38880 : 57.055% remaining
+   0 : 012510032003344041411323
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215643 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 9043 / 38880 : 23.259% remaining
+   0 : 012210352004350041411221
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215646 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 8827 / 38880 : 22.703% remaining
+   0 : 012110312044345041410121
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215650 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 7068 / 38880 : 18.179% remaining
+   0 : 012410232540312240421301
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215653 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 6703 / 38880 : 17.240% remaining
+   0 : 014510232030302041411101
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215656 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 3828 / 38880 : 9.846% remaining
+   0 : 014410232530350140421330
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215659 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 2768 / 38880 : 7.119% remaining
+   0 : 012110002103350442451320
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215701 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 2411 / 38880 : 6.201% remaining
+   0 : 014510032001320145451120
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215703 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 589 / 38880 : 1.515% remaining
+   0 : 012410052501324241421300
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215705 :: ------------ mi 0 on signal 30: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 233 / 38880 : 0.599% remaining
+   0 : 012510352305314045421100
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215706 :: ------------ mi 0 on signal 0: file 1202605273.215503_D1_M0_406f22ac404d6b401abc57bb4323c3b3_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 7, total_job_count = 38880
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 18446744073709551615 / 38880 : 47445329407689176.000% remaining
+   0 : 010010002000300040400000
+
+SU: [PID = 52412]: searching [D = 1] space...
+1202605273.215706 :: SU: finished searching [D = 1] space:
+	 search took     123.00 seconds
+	 from 1202605273.215503
+	 to   1202605273.215706
+
+
+pm counts:
+z_is_good: 1       		pm_zr5: 114575981		
+pm_zr6: 82441271		pm_ndi: 18985323		
+pm_sndi: 0       		pm_pco: 15466659		
+pm_per: 6167598 		pm_ns0: 16201630		
+pm_oer: 6740    		pm_rsi: 196013  		
+pm_mcal: 13345162		 pm_h0: 44817216		
+pm_h0s: 82      		 pm_h1: 556     		
+ pm_h2: 0       		pm_rmv: 3977    		
+pm_csm: 1880    		pm_pair: 2479070 		
+pm_bdl1: 12348   		pm_bdl2: 4       		
+pm_bdl3: 216     		 pm_xw: 9500    		
+[done]
+
+

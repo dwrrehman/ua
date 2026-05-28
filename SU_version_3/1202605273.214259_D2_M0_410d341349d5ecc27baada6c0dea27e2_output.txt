@@ -1,0 +1,430 @@
+1202605273.214259 :: SU: [PID 50778]: [D 2]: [machine 0]: starting search call...
+1202605273.214333 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81909 / 84035 : 97.470% remaining
+   0 : 0144103321553502464104461556
+   1 : 0141102120363655404104261556
+   2 : 0146102320353620464202441556
+   3 : 0146105623563151404102241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214355 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81907 / 84035 : 97.468% remaining
+   0 : 0126103624453400464130041556
+   1 : 0122102623463526454606261556
+   2 : 0146100223563150404106441556
+   3 : 0142105325063641464134241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214358 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81904 / 84035 : 97.464% remaining
+   0 : 0146102220433446414621041556
+   1 : 0121105320403446464520431556
+   2 : 0142102521533152424106441556
+   3 : 0126103024013056414106241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214400 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81904 / 84035 : 97.464% remaining
+   0 : 0122100623453001464632041556
+   1 : 0125105024303040464621431556
+   2 : 0144102521333554424106441556
+   3 : 0142105025353220464106241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214401 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81904 / 84035 : 97.464% remaining
+   0 : 0155100121303646424223041556
+   1 : 0126105620013652464223431556
+   2 : 0122100523453100434106441556
+   3 : 0122102526333225404206241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214402 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81904 / 84035 : 97.464% remaining
+   0 : 0126105324413100434523041556
+   1 : 0156103223333026464523431556
+   2 : 0146103126013142454106441556
+   3 : 0142105320303625414206241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214403 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81904 / 84035 : 97.464% remaining
+   0 : 0125103621013602424623041556
+   1 : 0121100520003646464623431556
+   2 : 0126100123543541464106441556
+   3 : 0124102521333104424206241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214403 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81904 / 84035 : 97.464% remaining
+   0 : 0141102223033406424124041556
+   1 : 0156102321333425404224431556
+   2 : 0146103526413240404206441556
+   3 : 0121100521333144424206241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214404 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81904 / 84035 : 97.464% remaining
+   0 : 0142105026303425464224041556
+   1 : 0152102024303455414624431556
+   2 : 0126105321053121414206441556
+   3 : 0126102521333144424206241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214405 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81903 / 84035 : 97.463% remaining
+   0 : 0121103520013425464624041556
+   1 : 0154102026003425424120331556
+   2 : 0142102023553541424206441556
+   3 : 0126103521333144424206241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214406 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81903 / 84035 : 97.463% remaining
+   0 : 0146105320443641464234041556
+   1 : 0146100620313044454220331556
+   2 : 0144103021333544424206441556
+   3 : 0122105521333144424206241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214406 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81903 / 84035 : 97.463% remaining
+   0 : 0146100226033440404136041556
+   1 : 0125103520313442464520331556
+   2 : 0144105021333644424206441556
+   3 : 0122103626043100434206241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214407 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81903 / 84035 : 97.463% remaining
+   0 : 0126105520533204404636041556
+   1 : 0126102323003426414121331556
+   2 : 0144100021333654424206441556
+   3 : 0146103025443256454206241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214408 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81900 / 84035 : 97.459% remaining
+   0 : 0142100621013002404220031556
+   1 : 0126100124033001414521331556
+   2 : 0146103026033150454206441556
+   3 : 0126102025433101404606241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214409 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81900 / 84035 : 97.459% remaining
+   0 : 0152100220313426454520031556
+   1 : 0141100020013422454621331556
+   2 : 0141103625033042464206441556
+   3 : 0144105321553501414606241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214410 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81900 / 84035 : 97.459% remaining
+   0 : 0126100024013445404121031556
+   1 : 0144100020033422464123331556
+   2 : 0126103024453504404606441556
+   3 : 0142105220363502424606241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214411 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81900 / 84035 : 97.459% remaining
+   0 : 0126103120313444404521031556
+   1 : 0146105121313452404523331556
+   2 : 0146103026043252414606441556
+   3 : 0146103321503440454606241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214411 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81900 / 84035 : 97.459% remaining
+   0 : 0141100226313056434621031556
+   1 : 0152105624403651404623331556
+   2 : 0141103021333644424606441556
+   3 : 0142103124543056454606241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214412 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81900 / 84035 : 97.459% remaining
+   0 : 0151102223403650464123031556
+   1 : 0124105626003040404124331556
+   2 : 0126105324063401454606441556
+   3 : 0146103521003255464606241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214413 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81900 / 84035 : 97.459% remaining
+   0 : 0142100526303452414523031556
+   1 : 0156100020403525434224331556
+   2 : 0126105325403001464606441556
+   3 : 0124100223563104464136241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214414 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81897 / 84035 : 97.456% remaining
+   0 : 0156100320403022434623031556
+   1 : 0146105224433121404100421556
+   2 : 0124100326453201404136441556
+   3 : 0146105325453021464636241556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214414 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81895 / 84035 : 97.453% remaining
+   0 : 0156100223313055434224031556
+   1 : 0142100320353622414100421556
+   2 : 0146103026503020404636441556
+   3 : 0141102026333526404100221556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214415 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81893 / 84035 : 97.451% remaining
+   0 : 0146105326463041404130021556
+   1 : 0126103225033622424100421556
+   2 : 0142102520333624464636441556
+   3 : 0146103626413225414100221556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214416 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81890 / 84035 : 97.447% remaining
+   0 : 0146103121513040454131021556
+   1 : 0146103021443450454100421556
+   2 : 0124105321453646404100411556
+   3 : 0146105224553501434100221556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214417 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81890 / 84035 : 97.447% remaining
+   0 : 0146100220343000454632021556
+   1 : 0146103626563424464100421556
+   2 : 0122103220513645424100411556
+   3 : 0146103021053400464100221556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214418 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81890 / 84035 : 97.447% remaining
+   0 : 0146105321053400404634021556
+   1 : 0141105326343444404200421556
+   2 : 0146103024503142454100411556
+   3 : 0146103526553056464100221556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214419 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81890 / 84035 : 97.447% remaining
+   0 : 0146102321353001454236021556
+   1 : 0142105325463105414200421556
+   2 : 0146103124553102464100411556
+   3 : 0142103523433600414200221556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214419 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81889 / 84035 : 97.446% remaining
+   0 : 0152100626303024424220311556
+   1 : 0144100326343002434200421556
+   2 : 0146103526063102404200411556
+   3 : 0146105623003441424200221556
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214541 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81419 / 84035 : 96.887% remaining
+   0 : 0144103325453405414600241356
+   1 : 0141102126503020404202261356
+   2 : 0152100224313521434621441356
+   3 : 0144103521533150464202461356
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214547 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81419 / 84035 : 96.887% remaining
+   0 : 0126103024053125414101241356
+   1 : 0126100620303454424602261356
+   2 : 0146105626403526464102441356
+   3 : 0142103324313254414104461356
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214547 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81419 / 84035 : 96.887% remaining
+   0 : 0126105121013002454101241356
+   1 : 0126105324533204454602261356
+   2 : 0121105120463222414202441356
+   3 : 0144102521333154424104461356
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214548 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81419 / 84035 : 96.887% remaining
+   0 : 0122105125303456464101241356
+   1 : 0142100320033154464602261356
+   2 : 0124103526033205434202441356
+   3 : 0121105120033006434104461356
+
+SU: [PID = 50778]: searching [D = 2] space...
+1202605273.214551 :: ------------ mi 0 on signal 30: file 1202605273.214259_D2_M0_410d341349d5ecc27baada6c0dea27e2_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 81419 / 84035 : 96.887% remaining
+   0 : 0124105224063021414601241356
+   1 : 0144102326503222434104261356
+   2 : 0144100520533152424602441356
+   3 : 0124100625533446424204461356
+
+SU: [PID = 50778]: searching [D = 2] space...

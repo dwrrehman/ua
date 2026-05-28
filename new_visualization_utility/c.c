@@ -46,7 +46,7 @@ typedef uint64_t nat;
 typedef uint32_t u32;
 typedef uint16_t u16;
 
-static const byte D = 3;        // the duplication count (operation_count = 5 + D)
+static const byte D = 2;  
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
@@ -60,21 +60,13 @@ static const byte D = 3;        // the duplication count (operation_count = 5 + 
 
 static const bool should_deduplicate_z_list = true;
 
-static const nat execution_limit  =   100000000LLU;  //(nat) -1;
+static const nat execution_limit  =   100000000LLU;
+static const nat pre_run_duration =   0;
 
-static const nat pre_run_duration = 10000000;
-
-static const nat array_size = 16384; // (must be divisible by 8)
-static const nat lifetime_length = 16384;
+static const nat array_size = 16384 / 4; // (must be divisible by 8)
+static const nat lifetime_length = 16384 / 4;
 
 static const nat generating_display_rate = 1;
-
-
-//#define execution_limit 100000000LLU
-//#define array_size 1000000LLU
-
-
-
 
 enum operations { one, two, three, five, six };
 
@@ -92,6 +84,7 @@ struct z_value {
 	byte** lifetime;
 	byte* value;
 	nat origin;
+	nat cdm;
 	nat unique;
 	nat xw;
 };
@@ -168,7 +161,7 @@ static void print_z_list(struct z_value* list, nat count) {
 	for (nat i = 0; i < count; i++) {
 		printf("z #%llu: ", i);
 		print_bytes(list[i].value, graph_count);
-		printf(", origin = %llu, lifetime = %p, xw = %llu\n", list[i].origin, (void*) list[i].lifetime, list[i].xw);
+		printf(", cdm = %llu, origin = %llu, lifetime = %p, xw = %llu\n", list[i].cdm, list[i].origin, (void*) list[i].lifetime, list[i].xw);
 	}	
 }
 
@@ -288,29 +281,54 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 	nat count = 0;
 
 	char buffer[1024] = {0};
-	while (fgets(buffer, sizeof buffer, file)) {
-
-		//printf("ENTERED THE FUNCTION?\n");
-	
+	while (fgets(buffer, sizeof buffer, file)) {	
 		char* zend = strchr(buffer, ' ');
-		if (not zend) { puts("zend: could not z value..."); abort(); }
+
+		if (not zend) { puts("zend: could not find z value..."); abort(); }
 		buffer[zend - buffer] = 0;
-		if (graph_count != strlen(buffer)) { puts("graph count or duplication_count mismatch!"); abort(); }
+
+		if (graph_count != strlen(buffer)) { 
+			puts("graph count or duplication_count mismatch!"); 
+			abort(); 
+		}
+
 		init_graph_from_string(buffer);
+
 		byte* g = calloc(graph_count, 1);
 		memcpy(g, graph, graph_count);
 
 		char* oend = strchr(zend + 1, ' ');
-		if (not oend) { puts("oend: could not origin..."); abort(); }
+		if (not oend) { 
+			puts("oend: could not find origin..."); 
+			abort(); 
+		}
+
 		buffer[oend - buffer] = 0;
 		const byte o = (byte) atoi(zend + 1);
-		
-		//printf("read: origin = %hhu, graph = ", o);
-		//print_graph_raw(g);
-		//puts("");
+
+
+		const bool has_cdm_field = true;
+
+		nat cdm = (nat) -1;
+
+		if (has_cdm_field) {	
+			char* cdm_end = strchr(oend + 1, ' ');
+			if (not cdm_end) { 
+				puts("cdm_end: could not find cdm..."); 
+				abort(); 
+			}
+			buffer[cdm_end - buffer] = 0;
+			cdm = strtoull(oend + 1, NULL, 10);
+		}
+
+				
+		/*printf("read: cdm = %llu, origin = %hhu, graph = ", cdm, o);
+		print_graph_raw(g);
+		puts("");
+		getchar();*/
 
 		list = realloc(list, sizeof(struct z_value) * (count + 1));
-		list[count++] = (struct z_value) {.value = g, .origin = o };
+		list[count++] = (struct z_value) {.value = g, .origin = o, .cdm = cdm};
 	}
 	fclose(file);
 	*list_count = count;
@@ -320,8 +338,19 @@ static struct z_value* load_zlist(const char* filename, nat* list_count) {
 static int comparison_function(const void* raw_a, const void* raw_b) {
 	const struct z_value* a = (const struct z_value*) raw_a;
 	const struct z_value* b = (const struct z_value*) raw_b;
-	return (int) (a->xw - b->xw);
 
+	if ((int64_t) a->xw - (int64_t) b->xw < 0) return -1;
+	if ((int64_t) a->xw - (int64_t) b->xw > 0) return 1;
+	return 0;
+}
+
+static int comparison_function2(const void* raw_a, const void* raw_b) {
+	const struct z_value* a = (const struct z_value*) raw_a;
+	const struct z_value* b = (const struct z_value*) raw_b;
+
+	if ((int64_t) a->cdm - (int64_t) b->cdm < 0) return -1;
+	if ((int64_t) a->cdm - (int64_t) b->cdm > 0) return 1;
+	return 0;
 }
 
 int main(int argc, const char** argv) {
@@ -462,10 +491,12 @@ int main(int argc, const char** argv) {
 		
 	}
 
+	puts("sorting list by xw...");
+	mergesort(list, count, sizeof(struct z_value), comparison_function);
 
-	puts("sorting list...");
+	puts("sorting list by cdm...");
+	mergesort(list, count, sizeof(struct z_value), comparison_function2);
 
-	qsort(list, count, sizeof(struct z_value), comparison_function);
 	print_z_list(list, count);
 
 	uint8_t* is_good = calloc(count, 1);

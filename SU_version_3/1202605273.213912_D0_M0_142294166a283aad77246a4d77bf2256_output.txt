@@ -1,0 +1,36 @@
+1202605273.213912 :: SU: [PID 50202]: [D 0]: [machine 0]: starting search call...
+1202605273.213912 :: ------------ mi 0 on signal 0: file 1202605273.213912_D0_M0_142294166a283aad77246a4d77bf2256_output.txt------------
+thread_count = 4, machine_count = 1
+job_digit_count = 6, total_job_count = 625
+graph_count = 20, operation_count = 5
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 18446744073709551612 / 625 : 2951479051793528320.000% remaining
+   0 : 01001000200030404041
+   1 : 01001000200030004041
+   2 : 01001000200030204041
+   3 : 01001000200030004040
+
+SU: [PID = 50202]: searching [D = 0] space...
+1202605273.213912 :: SU: finished searching [D = 0] space:
+	 search took       0.00 seconds
+	 from 1202605273.213912
+	 to   1202605273.213912
+
+
+pm counts:
+z_is_good: 0       		pm_zr5: 137298  		
+pm_zr6: 105148  		pm_ndi: 8660    		
+pm_sndi: 0       		pm_pco: 19376   		
+pm_per: 7723    		pm_ns0: 16279   		
+pm_oer: 6       		pm_rsi: 366     		
+pm_mcal: 9226    		 pm_h0: 60963   		
+pm_h0s: 0       		 pm_h1: 0       		
+ pm_h2: 0       		pm_rmv: 9       		
+pm_csm: 0       		pm_pair: 3254    		
+pm_bdl1: 48      		pm_bdl2: 0       		
+pm_bdl3: 0       		 pm_xw: 24      		
+ pm_mp: 0       		
+[done]
+
+

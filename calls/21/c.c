@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <iso646.h>
 
-#define D 1
+#define D 2
 
 #define machine_count 10
 #define thread_count 10
