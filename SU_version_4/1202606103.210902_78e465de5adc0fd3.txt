@@ -1,0 +1,856 @@
+1202606103.210759
+
+
+	the architecure of the networked search utility will be :
+
+
+	
+
+		[ mac mini 0 ]    :  server  (which also performs the same duties as the 9 clients)
+
+
+
+		[ mac mini 1 ]    :  client 
+
+		[ mac mini 2 ]    :  client 
+
+		[ mac mini 3 ]    :  client 
+
+		[ mac mini 4 ]    :  client 
+
+
+		[ mac mini 5 ]    :  client 
+
+		[ mac mini 6 ]    :  client 
+
+		[ mac mini 7 ]    :  client 
+
+		[ mac mini 8 ]    :  client 
+
+		[ mac mini 9 ]    :  client 
+
+
+
+
+----------- thread layout -------------------------
+
+
+	each job is a small array of zv msb digits, (ie, zv portion) which effectively defines a zi range    of zv's that need to be processed in this job!
+
+	
+
+	the server keeps track of a job list, and distributes these jobs to each of the cores:
+
+		on start up, we don't give any jobs to any cores, 
+
+		when a core realizes it doesnt have a job, it will request 5 jobs from the server.
+
+		the server the sends over that small packet  of 5 jobs, and the client begins processing them. 
+
+
+		
+
+	the main thread of the server, (while the 10 server worker threads are running)   will be in charge of talking to each of the client machines, 
+
+		each of which, have an inactive main thread, just waiting on joining the threads,   and also have 10 workers as well. 
+
+
+
+
+
+
+		[mm 0]
+-----------------------------------------------------
+
+
+	   main     +       10 workers
+
+
+	handles             executes jobs
+	job distr.
+
+
+
+
+
+		[mm 1-9]
+-----------------------------------------------------
+
+
+	   main     +       10 workers
+
+	waiting             executes jobs
+
+
+
+
+
+
+101 hardware threads (even thou we only have 100 cores!)   total,   but the main thread of the server program is actually not active for most of the time, only sometimes. 
+
+	when a client requests a job!
+
+
+
+
+
+------------ communication -----------------------
+
+each job itself is 24 bytes,  becuase each zv is 24 bytes,           (3 nats, each 8 bytes!)
+
+
+	and we are sending a set of jobs to the client worker thread.	
+
+
+the number of jobs which we send in a packet,  is some parameter to the system,   called    jobs_per_packet
+
+and so the number of bytes which we send over the network from the server to the client, should be: 
+
+
+
+		1 + jobs_per_packet * 24  +  1
+
+
+
+	first 1 is for the client the request
+
+	then jobs_per_packet * 24 is the payload, which is the jobset the client will work on now
+
+	then the final 1 is the client's ack of the jobset payload being received. 
+
+
+
+
+
+
+
+so,
+
+
+	when a client/server worker thread   finishes a set of jobs, it does not just exit the function like it currently does. instead, it remains active, but (if its a client), it does some networking code, to pull a new jobset. 
+
+
+		it issues the following bytes to try to pull a new jobset:
+
+
+
+
+
+
+
+			0x8F        :    requests a new job
+
+
+			[  24 * jobs_per_packet  ]     the actual byte sequence   which is the job set, 
+
+					organalized as a sequence of jobs,    little endian, arranged like:
+
+
+
+						job 0 :         [ byte0 byte1 byte2 byte3  byte4 byte5 byte6 byte7 ]      (g0 nat)
+							        [ byte0 byte1 byte2 byte3  byte4 byte5 byte6 byte7 ]      (g1 nat)
+							        [ byte0 byte1 byte2 byte3  byte4 byte5 byte6 byte7 ]      (g2 nat)
+
+
+						 
+						job 1 :         [ byte0 byte1 byte2 byte3  byte4 byte5 byte6 byte7 ]      (g0 nat)
+							        [ byte0 byte1 byte2 byte3  byte4 byte5 byte6 byte7 ]      (g1 nat)
+							        [ byte0 byte1 byte2 byte3  byte4 byte5 byte6 byte7 ]      (g2 nat)
+
+
+						etc 
+
+
+						for each job, in the job set.
+
+		
+
+			0x01       : client sends this byte in order to tell the server that the jobset was received, and acks it. 
+
+
+
+
+
+
+
+
+
+	note:
+
+
+		if the serever responds with    a    job 0       of 
+
+
+
+				[ byte0: 0xFF   byte1: 0xFF   byte2: 0xFF   byte3: 0xFF   byte4: 0xFF     ...   byte7: 0xFF   ]    (g0 nat!)
+
+							(ie, a zv of all ones, which should normally never happen!)
+
+
+				(all other data is ignored, by the way,   it should probably be all zeros in practice, but the clinet wont look at that!)
+
+
+
+		the client will detect immediately that this is not a real job, (becuase there are no more actual jobs left) 
+
+			and thus, it will exit the thread function, and wait to be joined, 
+
+
+		thats the packet that the server will respond with, to tell the clients that theres no more jobs to processed.
+
+
+
+
+
+
+	so, effectively     two types of packets.   a  job request + jobset            and a     job request  +  end-of-execution     
+
+
+
+
+	the client then acknowledges with      0x01, like before. 
+
+
+
+
+
+
+
+--------------------------- other communcation  :   zv agregation ----------------------------------
+
+
+	AFTERRRR      we join all threads, on all machines, 
+
+
+
+	the client program running on the client machines, will actaully    take its filename listing,   listing a set of filnames, which each of the 10 cores on that machine were outtput good zv's to, 
+
+	
+		we will parse those files,   loading there z lists     into memory, 
+
+
+		then we will actaully begin to transmit all of those zv's   
+
+				(in the same way we were transmitting a job in  a   job request  packet)
+	
+
+			we will transmit those zvs in that z list,    to the server. 
+
+
+
+
+
+
+
+	during the entire SU execution, 
+
+		the client always sends a command byte   firstt    initiating talkning to the server
+
+
+		in the job request packet situation,  (ie, during the search process of the SU)
+
+	
+			we send    0x8F
+
+				to initiate a job request. 
+
+
+
+
+		however, when the search utility finishes,   the server wont care,  and doesnt need to know about this. 
+
+		it just waits  to recieve  a      MACHINE-HALT  command byte     
+
+	
+			which is    0x7F
+
+
+		the serevr acks this byte as well.
+
+
+
+
+		and it only recieves that command from the clients,    after the clients issue       zero   or more 
+
+		of the    SEND_ZV_LIST  commands    
+
+
+			which is    0x6F
+
+
+			the server acks this byte. 
+
+
+			
+			and after the server ACKS that byte,   it then receives   4 bytes, which is a    uint32_t    of the number of zvs, which the client wants to send!
+
+
+			the server then ACTS this 4 byte value, with 0x01. 
+
+
+
+
+				the client then sends a list of     24 bytes   *    the number of zvs it wants to send   (which it told the server)
+
+
+
+
+			
+
+
+
+	now, what i think i'm going to do, is actaully make the clients   issue     SEND_Z_LIST   command bytes    
+
+
+		after  it finishes a jobset, 
+
+
+		so, the client does:
+
+
+
+
+				send    JOB REQUEST   command packet
+
+				{ processing job } 
+
+				send   SEND_Z_LIST  command packet 
+
+
+
+
+				send    JOB REQUEST   command packet
+
+				{ processing job } 
+	
+				send   SEND_Z_LIST  command packet 
+
+
+
+
+
+				...repeat the process...
+
+
+
+				send    JOB REQUEST   command packet
+
+				{ client sees the job is  FFFFFFFFFFFFF...FFFF }
+
+
+
+				send    MACHINE_HALT   command packet
+
+
+				{ client thread terminates, and joins } 
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+in order to handle sending of the pm_counts   array  values     as a result of the job, 
+
+
+		we bundle this data together with the   good  zv count         when we send a  SEND_Z_LIST   command!   the good count    and the pm_counts  will be send together, as its a constant amount of data. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1202606103.221234
+
+		actaully, i think i made some mistakes here,   heres the actual architecutre:
+
+
+	1. the main thread on each client is responsible for TCP  sending/recieveing of packets. 
+
+	2. this main client thread is also responsible for the filling of the    job_queue, (input queue)    and pulling all data from  the output_queue
+	
+	3. theres only 10 main threads,   9 of which are client main threads,  which are resonsible for filling the job queues. 
+
+	4. the last main thread (mac mini 0 main thread) is used for agregating all data,  and distributing job packets to the client's main threads. 
+
+	
+
+
+client main thread:
+-----------------------------
+
+
+
+main_thread_loop_begin:
+
+	request jobs   JOB_REQUEST packet/command
+
+	sees if the jobset is   0xFFFFFFFFF, if so, goto done
+	
+	(push jobs to atomic job queue)
+ 
+	(start up worker threads)
+
+	(wait on join of all worker threads)	
+
+	(the job_queue (jq) must now be empty,  and the good_zv_queue (output queue, "oq") must now be populated, with lots of data!)
+
+	send    SEND_Z_LIST  packet/command,  sending zv data, and pm_count data
+
+	(reset  oq   and pm_counts)
+
+	goto main_thread_loop_begin;
+
+done:
+
+	send  MACHINE_HALT  to server
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+server main thread:     (mac mini 0's main thread)
+
+----------------------------------
+
+
+	while (1) { 
+		for (nat i = 0; i < 10; i++) {
+			if (not halted[i]) goto recv_command;
+
+		}
+		break;
+
+	recv_command:
+		recv() :   get job from command byte of new packet
+
+		if (command_byte == JOB_REQUEST)
+
+			send jobset 
+
+			recv() ack 
+
+
+
+		else if (command_byte == SEND_Z_LIST)
+
+			send ACK 
+
+			recv() zvlist size, plus pm_counts array
+
+			send ACK
+
+
+
+			for (zvlist count) 
+
+				recv() the zv data. 
+
+			publish this zv data to the master zv list. 
+
+
+		else if (command_byte == MACHINE_HALT)
+
+			....
+
+
+		else {
+
+			abort();
+
+		}
+
+			
+	}
+
+
+	write() master zv list to local file on   mac mini 0. 
+
+	
+	print out the output to an output file like normal, then 
+
+	exit(0);
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+revision 2:
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+client main thread:
+-----------------------------
+
+
+
+main_thread_loop_begin:
+
+	request jobs   JOB_REQUEST packet/command
+
+	sees if the jobset is   0xFFFFFFFFF, if so, goto done
+	
+	(push jobs to atomic job queue)
+
+ 
+	(start up worker threads)  (this code is done already)
+
+	(wait on join of all worker threads)  (this code is done already)
+
+
+	(the job_queue (jq) must now be empty,  and the good_zv_queue (output queue, "oq") must now be populated, with lots of data!)
+
+
+	send    SEND_Z_LIST  packet/command,  sending zv data, and pm_count data
+
+	(reset  oq   and pm_counts)
+
+	goto main_thread_loop_begin;
+
+done:
+	print out the output to an output file like normal, then    (this code is already done)
+
+	exit(0);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+server main thread:     (mac mini 0's main thread)
+
+----------------------------------
+
+	
+
+
+	
+	nat master_job_queue[] = {}    (not atomic)
+
+
+	(generate set of jobs for the search space!)  (already happpening!)
+
+
+	(we will randomize the order of master_job_queue, prior to starting up in this while loop, ie, distributing jobs!)
+
+
+	(start up   "server_master_job_distribution_thread_function" thread!!!!  via pthread_create())
+
+
+	(...put client main thread code here!...)
+
+
+
+
+
+
+
+
+
+
+server non-main thread:     (mac mini 0's server thread)    (the mac mini 0   is the only machine that has this one extra additional thread!)
+										(ie, there are TECHNICALLYYY 12 threads on the mac mini 0. 
+										but only ever 2   or 10   are active at any point!)
+----------------------------------
+
+
+
+
+server_master_job_distribution_thread_function() :
+
+
+
+	while (1) {    // enter the   server command loop
+
+		for (nat i = 0; i < 10; i++) { if (not halted[i]) goto recv_command; } break;
+
+	recv_command:
+		recv() :   get job from command byte of new packet
+
+		if (command_byte == JOB_REQUEST)
+
+
+			if (master_job_queue is empty)
+
+				send empty 0xFFFFFFFFFF jobset to machine 
+				recv() ack 
+
+				halt[machine] = 1;
+
+			else 			
+				send jobset
+				recv() ack 
+
+
+
+
+		else if (command_byte == SEND_Z_LIST)
+
+			send ACK 
+
+			recv() zvlist size, plus pm_counts array
+
+			send ACK
+
+			for (zvlist count) 
+				recv() the zv data. 
+
+			publish this zv data to the master zv list. 
+			add in pm_count received the master pm_counts array.
+
+
+		else {
+			puts("error in recv command");
+			abort();
+
+		}
+			
+	}
+
+
+	write() master zv list to local file on   mac mini 0. 
+
+	
+	print out the output to an output file like normal, then 
+
+	exit(0);
+	
+
+
+
+
+
+
+-------------------
+
+
+
+
+
+	the server actaully outputs all this live information to a master output file, 
+
+
+	and then any information the clients warnt to output,  (which i don't think will be anything!?....)
+
+
+			they will output to a file as well.     they will probably just be outputting the standard information to their final output final, at the end, 
+
+			theres no real-time type of information   that we need to see aobut the clients behaviors,   because all relevant data is being exchanged / told to the server!
+
+
+
+
+
+
+
+
+
+
+
+
+
+so to handle the fact that the mac mini 0 is running both server and client code, 
+
+
+	we will actually run   12 distinct threads in total,   on mac mini 0:
+
+
+		main thread  :    client  sub-manager  which puts a new joblist   into the job queue for all workers to use. 
+					also agregates all data together, and sends it to the master server thread.
+
+
+		server thread :   the most important thread which handles the distributing jobs from the master job queue, to all sub managers.
+
+							this is running along side the main thread, but NOT along side the 10 workers.  
+
+		
+		10 worker threads   :   these are running along side the main thread, but NOT alongside the   server thread.
+
+
+
+
+
+
+
+	this allows as much code to be shared between the exucetable running on   mac mini 1-9      as with 0 
+
+
+	the only difference being that   mac mini 0   has one additional thread which is started up, which communicates with the main threads ON ALL MACHINES (including 0) over recv and send calls (ie,  TCP networking)
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+

@@ -206,6 +206,21 @@ static nat execute_graph_starting_at(
 
 		if (e == 100000 and xw >= 150) return pm_xw;
 		if (e == 20000 and xw < 8) return pm_xw;
+
+
+		/*  ---------------- new implementation of MP, which we will add in, once we get the SU_version_4 done!)  ----------------------
+
+		if (e == 1000000) {
+			if (xw == 0) abort();
+			for (nat i = 0; i < xw - 1; i++) {
+				if (array[i] < array[i + 1] and array[i + 1] - array[i] > 30) return pm_mp;
+			}
+		}
+
+		*/
+
+
+
 		const byte op = g(4 * ip);
 		
 		if (op == one) {
@@ -716,7 +731,7 @@ init:	pointer = graph_count - job_digit_count;
 	queue[3 * n + 2] = g2;
 	total_job_count++;
 	goto loop;
-done:; }	
+done:; }
 	srand((unsigned) time(0));
 	filenames = calloc(thread_count, sizeof(char*));
 	for (nat i = 0; i < thread_count; i++) {
