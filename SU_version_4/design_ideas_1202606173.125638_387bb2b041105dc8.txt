@@ -1,0 +1,156 @@
+1202606173.124411
+
+	new revision to the design of the SU version 4:
+
+
+	i think i'm actually going to be making this use a peer-to-peer  network architecture design instead, 
+
+
+	basically it will work  like this:
+
+
+
+
+
+
+
+		FACTS:
+
+				0. each machine has both   server (listen(), bind(), accept())   networking code, 
+					AND    client (connect()) networking code! 
+					and the way its used, is that    when a machine wants to send a packet to another machine, 
+							it will connect()   to that machine's server,   and do a send()      
+
+					but when it wants to receive data, it will   accept(),   and then wait for a connection, 
+						when it gets a connection, it will immediately  recv()    
+
+					so server code is used for receiving,    and client code is used for sending     i think?...
+
+
+
+
+				1. the while() loop inbtweeen the pthread_create and pthread_join for loops,   
+
+					will be what has the networking code, on all machines, 
+
+
+				2. each instance of the SU program on all machines, are identical, 
+	
+	
+				3. the program finds its machine index via the hostname shell command
+
+
+				4. the worker thread is identical to the current SU_version_3's worker thread.  (no changes neccessary)
+
+
+				5. the worker thread pulls a new job via   atomic_fetch_sub   to pop from the top of the job queue, (ie, the job stack)
+
+
+				6. the while loop in main will also   have  the ability to push and pop items from the top of the job stack, 
+					via   atomic_fetch_add  (push)     and atomic_fetch_sub (pop)
+
+				7. the while loop in main (aka, the "networked peer-to-peer job redstribution machinery")
+					will pop jobs   one by one   from the top of the job stack, 
+					and send those jobs  to another machine,   upon that machine requesting that number of jobs.
+
+				8. a machine will only ever request a certain number of jobs from another machine like that, 
+					(ie, that machine "triggers a redistribution/job-exchange") when it sees that its own job stack 
+					is much lower in size than all other machines. 
+
+
+				9. a machine knows the size of the job stacks of other machines,  
+					because of the fact that all machines are stochastically updating each other 
+					with their own job stack size,  by broadcasting their job stack size to each other,  
+					one every minute or so,  (maybe less often, depending on whats needed)
+
+
+				10. this means that there are two types of network packets that we will have to implement:
+
+					- a  JOB_STACK_SIZE_UPDATE packet :     sends a single  64-bit unsigned integer    ("nat")   
+					 	which is   the current job stack size for that machine. the machine will broadcast 
+						this packet to all other 9 machines. 
+
+					a   WORKLOAD_REQUEST packet   :    sends a nat  in this packet, to another given machine specifically, 
+							requesting to  pop   that many number of jobs  from its  job stack, 
+							and this machine (which originated the request)  pushes those set of jobs to its job stack!
+
+
+				11. the while loop in main   needs to   (based on the updated job stack sizes  of all the machines)
+
+					needs to figure out   when    (and    by how much jobs)       
+					the machine should initiate a workload_request transfer operation,
+
+					and the machine will never iniate a transfer, if the total number of jobs   
+					left in search  is less than a given threshold.
+
+				12. when it sees that the number of total jobs left in search falls below a given threshold,  
+
+					the machine will simply exit the while loop, and instead, sit on the pthread_join() calls, in that join loop!
+
+
+
+
+1202606173.125733				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
