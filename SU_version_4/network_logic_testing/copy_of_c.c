@@ -24,12 +24,14 @@
 #include <unistd.h>
 
 typedef uint64_t nat;
-typedef uint8_t byte;
 
 #define  total_machine_count  10
+
 #define  redistribution_delay  1
 
 static const nat server_port = 32768;    //   server_port + mi     that   machine  mi      puts their server on to listen!
+
+
 
 static const char* addresses[10] = {
 	"::1",
@@ -55,6 +57,16 @@ static void print_array(nat* array, nat count) {
 	puts("}");
 }
 
+static nat ACTUAL_job_counts[total_machine_count] = {
+	560, 450, 1680, 390, 500,
+	570, 480, 400, 520, 510,
+};
+
+
+// 560 + 450 + 1680  prior      2,690
+// after:      896 +  898  +  896         = 2,690
+
+
 static void set_blocking_state_for(int f, bool blocking) { 
 	int flags = fcntl(f, F_GETFL, 0);
 	if (flags == -1) { perror("fcntl(F_GETFL)"); exit(1); }
@@ -62,30 +74,30 @@ static void set_blocking_state_for(int f, bool blocking) {
 	if (flags == -1) { perror("fcntl(F_SETFL)"); exit(1); }
 }
 
-#define max_transfer_amount     64
-#define packet_size_in_bytes    (8 * (max_transfer_amount + 7))
-#define packet_size_in_nats    (max_transfer_amount + 7)
-#define master_count 200
-#define THRESHOLD_NAME  1
-#define required_difference  5
-
 int main(int argc, const char** argv) {
-	signal(SIGPIPE, SIG_IGN);
-	srand(42);
+
+
+
+	/*if (poll(&(struct pollfd){ .fd = your_fd, .events = POLLIN }, 1, 0) == 1) {			
+		ssize_t nbytes = read(your_fd, buffer, sizeof buffer);
+		if (nbytes <= 0) {
+			printf("CHILD ERROR stdout read(). \n");
+			printf("error: %s\n", strerror(errno));
+		} else {
+			buffer, nbytes
+		}
+	}*/
+
+
+	srand((unsigned) time(NULL));
 	if (argc == 1) return puts("usage error, give the mi");
 	const nat mi = (nat) atoi(argv[1]);
-	nat master_job_list[master_count] = {0};
-	nat our_jobs[master_count] = {0};
-	nat global_job_counts[total_machine_count] = {0};
-
-	nat job_count = 0;
-	for (nat i = 0; i < master_count; i++) {
-		const nat intended_machine = (nat) (rand() % total_machine_count);
-		if (intended_machine == mi) our_jobs[job_count++] = i;
-		global_job_counts[intended_machine]++;
-	}
+	nat job_count = ACTUAL_job_counts[mi];
 	printf("info: running with mi = %llu, job_count = %llu\n", mi, job_count);
-	srand((unsigned) time(NULL));
+	nat global_job_counts[total_machine_count];	
+	memset(global_job_counts, 0xff, sizeof global_job_counts);
+
+	// set up the server	
 	int server = socket(AF_INET6, SOCK_STREAM, 0);
 	if (server < 0) { perror("socket"); exit(1); }
 	int opt = 1;
@@ -104,61 +116,9 @@ int main(int argc, const char** argv) {
 	printf("[listening on %llu]\n", server_port + mi);
 	struct sockaddr_in6 client = client_address;
 	int length = sizeof client_address;
+	set_blocking_state_for(server, false);
 	printf("[server thread running on port %llu]\n", server_port + mi);
-
-	int write_ports[total_machine_count] = {0};
-	int read_ports[total_machine_count] = {0};
-
-	for (nat i = 0; i < total_machine_count; i++) {
-		if (i == mi) {
-			nat read_port_count = 0;
-			while (read_port_count < total_machine_count - 1) {
-				printf("[%llu]: listening to for connections...\n", mi);
-				int connection = accept(server, (struct sockaddr *) &client, (socklen_t*) &length);
-				if (connection < 0) { perror("accept"); exit(1); }
-				else {
-					nat them = 0;
-					ssize_t n = read(connection, &them, 8);
-					if (n < 0) { perror("read()"); abort(); } 
-					set_blocking_state_for(connection, false);
-					read_ports[them] = connection;
-					read_port_count++;
-					char ip[INET6_ADDRSTRLEN] = {0};
-	        			inet_ntop(AF_INET6, &client.sin6_addr, ip, sizeof ip);
-					int port = ntohs(client.sin6_port);
-					printf("connected to MACHINE #[%llu] [%s:%d]\n", them, ip, port);
-				}
-			}
-		} else {
-			write_ports[i] = socket(AF_INET6, SOCK_STREAM, 0);
-			if (write_ports[i] < 0) { perror("socket"); exit(1); }
-			set_blocking_state_for(write_ports[i], true);
-			struct sockaddr_in6 server_address = {0};
-			memset(&server_address, 0, sizeof server_address);
-			server_address.sin6_family = AF_INET6;
-			server_address.sin6_port = htons((int) (server_port + i));
-			r = inet_pton(AF_INET6, addresses[i], &server_address.sin6_addr);
-			if (r <= 0) { perror("inet_pton"); exit(1); }
-			printf("client: [trying to connect to %s:%u...]\n", addresses[i], (int) (server_port + i));
-			r = connect(write_ports[i], (struct sockaddr *) &server_address, sizeof server_address); 
-			if (r < 0) perror("connect");
-			else {
-				puts("[connection server was successful!]");
-				char ip[INET6_ADDRSTRLEN];
-		        	inet_ntop(AF_INET6, &server_address.sin6_addr, ip, sizeof ip);
-				const int port = ntohs(server_address.sin6_port);
-				printf("connection to machine [i = %llu]: [connected to server %s:%d]\n", i, ip, port);
-				ssize_t n = write(write_ports[i], &mi, 8);
-				if (n < 0) { perror("write()"); abort(); } 
-			}
-		}
-	}
-
-	printf("allocated the following jobs to this machine: (count = %llu)\n", job_count);
-	print_array(our_jobs, job_count);
-
 mainloop:;
-
 	global_job_counts[mi] = job_count;
 
 	printf("\n\njob counts: ");
@@ -166,11 +126,10 @@ mainloop:;
 	puts("bar graph: ");
 	for (nat i = 0; i < total_machine_count; i++) {
 		if (global_job_counts[i] == (nat) -1) continue;
-		printf("%llu: %5llu : ", i, global_job_counts[i]); 
-		const nat amount = global_job_counts[i] / 1;
+		printf("%5llu : ", global_job_counts[i]); 
+		const nat amount = global_job_counts[i] / 80;
 		for (nat _ = 0; _ < amount; _++) putchar('#'); puts("");
 	} puts("");
-
 
 	nat transfer_amount = 0;		
 	nat 	min_index = (nat) -1,
@@ -178,16 +137,8 @@ mainloop:;
 		max_index = (nat) -1,
 		max_value = 0;
 
-	nat global_sum = 0;
-	for (nat i = 0; i < total_machine_count; i++) {
-		if (global_job_counts[i] == (nat) -1) goto skip_transfer_computation;
-		global_sum += global_job_counts[i];
-	}
-	if (global_sum < THRESHOLD_NAME) goto done;
-
 	for (nat i = 0; i < total_machine_count; i++) {
 		if (global_job_counts[i] == (nat) -1) continue;
-
 		if (min_value > global_job_counts[i]) {
 			min_value = global_job_counts[i];
 			min_index = i;
@@ -196,143 +147,155 @@ mainloop:;
 
 	for (nat i = 0; i < total_machine_count; i++) {
 		if (global_job_counts[i] == (nat) -1) continue;
-
 		if (max_value < global_job_counts[i]) {
 			max_value = global_job_counts[i];
 			max_index = i;
 		}
 	}				
 
-	if (max_value > min_value and max_value - min_value > required_difference and mi == max_index) {
+	if (	max_value > 20 and 
+		max_value > min_value and 
+		max_value - min_value > 15 and 
+		mi == min_index
+	) {
 		const nat ideal = (max_value + min_value) / 2;
 		const nat diff = max_value - ideal;
 		if ((int64_t) diff < 0) abort();
 		transfer_amount = diff;
-		if (transfer_amount > max_transfer_amount) transfer_amount = max_transfer_amount;
+		if (transfer_amount > 32) transfer_amount = 32;
 		printf("WARING: computed non-zero transfer amount of %llu, initiating transfer!\n", transfer_amount);
 	} else transfer_amount = 0; 
 
-skip_transfer_computation:;
-
 	for (nat i = 0; i < total_machine_count; i++) {
 		if (i == mi) continue;
+		int connection = socket(AF_INET6, SOCK_STREAM, 0);
+		if (connection < 0) { perror("socket"); exit(1); }
+		set_blocking_state_for(connection, false);
+		struct sockaddr_in6 server_address = {0};
+		memset(&server_address, 0, sizeof server_address);
+		server_address.sin6_family = AF_INET6;
+		server_address.sin6_port = htons((int) (server_port + i));
 
-		const nat amount = i == min_index ? transfer_amount : 0;
+		int rr = inet_pton(AF_INET6, addresses[i], &server_address.sin6_addr);
+		if (rr <= 0) { perror("inet_pton"); exit(1); }
+		//printf("client: [trying to connect to %s:%u...]\n", addresses[i], (int) (server_port + i));
+		int r2 = connect(connection, (struct sockaddr *) &server_address, sizeof server_address); 
+		if (r2 < 0) perror("connect");
 
-		nat command[packet_size_in_nats] = {
-			mi, job_count, amount, 
-			min_index, max_index, 
-			min_value, max_value
-		};
+		else { 
+			//puts("[connection server was successful!]");
+			char ip[INET6_ADDRSTRLEN];
+	        	inet_ntop(AF_INET6, &server_address.sin6_addr, ip, sizeof ip);
+			const int port = ntohs(server_address.sin6_port);
+			//printf("connection to machine [i = %llu]: [connected to server %s:%d]\n", i, ip, port);
 
-		for (nat j = 0; j < amount; j++) {
-			const nat job = our_jobs[(job_count - 1) - j];
-			command[7 + j] = job;
-		}
 
-		ssize_t n = write(write_ports[i], command, packet_size_in_bytes);
-		if (n <= 0 and errno == EPIPE) goto done;
-		else if (n <= 0) { perror("write"); abort(); } 
 
-		if (amount) {
-			byte ack = 0;
-			n = read(write_ports[i], &ack, 1);
-			if (n <= 0 and errno == EPIPE) goto done;
-			else if (n <= 0) { perror("read"); abort(); } 
 
-			else if (n == 1 and ack == 1) {
-				printf("[-----> successfully ACKED transfer! <------]\n");
-				for (nat j = 0; j < amount; j++) --job_count;
-			}
-		}
-	}
 
-	for (nat i = 0; i < total_machine_count; i++) {
-		if (i == mi) continue;
-		if (poll(&(struct pollfd){ .fd = read_ports[i], .events = POLLIN }, 1, 0) == 1) {
+			const nat amount = i == max_index ? transfer_amount : 0;
+			nat command[100] = { 0x1005, mi, job_count, amount };
 
-			nat data[packet_size_in_nats] = {0};
-			ssize_t n = read(read_ports[i], data, packet_size_in_bytes);
-			if (n <= 0 and errno == EPIPE) goto done;
-			else if (n <= 0) { perror("read"); abort(); } 
+			//zv = 24 bytes    8 bytes   * 3 
+			// command is also same size as a zv,   there are 32 zvs       24 * 33  =  792 bytes   = 99 nat's
 
-			if (n != packet_size_in_bytes) {
-				puts("n != packet_size_in_bytes : read did not receive all bytes from packet.");
-				abort();
-			}
+			// add one   as the opcode in the header, (which means nothing, but it makes it a full 100 nat's
 
-			global_job_counts[data[0]] = data[1];
-			const nat amount = data[2];
+ 
 
-			if (data[3] != min_index) { 
-				//printf("warning: program did not have consistent min_index during transfer!(%lld vs %lld)\n", data[3], min_index);
-			} 
+		
 
-			if (data[4] != max_index) { 
-				//printf("warning: program did not have consistent max_index during transfer!(%lld vs %lld)\n", data[4], max_index); 
-			} 
+			
 
-			if (data[5] != min_value) { 
-				//printf("warning: program did not have consistent min_value during transfer!(%lld vs %lld)\n", data[5], min_value); 
-			} 
+			ssize_t n = write(connection, command, sizeof command);
+			if (n <= 0) { puts("---------------------"); perror("write"); puts("---------------------"); } printf("[n = %ld]\n", n);
 
-			if (data[6] != max_value) { 
-				//printf("warning: program did not have consistent max_value during transfer!(%lld vs %lld)\n", data[6], max_value); 
-			} 
-
+			//printf("broadcasted our job_count to machine, sent %llu\n", job_count);
+			//printf("requested transfer of %llu zv_jobs from them(%llu) to us(%llu)\n", amount, i, mi);
+			
 			if (amount) {
-				if (data[3] != min_index or data[4] != max_index) {
-					byte ack = 0;
-					set_blocking_state_for(read_ports[i], true);
-					n = write(read_ports[i], &ack, 1);
-					if (n <= 0 and errno == EPIPE) goto done;
-					else if (n <= 0) { perror("write"); abort(); } 
-					set_blocking_state_for(read_ports[i], false);
-					//puts("SENT NOT-ACK");
-				} else {
+				nat jobs_to_push[64] = {0};
 
-					for (nat j = 0; j < amount; j++) 
-						our_jobs[job_count++] = data[7 + j];
+				n = read(connection, jobs_to_push, sizeof jobs_to_push);
+				if (n <= 0) { puts("---------------------"); perror("read"); puts("---------------------"); } printf("[n = %ld]\n", n);
 
-					byte ack = 1;
-					set_blocking_state_for(read_ports[i], true);
-					n = write(read_ports[i], &ack, 1);
-					if (n <= 0 and errno == EPIPE) goto done;
-					else if (n <= 0) { perror("write"); abort(); } 
-					set_blocking_state_for(read_ports[i], false);
-					puts("ACCEPTED JOB, SENT ACK");
-				}
+				//printf("received these jobs, to push, as a result of the transfer request: \n");
+				//printf("\t { ");
+				//for (nat j = 0; j < amount; j++) {
+				//	printf("%llu ", jobs_to_push[j]);
+				//} printf(" } (count=%llu)\n", amount);
+				
+				job_count += amount;
 
+				//printf("just sent ack to the one that we sent the request to...\n");
+				uint8_t ack = 1;
+				n = write(connection, &ack, 1);
+				if (n <= 0) { puts("---------------------"); perror("write"); puts("---------------------"); } printf("[n = %ld]\n", n);
 			}
 		}
+		close(connection);
 	}
+
 	
-	const nat count = (nat) ((rand() % 2) * (rand() % 2));
-	for (nat i = 0; i < count; i++) {
-		if (job_count > 0) {
-			const nat job = our_jobs[--job_count];
-			master_job_list[job]++;
+
+	accept_again:; { int connection = accept(server, (struct sockaddr *) &client, (socklen_t*) &length);
+	if (connection < 0 and errno == EWOULDBLOCK) { 
+		//printf("...no clients to connect to at the moment...\n");
+	} else if (connection < 0) { perror("accept"); exit(1); }
+	else {
+		set_blocking_state_for(connection, true);
+
+		char ip[INET6_ADDRSTRLEN] = {0};
+        	inet_ntop(AF_INET6, &client.sin6_addr, ip, sizeof ip);
+		int port = ntohs(client.sin6_port);
+		printf("connected to client [%s:%d]\n", ip, port);
+
+		nat bytes[4] = {0};
+		ssize_t n = read(connection, bytes, sizeof bytes);
+		if (n <= 0) { puts("---------------------"); perror("read"); puts("---------------------"); } printf("[n = %ld]\n", n);
+
+		const nat command = bytes[0];
+		const nat whotheyare = bytes[1];
+		const nat their_job_count = bytes[2];
+		const nat requested_transfer_amount = bytes[3];
+
+		if (command == 0x1005) {
+			//printf("their_job_count = %llu\n", their_job_count);
+			global_job_counts[whotheyare] = their_job_count;
+			//printf("they requested %llu jobs be sent!!!\n", requested_transfer_amount);
+
+			if (requested_transfer_amount) { 
+				nat buffer[64] = {0};
+				for (nat i = 0; i < requested_transfer_amount; i++) {
+					job_count--;
+					buffer[i] = job_count;
+				}	
+				n = write(connection, buffer, sizeof buffer);
+				if (n <= 0) { puts("---------------------"); perror("write"); puts("---------------------"); } printf("[n = %ld]\n", n);
+
+				//printf("trying to receive ack...\n");
+				uint8_t ack = 255;
+				n = read(connection, &ack, 1);
+				if (n <= 0) { puts("---------------------"); perror("read"); puts("---------------------"); } printf("[n = %ld]\n", n);
+				if (ack != 1) { 
+					printf("error: [%hhu]: did not receive acknowledgement "
+						"to transfer_request, received byte [%hhu] instead....", 
+						ack, ack
+					); abort();
+				} else 
+					puts("--->    SUCCESSFULLY RECEIVED ACK FOR TRANSFER_REQUEST!!!!\n");
+			}
+		
+		} else {
+			printf("error: unknown command received: %llu\n", command);
+			abort();
 		}
-	}
-
-	//sleep(redistribution_delay);
-	usleep(400000);	
-
+		close(connection);
+		goto accept_again;
+	}}
+	sleep(redistribution_delay);
+	//job_count -= (nat) (rand() % 5);
 	goto mainloop;
-done:;	
-	for (nat i = 0; i < total_machine_count - 1; i++) close(read_ports[i]);
-	for (nat i = 0; i < total_machine_count - 1; i++) close(write_ports[i]);
-	close(server);
-
-	puts("master job list:");
-	for (nat i = 0; i < master_count; i++) {
-		if (i % 40 == 0) puts("");
-		if (master_job_list[i] > 1) printf("{");
-		printf("%llu", master_job_list[i]);
-		if (master_job_list[i] > 1) printf("}");
-	}
-	puts("\n\nutility exited normally.");
-	exit(0);
 }
 
 
@@ -346,100 +309,11 @@ done:;
 
 
 
-/*
-
-
-	mac mini 0 
-
-		0 1 2 3 4 5 6 7 8 9 
-		^
-		accept 9 connections
-
-
-	mac mini 1
-
-		0 1 2 3 4 5 6 7 8 9 
-		^
-		connect to 0
-
-	mac mini 2
-
-		0 1 2 3 4 5 6 7 8 9 
-		^
-		connect to 0
-
-	mac mini 3
-
-		0 1 2 3 4 5 6 7 8 9 
-		^
-		connect to 0
-
-
-
-------------------
-
-
-
-	mac mini 0 
-
-		0 1 2 3 4 5 6 7 8 9 
-		  ^
-		connect to 1
-
-
-	mac mini 1
-
-		0 1 2 3 4 5 6 7 8 9 
-		  ^
-		accept 9 connections
-
-	mac mini 2
-
-		0 1 2 3 4 5 6 7 8 9 
-		  ^
-		connect to 1
-
-	mac mini 3
-
-		0 1 2 3 4 5 6 7 8 9 
-		  ^
-		connect to 1
-
-
-
-
-*/
-
-
-
-//zv = 24 bytes    8 bytes   * 3
-		// command is also same size as a zv,   there are 32 zvs       24 * 33  =  792 bytes   = 99 nat's
-		// add one   as the opcode in the header, (which means nothing, but it makes it a full 100 nat's
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-//static nat ACTUAL_job_counts[total_machine_count] = {
-//	1560, 450, 100, 390, 500,
-//	570, 480, 400, 520, 510,
-//};
-
-// 560 + 450 + 1680  prior      2,690
-// after:      896 +  898  +  896         = 2,690
 
 
 
