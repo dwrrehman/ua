@@ -1,0 +1,4639 @@
+1202607061.222441 :: SU: [PID 16885]: [D 2]: [machine 0]: starting search call...
+1202607061.222442 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222442 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222442 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222442 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222442 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222442 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222442 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222442 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222443 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222443 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222443 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222443 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222443 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222443 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222443 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222444 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222444 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222444 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222444 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222444 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222445 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222445 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222445 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222446 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.222631 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 71285 / 84035 : 84.828% remaining
+   0 : 7072
+   1 : 7159
+   2 : 7114
+   3 : 7196
+   4 : 7008
+   5 : 7153
+   6 : 7182
+   7 : 7209
+   8 : 6993
+   9 : 7199
+
+   0 : 0126103125303225434201421306
+   1 : 0146105121443040404634061326
+   2 : 0125103226463605414616251306
+   3 : 0146102220353221414106241126
+   4 : 0126100021013140404513051306
+   5 : 0142102620533450404141423555
+   6 : 0125106123403444454123333555
+   7 : 0146103025013024464234061506
+   8 : 0124100523463544454613321006
+   9 : 0146103025403125454206441126
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.222740 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 68716 / 84035 : 81.771% remaining
+   0 : 6863
+   1 : 6852
+   2 : 6886
+   3 : 6881
+   4 : 6853
+   5 : 6883
+   6 : 6876
+   7 : 6874
+   8 : 6886
+   9 : 6862
+
+   0 : 0121103626403465464513200545
+   1 : 0141102520443264414213000545
+   2 : 0142106326003044464526440155
+   3 : 0151106226003106434221300455
+   4 : 0154106320663424454121663545
+   5 : 0166102321643501454111014545
+   6 : 0122103023403404464526600055
+   7 : 0146103021563405424602211255
+   8 : 0144102023443661434216220545
+   9 : 0142106126303425404120363545
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.223057 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 64813 / 84035 : 77.126% remaining
+   0 : 6482
+   1 : 6485
+   2 : 6484
+   3 : 6487
+   4 : 6481
+   5 : 6481
+   6 : 6479
+   7 : 6485
+   8 : 6480
+   9 : 6469
+
+   0 : 0146106325053021464200622035
+   1 : 0165103324443224464113232135
+   2 : 0141106621013044424521330455
+   3 : 0126105620413405454606441335
+   4 : 0121102524343021464520463525
+   5 : 0146103521003122404200261525
+   6 : 0144102524303601414111222135
+   7 : 0124102621303564414511262035
+   8 : 0141103126453602464100221335
+   9 : 0146102223033025434212232035
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.223214 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 62077 / 84035 : 73.870% remaining
+   0 : 6110
+   1 : 6282
+   2 : 6240
+   3 : 6251
+   4 : 6259
+   5 : 6266
+   6 : 6257
+   7 : 6068
+   8 : 6215
+   9 : 6129
+
+   0 : 0146100021013101434216231125
+   1 : 0125102025403162434216260225
+   2 : 0124106621003044424223330455
+   3 : 0121106625333064424511260425
+   4 : 0144105620333044454121060425
+   5 : 0144105526333622424600441125
+   6 : 0144100521333004464604222135
+   7 : 0121102621343064454136262035
+   8 : 0124103523043600464513001125
+   9 : 0125105320343050454520363505
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.223359 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 58150 / 84035 : 69.197% remaining
+   0 : 5827
+   1 : 5795
+   2 : 5808
+   3 : 5823
+   4 : 5803
+   5 : 5820
+   6 : 5815
+   7 : 5822
+   8 : 5838
+   9 : 5799
+
+   0 : 0126103525063450454600461505
+   1 : 0126100123343624404111021505
+   2 : 0142100626333024464606241305
+   3 : 0161103125543054404201212505
+   4 : 0125102621633405454126060425
+   5 : 0146102621403402404223041505
+   6 : 0144105524003100414100261305
+   7 : 0122100126403542414516323005
+   8 : 0126103124413042454620031505
+   9 : 0126105520063646414106461305
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.223713 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 51963 / 84035 : 61.835% remaining
+   0 : 5166
+   1 : 5212
+   2 : 5213
+   3 : 5156
+   4 : 5212
+   5 : 5185
+   6 : 5201
+   7 : 5216
+   8 : 5225
+   9 : 5177
+
+   0 : 0166105220343000454632622334
+   1 : 0142103024353442464116030044
+   2 : 0141106620043000454232202034
+   3 : 0145106626033405414120040424
+   4 : 0121102525363002454113653524
+   5 : 0141106220413062454632062334
+   6 : 0145103621643104404216610044
+   7 : 0145103525603142454210060224
+   8 : 0124106125643422454513353524
+   9 : 0146105123003025424124432034
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.224654 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 19589 / 84035 : 23.311% remaining
+   0 : 1972
+   1 : 1951
+   2 : 1951
+   3 : 1917
+   4 : 1982
+   5 : 1977
+   6 : 1946
+   7 : 1956
+   8 : 1974
+   9 : 1963
+
+   0 : 0146102321333502404111254341
+   1 : 0145103023653500414112350241
+   2 : 0144105126303244424100410441
+   3 : 0141105323443425464120660241
+   4 : 0145102223043661454212200541
+   5 : 0124105621333004424123660422
+   6 : 0144105026643241404100644341
+   7 : 0145106520353044464212300541
+   8 : 0144103521663202464136040241
+   9 : 0146103121563100464606261251
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.224745 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 17574 / 84035 : 20.913% remaining
+   0 : 1766
+   1 : 1765
+   2 : 1735
+   3 : 1772
+   4 : 1759
+   5 : 1778
+   6 : 1746
+   7 : 1754
+   8 : 1750
+   9 : 1749
+
+   0 : 0166103020403042454600262531
+   1 : 0142100124533426404136460041
+   2 : 0124106224643500434513230041
+   3 : 0122102323443504454116660241
+   4 : 0145103120333624414212301231
+   5 : 0121102524053205464113001231
+   6 : 0124100625003450464100462531
+   7 : 0164105520403655464102262131
+   8 : 0146102521003065434516252131
+   9 : 0144106326613521434213050041
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.224946 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 9474 / 84035 : 11.274% remaining
+   0 : 908
+   1 : 972
+   2 : 959
+   3 : 944
+   4 : 961
+   5 : 960
+   6 : 931
+   7 : 945
+   8 : 951
+   9 : 943
+
+   0 : 0144100220343000464204423250
+   1 : 0146105324063241404100441150
+   2 : 0146100126053025434100221350
+   3 : 0145100323613651414223030021
+   4 : 0161102623403401404606612350
+   5 : 0121106321043504404101213150
+   6 : 0145106121603504454116630021
+   7 : 0121100020343440464121443150
+   8 : 0141100220013406414221311250
+   9 : 0126103525033542414101441550
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.225024 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 5355 / 84035 : 6.372% remaining
+   0 : 479
+   1 : 558
+   2 : 528
+   3 : 557
+   4 : 504
+   5 : 564
+   6 : 558
+   7 : 546
+   8 : 527
+   9 : 534
+
+   0 : 0144100224003561434113052030
+   1 : 0146103121513105454602441150
+   2 : 0126103124453545464604221350
+   3 : 0124103021463100454211633120
+   4 : 0144100026443400454213263120
+   5 : 0151105520003020464120343520
+   6 : 0146103020003060464513202030
+   7 : 0145106325353200404111303120
+   8 : 0155100320643400454521663120
+   9 : 0146100021333654424604441550
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.225051 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225053 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225056 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225058 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225059 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225100 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225100 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 393 / 84035 : 0.468% remaining
+   0 : 68
+   1 : 12
+   2 : 45
+   3 : 66
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0124103125353240424206241230
+   1 : 0122102624433454414626441150
+   2 : 0146102521563441414200441300
+   3 : 0145105624403442414126431320
+   4 : 0154100620013100434624041320
+   5 : 0141105226033102414600261520
+   6 : 0146105124013424404521041300
+   7 : 0124105126553625464200441130
+   8 : 0146105321513021464102441500
+   9 : 0144105326043621464636441550
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.225101 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225102 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225103 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225104 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225105 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225106 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225108 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225109 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225110 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225111 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225112 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225113 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225114 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225115 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: connect: 61: Connection refused
+1202607061.225116 :: [MI0]: [fe80::1c3f:ebba:990e:2e30%bridge0:32768]: [PID16885]: accept: 53: Software caused connection abort
+1202607061.225124 :: ------------ [MACHINE 0] on signal 30: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 287 / 84035 : 0.342% remaining
+   0 : 3
+   1 : 12
+   2 : 45
+   3 : 66
+   4 : 2
+   5 : 9
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0100100020003000404000340000
+   1 : 0100100020003000404000241000
+   2 : 0121103326563022434602441300
+   3 : 0100100020003000404000431320
+   4 : 0100100020003000404000041320
+   5 : 0141103021003100404110261520
+   6 : 0100100020003000404000041300
+   7 : 0121100625463045414104441130
+   8 : 0126105321443401414624441500
+   9 : 0145103021003100404110261100
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.225146 :: ------------ [MACHINE 0] on signal 0: file 1202607061.222441_D2_M0_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1c3f:ebba:990e:2e30%bridge0, port = 32768
+
+total job count remaining : jobs 287 / 84035 : 0.342% remaining
+   0 : 3
+   1 : 12
+   2 : 45
+   3 : 66
+   4 : 2
+   5 : 9
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0100100020003000404000340000
+   1 : 0100100020003000404000241000
+   2 : 0100100020003000404000441300
+   3 : 0100100020003000404000431320
+   4 : 0100100020003000404000041320
+   5 : 0141103021003100404110261520
+   6 : 0100100020003000404000041300
+   7 : 0100100020003000404000441130
+   8 : 0100100020003000404000441500
+   9 : 0145103021003100404110261100
+
+SU: [PID = 16885]: searching [D = 2] space...
+1202607061.225146 :: SU: finished searching [D = 2] space:
+	 search took    1625.00 seconds
+	 from 1202607061.222441
+	 to   1202607061.225146
+
+
+pm counts:
+z_is_good: 261     		pm_zr5: 15690571306		
+pm_zr6: 11631630243		pm_ndi: 3770916822		
+pm_sndi: 5222    		pm_pco: 2073590367		
+pm_per: 983543828		pm_ns0: 2854762041		
+pm_oer: 1337489 		pm_rsi: 18676997		
+pm_mcal: 2272777620		 pm_h0: 6817590656		
+pm_h0s: 10640   		 pm_h1: 161409  		
+ pm_h2: 5798    		pm_rmv: 557735  		
+pm_csm: 391499  		pm_pair: 314944101		
+pm_bdl1: 675364  		pm_bdl2: 1025    		
+pm_bdl3: 17381   		 pm_xw: 644301  		
+[done]
+
+
+---------------------------------------------------------------------------------------------
+1202607061.222441 :: SU: [PID 16263]: [D 2]: [machine 1]: starting search call...
+1202607061.222444 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.222444 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.222444 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.222444 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.222445 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.222445 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.222633 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 71082 / 84035 : 84.586% remaining
+   0 : 7042
+   1 : 7156
+   2 : 7090
+   3 : 7196
+   4 : 7005
+   5 : 7103
+   6 : 7158
+   7 : 7144
+   8 : 7053
+   9 : 7135
+
+   0 : 0141102325403040454611251206
+   1 : 0144105223303651434101441506
+   2 : 0146105521343200404131041106
+   3 : 0144102323303405404106221526
+   4 : 0141100226513504464101441306
+   5 : 0146100325063502414604421206
+   6 : 0145103224043100414116201306
+   7 : 0145103124403604414116321306
+   8 : 0124100623453044454600261206
+   9 : 0126103026043144454100411106
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.222742 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 68655 / 84035 : 81.698% remaining
+   0 : 6864
+   1 : 6850
+   2 : 6865
+   3 : 6880
+   4 : 6853
+   5 : 6862
+   6 : 6875
+   7 : 6868
+   8 : 6882
+   9 : 6856
+
+   0 : 0125106324303100414123040455
+   1 : 0144102223303120414100461355
+   2 : 0152103621313044424223330555
+   3 : 0164106321433020464200222355
+   4 : 0121103220053666454101212455
+   5 : 0166100620353042464634242055
+   6 : 0124102223033506404142410455
+   7 : 0162105623043020464100212355
+   8 : 0144105223063401454202411555
+   9 : 0164105323503060404632622155
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.223059 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 64576 / 84035 : 76.844% remaining
+   0 : 6482
+   1 : 6485
+   2 : 6483
+   3 : 6269
+   4 : 6479
+   5 : 6480
+   6 : 6458
+   7 : 6485
+   8 : 6477
+   9 : 6478
+
+   0 : 0146100024463102404134041335
+   1 : 0146100624333202454613321235
+   2 : 0146102020453501454113301235
+   3 : 0141103220353422454616312335
+   4 : 0121106621303242414613232335
+   5 : 0146103521443144464604411525
+   6 : 0124103621013520454211660525
+   7 : 0121106121033144404513650225
+   8 : 0124103526613502424213050525
+   9 : 0145103120453444464213030225
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.223216 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 62018 / 84035 : 73.800% remaining
+   0 : 6110
+   1 : 6244
+   2 : 6238
+   3 : 6250
+   4 : 6258
+   5 : 6265
+   6 : 6255
+   7 : 6068
+   8 : 6215
+   9 : 6115
+
+   0 : 0145100021633261434116620425
+   1 : 0145103623013624454513050425
+   2 : 0124103220013440454216001225
+   3 : 0142106125033524464111050125
+   4 : 0145100626333246464212201125
+   5 : 0145103526043242414111000025
+   6 : 0144103620013656404123640125
+   7 : 0142103226343625434600211125
+   8 : 0144106523613524424513330225
+   9 : 0125103026303224414512011125
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.223401 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 58120 / 84035 : 69.162% remaining
+   0 : 5827
+   1 : 5814
+   2 : 5797
+   3 : 5823
+   4 : 5802
+   5 : 5796
+   6 : 5815
+   7 : 5813
+   8 : 5837
+   9 : 5796
+
+   0 : 0146100526333622424100441105
+   1 : 0155100520633444454220363005
+   2 : 0121103326453006434216031305
+   3 : 0122105320303221454606421005
+   4 : 0145106120053524454511313005
+   5 : 0164102523043406464513332005
+   6 : 0142105526563656434100461105
+   7 : 0121103121343442454611062005
+   8 : 0142106621013200464213212005
+   9 : 0166103120503400414200212105
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.223715 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 51982 / 84035 : 61.858% remaining
+   0 : 5163
+   1 : 5212
+   2 : 5213
+   3 : 5190
+   4 : 5212
+   5 : 5185
+   6 : 5201
+   7 : 5204
+   8 : 5225
+   9 : 5177
+
+   0 : 0166105023403400404206612134
+   1 : 0121106125333544424210360124
+   2 : 0141106220013061454632262334
+   3 : 0121106125333004424210660124
+   4 : 0145100524633620414112350024
+   5 : 0144102021333560434602222034
+   6 : 0122100524013446454511330124
+   7 : 0141103521603142424101410124
+   8 : 0124100521633661424112320124
+   9 : 0125103124303226414113310124
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.224656 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 19496 / 84035 : 23.200% remaining
+   0 : 1967
+   1 : 1950
+   2 : 1951
+   3 : 1941
+   4 : 1945
+   5 : 1935
+   6 : 1917
+   7 : 1953
+   8 : 1974
+   9 : 1963
+
+   0 : 0146102320063652464606411551
+   1 : 0162102223443455414100414541
+   2 : 0125103124453155414146410051
+   3 : 0155103126403440414224640051
+   4 : 0126103124563405464104461151
+   5 : 0124100521333044424204261351
+   6 : 0142105620333652404223360051
+   7 : 0162103525403254404101624541
+   8 : 0142105625033606414206421251
+   9 : 0125106326313454454221330051
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.224748 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 17508 / 84035 : 20.834% remaining
+   0 : 1752
+   1 : 1741
+   2 : 1745
+   3 : 1770
+   4 : 1759
+   5 : 1756
+   6 : 1743
+   7 : 1744
+   8 : 1750
+   9 : 1748
+
+   0 : 0122106625353241464513660541
+   1 : 0151103620413022434124360441
+   2 : 0121103121303456404202442531
+   3 : 0141102126633644424216610541
+   4 : 0155106321403452454226010441
+   5 : 0144103024663545454513020241
+   6 : 0122100526603040424526330441
+   7 : 0124102125003106414213050241
+   8 : 0126105323533021454100441531
+   9 : 0161100020303020454216322431
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.224948 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 9298 / 84035 : 11.064% remaining
+   0 : 914
+   1 : 964
+   2 : 948
+   3 : 919
+   4 : 901
+   5 : 943
+   6 : 898
+   7 : 928
+   8 : 944
+   9 : 939
+
+   0 : 0145106125363226424213060021
+   1 : 0142102525343024404601461201
+   2 : 0145103620613522424216200521
+   3 : 0141103525433264414216300521
+   4 : 0126100120303524454212011301
+   5 : 0145102520333202424224660221
+   6 : 0124103024013605464116620521
+   7 : 0125100125333504424211660421
+   8 : 0141100625313644464600211301
+   9 : 0146102223453400454100411201
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.225026 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 4867 / 84035 : 5.792% remaining
+   0 : 114
+   1 : 518
+   2 : 516
+   3 : 557
+   4 : 460
+   5 : 544
+   6 : 558
+   7 : 542
+   8 : 527
+   9 : 531
+
+   0 : 0144106321503001454136060021
+   1 : 0152105523343105404126461201
+   2 : 0124100520303402424511662130
+   3 : 0146103521003654404104261550
+   4 : 0146105320043551414204461550
+   5 : 0125100126403442404511201330
+   6 : 0146105026043040414200221330
+   7 : 0144100620333042454521660421
+   8 : 0162102020303420454113232130
+   9 : 0156103320553004414146411201
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.225050 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225051 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225052 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225053 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225054 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225055 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225056 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225057 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225057 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225058 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225058 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: connect: 61: Connection refused
+1202607061.225059 :: [MI1]: [fe80::cb4:c1b3:d25e:9241%bridge0:32769]: [PID16263]: accept: 53: Software caused connection abort
+1202607061.225102 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 397 / 84035 : 0.472% remaining
+   0 : 68
+   1 : 12
+   2 : 45
+   3 : 70
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0100100020003000404000210000
+   1 : 0146102321353005424213001500
+   2 : 0124105626313421454201241500
+   3 : 0146105623053424414600441100
+   4 : 0100100020003000404000441000
+   5 : 0145100020063100404110211300
+   6 : 0126100323033501424201421200
+   7 : 0124103126333444424523660421
+   8 : 0154103021003100464200421000
+   9 : 0154102521033444464626041120
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.225126 :: ------------ [MACHINE 1] on signal 30: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 397 / 84035 : 0.472% remaining
+   0 : 68
+   1 : 12
+   2 : 45
+   3 : 70
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0100100020003000404000210000
+   1 : 0142103021003100404116001500
+   2 : 0146105325513551404606241500
+   3 : 0146102620333651464204441100
+   4 : 0100100020003000404000441000
+   5 : 0145100020063100404110211300
+   6 : 0154103021003100464200421200
+   7 : 0100100020003000404000660421
+   8 : 0154103021003100464200421000
+   9 : 0100100020003000404000041120
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.225139 :: ------------ [MACHINE 1] on signal 0: file 1202607061.222441_D2_M1_214552d44e40ed5c089f5b27161961dd_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cb4:c1b3:d25e:9241%bridge0, port = 32769
+
+total job count remaining : jobs 397 / 84035 : 0.472% remaining
+   0 : 68
+   1 : 12
+   2 : 45
+   3 : 70
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0100100020003000404000210000
+   1 : 0142103021003100404116001500
+   2 : 0100100020003000404000241500
+   3 : 0100100020003000404000441100
+   4 : 0100100020003000404000441000
+   5 : 0145100020063100404110211300
+   6 : 0154103021003100464200421200
+   7 : 0100100020003000404000660421
+   8 : 0154103021003100464200421000
+   9 : 0100100020003000404000041120
+
+SU: [PID = 16263]: searching [D = 2] space...
+1202607061.225139 :: SU: finished searching [D = 2] space:
+	 search took    1618.00 seconds
+	 from 1202607061.222441
+	 to   1202607061.225139
+
+
+pm counts:
+z_is_good: 177     		pm_zr5: 17853936096		
+pm_zr6: 12432582729		pm_ndi: 3673757438		
+pm_sndi: 17798   		pm_pco: 2095562568		
+pm_per: 1097006273		pm_ns0: 3529340375		
+pm_oer: 1718872 		pm_rsi: 19583669		
+pm_mcal: 2584307027		 pm_h0: 7213974181		
+pm_h0s: 11805   		 pm_h1: 164222  		
+ pm_h2: 6543    		pm_rmv: 533873  		
+pm_csm: 331810  		pm_pair: 338994285		
+pm_bdl1: 706418  		pm_bdl2: 2311    		
+pm_bdl3: 25935   		 pm_xw: 634197  		
+[done]
+
+
+---------------------------------------------------------------------------------------------
+1202607061.222442 :: SU: [PID 16244]: [D 2]: [machine 2]: starting search call...
+1202607061.222443 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222443 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222443 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222443 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222443 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222443 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222443 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222444 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222444 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222444 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222444 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222444 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222445 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222445 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222445 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222446 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.222635 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 70750 / 84035 : 84.191% remaining
+   0 : 7010
+   1 : 6922
+   2 : 7090
+   3 : 7131
+   4 : 7066
+   5 : 7103
+   6 : 7097
+   7 : 7143
+   8 : 7053
+   9 : 7135
+
+   0 : 0144102526033044404623461506
+   1 : 0145102020063020434216051206
+   2 : 0141103225053522404116331126
+   3 : 0121100625033120464634011006
+   4 : 0142100325463242464513211506
+   5 : 0126100525363405454100461106
+   6 : 0156103120043124464224461026
+   7 : 0146105124403120464100221306
+   8 : 0146100220053205434211021306
+   9 : 0155100220343025464520463555
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.222744 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 68666 / 84035 : 81.711% remaining
+   0 : 6861
+   1 : 6866
+   2 : 6865
+   3 : 6880
+   4 : 6867
+   5 : 6862
+   6 : 6875
+   7 : 6868
+   8 : 6866
+   9 : 6856
+
+   0 : 0144100626433521404113063145
+   1 : 0146105324013650404102411155
+   2 : 0164103021013566464202662555
+   3 : 0126103220043100414201262145
+   4 : 0162103321343464414602242555
+   5 : 0125105226333441404626461106
+   6 : 0124102120353152424606211206
+   7 : 0142103125503454424200622055
+   8 : 0144103220303226414112314145
+   9 : 0164106521333004424204212155
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.223101 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 64508 / 84035 : 76.763% remaining
+   0 : 6479
+   1 : 6407
+   2 : 6483
+   3 : 6380
+   4 : 6462
+   5 : 6480
+   6 : 6458
+   7 : 6404
+   8 : 6477
+   9 : 6478
+
+   0 : 0142100321333560404116202135
+   1 : 0124106621033144424211210125
+   2 : 0146103124303544404112221135
+   3 : 0122103126553602454102441135
+   4 : 0145103620653265414511650525
+   5 : 0141106325313240464111310125
+   6 : 0125103621403642404112600125
+   7 : 0144102124543022434106441035
+   8 : 0121106125333142424511200125
+   9 : 0144106621333044454221660425
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.223218 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 62009 / 84035 : 73.789% remaining
+   0 : 6110
+   1 : 6244
+   2 : 6238
+   3 : 6250
+   4 : 6258
+   5 : 6198
+   6 : 6254
+   7 : 6129
+   8 : 6215
+   9 : 6113
+
+   0 : 0141106225603262454210230125
+   1 : 0142103523053120434513610525
+   2 : 0142106620043442454211230025
+   3 : 0141106621333144424142420025
+   4 : 0141105626303426464106421125
+   5 : 0146100220343021454632211525
+   6 : 0145100120313040404513360525
+   7 : 0155103126403025414521610025
+   8 : 0145106626333022454211350025
+   9 : 0145106521053004404512033025
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.223402 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 58029 / 84035 : 69.053% remaining
+   0 : 5803
+   1 : 5809
+   2 : 5795
+   3 : 5810
+   4 : 5802
+   5 : 5796
+   6 : 5812
+   7 : 5796
+   8 : 5814
+   9 : 5792
+
+   0 : 0166103220413060454212012105
+   1 : 0166102323333464404601662105
+   2 : 0125105621433020464621041105
+   3 : 0155106626633125414242420554
+   4 : 0141102220043041464224343225
+   5 : 0166100620343022454132222005
+   6 : 0124106321403022404212352105
+   7 : 0142103121043122464212353105
+   8 : 0142103620303124454213253005
+   9 : 0145103126013224454211023005
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.223717 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 51858 / 84035 : 61.710% remaining
+   0 : 5128
+   1 : 5212
+   2 : 5208
+   3 : 5189
+   4 : 5203
+   5 : 5185
+   6 : 5196
+   7 : 5203
+   8 : 5164
+   9 : 5170
+
+   0 : 0145103120613144404212200524
+   1 : 0145106220303144464112650524
+   2 : 0142103126453062414212610524
+   3 : 0122106525013146424511300224
+   4 : 0141106220533020454236022034
+   5 : 0141106123003541404516663424
+   6 : 0145103320413520434111630224
+   7 : 0165106625413044414216612034
+   8 : 0145106326443201404211063124
+   9 : 0152100123633021424520360224
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.224658 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 19445 / 84035 : 23.139% remaining
+   0 : 1965
+   1 : 1948
+   2 : 1949
+   3 : 1941
+   4 : 1927
+   5 : 1934
+   6 : 1935
+   7 : 1949
+   8 : 1945
+   9 : 1952
+
+   0 : 0145102126353021414216330541
+   1 : 0122106025343104404113000141
+   2 : 0145102021063425454210030041
+   3 : 0145106620333564424216200441
+   4 : 0122103024413046454521660141
+   5 : 0142106025333544424216000541
+   6 : 0145103526443162454516050441
+   7 : 0144100025633401454210060041
+   8 : 0125100021343422464213650141
+   9 : 0145103224043620404111260041
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.224749 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 17386 / 84035 : 20.689% remaining
+   0 : 1747
+   1 : 1746
+   2 : 1745
+   3 : 1752
+   4 : 1753
+   5 : 1756
+   6 : 1741
+   7 : 1684
+   8 : 1714
+   9 : 1748
+
+   0 : 0122105625313152434206421531
+   1 : 0121100126303405404526011331
+   2 : 0125102126433442404210620421
+   3 : 0124102520353022434602461531
+   4 : 0142103624443400404102213521
+   5 : 0144103320313220454612211331
+   6 : 0144102324633441454130610421
+   7 : 0124106326543401464134060041
+   8 : 0144102521303120464602211231
+   9 : 0146103121453522414200421521
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.224950 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 9172 / 84035 : 10.914% remaining
+   0 : 878
+   1 : 929
+   2 : 941
+   3 : 917
+   4 : 881
+   5 : 938
+   6 : 879
+   7 : 928
+   8 : 944
+   9 : 937
+
+   0 : 0154106526343441414123660021
+   1 : 0146103124433200414513301101
+   2 : 0122102226033602414123041150
+   3 : 0146105623013020404604411101
+   4 : 0146100620033120454513201101
+   5 : 0141102320463654464600421101
+   6 : 0122105326043256414602441101
+   7 : 0146100120303552464241461101
+   8 : 0146105623513520464602421550
+   9 : 0161103620003024464201442050
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225028 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 4563 / 84035 : 5.430% remaining
+   0 : 106
+   1 : 491
+   2 : 454
+   3 : 535
+   4 : 451
+   5 : 544
+   6 : 437
+   7 : 541
+   8 : 527
+   9 : 477
+
+   0 : 0155100320413444464526660021
+   1 : 0155105023043400454226063220
+   2 : 0122103525453542464100461520
+   3 : 0141103124333652404102421530
+   4 : 0146102521033052434100411320
+   5 : 0156102220433100404146421101
+   6 : 0122102320463120454216353220
+   7 : 0126105325463601464136461101
+   8 : 0126105525443401464600411130
+   9 : 0145106524643120404113253220
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225050 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.225052 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.225054 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.225057 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.225059 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.225100 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.225101 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: connect: 61: Connection refused
+1202607061.225102 :: [MI2]: [fe80::dd:4db5:440c:6274%bridge0:32770]: [PID16244]: accept: 53: Software caused connection abort
+1202607061.225103 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 374 / 84035 : 0.445% remaining
+   0 : 49
+   1 : 12
+   2 : 45
+   3 : 66
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0146105324413201464604411120
+   1 : 0121102020033405414521461120
+   2 : 0141100226033451414621461520
+   3 : 0126100521333144424200241100
+   4 : 0146105526003126414206411320
+   5 : 0146105021363244424200221100
+   6 : 0100100020003000404000400000
+   7 : 0145103020063100404110211200
+   8 : 0154102021003100464100411130
+   9 : 0146105623413006464602461220
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225127 :: ------------ [MACHINE 2] on signal 30: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 374 / 84035 : 0.445% remaining
+   0 : 49
+   1 : 12
+   2 : 45
+   3 : 66
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0154103021003100464100411120
+   1 : 0156105523333140464124461120
+   2 : 0144105521343605414604461520
+   3 : 0146105621433201464104241100
+   4 : 0154100021003100464100411320
+   5 : 0145103026003100404110221100
+   6 : 0100100020003000404000400000
+   7 : 0145103020063100404110211200
+   8 : 0154102021003100464100411130
+   9 : 0156105020313055434626461220
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225153 :: ------------ [MACHINE 2] on signal 0: file 1202607061.222442_D2_M2_40e44b334c05228d651f7df8768758a5_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::dd:4db5:440c:6274%bridge0, port = 32770
+
+total job count remaining : jobs 374 / 84035 : 0.445% remaining
+   0 : 49
+   1 : 12
+   2 : 45
+   3 : 66
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0154103021003100464100411120
+   1 : 0154103021003100464600461120
+   2 : 0100100020003000404000461520
+   3 : 0100100020003000404000241100
+   4 : 0154100021003100464100411320
+   5 : 0145103026003100404110221100
+   6 : 0100100020003000404000400000
+   7 : 0145103020063100404110211200
+   8 : 0154102021003100464100411130
+   9 : 0154103021003100464600461220
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225153 :: SU: finished searching [D = 2] space:
+	 search took    1631.00 seconds
+	 from 1202607061.222442
+	 to   1202607061.225153
+
+
+pm counts:
+z_is_good: 175     		pm_zr5: 17684277887		
+pm_zr6: 12141947554		pm_ndi: 4555996902		
+pm_sndi: 4649    		pm_pco: 2301920373		
+pm_per: 1133329089		pm_ns0: 3109143448		
+pm_oer: 2039341 		pm_rsi: 20207714		
+pm_mcal: 2609788849		 pm_h0: 7011206474		
+pm_h0s: 12513   		 pm_h1: 180648  		
+ pm_h2: 3653    		pm_rmv: 774823  		
+pm_csm: 366539  		pm_pair: 362443480		
+pm_bdl1: 802503  		pm_bdl2: 2379    		
+pm_bdl3: 22149   		 pm_xw: 893081  		
+[done]
+
+
+---------------------------------------------------------------------------------------------
+1202607061.222443 :: SU: [PID 16244]: [D 2]: [machine 3]: starting search call...
+1202607061.222637 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 70711 / 84035 : 84.145% remaining
+   0 : 7009
+   1 : 6986
+   2 : 7090
+   3 : 7131
+   4 : 7047
+   5 : 7085
+   6 : 7096
+   7 : 7079
+   8 : 7053
+   9 : 7135
+
+   0 : 0151100624613462414521430555
+   1 : 0142100223563624414201241555
+   2 : 0142100021533552434602221126
+   3 : 0155106623003160424224440555
+   4 : 0141102021033454464124441136
+   5 : 0145100626343604414112211126
+   6 : 0122103324533554414104261136
+   7 : 0156100024443242464143421126
+   8 : 0144102224033402454621061226
+   9 : 0144102525543104404606211136
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.222746 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 68600 / 84035 : 81.633% remaining
+   0 : 6859
+   1 : 6866
+   2 : 6865
+   3 : 6830
+   4 : 6866
+   5 : 6862
+   6 : 6867
+   7 : 6863
+   8 : 6866
+   9 : 6856
+
+   0 : 0145102021603544464213600245
+   1 : 0124100320333600454211014045
+   2 : 0164105523463460404224664045
+   3 : 0166103125043465414211054045
+   4 : 0144106324043561434100242535
+   5 : 0142102323063564404513610245
+   6 : 0125106325663466454511660145
+   7 : 0146100323033165434113252145
+   8 : 0122100521363624454512310145
+   9 : 0145102121333125454113620145
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.223102 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 64531 / 84035 : 76.791% remaining
+   0 : 6479
+   1 : 6405
+   2 : 6483
+   3 : 6431
+   4 : 6448
+   5 : 6480
+   6 : 6457
+   7 : 6397
+   8 : 6477
+   9 : 6474
+
+   0 : 0142106023003041404112052505
+   1 : 0121106123433444414110030425
+   2 : 0141102226633201434211250025
+   3 : 0141100320313224404106211225
+   4 : 0121100621333164424211200025
+   5 : 0146103521433525454511251035
+   6 : 0145102020033620454210211035
+   7 : 0124100225033044424606461525
+   8 : 0121102220333452424604441025
+   9 : 0124100224003142464623461225
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.223220 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 61995 / 84035 : 73.773% remaining
+   0 : 6170
+   1 : 6244
+   2 : 6231
+   3 : 6250
+   4 : 6194
+   5 : 6198
+   6 : 6253
+   7 : 6127
+   8 : 6215
+   9 : 6113
+
+   0 : 0124106025633401404104443405
+   1 : 0122102320043660464234422505
+   2 : 0122105326563441414601411505
+   3 : 0121103023013000404634642135
+   4 : 0121100325063250464201421505
+   5 : 0141106024403264464513220125
+   6 : 0125102021033124464216011135
+   7 : 0121102623343021454636062035
+   8 : 0142100520633244404516233405
+   9 : 0146103021463125464516051135
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.223404 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 57964 / 84035 : 68.976% remaining
+   0 : 5802
+   1 : 5809
+   2 : 5795
+   3 : 5777
+   4 : 5799
+   5 : 5796
+   6 : 5812
+   7 : 5792
+   8 : 5797
+   9 : 5785
+
+   0 : 0144103226543200454100443054
+   1 : 0125106026633052404520463054
+   2 : 0151100626303220424140420154
+   3 : 0121102526633444454120663054
+   4 : 0146106220333560434116062135
+   5 : 0155103524403454454526600254
+   6 : 0124103021343462404232242354
+   7 : 0164103523333044464202242135
+   8 : 0146105320403541414202211505
+   9 : 0144106521333004464604262105
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.223719 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 51840 / 84035 : 61.689% remaining
+   0 : 5168
+   1 : 5170
+   2 : 5208
+   3 : 5188
+   4 : 5191
+   5 : 5185
+   6 : 5194
+   7 : 5202
+   8 : 5164
+   9 : 5170
+
+   0 : 0141102326053064464513660044
+   1 : 0121100025403121404516313424
+   2 : 0121106521333004424204220144
+   3 : 0145103524463620464511200024
+   4 : 0124102021663521454112323124
+   5 : 0144105126403106434204210144
+   6 : 0145102020653162404113030224
+   7 : 0151103323033044414226040024
+   8 : 0145106626053421404212313124
+   9 : 0145103126613220454212300024
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.224659 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 19413 / 84035 : 23.101% remaining
+   0 : 1939
+   1 : 1945
+   2 : 1948
+   3 : 1936
+   4 : 1940
+   5 : 1929
+   6 : 1934
+   7 : 1945
+   8 : 1945
+   9 : 1952
+
+   0 : 0144106325303502454216000441
+   1 : 0141103223633625414210630441
+   2 : 0142106626433164454111330041
+   3 : 0141102621533004464236460141
+   4 : 0146100026463200454112301531
+   5 : 0146103324653022414130264341
+   6 : 0145100120333022414110650441
+   7 : 0142106223653120414513060441
+   8 : 0141103326453424404102244341
+   9 : 0145106626363040424216610441
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.224751 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 17359 / 84035 : 20.657% remaining
+   0 : 1745
+   1 : 1743
+   2 : 1742
+   3 : 1751
+   4 : 1753
+   5 : 1756
+   6 : 1699
+   7 : 1713
+   8 : 1709
+   9 : 1748
+
+   0 : 0125106125663401404113610041
+   1 : 0155100026303021404220463141
+   2 : 0145100226313500404111204141
+   3 : 0145103520453526464111010041
+   4 : 0122100325463506404513210241
+   5 : 0125103521003064424116320041
+   6 : 0142103526403220404212233141
+   7 : 0121103624653664454111650041
+   8 : 0144100521303621434216030241
+   9 : 0125103223313025464216610241
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.224952 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 9082 / 84035 : 10.807% remaining
+   0 : 890
+   1 : 910
+   2 : 941
+   3 : 901
+   4 : 877
+   5 : 933
+   6 : 867
+   7 : 927
+   8 : 903
+   9 : 933
+
+   0 : 0166103520503455464202622150
+   1 : 0124105526353052434204211550
+   2 : 0141105520303040464220343250
+   3 : 0142106023003056434601222150
+   4 : 0124100521443622434204421301
+   5 : 0122105023463100434600441350
+   6 : 0126105521533204404131461301
+   7 : 0124103020403460404602422150
+   8 : 0151105126413440414223041350
+   9 : 0144105621333141464131041250
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225029 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 4278 / 84035 : 5.091% remaining
+   0 : 101
+   1 : 438
+   2 : 418
+   3 : 494
+   4 : 436
+   5 : 508
+   6 : 437
+   7 : 530
+   8 : 508
+   9 : 408
+
+   0 : 0124102226333104424201241530
+   1 : 0145106023013020404510313520
+   2 : 0121102526343020464220443520
+   3 : 0126102526333004424104211150
+   4 : 0162103525003455404606622030
+   5 : 0141103625513244404604441350
+   6 : 0146105126033126404606461301
+   7 : 0124102526333644424104221150
+   8 : 0121100526433455404124341130
+   9 : 0141102020563240424141461030
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225051 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225053 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225055 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225057 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225058 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225100 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225101 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225102 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225103 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225104 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225105 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 324 / 84035 : 0.386% remaining
+   0 : 49
+   1 : 12
+   2 : 45
+   3 : 66
+   4 : 2
+   5 : 0
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0141100624403604404136241530
+   1 : 0122105226003454414126431120
+   2 : 0151103026033505434226341120
+   3 : 0141103626543056414606211150
+   4 : 0146100521333142424602441520
+   5 : 0141100626553006424600261300
+   6 : 0122105523313446414102241220
+   7 : 0125103321433404464523341300
+   8 : 0146103021463604454201461500
+   9 : 0146103524403140404631421120
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225106 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225107 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225108 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225109 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225110 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225111 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225112 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: connect: 61: Connection refused
+1202607061.225113 :: [MI3]: [fe80::cbb:f438:fde:6242%bridge0:32771]: [PID16244]: accept: 53: Software caused connection abort
+1202607061.225128 :: ------------ [MACHINE 3] on signal 30: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 275 / 84035 : 0.327% remaining
+   0 : 0
+   1 : 12
+   2 : 45
+   3 : 66
+   4 : 2
+   5 : 0
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0100100020003000404000041200
+   1 : 0100100020003000404000431120
+   2 : 0145102021003100404110361000
+   3 : 0154102321003100464600461000
+   4 : 0144103524343125404106441520
+   5 : 0154102321003100464100411000
+   6 : 0100100020003000404000241220
+   7 : 0100100020003000404000341300
+   8 : 0146100020333654424204461500
+   9 : 0154103021003100464200421120
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225156 :: ------------ [MACHINE 3] on signal 0: file 1202607061.222443_D2_M3_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::cbb:f438:fde:6242%bridge0, port = 32771
+
+total job count remaining : jobs 275 / 84035 : 0.327% remaining
+   0 : 0
+   1 : 12
+   2 : 45
+   3 : 66
+   4 : 2
+   5 : 0
+   6 : 39
+   7 : 66
+   8 : 34
+   9 : 11
+
+   0 : 0100100020003000404000041200
+   1 : 0100100020003000404000431120
+   2 : 0145102021003100404110361000
+   3 : 0154102321003100464600461000
+   4 : 0100100020003000404000441520
+   5 : 0154102321003100464100411000
+   6 : 0100100020003000404000241220
+   7 : 0100100020003000404000341300
+   8 : 0100100020003000404000461500
+   9 : 0154103021003100464200421120
+
+SU: [PID = 16244]: searching [D = 2] space...
+1202607061.225156 :: SU: finished searching [D = 2] space:
+	 search took    1633.00 seconds
+	 from 1202607061.222443
+	 to   1202607061.225156
+
+
+pm counts:
+z_is_good: 322     		pm_zr5: 17867841727		
+pm_zr6: 12131523573		pm_ndi: 4081606623		
+pm_sndi: 4047    		pm_pco: 2139046760		
+pm_per: 1056550815		pm_ns0: 3184466110		
+pm_oer: 1569788 		pm_rsi: 18993890		
+pm_mcal: 2505676514		 pm_h0: 6693826844		
+pm_h0s: 14094   		 pm_h1: 157028  		
+ pm_h2: 3979    		pm_rmv: 765528  		
+pm_csm: 469914  		pm_pair: 353387392		
+pm_bdl1: 735975  		pm_bdl2: 1577    		
+pm_bdl3: 19457   		 pm_xw: 801537  		
+[done]
+
+
+---------------------------------------------------------------------------------------------
+1202607061.222443 :: SU: [PID 16226]: [D 2]: [machine 4]: starting search call...
+1202607061.222639 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 70424 / 84035 : 83.803% remaining
+   0 : 7009
+   1 : 6941
+   2 : 7090
+   3 : 7123
+   4 : 7045
+   5 : 7085
+   6 : 7096
+   7 : 6980
+   8 : 7032
+   9 : 7023
+
+   0 : 0144103626553145454106241506
+   1 : 0142102324363522434113351106
+   2 : 0121103526413106464100411355
+   3 : 0145103323013146454613221506
+   4 : 0151102323463140404142423255
+   5 : 0122103020303542414100261355
+   6 : 0146103120513142464106441206
+   7 : 0141100126363252454100221355
+   8 : 0144100525363605434616201206
+   9 : 0142102020363404404520663555
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.222748 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 68538 / 84035 : 81.559% remaining
+   0 : 6855
+   1 : 6847
+   2 : 6865
+   3 : 6829
+   4 : 6858
+   5 : 6861
+   6 : 6865
+   7 : 6863
+   8 : 6861
+   9 : 6834
+
+   0 : 0124106321333060424111332045
+   1 : 0121102621343040454636062055
+   2 : 0164100620053600434202262055
+   3 : 0162100023463620454112354545
+   4 : 0141105220303444454120633045
+   5 : 0145103020633002434112024545
+   6 : 0162100524413562434106462155
+   7 : 0146102021333146404212224545
+   8 : 0161100225403026454210032045
+   9 : 0124103621303044424226330255
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.223104 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 64488 / 84035 : 76.739% remaining
+   0 : 6477
+   1 : 6405
+   2 : 6419
+   3 : 6425
+   4 : 6448
+   5 : 6477
+   6 : 6457
+   7 : 6437
+   8 : 6470
+   9 : 6473
+
+   0 : 0122102526333644424204211135
+   1 : 0141106220043044464134442035
+   2 : 0124102524463005414516001135
+   3 : 0142100226333601414104421135
+   4 : 0141102224063422464604241135
+   5 : 0124102625333144424211060125
+   6 : 0142102020633601404211220425
+   7 : 0146105021443244404200241325
+   8 : 0141103020303042404521461135
+   9 : 0155106020413452414223033425
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.223222 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 61918 / 84035 : 73.681% remaining
+   0 : 6169
+   1 : 6235
+   2 : 6231
+   3 : 6222
+   4 : 6157
+   5 : 6198
+   6 : 6189
+   7 : 6127
+   8 : 6214
+   9 : 6176
+
+   0 : 0146103321003002464116011025
+   1 : 0146100326013554464202461025
+   2 : 0142106520353402404211030025
+   3 : 0145103020653162464212060025
+   4 : 0142103020003066454211012505
+   5 : 0151105021313424464523360225
+   6 : 0145103025003202454210260025
+   7 : 0142105523533450464200622505
+   8 : 0145106320053661414216020125
+   9 : 0142103220343420414106411025
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.223406 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 57883 / 84035 : 68.880% remaining
+   0 : 5801
+   1 : 5787
+   2 : 5793
+   3 : 5774
+   4 : 5787
+   5 : 5768
+   6 : 5804
+   7 : 5792
+   8 : 5797
+   9 : 5780
+
+   0 : 0152106320613166404220030554
+   1 : 0144102625043640404113331205
+   2 : 0145100024433521464511221205
+   3 : 0144103120543224464204413205
+   4 : 0142100223303100434613011205
+   5 : 0144106025313665424516202005
+   6 : 0155100624403025454120360554
+   7 : 0124100226333456414220430554
+   8 : 0145106624413220414113303205
+   9 : 0125100326603040454120310554
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.223721 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 51750 / 84035 : 61.581% remaining
+   0 : 5168
+   1 : 5159
+   2 : 5184
+   3 : 5187
+   4 : 5189
+   5 : 5175
+   6 : 5194
+   7 : 5148
+   8 : 5183
+   9 : 5163
+
+   0 : 0144103524063642404134640424
+   1 : 0154100320403452404624042134
+   2 : 0144102520633461404134460224
+   3 : 0144103621413420454223030424
+   4 : 0141106123403645464212010224
+   5 : 0124100023403420454106262134
+   6 : 0142100326403420454213203524
+   7 : 0124102621333504424111050524
+   8 : 0144103121433266454102410424
+   9 : 0141100523463540404111633124
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.224702 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 19363 / 84035 : 23.042% remaining
+   0 : 1930
+   1 : 1931
+   2 : 1948
+   3 : 1927
+   4 : 1928
+   5 : 1941
+   6 : 1934
+   7 : 1939
+   8 : 1945
+   9 : 1940
+
+   0 : 0144103625453440454200443241
+   1 : 0161103121303554414104244241
+   2 : 0124103220013060454131602341
+   3 : 0155105623003000404520333241
+   4 : 0166103223013425404512002341
+   5 : 0125102321003424414611022341
+   6 : 0124106021333144424513230241
+   7 : 0126103023343455464606441251
+   8 : 0166103320403044454216262141
+   9 : 0145103525663020404511650541
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.224753 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 17176 / 84035 : 20.439% remaining
+   0 : 1727
+   1 : 1717
+   2 : 1734
+   3 : 1745
+   4 : 1706
+   5 : 1710
+   6 : 1699
+   7 : 1713
+   8 : 1695
+   9 : 1730
+
+   0 : 0142102520363022464202411531
+   1 : 0125100525053041464511001331
+   2 : 0146105321343002454100411231
+   3 : 0146100525343102414216201531
+   4 : 0145100623043064404216060241
+   5 : 0122103021303042424511652131
+   6 : 0142102525403542404613001531
+   7 : 0162105224503400454600442131
+   8 : 0142103620043125404111011231
+   9 : 0142105321033104464100421231
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.224954 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 8974 / 84035 : 10.679% remaining
+   0 : 871
+   1 : 902
+   2 : 904
+   3 : 901
+   4 : 861
+   5 : 880
+   6 : 903
+   7 : 925
+   8 : 900
+   9 : 927
+
+   0 : 0124103026503554404201241550
+   1 : 0122100624313425404626031250
+   2 : 0146100020303552434120011250
+   3 : 0146103125003622424146411121
+   4 : 0124105524003651434604461121
+   5 : 0166106623303440424136662350
+   6 : 0145106520303040404526313250
+   7 : 0126102521333124424100261350
+   8 : 0144103126003256434104441501
+   9 : 0155105321433500404526663250
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.225032 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 3987 / 84035 : 4.744% remaining
+   0 : 105
+   1 : 389
+   2 : 410
+   3 : 478
+   4 : 382
+   5 : 484
+   6 : 437
+   7 : 466
+   8 : 444
+   9 : 392
+
+   0 : 0124103521333604424206241550
+   1 : 0126102625353041424200421520
+   2 : 0146100023433125454513001530
+   3 : 0146105326563251414604411150
+   4 : 0146105625513606434100221220
+   5 : 0142100321003400404600241520
+   6 : 0144105220413100464600211130
+   7 : 0122103625033552434604261350
+   8 : 0141105126303125424521341520
+   9 : 0121103121543100404631401320
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.225051 :: [MI4]: [fe80::d8:eb7d:813e:7f5d%bridge0:32772]: [PID16226]: connect: 61: Connection refused
+1202607061.225053 :: [MI4]: [fe80::d8:eb7d:813e:7f5d%bridge0:32772]: [PID16226]: connect: 61: Connection refused
+1202607061.225055 :: [MI4]: [fe80::d8:eb7d:813e:7f5d%bridge0:32772]: [PID16226]: connect: 61: Connection refused
+1202607061.225056 :: [MI4]: [fe80::d8:eb7d:813e:7f5d%bridge0:32772]: [PID16226]: accept: 53: Software caused connection abort
+1202607061.225106 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 478 / 84035 : 0.569% remaining
+   0 : 74
+   1 : 14
+   2 : 66
+   3 : 75
+   4 : 2
+   5 : 50
+   6 : 62
+   7 : 64
+   8 : 34
+   9 : 37
+
+   0 : 0146103525013640404131441120
+   1 : 0146102323433641464604421520
+   2 : 0146102223063625434600211100
+   3 : 0146102521003100404113001300
+   4 : 0100100020003000404000110000
+   5 : 0144100020333654424204241520
+   6 : 0100100020003000404000212100
+   7 : 0142105626513026434102411300
+   8 : 0142102526353602464231241120
+   9 : 0141103620013005414521441200
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.225130 :: ------------ [MACHINE 4] on signal 30: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 478 / 84035 : 0.569% remaining
+   0 : 74
+   1 : 14
+   2 : 66
+   3 : 75
+   4 : 2
+   5 : 50
+   6 : 62
+   7 : 64
+   8 : 34
+   9 : 37
+
+   0 : 0146103526013100404134441120
+   1 : 0100100020003000404000421520
+   2 : 0145103020063100404110211100
+   3 : 0146102521003100404113001300
+   4 : 0100100020003000404000110000
+   5 : 0126103626503624454606241520
+   6 : 0100100020003000404000212100
+   7 : 0142102224533045404146411300
+   8 : 0121100521333144424604241120
+   9 : 0156105623043005414626441200
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.225147 :: ------------ [MACHINE 4] on signal 0: file 1202607061.222443_D2_M4_6083439249c957be419fa0ca56f54f6e_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::d8:eb7d:813e:7f5d%bridge0, port = 32772
+
+total job count remaining : jobs 478 / 84035 : 0.569% remaining
+   0 : 74
+   1 : 14
+   2 : 66
+   3 : 75
+   4 : 2
+   5 : 50
+   6 : 62
+   7 : 64
+   8 : 34
+   9 : 37
+
+   0 : 0100100020003000404000441120
+   1 : 0100100020003000404000421520
+   2 : 0145103020063100404110211100
+   3 : 0146102521003100404113001300
+   4 : 0100100020003000404000110000
+   5 : 0100100020003000404000241520
+   6 : 0100100020003000404000212100
+   7 : 0154102021003100464100411300
+   8 : 0100100020003000404000241120
+   9 : 0100100020003000404000441200
+
+SU: [PID = 16226]: searching [D = 2] space...
+1202607061.225147 :: SU: finished searching [D = 2] space:
+	 search took    1624.00 seconds
+	 from 1202607061.222443
+	 to   1202607061.225147
+
+
+pm counts:
+z_is_good: 238     		pm_zr5: 18084728677		
+pm_zr6: 12432519544		pm_ndi: 4167360234		
+pm_sndi: 7690    		pm_pco: 2335589797		
+pm_per: 1133338919		pm_ns0: 3376264258		
+pm_oer: 1830287 		pm_rsi: 21210158		
+pm_mcal: 2581095618		 pm_h0: 7399464841		
+pm_h0s: 16515   		 pm_h1: 121137  		
+ pm_h2: 5962    		pm_rmv: 711159  		
+pm_csm: 345366  		pm_pair: 367949662		
+pm_bdl1: 759016  		pm_bdl2: 1373    		
+pm_bdl3: 22185   		 pm_xw: 633514  		
+[done]
+
+
+---------------------------------------------------------------------------------------------
+1202607061.222444 :: SU: [PID 16576]: [D 2]: [machine 5]: starting search call...
+1202607061.222641 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 70307 / 84035 : 83.664% remaining
+   0 : 7008
+   1 : 7003
+   2 : 7088
+   3 : 7059
+   4 : 7042
+   5 : 7079
+   6 : 7096
+   7 : 6984
+   8 : 7032
+   9 : 6916
+
+   0 : 0121105520313620434523461306
+   1 : 0125103020403004464223311306
+   2 : 0141100625013656414246461326
+   3 : 0146103521003455404106241206
+   4 : 0125105326013424454226031006
+   5 : 0146105623003401424100211555
+   6 : 0124103123003005454621311555
+   7 : 0146102320443224404202421506
+   8 : 0164106223053401404130612555
+   9 : 0121105023443654454602462555
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.222750 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 68525 / 84035 : 81.543% remaining
+   0 : 6835
+   1 : 6843
+   2 : 6865
+   3 : 6847
+   4 : 6858
+   5 : 6859
+   6 : 6865
+   7 : 6861
+   8 : 6859
+   9 : 6833
+
+   0 : 0166100021333146404211024245
+   1 : 0145105023443556434221064245
+   2 : 0125106021443164454113320445
+   3 : 0121100321613245424246420445
+   4 : 0142100025313145414106461206
+   5 : 0155103121033652434223044245
+   6 : 0165103125013500424616312345
+   7 : 0162100220413145454511212345
+   8 : 0145103524063604454112210445
+   9 : 0141103224363164414512020445
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.223107 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 64227 / 84035 : 76.429% remaining
+   0 : 6431
+   1 : 6405
+   2 : 6419
+   3 : 6425
+   4 : 6448
+   5 : 6277
+   6 : 6456
+   7 : 6431
+   8 : 6463
+   9 : 6472
+
+   0 : 0144106620333044454521360425
+   1 : 0152106124433022414123460025
+   2 : 0124102525063020454513050225
+   3 : 0142100124543102404602461325
+   4 : 0145103526633520434120360025
+   5 : 0145103621613406454516010425
+   6 : 0155103220603046464221040025
+   7 : 0141103023353640404141410025
+   8 : 0121100326613546464116630045
+   9 : 0125105620033402404521043505
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.223224 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 61864 / 84035 : 73.617% remaining
+   0 : 6169
+   1 : 6228
+   2 : 6229
+   3 : 6220
+   4 : 6157
+   5 : 6187
+   6 : 6174
+   7 : 6110
+   8 : 6214
+   9 : 6176
+
+   0 : 0145103225063542424513050025
+   1 : 0145106620353444404212353205
+   2 : 0141106321053121414116303405
+   3 : 0145103020663202454510213205
+   4 : 0144106320643540464104223205
+   5 : 0161106625053024464234242035
+   6 : 0142105024353400404636201135
+   7 : 0146100020443420464213331135
+   8 : 0142102220443124464616301135
+   9 : 0146103120013022464610021205
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.223408 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 57834 / 84035 : 68.821% remaining
+   0 : 5801
+   1 : 5787
+   2 : 5784
+   3 : 5771
+   4 : 5779
+   5 : 5783
+   6 : 5779
+   7 : 5782
+   8 : 5797
+   9 : 5771
+
+   0 : 0124102126403002404520311105
+   1 : 0126106121313254404242422354
+   2 : 0141103623433544404106411225
+   3 : 0155100021003166424523460054
+   4 : 0145102323463521454511060225
+   5 : 0142103025443640464604421225
+   6 : 0145106623653545414516620225
+   7 : 0151100120633020454221063544
+   8 : 0155105120633052454221633544
+   9 : 0144105323003040404106221305
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.223723 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 51664 / 84035 : 61.479% remaining
+   0 : 5163
+   1 : 5159
+   2 : 5184
+   3 : 5186
+   4 : 5189
+   5 : 5131
+   6 : 5170
+   7 : 5171
+   8 : 5148
+   9 : 5163
+
+   0 : 0121105621333044424520430424
+   1 : 0145100026033444454120630424
+   2 : 0151105526063020454520363424
+   3 : 0121106021333144424516200424
+   4 : 0161106625003041454236662034
+   5 : 0141103121603040454120663524
+   6 : 0124102621333504424111360424
+   7 : 0124100621033004424521460424
+   8 : 0122106625333144424216260124
+   9 : 0144100220343040454132260224
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.224703 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 19303 / 84035 : 22.970% remaining
+   0 : 1928
+   1 : 1930
+   2 : 1913
+   3 : 1927
+   4 : 1931
+   5 : 1929
+   6 : 1921
+   7 : 1939
+   8 : 1945
+   9 : 1940
+
+   0 : 0144100520313464404112200041
+   1 : 0142102526443624414112300041
+   2 : 0124100521333164424204210441
+   3 : 0124102020033540464610011531
+   4 : 0146100225533601404600211531
+   5 : 0124100326353260454511600041
+   6 : 0166105220303420404136402341
+   7 : 0156102320443064404120644241
+   8 : 0141100526033462464212250041
+   9 : 0121106021433152434101210041
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.224755 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 17095 / 84035 : 20.343% remaining
+   0 : 1724
+   1 : 1711
+   2 : 1731
+   3 : 1710
+   4 : 1705
+   5 : 1707
+   6 : 1697
+   7 : 1678
+   8 : 1715
+   9 : 1717
+
+   0 : 0155100120333026404220460221
+   1 : 0142102025333562454213000041
+   2 : 0122102621353140454513310041
+   3 : 0141102020043121434602211521
+   4 : 0121102523303406424220340221
+   5 : 0125102021633602464113200241
+   6 : 0152105220363022414523461331
+   7 : 0146102320053600424611301221
+   8 : 0124102621333044454212320521
+   9 : 0141100023663526464106210041
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.224956 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 8692 / 84035 : 10.343% remaining
+   0 : 832
+   1 : 866
+   2 : 889
+   3 : 892
+   4 : 832
+   5 : 846
+   6 : 827
+   7 : 922
+   8 : 896
+   9 : 890
+
+   0 : 0142105524003024464526341150
+   1 : 0142105624513546414106441301
+   2 : 0145100226313565434116260521
+   3 : 0125106626603500454111303440
+   4 : 0141102123643420454111603440
+   5 : 0146100020303465404204642540
+   6 : 0146100521333152424604441121
+   7 : 0146105120343204414202241301
+   8 : 0124103021303044424613352540
+   9 : 0124105223433625434200241150
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.225033 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 3934 / 84035 : 4.681% remaining
+   0 : 163
+   1 : 378
+   2 : 409
+   3 : 477
+   4 : 380
+   5 : 407
+   6 : 426
+   7 : 466
+   8 : 444
+   9 : 384
+
+   0 : 0142100124043425404601441230
+   1 : 0142100524553440404136041330
+   2 : 0146100324363522404604221250
+   3 : 0144102120303540464604461250
+   4 : 0121102520343000464520643220
+   5 : 0124102023653000454210603220
+   6 : 0142103624333402404511201230
+   7 : 0126105621003402464600421130
+   8 : 0124105623443620434601241330
+   9 : 0126103526013440404604241150
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.225051 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225053 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225055 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225057 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225059 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225100 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225101 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225103 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225104 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225105 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225106 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225107 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225108 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 280 / 84035 : 0.333% remaining
+   0 : 23
+   1 : 12
+   2 : 33
+   3 : 66
+   4 : 2
+   5 : 9
+   6 : 32
+   7 : 64
+   8 : 34
+   9 : 5
+
+   0 : 0165103220003400404121002000
+   1 : 0124102524443401404631421300
+   2 : 0126103023013145404201241200
+   3 : 0122102225433002414616001120
+   4 : 0156103520413452404624341100
+   5 : 0156100121433555434246421220
+   6 : 0126103321053446414140461300
+   7 : 0155102124453505464146421130
+   8 : 0145100023063100404110201000
+   9 : 0121105024313664464601212000
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.225108 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 4: Interrupted system call
+1202607061.225109 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: connect: 61: Connection refused
+1202607061.225110 :: [MI5]: [fe80::449:29c3:416a:6061%bridge0:32773]: [PID16576]: accept: 53: Software caused connection abort
+1202607061.225131 :: ------------ [MACHINE 5] on signal 30: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 222 / 84035 : 0.264% remaining
+   0 : 23
+   1 : 12
+   2 : 33
+   3 : 8
+   4 : 2
+   5 : 9
+   6 : 32
+   7 : 64
+   8 : 34
+   9 : 5
+
+   0 : 0165103220003400404121002000
+   1 : 0154100021003100464200421300
+   2 : 0100100020003000404000241200
+   3 : 0100100020003000404000001120
+   4 : 0100100020003000404000341100
+   5 : 0154103021003100464200421220
+   6 : 0151102520403041414124461300
+   7 : 0154100021003100464200421130
+   8 : 0100100020003000404000100000
+   9 : 0100100020003000404000212000
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.225150 :: ------------ [MACHINE 5] on signal 0: file 1202607061.222444_D2_M5_00223bf2478d8cef1e1fc39c37634637_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::449:29c3:416a:6061%bridge0, port = 32773
+
+total job count remaining : jobs 222 / 84035 : 0.264% remaining
+   0 : 23
+   1 : 12
+   2 : 33
+   3 : 8
+   4 : 2
+   5 : 9
+   6 : 32
+   7 : 64
+   8 : 34
+   9 : 5
+
+   0 : 0165103220003400404121002000
+   1 : 0154100021003100464200421300
+   2 : 0100100020003000404000241200
+   3 : 0100100020003000404000001120
+   4 : 0100100020003000404000341100
+   5 : 0154103021003100464200421220
+   6 : 0154102021003100464600461300
+   7 : 0154100021003100464200421130
+   8 : 0100100020003000404000100000
+   9 : 0100100020003000404000212000
+
+SU: [PID = 16576]: searching [D = 2] space...
+1202607061.225150 :: SU: finished searching [D = 2] space:
+	 search took    1626.00 seconds
+	 from 1202607061.222444
+	 to   1202607061.225150
+
+
+pm counts:
+z_is_good: 325     		pm_zr5: 17576353558		
+pm_zr6: 12038701576		pm_ndi: 3864176886		
+pm_sndi: 8581    		pm_pco: 2294767407		
+pm_per: 1033574052		pm_ns0: 3258126577		
+pm_oer: 1821894 		pm_rsi: 17688155		
+pm_mcal: 2587628958		 pm_h0: 6833382052		
+pm_h0s: 7169    		 pm_h1: 160723  		
+ pm_h2: 4071    		pm_rmv: 675769  		
+pm_csm: 293218  		pm_pair: 324133078		
+pm_bdl1: 750251  		pm_bdl2: 1320    		
+pm_bdl3: 27729   		 pm_xw: 822452  		
+[done]
+
+
+---------------------------------------------------------------------------------------------
+1202607061.222445 :: SU: [PID 16233]: [D 2]: [machine 6]: starting search call...
+1202607061.222643 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 70097 / 84035 : 83.414% remaining
+   0 : 7008
+   1 : 7003
+   2 : 7016
+   3 : 7052
+   4 : 7030
+   5 : 7077
+   6 : 7032
+   7 : 6917
+   8 : 7012
+   9 : 6950
+
+   0 : 0142100225463426414513311106
+   1 : 0144100623043040414516011206
+   2 : 0126100225333224454101241106
+   3 : 0142103320013145424613201006
+   4 : 0121103626443452464221461006
+   5 : 0122105024313255464102411006
+   6 : 0121100320443554464242461126
+   7 : 0124100120343605454513001006
+   8 : 0142103223463646464516011306
+   9 : 0124105624043204464104241306
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.222752 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 68467 / 84035 : 81.474% remaining
+   0 : 6834
+   1 : 6831
+   2 : 6824
+   3 : 6847
+   4 : 6855
+   5 : 6857
+   6 : 6865
+   7 : 6858
+   8 : 6859
+   9 : 6837
+
+   0 : 0146103021003006454102221255
+   1 : 0141103025413654414201412155
+   2 : 0142105626033202464204423155
+   3 : 0124100521333604424200261155
+   4 : 0122106325303002404604262355
+   5 : 0146105220003060464636662355
+   6 : 0124100621313026404126630255
+   7 : 0141105520313020464220343255
+   8 : 0152100320343424414224460255
+   9 : 0161102125033455414201422155
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.223108 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 64185 / 84035 : 76.379% remaining
+   0 : 6431
+   1 : 6403
+   2 : 6419
+   3 : 6425
+   4 : 6446
+   5 : 6312
+   6 : 6455
+   7 : 6426
+   8 : 6463
+   9 : 6405
+
+   0 : 0146105321443601404131041125
+   1 : 0164100323303420424143422035
+   2 : 0145103521063462464511600525
+   3 : 0162105220333440464102262135
+   4 : 0121105526333624424600241125
+   5 : 0142102520403041464113251525
+   6 : 0145102024303021464111321125
+   7 : 0146102121353521454111331125
+   8 : 0125106520443426464113252035
+   9 : 0155106120033245424142420525
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.223108 :: [MI6]: [fe80::b9:c498:c86a:1d57%bridge0:32774]: [PID16233]: connect: 4: Interrupted system call
+1202607061.223226 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 61772 / 84035 : 73.507% remaining
+   0 : 6127
+   1 : 6225
+   2 : 6169
+   3 : 6218
+   4 : 6140
+   5 : 6171
+   6 : 6173
+   7 : 6167
+   8 : 6214
+   9 : 6168
+
+   0 : 0141102623333044454220660025
+   1 : 0121100621333144424511210025
+   2 : 0145106224343145454512200525
+   3 : 0164105224043021404606262135
+   4 : 0121105521333654424206241125
+   5 : 0141102223603000454113013025
+   6 : 0141106623643441414142410125
+   7 : 0141102526633604404111350125
+   8 : 0121102625063244424511303025
+   9 : 0121102326343020454111221025
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.223410 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 57809 / 84035 : 68.792% remaining
+   0 : 5786
+   1 : 5787
+   2 : 5776
+   3 : 5774
+   4 : 5778
+   5 : 5783
+   6 : 5773
+   7 : 5774
+   8 : 5796
+   9 : 5782
+
+   0 : 0121106321013504414101213225
+   1 : 0121103220343655434602462105
+   2 : 0141105220003001464123343205
+   3 : 0126102126433520414110211025
+   4 : 0146103520443242464136461125
+   5 : 0125102524333646464113630225
+   6 : 0142100023403024404216000225
+   7 : 0124100125443444454613052105
+   8 : 0122102525033405464516252105
+   9 : 0155106325643161404141410225
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.223725 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 51572 / 84035 : 61.370% remaining
+   0 : 5156
+   1 : 5130
+   2 : 5157
+   3 : 5176
+   4 : 5142
+   5 : 5160
+   6 : 5169
+   7 : 5171
+   8 : 5148
+   9 : 5163
+
+   0 : 0124100025433002404211650424
+   1 : 0145100621333044424521340424
+   2 : 0144102521333004424604222134
+   3 : 0144100323663621414516230524
+   4 : 0125106025333104424210660424
+   5 : 0121100621333144424216250524
+   6 : 0124100326653560414113320524
+   7 : 0122100625333544424511260524
+   8 : 0166106524313004404632062034
+   9 : 0145106125353142404111033224
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.224705 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 19206 / 84035 : 22.855% remaining
+   0 : 1928
+   1 : 1926
+   2 : 1924
+   3 : 1922
+   4 : 1914
+   5 : 1927
+   6 : 1917
+   7 : 1933
+   8 : 1890
+   9 : 1925
+
+   0 : 0162103021053504404101224141
+   1 : 0121100121303424464121060541
+   2 : 0145106324613221464110250241
+   3 : 0124100621303004424224330452
+   4 : 0126105323503464454631662141
+   5 : 0125100226403242404113360141
+   6 : 0141106326443541454211060141
+   7 : 0155106123303004404120430241
+   8 : 0144106124633561434512010541
+   9 : 0122100324653540404113354141
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.224757 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 17070 / 84035 : 20.313% remaining
+   0 : 1719
+   1 : 1707
+   2 : 1731
+   3 : 1708
+   4 : 1705
+   5 : 1707
+   6 : 1696
+   7 : 1666
+   8 : 1715
+   9 : 1716
+
+   0 : 0124100323403045404613662031
+   1 : 0151100020313604424246461031
+   2 : 0122100520303422464211612031
+   3 : 0122100621303044424526330452
+   4 : 0146103323343040454112301131
+   5 : 0144103120313150424606622131
+   6 : 0141105621413244464201441331
+   7 : 0144102623503540404141411331
+   8 : 0124105024003451464606642031
+   9 : 0146100525443042404216201231
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.224958 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 8451 / 84035 : 10.057% remaining
+   0 : 812
+   1 : 865
+   2 : 885
+   3 : 849
+   4 : 807
+   5 : 838
+   6 : 831
+   7 : 870
+   8 : 854
+   9 : 840
+
+   0 : 0161102021303002404134062350
+   1 : 0144103024063040414512050221
+   2 : 0125103024433402414126441050
+   3 : 0124100124333655414606441201
+   4 : 0164103220003455404104212050
+   5 : 0152100323003424404240462350
+   6 : 0162102224003155404100642350
+   7 : 0121103126403605464204221050
+   8 : 0121100626433242464101211350
+   9 : 0146103624553600464636241201
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.225035 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 3797 / 84035 : 4.518% remaining
+   0 : 212
+   1 : 367
+   2 : 409
+   3 : 414
+   4 : 380
+   5 : 375
+   6 : 413
+   7 : 402
+   8 : 444
+   9 : 381
+
+   0 : 0126100324533204404104461150
+   1 : 0146103520013246424100261220
+   2 : 0124105126333142424600211520
+   3 : 0142100626003451454600241320
+   4 : 0141105520553422464130461130
+   5 : 0126103520403040404113001130
+   6 : 0141105021313244464602411530
+   7 : 0122100225433525434600441320
+   8 : 0146103120033120454111001220
+   9 : 0124103623063405404213201130
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.225050 :: [MI6]: [fe80::b9:c498:c86a:1d57%bridge0:32774]: [PID16233]: connect: 61: Connection refused
+1202607061.225052 :: [MI6]: [fe80::b9:c498:c86a:1d57%bridge0:32774]: [PID16233]: connect: 61: Connection refused
+1202607061.225054 :: [MI6]: [fe80::b9:c498:c86a:1d57%bridge0:32774]: [PID16233]: connect: 61: Connection refused
+1202607061.225057 :: [MI6]: [fe80::b9:c498:c86a:1d57%bridge0:32774]: [PID16233]: connect: 61: Connection refused
+1202607061.225059 :: [MI6]: [fe80::b9:c498:c86a:1d57%bridge0:32774]: [PID16233]: connect: 61: Connection refused
+1202607061.225100 :: [MI6]: [fe80::b9:c498:c86a:1d57%bridge0:32774]: [PID16233]: connect: 61: Connection refused
+1202607061.225101 :: [MI6]: [fe80::b9:c498:c86a:1d57%bridge0:32774]: [PID16233]: connect: 61: Connection refused
+1202607061.225102 :: [MI6]: [fe80::b9:c498:c86a:1d57%bridge0:32774]: [PID16233]: accept: 53: Software caused connection abort
+1202607061.225109 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 373 / 84035 : 0.444% remaining
+   0 : 68
+   1 : 12
+   2 : 33
+   3 : 66
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 64
+   8 : 34
+   9 : 5
+
+   0 : 0126103223353404414101411100
+   1 : 0126105623413401464634041100
+   2 : 0100100020003000404000300000
+   3 : 0124102521333004424206241320
+   4 : 0156103025453602414143461130
+   5 : 0146105324553451414102411500
+   6 : 0100100020003000404000411530
+   7 : 0144102526333406424204441320
+   8 : 0145103020063100404110221200
+   9 : 0126100520353641404131461200
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.225133 :: ------------ [MACHINE 6] on signal 30: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 373 / 84035 : 0.444% remaining
+   0 : 68
+   1 : 12
+   2 : 33
+   3 : 66
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 64
+   8 : 34
+   9 : 5
+
+   0 : 0146103526543152454206411100
+   1 : 0100100020003000404000041100
+   2 : 0100100020003000404000300000
+   3 : 0100100020003000404000241320
+   4 : 0152100020433100434246461130
+   5 : 0142100126333644424206411500
+   6 : 0100100020003000404000411530
+   7 : 0100100020003000404000441320
+   8 : 0145103020063100404110221200
+   9 : 0144103021413625404126461200
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.225144 :: ------------ [MACHINE 6] on signal 0: file 1202607061.222445_D2_M6_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::b9:c498:c86a:1d57%bridge0, port = 32774
+
+total job count remaining : jobs 373 / 84035 : 0.444% remaining
+   0 : 68
+   1 : 12
+   2 : 33
+   3 : 66
+   4 : 2
+   5 : 50
+   6 : 39
+   7 : 64
+   8 : 34
+   9 : 5
+
+   0 : 0154102321003100464100411100
+   1 : 0100100020003000404000041100
+   2 : 0100100020003000404000300000
+   3 : 0100100020003000404000241320
+   4 : 0154102021003100464600461130
+   5 : 0100100020003000404000411500
+   6 : 0100100020003000404000411530
+   7 : 0100100020003000404000441320
+   8 : 0145103020063100404110221200
+   9 : 0154103021003100464600461200
+
+SU: [PID = 16233]: searching [D = 2] space...
+1202607061.225144 :: SU: finished searching [D = 2] space:
+	 search took    1619.00 seconds
+	 from 1202607061.222445
+	 to   1202607061.225144
+
+
+pm counts:
+z_is_good: 323     		pm_zr5: 17493585839		
+pm_zr6: 12931421502		pm_ndi: 4288534004		
+pm_sndi: 9465    		pm_pco: 2207977904		
+pm_per: 1090152675		pm_ns0: 2853646391		
+pm_oer: 1616265 		pm_rsi: 18175272		
+pm_mcal: 2350899189		 pm_h0: 6686284873		
+pm_h0s: 8773    		 pm_h1: 136916  		
+ pm_h2: 5966    		pm_rmv: 782032  		
+pm_csm: 407287  		pm_pair: 345626886		
+pm_bdl1: 737336  		pm_bdl2: 2374    		
+pm_bdl3: 31888   		 pm_xw: 690088  		
+[done]
+
+
+---------------------------------------------------------------------------------------------
+1202607061.222445 :: SU: [PID 16575]: [D 2]: [machine 7]: starting search call...
+1202607061.222645 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 70072 / 84035 : 83.384% remaining
+   0 : 6997
+   1 : 7000
+   2 : 7015
+   3 : 7050
+   4 : 7030
+   5 : 7067
+   6 : 7032
+   7 : 6978
+   8 : 6987
+   9 : 6916
+
+   0 : 0121100623513421464600211006
+   1 : 0145102020343006404211051006
+   2 : 0155103226613004464220043555
+   3 : 0125106320343405404520363555
+   4 : 0152100026403100464221311006
+   5 : 0155103523313446424226331306
+   6 : 0151105526303020464120343555
+   7 : 0145100126353102424513301306
+   8 : 0142103520043622464211231006
+   9 : 0145100126313624424612301106
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.222753 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 68415 / 84035 : 81.413% remaining
+   0 : 6834
+   1 : 6810
+   2 : 6845
+   3 : 6847
+   4 : 6855
+   5 : 6855
+   6 : 6818
+   7 : 6858
+   8 : 6856
+   9 : 6837
+
+   0 : 0162102225403440404206642355
+   1 : 0146105123013105454600622355
+   2 : 0141105224363256434602241055
+   3 : 0141100226353200454100441355
+   4 : 0122106320453022464231242355
+   5 : 0144106521333044464604222155
+   6 : 0151105526413052464520343555
+   7 : 0142105326343205434601241155
+   8 : 0126103521333044424204221155
+   9 : 0126105026333624424202211055
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.223108 :: [MI7]: [fe80::186a:9d50:d08d:a5f5%bridge0:32775]: [PID16575]: read: 0: Undefined error: 0
+1202607061.223110 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 64165 / 84035 : 76.355% remaining
+   0 : 6431
+   1 : 6402
+   2 : 6419
+   3 : 6409
+   4 : 6446
+   5 : 6375
+   6 : 6455
+   7 : 6426
+   8 : 6397
+   9 : 6405
+
+   0 : 0124106520433002454611002335
+   1 : 0122102326343224414211353025
+   2 : 0161100021043221454511212035
+   3 : 0126103021033104424513202535
+   4 : 0144102226533022424106441535
+   5 : 0144100324033201464132041525
+   6 : 0121105521333144424600241525
+   7 : 0142100021363605434216660045
+   8 : 0144100023053441414236662335
+   9 : 0121102126353401414511321335
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.223228 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 61707 / 84035 : 73.430% remaining
+   0 : 6176
+   1 : 6176
+   2 : 6161
+   3 : 6165
+   4 : 6139
+   5 : 6169
+   6 : 6173
+   7 : 6166
+   8 : 6214
+   9 : 6168
+
+   0 : 0155106123033404454120333025
+   1 : 0145103521413262414512010025
+   2 : 0141100020603122404513253405
+   3 : 0144102126353026404200221505
+   4 : 0145106020303424414513323405
+   5 : 0141100125533465424604412505
+   6 : 0152105020303452464121443505
+   7 : 0145102623603045454516000525
+   8 : 0142103324453620464112011505
+   9 : 0145103323603144454511233025
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.223412 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 57751 / 84035 : 68.723% remaining
+   0 : 5779
+   1 : 5787
+   2 : 5768
+   3 : 5769
+   4 : 5776
+   5 : 5782
+   6 : 5772
+   7 : 5765
+   8 : 5771
+   9 : 5782
+
+   0 : 0146100120003404464204622305
+   1 : 0126100321033004414223441205
+   2 : 0151103121443450454220660454
+   3 : 0155106026353264414140420454
+   4 : 0124102624333622434612211305
+   5 : 0142106021403552434124400454
+   6 : 0121106021433445414124060554
+   7 : 0122106521333044424104242305
+   8 : 0144105120033641404131422454
+   9 : 0146102321443650404102642454
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.223727 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 51389 / 84035 : 61.152% remaining
+   0 : 5154
+   1 : 5150
+   2 : 4979
+   3 : 5157
+   4 : 5140
+   5 : 5160
+   6 : 5169
+   7 : 5170
+   8 : 5148
+   9 : 5162
+
+   0 : 0145103026643420454511010424
+   1 : 0125106224633264414110620424
+   2 : 0145106021333240454211253224
+   3 : 0142103620563642404131640224
+   4 : 0145103620333044454521330424
+   5 : 0122103126543042404201220424
+   6 : 0142102623543545464141420524
+   7 : 0161106620033040454632622034
+   8 : 0124106521333044424204210224
+   9 : 0121103220413564464211250224
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.224707 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 19133 / 84035 : 22.768% remaining
+   0 : 1924
+   1 : 1916
+   2 : 1918
+   3 : 1919
+   4 : 1906
+   5 : 1927
+   6 : 1896
+   7 : 1899
+   8 : 1907
+   9 : 1921
+
+   0 : 0144103625663240404130460441
+   1 : 0145106621033500434213320541
+   2 : 0121100120443625404213050541
+   3 : 0144103524613624454511260441
+   4 : 0121100320313621424113620541
+   5 : 0145105124413600414123434241
+   6 : 0145100121653520414113314341
+   7 : 0145100323353404414212360241
+   8 : 0141103223053156414606241351
+   9 : 0125103521003504454511600541
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.224759 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 16970 / 84035 : 20.194% remaining
+   0 : 1684
+   1 : 1702
+   2 : 1676
+   3 : 1706
+   4 : 1700
+   5 : 1707
+   6 : 1689
+   7 : 1686
+   8 : 1707
+   9 : 1713
+
+   0 : 0146103525443646404200461521
+   1 : 0122102225643001404113603421
+   2 : 0122103626503600454102241131
+   3 : 0144105220563002404630461231
+   4 : 0142100023403445414220460421
+   5 : 0122103525013422464136041331
+   6 : 0146103025063402464216011031
+   7 : 0121102023343141454601211031
+   8 : 0141100220413500434620341521
+   9 : 0124105621333045424220430421
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.224759 :: [MI7]: [fe80::186a:9d50:d08d:a5f5%bridge0:32775]: [PID16575]: connect: 4: Interrupted system call
+1202607061.225000 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 8369 / 84035 : 9.959% remaining
+   0 : 809
+   1 : 863
+   2 : 878
+   3 : 822
+   4 : 824
+   5 : 809
+   6 : 822
+   7 : 870
+   8 : 850
+   9 : 822
+
+   0 : 0142105121503041404200461350
+   1 : 0142102223053124404606411301
+   2 : 0145103625013602464516650521
+   3 : 0144103626653244404131060421
+   4 : 0142103126033655404104221550
+   5 : 0141102126533221404200241350
+   6 : 0142106323463141464104210521
+   7 : 0142100121443665434516630521
+   8 : 0141105224063655464100421350
+   9 : 0142105626033155464100411350
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.225038 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 3355 / 84035 : 3.992% remaining
+   0 : 260
+   1 : 367
+   2 : 388
+   3 : 366
+   4 : 346
+   5 : 142
+   6 : 349
+   7 : 395
+   8 : 368
+   9 : 374
+
+   0 : 0142100223363145454106461350
+   1 : 0125103621033004404113001330
+   2 : 0146105026033424404100421320
+   3 : 0142106321463502434516060421
+   4 : 0126105124543045454101441330
+   5 : 0142100125033120464234241350
+   6 : 0156100120303424424521411330
+   7 : 0122100223313026434104261150
+   8 : 0144103120353025454106421350
+   9 : 0142102125363625464106411350
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.225049 :: [MI7]: [fe80::186a:9d50:d08d:a5f5%bridge0:32775]: [PID16575]: accept: 53: Software caused connection abort
+1202607061.225111 :: ------------ [MACHINE 7] on signal 30: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 833 / 84035 : 0.991% remaining
+   0 : 119
+   1 : 80
+   2 : 82
+   3 : 106
+   4 : 69
+   5 : 108
+   6 : 63
+   7 : 66
+   8 : 43
+   9 : 97
+
+   0 : 0100100020003000404000622000
+   1 : 0100100020003000404000001330
+   2 : 0152103224333052404146421320
+   3 : 0100100020003000404000431300
+   4 : 0100100020003000404000441330
+   5 : 0100100020003000404000241350
+   6 : 0154102021003100464100411330
+   7 : 0100100020003000404000261150
+   8 : 0100100020003000404000041000
+   9 : 0100100020003000404000620000
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.225113 :: ------------ [MACHINE 7] on signal 0: file 1202607061.222445_D2_M7_1fc134514551c2207a9fe66d17d13d00_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::186a:9d50:d08d:a5f5%bridge0, port = 32775
+
+total job count remaining : jobs 833 / 84035 : 0.991% remaining
+   0 : 119
+   1 : 80
+   2 : 82
+   3 : 106
+   4 : 69
+   5 : 108
+   6 : 63
+   7 : 66
+   8 : 43
+   9 : 97
+
+   0 : 0100100020003000404000622000
+   1 : 0100100020003000404000001330
+   2 : 0154100021003100464200421320
+   3 : 0100100020003000404000431300
+   4 : 0100100020003000404000441330
+   5 : 0100100020003000404000241350
+   6 : 0154102021003100464100411330
+   7 : 0100100020003000404000261150
+   8 : 0100100020003000404000041000
+   9 : 0100100020003000404000620000
+
+SU: [PID = 16575]: searching [D = 2] space...
+1202607061.225113 :: SU: finished searching [D = 2] space:
+	 search took    1588.00 seconds
+	 from 1202607061.222445
+	 to   1202607061.225113
+
+
+pm counts:
+z_is_good: 241     		pm_zr5: 18189598342		
+pm_zr6: 12290319066		pm_ndi: 4040300372		
+pm_sndi: 9982    		pm_pco: 2099020161		
+pm_per: 1074942727		pm_ns0: 3211625174		
+pm_oer: 1519519 		pm_rsi: 17503512		
+pm_mcal: 2444705489		 pm_h0: 6983584766		
+pm_h0s: 10676   		 pm_h1: 108755  		
+ pm_h2: 4834    		pm_rmv: 513726  		
+pm_csm: 282753  		pm_pair: 337148831		
+pm_bdl1: 678863  		pm_bdl2: 1690    		
+pm_bdl3: 30914   		 pm_xw: 569332  		
+[done]
+
+
+---------------------------------------------------------------------------------------------
+1202607061.222446 :: SU: [PID 16557]: [D 2]: [machine 8]: starting search call...
+1202607061.222647 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 69870 / 84035 : 83.144% remaining
+   0 : 6993
+   1 : 6995
+   2 : 7015
+   3 : 7023
+   4 : 7029
+   5 : 6995
+   6 : 6947
+   7 : 6974
+   8 : 6987
+   9 : 6912
+
+   0 : 0142103525353626464206411506
+   1 : 0142103025463020414204441006
+   2 : 0122102223343646464516031306
+   3 : 0146105321003021404132021106
+   4 : 0146105026363002424200211306
+   5 : 0126103320543252414101411206
+   6 : 0121105626363002464604421006
+   7 : 0156103520403004414526061126
+   8 : 0121102220343022464520443555
+   9 : 0146105320413150454200642555
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.222755 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 68379 / 84035 : 81.370% remaining
+   0 : 6831
+   1 : 6830
+   2 : 6839
+   3 : 6847
+   4 : 6852
+   5 : 6855
+   6 : 6817
+   7 : 6834
+   8 : 6837
+   9 : 6837
+
+   0 : 0141102320003451464221410055
+   1 : 0166100220043506434140462055
+   2 : 0142103624503040464601422055
+   3 : 0165103321003026424216202145
+   4 : 0125103620603405454520610055
+   5 : 0126103521333044424604242145
+   6 : 0124102521333004424204262155
+   7 : 0164106620333425424201642055
+   8 : 0166103620503420404141412055
+   9 : 0121105621033420424220330055
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.223112 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 64110 / 84035 : 76.290% remaining
+   0 : 6429
+   1 : 6382
+   2 : 6419
+   3 : 6409
+   4 : 6414
+   5 : 6415
+   6 : 6415
+   7 : 6426
+   8 : 6397
+   9 : 6404
+
+   0 : 0146103325433420414113231525
+   1 : 0144100324003121454512063425
+   2 : 0146105321453241404600221225
+   3 : 0144105324343652414123460525
+   4 : 0126100025403105434604412535
+   5 : 0142105325413660454136662035
+   6 : 0142102326443002414116333525
+   7 : 0122100621333544424211020525
+   8 : 0121100125053641424611301225
+   9 : 0161106620053062464634642035
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.223230 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 61563 / 84035 : 73.259% remaining
+   0 : 6132
+   1 : 6066
+   2 : 6172
+   3 : 6165
+   4 : 6178
+   5 : 6167
+   6 : 6173
+   7 : 6164
+   8 : 6178
+   9 : 6168
+
+   0 : 0144100323643100404216010225
+   1 : 0126103320403022414511321225
+   2 : 0151105526033022464220343505
+   3 : 0125103223003426414513630425
+   4 : 0124100126603204424516313125
+   5 : 0142105025303604414101441325
+   6 : 0124100321033146454512231325
+   7 : 0141106024303544454116660125
+   8 : 0124102325603465414516230225
+   9 : 0145103021453220454512660225
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.223414 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 57682 / 84035 : 68.640% remaining
+   0 : 5779
+   1 : 5781
+   2 : 5767
+   3 : 5767
+   4 : 5769
+   5 : 5767
+   6 : 5763
+   7 : 5752
+   8 : 5764
+   9 : 5773
+
+   0 : 0166106625303044424100622454
+   1 : 0124100521333144424206211105
+   2 : 0121102223433661434513252005
+   3 : 0166106623003425464616012005
+   4 : 0124106321443100464121640554
+   5 : 0166103621433666434212232005
+   6 : 0122106023003461404131022454
+   7 : 0144103521333004424604222105
+   8 : 0121105526333124424204221105
+   9 : 0142103520033045404212262005
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.223729 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 51372 / 84035 : 61.132% remaining
+   0 : 5153
+   1 : 5150
+   2 : 4978
+   3 : 5152
+   4 : 5147
+   5 : 5160
+   6 : 5155
+   7 : 5168
+   8 : 5147
+   9 : 5162
+
+   0 : 0165102123403044414113212034
+   1 : 0121106025333104424211260424
+   2 : 0144102023403160414513620524
+   3 : 0124106020343525454511600124
+   4 : 0145100124313206404112000424
+   5 : 0124103621443046464511630124
+   6 : 0145106625303466424516300524
+   7 : 0122106223643466414142410524
+   8 : 0145103324013126414116010524
+   9 : 0124100326633020434510030124
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.223731 :: [MI8]: [fe80::1077:f45b:174b:83e4%bridge0:32776]: [PID16557]: read: 0: Undefined error: 0
+1202607061.224709 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 19101 / 84035 : 22.730% remaining
+   0 : 1924
+   1 : 1912
+   2 : 1911
+   3 : 1917
+   4 : 1904
+   5 : 1910
+   6 : 1911
+   7 : 1897
+   8 : 1894
+   9 : 1921
+
+   0 : 0144106321613021454116620241
+   1 : 0141103623303565464513000241
+   2 : 0125103023003004404616302341
+   3 : 0144103120403420454132660441
+   4 : 0125103126033404404120464341
+   5 : 0145103026043446404111320441
+   6 : 0146105226503044424132064341
+   7 : 0145100625643524404513600241
+   8 : 0121106321063665414116030541
+   9 : 0145106020303444464113260241
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.224801 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 16777 / 84035 : 19.964% remaining
+   0 : 1670
+   1 : 1661
+   2 : 1672
+   3 : 1706
+   4 : 1685
+   5 : 1676
+   6 : 1646
+   7 : 1681
+   8 : 1696
+   9 : 1684
+
+   0 : 0125100621333144424211650421
+   1 : 0125102525333542424111600421
+   2 : 0142100526043544414112350421
+   3 : 0145103021313122434216201131
+   4 : 0146105224363422464602411131
+   5 : 0122103626313406404211001521
+   6 : 0122100526063552434601461131
+   7 : 0125100025333144424210660521
+   8 : 0152102320033040404124360041
+   9 : 0145100626443224464613001131
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.225002 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 8243 / 84035 : 9.809% remaining
+   0 : 802
+   1 : 863
+   2 : 828
+   3 : 821
+   4 : 811
+   5 : 781
+   6 : 798
+   7 : 869
+   8 : 849
+   9 : 821
+
+   0 : 0142105020313502404604211250
+   1 : 0146100021333654424204411550
+   2 : 0122105520333421464232441250
+   3 : 0145103526433020454113003540
+   4 : 0121102521533022424604411250
+   5 : 0121106325603241414201213540
+   6 : 0121102621303451424600422540
+   7 : 0124103025013052424606421050
+   8 : 0145100125003106414513201501
+   9 : 0122100521333104424206241101
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.225039 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 2707 / 84035 : 3.221% remaining
+   0 : 260
+   1 : 352
+   2 : 380
+   3 : 146
+   4 : 130
+   5 : 176
+   6 : 349
+   7 : 395
+   8 : 145
+   9 : 374
+
+   0 : 0122103526413000464632421330
+   1 : 0146105525533552464600461320
+   2 : 0156100321003001404123041520
+   3 : 0141100125453255414600261320
+   4 : 0142105523003650404106411230
+   5 : 0152103620403445404121461330
+   6 : 0125102023403006464116001020
+   7 : 0121100526443200454516313500
+   8 : 0146103620303456464124401120
+   9 : 0146105023533444464202441530
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.225051 :: [MI8]: [fe80::1077:f45b:174b:83e4%bridge0:32776]: [PID16557]: connect: 61: Connection refused
+1202607061.225053 :: [MI8]: [fe80::1077:f45b:174b:83e4%bridge0:32776]: [PID16557]: connect: 61: Connection refused
+1202607061.225055 :: [MI8]: [fe80::1077:f45b:174b:83e4%bridge0:32776]: [PID16557]: connect: 61: Connection refused
+1202607061.225057 :: [MI8]: [fe80::1077:f45b:174b:83e4%bridge0:32776]: [PID16557]: connect: 61: Connection refused
+1202607061.225058 :: [MI8]: [fe80::1077:f45b:174b:83e4%bridge0:32776]: [PID16557]: accept: 53: Software caused connection abort
+1202607061.225112 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 466 / 84035 : 0.555% remaining
+   0 : 74
+   1 : 12
+   2 : 66
+   3 : 70
+   4 : 0
+   5 : 50
+   6 : 59
+   7 : 64
+   8 : 34
+   9 : 37
+
+   0 : 0154100021003100464200421330
+   1 : 0126103123343055434241461320
+   2 : 0146105124363202464604411200
+   3 : 0100100020003000404000401000
+   4 : 0146105326503021454602421100
+   5 : 0126100620033545454106461330
+   6 : 0100100020003000404000000000
+   7 : 0121102023553146404204421500
+   8 : 0100100020003000404000401100
+   9 : 0124105326353021464606441530
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.225136 :: ------------ [MACHINE 8] on signal 30: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 466 / 84035 : 0.555% remaining
+   0 : 74
+   1 : 12
+   2 : 66
+   3 : 70
+   4 : 0
+   5 : 50
+   6 : 59
+   7 : 64
+   8 : 34
+   9 : 37
+
+   0 : 0154100021003100464200421330
+   1 : 0144105224543204404606461320
+   2 : 0154103021003100464100411200
+   3 : 0100100020003000404000401000
+   4 : 0154103021003100464200421100
+   5 : 0154102021003100464600461330
+   6 : 0100100020003000404000000000
+   7 : 0100100020003000404000421500
+   8 : 0100100020003000404000401100
+   9 : 0100100020003000404000441530
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.225152 :: ------------ [MACHINE 8] on signal 0: file 1202607061.222446_D2_M8_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::1077:f45b:174b:83e4%bridge0, port = 32776
+
+total job count remaining : jobs 466 / 84035 : 0.555% remaining
+   0 : 74
+   1 : 12
+   2 : 66
+   3 : 70
+   4 : 0
+   5 : 50
+   6 : 59
+   7 : 64
+   8 : 34
+   9 : 37
+
+   0 : 0154100021003100464200421330
+   1 : 0154100021003100464600461320
+   2 : 0154103021003100464100411200
+   3 : 0100100020003000404000401000
+   4 : 0154103021003100464200421100
+   5 : 0154102021003100464600461330
+   6 : 0100100020003000404000000000
+   7 : 0100100020003000404000421500
+   8 : 0100100020003000404000401100
+   9 : 0100100020003000404000441530
+
+SU: [PID = 16557]: searching [D = 2] space...
+1202607061.225152 :: SU: finished searching [D = 2] space:
+	 search took    1626.00 seconds
+	 from 1202607061.222446
+	 to   1202607061.225152
+
+
+pm counts:
+z_is_good: 172     		pm_zr5: 16959790984		
+pm_zr6: 12772296894		pm_ndi: 4230012673		
+pm_sndi: 12871   		pm_pco: 2336162420		
+pm_per: 1058285746		pm_ns0: 3091247807		
+pm_oer: 1504603 		pm_rsi: 19928824		
+pm_mcal: 2630986805		 pm_h0: 7319852940		
+pm_h0s: 11787   		 pm_h1: 128107  		
+ pm_h2: 4727    		pm_rmv: 798011  		
+pm_csm: 444490  		pm_pair: 353522622		
+pm_bdl1: 678284  		pm_bdl2: 2052    		
+pm_bdl3: 39560   		 pm_xw: 715571  		
+[done]
+
+
+---------------------------------------------------------------------------------------------
+1202607061.222446 :: SU: [PID 16227]: [D 2]: [machine 9]: starting search call...
+1202607061.222650 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 69801 / 84035 : 83.062% remaining
+   0 : 6993
+   1 : 6994
+   2 : 7015
+   3 : 6980
+   4 : 6962
+   5 : 6988
+   6 : 6937
+   7 : 6974
+   8 : 6987
+   9 : 6971
+
+   0 : 0121103621533254464604411306
+   1 : 0146100025303205454611251106
+   2 : 0146103124553420464100221106
+   3 : 0144100523513655424102441106
+   4 : 0145103124463220414611221006
+   5 : 0141100125313624424616011106
+   6 : 0124102320053460424200212555
+   7 : 0146103020543224454106461226
+   8 : 0146105526433644464100211106
+   9 : 0126106623413441404601262555
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.222757 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 68363 / 84035 : 81.351% remaining
+   0 : 6830
+   1 : 6828
+   2 : 6837
+   3 : 6843
+   4 : 6849
+   5 : 6835
+   6 : 6833
+   7 : 6834
+   8 : 6837
+   9 : 6837
+
+   0 : 0121100520313461414606612355
+   1 : 0146100521053501424101211355
+   2 : 0122100526363024414120660055
+   3 : 0126100320303402404236462455
+   4 : 0146102025343250414204441555
+   5 : 0146103124043104464104261555
+   6 : 0144103621043105404104213255
+   7 : 0154100126413446454221360055
+   8 : 0146103020063445424606211106
+   9 : 0144100220333052464206421555
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.223114 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 64102 / 84035 : 76.280% remaining
+   0 : 6409
+   1 : 6414
+   2 : 6418
+   3 : 6408
+   4 : 6414
+   5 : 6415
+   6 : 6414
+   7 : 6417
+   8 : 6390
+   9 : 6403
+
+   0 : 0124100521343465414604662135
+   1 : 0154100220333662434223640025
+   2 : 0155103520343052464120643525
+   3 : 0142102620033125464104421235
+   4 : 0151105523333000464120343525
+   5 : 0152103324333055414142462135
+   6 : 0144106020413044414124340025
+   7 : 0141106623633401414512300025
+   8 : 0124100623413525434613211535
+   9 : 0145106021613521404212353525
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.223231 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 61477 / 84035 : 73.156% remaining
+   0 : 6132
+   1 : 6062
+   2 : 6172
+   3 : 6162
+   4 : 6120
+   5 : 6167
+   6 : 6171
+   7 : 6154
+   8 : 6172
+   9 : 6165
+
+   0 : 0142105020033451464223060525
+   1 : 0141102125043246414516230425
+   2 : 0124100121453142414516333505
+   3 : 0122102625333002424511200425
+   4 : 0151105220433051464520343525
+   5 : 0145103621403402454511023025
+   6 : 0144102620333004454521330425
+   7 : 0145106125303401454211053025
+   8 : 0124103120443466414116210425
+   9 : 0141106220313561414113310425
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.223416 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 57579 / 84035 : 68.518% remaining
+   0 : 5779
+   1 : 5746
+   2 : 5765
+   3 : 5767
+   4 : 5714
+   5 : 5754
+   6 : 5751
+   7 : 5766
+   8 : 5764
+   9 : 5773
+
+   0 : 0122102326453640414604441305
+   1 : 0142105620313422404220033154
+   2 : 0144103521613040404204413154
+   3 : 0161102520433020434100642554
+   4 : 0126100523043626434206421205
+   5 : 0121102620343060454236062054
+   6 : 0124106326613041454526633054
+   7 : 0162100321033042454100242554
+   8 : 0164100023413420404130622554
+   9 : 0121102220343041454136612054
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.223731 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 51152 / 84035 : 60.870% remaining
+   0 : 5152
+   1 : 5149
+   2 : 5042
+   3 : 5152
+   4 : 4936
+   5 : 5158
+   6 : 5153
+   7 : 5101
+   8 : 5147
+   9 : 5162
+
+   0 : 0144103625463444414206420424
+   1 : 0125106626033020434213250124
+   2 : 0124106625433466404204210044
+   3 : 0121100626343142404513653024
+   4 : 0145105126363402454526663024
+   5 : 0146100620413622454232262034
+   6 : 0141102620633221414516600424
+   7 : 0121102521353225434516610424
+   8 : 0141102225633100414213050424
+   9 : 0145102123043001404216020424
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.223731 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: connect: 4: Interrupted system call
+1202607061.224711 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 19007 / 84035 : 22.618% remaining
+   0 : 1920
+   1 : 1908
+   2 : 1910
+   3 : 1875
+   4 : 1902
+   5 : 1886
+   6 : 1897
+   7 : 1897
+   8 : 1891
+   9 : 1921
+
+   0 : 0124106520403261434512030441
+   1 : 0141100020033120414206241151
+   2 : 0125103121033640454112600441
+   3 : 0145103620353626454213310441
+   4 : 0122106126033646414511210541
+   5 : 0124105326313240464206221151
+   6 : 0142100321463244464112360541
+   7 : 0144100121433552464202410541
+   8 : 0144105626413004454221330451
+   9 : 0145102320363664424111650241
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.224759 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: read: 0: Undefined error: 0
+1202607061.224803 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 16729 / 84035 : 19.907% remaining
+   0 : 1653
+   1 : 1661
+   2 : 1672
+   3 : 1706
+   4 : 1684
+   5 : 1676
+   6 : 1656
+   7 : 1680
+   8 : 1696
+   9 : 1645
+
+   0 : 0145106225433521414213350041
+   1 : 0146102326363600434204241531
+   2 : 0124105326643221454101243521
+   3 : 0165102120403061434613602031
+   4 : 0144100620333544424516210541
+   5 : 0142100521403025404216201331
+   6 : 0145103225043565454211660041
+   7 : 0142100223303051434124630041
+   8 : 0144100620313042454521330451
+   9 : 0151100320303520434624402031
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.225005 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 7956 / 84035 : 9.467% remaining
+   0 : 766
+   1 : 799
+   2 : 823
+   3 : 812
+   4 : 806
+   5 : 812
+   6 : 725
+   7 : 823
+   8 : 803
+   9 : 787
+
+   0 : 0122100220303405414113602340
+   1 : 0145100623403100454511633240
+   2 : 0121103025403644404234062440
+   3 : 0124100621353046414602261250
+   4 : 0141100120303466414513022440
+   5 : 0165103021303422424521402340
+   6 : 0141103021033425464602241250
+   7 : 0146102623053001454600421150
+   8 : 0121102524343620464104421250
+   9 : 0142106223443400454210033240
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.225041 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 2232 / 84035 : 2.656% remaining
+   0 : 258
+   1 : 344
+   2 : 156
+   3 : 141
+   4 : 177
+   5 : 176
+   6 : 134
+   7 : 331
+   8 : 141
+   9 : 374
+
+   0 : 0146105325413402464634041220
+   1 : 0146102520433540454102241130
+   2 : 0121100521333124424200261120
+   3 : 0141105623053444424601411520
+   4 : 0121100620533421404131461530
+   5 : 0122100623553054404206421230
+   6 : 0146103521013602404630441220
+   7 : 0146100320353026434206421150
+   8 : 0141103521503600414601411220
+   9 : 0156103324443044464141461230
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.225051 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: connect: 61: Connection refused
+1202607061.225053 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: connect: 61: Connection refused
+1202607061.225055 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: connect: 61: Connection refused
+1202607061.225057 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: connect: 61: Connection refused
+1202607061.225059 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: connect: 61: Connection refused
+1202607061.225100 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: connect: 61: Connection refused
+1202607061.225101 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: connect: 61: Connection refused
+1202607061.225102 :: [MI9]: [fe80::4e7:9372:195a:8ad6%bridge0:32777]: [PID16227]: accept: 53: Software caused connection abort
+1202607061.225113 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 252 / 84035 : 0.300% remaining
+   0 : 68
+   1 : 12
+   2 : 0
+   3 : 70
+   4 : 0
+   5 : 16
+   6 : 6
+   7 : 64
+   8 : 5
+   9 : 11
+
+   0 : 0122100225433105434240461100
+   1 : 0100100020003000404000241130
+   2 : 0100100020003000404000431100
+   3 : 0146105326333604424206411520
+   4 : 0142105321363520434106461530
+   5 : 0126102526363452464102241300
+   6 : 0124103021533602424606441220
+   7 : 0100100020003000404000500000
+   8 : 0154103021003100464100411220
+   9 : 0141100220033020464526461230
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.225137 :: ------------ [MACHINE 9] on signal 30: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 252 / 84035 : 0.300% remaining
+   0 : 68
+   1 : 12
+   2 : 0
+   3 : 70
+   4 : 0
+   5 : 16
+   6 : 6
+   7 : 64
+   8 : 5
+   9 : 11
+
+   0 : 0156103520013046464224461100
+   1 : 0100100020003000404000241130
+   2 : 0100100020003000404000431100
+   3 : 0100100020003000404000411520
+   4 : 0100100020003000404000461530
+   5 : 0100100020003000404000241300
+   6 : 0100100020003000404000441220
+   7 : 0100100020003000404000500000
+   8 : 0154103021003100464100411220
+   9 : 0154100021003100464600461230
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.225155 :: ------------ [MACHINE 9] on signal 0: file 1202607061.222446_D2_M9_3f602cb04315f7515720093f783f33c8_output.txt------------
+thread_count = 10, machine_count = 10
+job_digit_count = 6, total_job_count = 84035
+graph_count = 28, operation_count = 7
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = fe80::4e7:9372:195a:8ad6%bridge0, port = 32777
+
+total job count remaining : jobs 252 / 84035 : 0.300% remaining
+   0 : 68
+   1 : 12
+   2 : 0
+   3 : 70
+   4 : 0
+   5 : 16
+   6 : 6
+   7 : 64
+   8 : 5
+   9 : 11
+
+   0 : 0154102321003100464600461100
+   1 : 0100100020003000404000241130
+   2 : 0100100020003000404000431100
+   3 : 0100100020003000404000411520
+   4 : 0100100020003000404000461530
+   5 : 0100100020003000404000241300
+   6 : 0100100020003000404000441220
+   7 : 0100100020003000404000500000
+   8 : 0154103021003100464100411220
+   9 : 0154100021003100464600461230
+
+SU: [PID = 16227]: searching [D = 2] space...
+1202607061.225155 :: SU: finished searching [D = 2] space:
+	 search took    1629.00 seconds
+	 from 1202607061.222446
+	 to   1202607061.225155
+
+
+pm counts:
+z_is_good: 391     		pm_zr5: 16883659714		
+pm_zr6: 12200985675		pm_ndi: 3763367013		
+pm_sndi: 5262    		pm_pco: 2287771053		
+pm_per: 1103357278		pm_ns0: 3042994613		
+pm_oer: 1404951 		pm_rsi: 19589048		
+pm_mcal: 2376899179		 pm_h0: 7612879386		
+pm_h0s: 13462   		 pm_h1: 172318  		
+ pm_h2: 7972    		pm_rmv: 566310  		
+pm_csm: 367823  		pm_pair: 358810248		
+pm_bdl1: 704297  		pm_bdl2: 1714    		
+pm_bdl3: 31151   		 pm_xw: 571395  		
+[done]
+
+
+---------------------------------------------------------------------------------------------

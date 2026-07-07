@@ -3,13 +3,20 @@
 # status of each search call on each mac mini. 
 # written on 1202604116.200127
 
-cd root/projects/ua/calls/21/
+cd root/projects/ua/calls/22/
 kill -s USR1 $(pgrep search_run)
+
 sleep 1
 
-#cat *output* | tail -n 20 | grep "remaining"
+#do this to get all the errors:
+cat *output* 
 
-cat *output* | tail -n 45
+#do this to just get the percentage remaining:
+#cat *output* | tail -n 34 | grep "remaining"
+
+
+echo "---------------------------------------------------------------------------------------------"
+
 
 cd ~
 exit

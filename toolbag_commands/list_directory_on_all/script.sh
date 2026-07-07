@@ -2,11 +2,11 @@
 # useful script executing commands on a mac mini. 
 # written on 1202604046.204915
 
-cd root/projects/ua/calls/21/
+cd root/projects/ua/calls/22/
 
+mv *D1*output.txt old
 
 ls -l
-
 
 cd ~
 exit

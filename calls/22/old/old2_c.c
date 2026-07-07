@@ -74,7 +74,7 @@ typedef uint64_t nat;
 #define pg1  0x0000000000000404
 #define pg2  0x0
 #define required_difference  		2
-#define redistribution_delay 		1
+#define redistribution_delay 		2
 #define maximum_number_of_total_jobs 	10000000
 #define server_port 		32768
 #define max_transfer_amount     64
@@ -589,10 +589,10 @@ static byte execute_graph(
 
 static void* server_thread_function(void* unused) {
 	server_socket = socket(AF_INET6, SOCK_STREAM, 0);
-	if (server_socket < 0) { publish_error("socket"); abort(); }
+	if (server_socket < 0) { perror("socket"); exit(1); }
 	int opt = 1;
 	int r = setsockopt(server_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof opt);
-	if (r) { publish_error("setsockopt(SO_REUSEPORT)"); abort(); }
+	if (r) { perror("setsockopt(SO_REUSEPORT)"); exit(1); }
 	struct sockaddr_in6 client_address = {0};
 	client_address.sin6_family = AF_INET6;
 	client_address.sin6_addr = in6addr_any;
@@ -600,9 +600,9 @@ static void* server_thread_function(void* unused) {
 	client_address.sin6_flowinfo = 0;
 	client_address.sin6_scope_id = 0;
 	r = bind(server_socket, (struct sockaddr *) &client_address, sizeof client_address);
-	if (r < 0) { publish_error("bind"); abort(); }
+	if (r < 0) { perror("bind"); exit(1); }
 	r = listen(server_socket, machine_count);
-	if (r < 0) { publish_error("listen"); exit(1); }
+	if (r < 0) { perror("listen"); exit(1); }
 	struct sockaddr_in6 client = client_address;
 	int length = sizeof client_address;
 	printf("[server thread running on port %llu]\n", server_port + machine_index);
@@ -610,7 +610,7 @@ try_accepting_clients:;
 	const nat is_running = atomic_load_explicit(&running, memory_order_relaxed);
 	if (not is_running) goto done;
 	int connection = accept(server_socket, (struct sockaddr *) &client, (socklen_t*) &length);
-	if (connection < 0) { publish_error("accept"); goto done; } 
+	if (connection < 0) goto done;
 	char ip[INET6_ADDRSTRLEN] = {0};
 	inet_ntop(AF_INET6, &client.sin6_addr, ip, sizeof ip);
 	//int port = ntohs(client.sin6_port);
@@ -885,17 +885,17 @@ mainloop:;
 		if (i == machine_index) continue;
 
 		int connection = socket(AF_INET6, SOCK_STREAM, 0);
-		if (connection < 0) { publish_error("socket"); abort(); }
+		if (connection < 0) { perror("socket"); exit(1); }
 
 		struct sockaddr_in6 server_address = {0};
 		memset(&server_address, 0, sizeof server_address);
 		server_address.sin6_family = AF_INET6;
 		server_address.sin6_port = htons((int) (server_port + i));
 		int r = inet_pton(AF_INET6, ip_addresses[i], &server_address.sin6_addr);
-		if (r <= 0) { publish_error("inet_pton"); abort(); }
+		if (r <= 0) { perror("inet_pton"); exit(1); }
 
 		r = connect(connection, (struct sockaddr *) &server_address, sizeof server_address); 
-		if (r < 0) { publish_error("connect"); goto skip_to_next; } 
+		if (r < 0) { perror("connect"); goto skip_to_next; } 
 
 		char ip[INET6_ADDRSTRLEN];
 		inet_ntop(AF_INET6, &server_address.sin6_addr, ip, sizeof ip);

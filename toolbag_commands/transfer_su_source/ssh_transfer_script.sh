@@ -2,16 +2,43 @@
 # useful ssh script to execute commands on all mac minis. 
 # written on 1202604046.203804
 
-scp -r ../../calls/21 dwrr-mini0.local:/Users/dwrr/root/staging
-scp -r ../../calls/21 dwrr-mini1.local:/Users/dwrr/root/staging
-scp -r ../../calls/21 dwrr-mini2.local:/Users/dwrr/root/staging
-scp -r ../../calls/21 dwrr-mini3.local:/Users/dwrr/root/staging
-scp -r ../../calls/21 dwrr-mini4.local:/Users/dwrr/root/staging
-scp -r ../../calls/21 dwrr-mini5.local:/Users/dwrr/root/staging
-scp -r ../../calls/21 dwrr-mini6.local:/Users/dwrr/root/staging
-scp -r ../../calls/21 dwrr-mini7.local:/Users/dwrr/root/staging
-scp -r ../../calls/21 dwrr-mini8.local:/Users/dwrr/root/staging
-scp -r ../../calls/21 dwrr-mini9.local:/Users/dwrr/root/staging
+scp -r ../../calls/22 dwrr-mini0.local:/Users/dwrr/root/projects/ua/calls/
+scp -r ../../calls/22 dwrr-mini1.local:/Users/dwrr/root/projects/ua/calls/
+scp -r ../../calls/22 dwrr-mini2.local:/Users/dwrr/root/projects/ua/calls/
+scp -r ../../calls/22 dwrr-mini3.local:/Users/dwrr/root/projects/ua/calls/
+scp -r ../../calls/22 dwrr-mini4.local:/Users/dwrr/root/projects/ua/calls/
+scp -r ../../calls/22 dwrr-mini5.local:/Users/dwrr/root/projects/ua/calls/
+scp -r ../../calls/22 dwrr-mini6.local:/Users/dwrr/root/projects/ua/calls/
+scp -r ../../calls/22 dwrr-mini7.local:/Users/dwrr/root/projects/ua/calls/
+scp -r ../../calls/22 dwrr-mini8.local:/Users/dwrr/root/projects/ua/calls/
+scp -r ../../calls/22 dwrr-mini9.local:/Users/dwrr/root/projects/ua/calls/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

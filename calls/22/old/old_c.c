@@ -206,51 +206,11 @@ static nat pull_job_if_available(void) {
 	return jobs[d];
 }
 
-static void publish(void) {
-	char dt[32] = {0};   get_datetime(dt);
-	int flags = O_WRONLY | O_APPEND;
-	mode_t permissions = 0;
-try_open:;
-	const int file = open(output_filename, flags, permissions);
-	if (file < 0) {
-		if (permissions) {
-			perror("create openat file");
-			printf("print: [%s]: failed to create output_filename = \"%s\"\n", dt, output_filename);
-			fflush(stdout);
-			abort();
-		}
-		snprintf(output_filename, sizeof output_filename, "%s_D%u_M%llu_%08x%08x%08x%08x_output.txt", dt, D, machine_index,
-			rand(), rand(), rand(), rand()
-		);
-		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
-		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-		goto try_open;
-	}
-	dt[17] = ' '; dt[18] = ':';
-	dt[19] = ':'; dt[20] = ' ';
-	write(file, dt, 21);
-	write(file, output_string, strlen(output_string));
-	close(file);
-}
-
-static void publish_error(const char* message) {
-	char buffer[4096] = {0};
-	snprintf(buffer, sizeof buffer, "%d: %s", errno, strerror(errno));
-	snprintf(output_string, sizeof output_string, 
-		"[MI%llu]: [%s:%llu]: [PID%d]: %s: %s\n",
-		machine_index, 
-		ip_addresses[machine_index],
-		server_port + machine_index, 
-		getpid(), message, buffer
-	); 
-	publish();
-}
-
 static char* get_command_output(const char* input_command) {
 	char command[4096] = {0};
 	snprintf(command, sizeof command, "%s 2>&1", input_command);
 	FILE* f = popen(command, "r");
-	if (not f) { publish_error("popen"); abort(); } 
+	if (not f) { perror("popen"); abort(); }
 	char* string = NULL;
 	size_t length = 0;
 	char line[2048] = {0};
@@ -278,9 +238,34 @@ static nat translate_hostname_to_machine_index(char* s) {
 
 	if (not strcmp(s, "dwrr.local\n")) return 1;
 
-	puts(s); 
-	publish_error("translate_hostname_to_machine_index"); 
-	abort(); 
+	puts(s); abort();
+}
+
+static void publish(void) {
+	char dt[32] = {0};   get_datetime(dt);
+	int flags = O_WRONLY | O_APPEND;
+	mode_t permissions = 0;
+try_open:;
+	const int file = open(output_filename, flags, permissions);
+	if (file < 0) {
+		if (permissions) {
+			perror("create openat file");
+			printf("print: [%s]: failed to create output_filename = \"%s\"\n", dt, output_filename);
+			fflush(stdout);
+			abort();
+		}
+		snprintf(output_filename, sizeof output_filename, "%s_D%u_M%llu_%08x%08x%08x%08x_output.txt", dt, D, machine_index,
+			rand(), rand(), rand(), rand()
+		);
+		flags = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
+		permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+		goto try_open;
+	}
+	dt[17] = ' '; dt[18] = ':';
+	dt[19] = ':'; dt[20] = ' ';
+	write(file, dt, 21);
+	write(file, output_string, strlen(output_string));
+	close(file);
 }
 
 static void signal_handler(int sig) {
@@ -422,7 +407,6 @@ static nat execute_graph_starting_at(
 				puts("FEA condition violated by a z value: "); 
 				print_graph_raw(g0, g1, g2);
 				puts(""); 
-				publish_error("execute_graph_starting_at : FEA condition violated by a z value"); 
 				abort(); 
 			}
   
@@ -589,10 +573,10 @@ static byte execute_graph(
 
 static void* server_thread_function(void* unused) {
 	server_socket = socket(AF_INET6, SOCK_STREAM, 0);
-	if (server_socket < 0) { publish_error("socket"); abort(); }
+	if (server_socket < 0) { perror("socket"); exit(1); }
 	int opt = 1;
 	int r = setsockopt(server_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof opt);
-	if (r) { publish_error("setsockopt(SO_REUSEPORT)"); abort(); }
+	if (r) { perror("setsockopt(SO_REUSEPORT)"); exit(1); }
 	struct sockaddr_in6 client_address = {0};
 	client_address.sin6_family = AF_INET6;
 	client_address.sin6_addr = in6addr_any;
@@ -600,9 +584,9 @@ static void* server_thread_function(void* unused) {
 	client_address.sin6_flowinfo = 0;
 	client_address.sin6_scope_id = 0;
 	r = bind(server_socket, (struct sockaddr *) &client_address, sizeof client_address);
-	if (r < 0) { publish_error("bind"); abort(); }
+	if (r < 0) { perror("bind"); exit(1); }
 	r = listen(server_socket, machine_count);
-	if (r < 0) { publish_error("listen"); exit(1); }
+	if (r < 0) { perror("listen"); exit(1); }
 	struct sockaddr_in6 client = client_address;
 	int length = sizeof client_address;
 	printf("[server thread running on port %llu]\n", server_port + machine_index);
@@ -610,29 +594,29 @@ try_accepting_clients:;
 	const nat is_running = atomic_load_explicit(&running, memory_order_relaxed);
 	if (not is_running) goto done;
 	int connection = accept(server_socket, (struct sockaddr *) &client, (socklen_t*) &length);
-	if (connection < 0) { publish_error("accept"); goto done; } 
+	if (connection < 0) goto done;
 	char ip[INET6_ADDRSTRLEN] = {0};
 	inet_ntop(AF_INET6, &client.sin6_addr, ip, sizeof ip);
-	//int port = ntohs(client.sin6_port);
+	int port = ntohs(client.sin6_port);
 	//printf("[connected to [%s:%d]\n", ip, port);
 	nat data[packet_size_in_nats] = {0};
 	ssize_t n = read(connection, data, packet_size_in_bytes);
 	if (n <= 0 and errno == EPIPE) goto done;
-	else if (n <= 0) { publish_error("read"); goto close_connection; } 
+	else if (n <= 0) { perror("read"); abort(); } 
 	if (n != packet_size_in_bytes) {
-		publish_error("n != packet_size_in_bytes : read did not receive all bytes from packet."); 
-		goto close_connection; 
+		puts("n != packet_size_in_bytes : read did not receive all bytes from packet.");
+		abort();
 	}
 	atomic_store_explicit(global_job_counts + data[0], data[1], memory_order_relaxed);
 	const nat amount = data[2];
-	if (not amount) goto close_connection;
+	if (not amount) goto skip;
 	const nat min_index = atomic_load_explicit(&global_min_index, memory_order_relaxed);
 	const nat max_index = atomic_load_explicit(&global_max_index, memory_order_relaxed);
 	if (data[3] != min_index or data[4] != max_index) {
 		byte ack = 0;
 		n = write(connection, &ack, 1);
 		if (n <= 0 and errno == EPIPE) goto done;
-		else if (n <= 0) { publish_error("write"); goto close_connection; }
+		else if (n <= 0) { perror("write"); abort(); }
 	} else {
 		for (nat j = 0; j < amount; j++) {
 			const nat k = atomic_fetch_add_explicit(&job_count, 1, memory_order_relaxed);
@@ -641,10 +625,10 @@ try_accepting_clients:;
 		byte ack = 1;
 		n = write(connection, &ack, 1);
 		if (n <= 0 and errno == EPIPE) goto done;
-		else if (n <= 0) { publish_error("write"); goto close_connection; }
+		else if (n <= 0) { perror("write"); abort(); } 
 		puts("ACCEPTED JOB, SENT ACK");
 	}
-	close_connection: close(connection); goto try_accepting_clients;
+	skip: close(connection); goto try_accepting_clients;
 	done: return unused;
 }
 
@@ -875,27 +859,27 @@ mainloop:;
 	if (max_value > min_value and max_value - min_value > required_difference and machine_index == max_index) {
 		const nat ideal = (max_value + min_value) / 2;
 		const nat diff = max_value - ideal;
-		if ((int64_t) diff < 0) { publish_error("transfer amount diff < 0"); transfer_amount = 0; goto connect_to_peers; } 
+		if ((int64_t) diff < 0) abort();
 		transfer_amount = diff;
 		if (transfer_amount > max_transfer_amount) transfer_amount = max_transfer_amount;
 		printf("WARING: computed non-zero transfer amount of %llu, initiating transfer!\n", transfer_amount);
 	} else transfer_amount = 0; 
 
-	connect_to_peers: for (nat i = 0; i < machine_count; i++) {
+	for (nat i = 0; i < machine_count; i++) {
 		if (i == machine_index) continue;
 
 		int connection = socket(AF_INET6, SOCK_STREAM, 0);
-		if (connection < 0) { publish_error("socket"); abort(); }
+		if (connection < 0) { perror("socket"); exit(1); }
 
 		struct sockaddr_in6 server_address = {0};
 		memset(&server_address, 0, sizeof server_address);
 		server_address.sin6_family = AF_INET6;
 		server_address.sin6_port = htons((int) (server_port + i));
 		int r = inet_pton(AF_INET6, ip_addresses[i], &server_address.sin6_addr);
-		if (r <= 0) { publish_error("inet_pton"); abort(); }
+		if (r <= 0) { perror("inet_pton"); exit(1); }
 
 		r = connect(connection, (struct sockaddr *) &server_address, sizeof server_address); 
-		if (r < 0) { publish_error("connect"); goto skip_to_next; } 
+		if (r < 0) { perror("connect"); goto skip_to_next; } 
 
 		char ip[INET6_ADDRSTRLEN];
 		inet_ntop(AF_INET6, &server_address.sin6_addr, ip, sizeof ip);
@@ -914,13 +898,13 @@ mainloop:;
 		command[2] = amount;
 		ssize_t n = write(connection, command, packet_size_in_bytes);
 		if (n <= 0 and errno == EPIPE) goto done;
-		else if (n <= 0) { publish_error("write"); goto skip_to_next; }
+		else if (n <= 0) { perror("write"); abort(); }
 		if (not amount) goto skip_to_next;
 
 		byte ack = 0;
 		n = read(connection, &ack, 1);
 		if (n <= 0 and errno == EPIPE) goto done;
-		else if (n <= 0) { publish_error("read"); goto skip_to_next; }
+		else if (n <= 0) { perror("read"); abort(); } 
 		else if (n == 1 and ack == 1) {
 		} else if (n == 1 and ack != 1) {
 			for (nat j = 0; j < amount; j++) {
@@ -1002,7 +986,7 @@ init:	pointer = graph_count - job_digit_count;
 	gettimeofday(&time_begin, NULL);
 	pthread_t server_thread;
 	int r = pthread_create(&server_thread, NULL, server_thread_function, NULL);
-	if (r) { publish_error("pthread_create"); abort(); } 
+	if (r) { puts("could not create server thread"); abort(); } 
 
 	for (nat i = 0; i < thread_count; i++) {
 		nat* arg = malloc(sizeof(nat)); *arg = i;
