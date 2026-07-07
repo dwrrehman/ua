@@ -1,0 +1,32 @@
+1202607061.201317 :: SU: [PID 29560]: [D 0]: [machine 0]: starting search call...
+1202607061.201319 :: ------------ mi 0 on signal 0: file 1202607061.201317_D0_M0_7fe3b39e3e258baa12f465c66b45b3e2_output.txt------------
+thread_count = 1, machine_count = 1
+job_digit_count = 5, total_job_count = 125
+graph_count = 20, operation_count = 5
+array_size = 1000000, execution_limit = 100000000
+
+queue count: jobs 18446744073709551615 / 125 : 14757395258967642112.000% remaining
+   0 : 01001000200030004040
+
+SU: [PID = 29560]: searching [D = 0] space...
+1202607061.201319 :: SU: finished searching [D = 0] space:
+	 search took       2.00 seconds
+	 from 1202607061.201317
+	 to   1202607061.201319
+
+
+pm counts:
+z_is_good: 0       		pm_zr5: 137298  		
+pm_zr6: 105148  		pm_ndi: 8660    		
+pm_sndi: 0       		pm_pco: 19376   		
+pm_per: 7723    		pm_ns0: 16279   		
+pm_oer: 6       		pm_rsi: 366     		
+pm_mcal: 9226    		 pm_h0: 60963   		
+pm_h0s: 0       		 pm_h1: 0       		
+ pm_h2: 0       		pm_rmv: 9       		
+pm_csm: 0       		pm_pair: 3254    		
+pm_bdl1: 48      		pm_bdl2: 0       		
+pm_bdl3: 0       		 pm_xw: 24      		
+[done]
+
+

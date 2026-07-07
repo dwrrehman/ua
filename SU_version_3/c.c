@@ -20,9 +20,9 @@
 
 #define D 1
 
-#define machine_count 10
-#define thread_count 10
-#define job_digit_count 7
+#define machine_count 1
+#define thread_count 1
+#define job_digit_count 5
 
 enum operations { one, two, three, five, six };
 

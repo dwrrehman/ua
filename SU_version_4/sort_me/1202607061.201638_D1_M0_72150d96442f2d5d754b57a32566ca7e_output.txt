@@ -1,0 +1,54 @@
+1202607061.201638 :: SU: [PID 30039]: [D 1]: [machine 0]: starting search call...
+1202607061.201655 :: ------------ [MACHINE 0] on signal 30: file 1202607061.201638_D1_M0_72150d96442f2d5d754b57a32566ca7e_output.txt------------
+thread_count = 2, machine_count = 1
+job_digit_count = 5, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = ::1, port = 32768
+
+total job count remaining : jobs 4003 / 6480 : 61.775% remaining
+   0 : 4003
+
+   0 : 012410532031300241452333
+   1 : 014410202133345442412433
+
+SU: [PID = 30039]: searching [D = 1] space...
+1202607061.201732 :: ------------ [MACHINE 0] on signal 0: file 1202607061.201638_D1_M0_72150d96442f2d5d754b57a32566ca7e_output.txt------------
+thread_count = 2, machine_count = 1
+job_digit_count = 5, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = ::1, port = 32768
+
+total job count remaining : jobs 38 / 6480 : 0.586% remaining
+   0 : 38
+
+   0 : 010010002000300040411100
+   1 : 010010002000300040400000
+
+SU: [PID = 30039]: searching [D = 1] space...
+1202607061.201732 :: SU: finished searching [D = 1] space:
+	 search took      54.00 seconds
+	 from 1202607061.201638
+	 to   1202607061.201732
+
+
+pm counts:
+z_is_good: 1       		pm_zr5: 107255212		
+pm_zr6: 79565864		pm_ndi: 18888303		
+pm_sndi: 0       		pm_pco: 14455852		
+pm_per: 6008445 		pm_ns0: 15904867		
+pm_oer: 6716    		pm_rsi: 190577  		
+pm_mcal: 13257574		 pm_h0: 43265704		
+pm_h0s: 82      		 pm_h1: 556     		
+ pm_h2: 0       		pm_rmv: 3836    		
+pm_csm: 1880    		pm_pair: 2374288 		
+pm_bdl1: 11364   		pm_bdl2: 4       		
+pm_bdl3: 54      		 pm_xw: 8936    		
+[done]
+
+

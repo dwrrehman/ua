@@ -1,0 +1,320 @@
+Processes: 219 total, 2 running, 217 sleeping, 1190 threads 
+2026/04/13 23:23:23
+Load Avg: 1.21, 1.73, 4.92 
+CPU usage: 2.43% user, 9.75% sys, 87.80% idle 
+SharedLibs: 392M resident, 84M data, 105M linkedit.
+MemRegions: 14590 total, 508M resident, 263M private, 438M shared.
+PhysMem: 5076M used (1076M wired, 0B compressor), 27G unused.
+VM: 86T vsize, 5533M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 393021/127M in, 5649/1177K out.
+Disks: 125736/1688M read, 53069/492M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH CSW      PAGEINS IDLEW  POWER INSTRS CYCLES JETPRI USER               #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2616  head             0.0  00:00.00 1      0   11     976K  0B    0B    2614 2614 sleeping *0[1]     0.00000 0.00000    501 240    61  26      13      123     58      2        1       0      0.0   0      0      180    dwrr               N/A    N/A   N/A   N/A   N/A   N/A  
+2615  top              0.0  00:00.04 1/1    0   17     2544K 0B    0B    2614 2614 running  *0[1]     0.00000 0.00000    0   641    105 42191   21095   1259    22990   4        1       0      0.0   0      0      180    root               N/A    N/A   N/A   N/A   N/A   N/A  
+2614  zsh              0.0  00:00.01 1      0   22     2128K 0B    0B    2614 2613 sleeping *0[1]     0.00000 0.00000    501 761    151 108     37      579     250     32       6       0      0.0   0      0      180    dwrr               N/A    N/A   N/A   N/A   N/A   N/A  
+2613  sshd-session     0.0  00:00.00 1      0   19     2624K 0B    0B    2611 2611 sleeping *0[1]     0.00000 0.00000    501 337    125 38      18      115     65      11       0       0      0.0   0      0      180    dwrr               N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:36 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:52 c.c
+drwxr-xr-x  7 dwrr  staff    224 Apr 13 23:10 old
+Mach kernel version:
+	 Darwin Kernel Version 24.2.0: Fri Dec  6 19:04:03 PST 2024; root:xnu-11215.61.5~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 32.00 gigabytes
+Default processor set: 218 tasks, 1189 threads, 10 processors
+Load average: 1.49, Mach factor: 8.49
+No Sockets found in /var/folders/f9/yqcljx251xngc12v3x9xlxv00000gn/T/.screen.
+
+Processes: 222 total, 2 running, 220 sleeping, 1195 threads 
+2026/04/13 23:23:24
+Load Avg: 1.25, 1.52, 2.88 
+CPU usage: 2.56% user, 10.25% sys, 87.17% idle 
+SharedLibs: 398M resident, 82M data, 96M linkedit.
+MemRegions: 15163 total, 568M resident, 275M private, 449M shared.
+PhysMem: 5160M used (1100M wired, 0B compressor), 10G unused.
+VM: 88T vsize, 5709M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 394219/128M in, 5041/1012K out.
+Disks: 114649/1904M read, 55388/720M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH  CSW      PAGEINS IDLEW  POWER INSTRS CYCLES JETPRI USER                 #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2578  head             0.0  00:00.00 1      0   11     960K  0B    0B    2576 2576 sleeping *0[1]     0.00000 0.00000    501 258    58  24      12      131     68       2        1       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2577  top              0.0  00:00.04 1/1    0   17     2496K 0B    0B    2576 2576 running  *0[1]     0.00000 0.00000    0   653    102 43507   21753   1284    23672    3        1       0      0.0   0      0      180    root                 N/A    N/A   N/A   N/A   N/A   N/A  
+2576  zsh              0.0  00:00.01 1      0   22     1952K 0B    0B    2576 2575 sleeping *0[1]     0.00000 0.00000    501 849    206 104     35      601     310      32       6       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2575  sshd-session     0.0  00:00.00 1      0   19     2576K 0B    0B    2573 2573 sleeping *0[1]     0.00000 0.00000    501 335    123 38      18      115     65       11       0       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:36 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:52 c.c
+drwxr-xr-x  7 dwrr  staff    224 Apr 13 23:12 old
+Mach kernel version:
+	 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:43 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 16.00 gigabytes
+Default processor set: 221 tasks, 1194 threads, 10 processors
+Load average: 1.54, Mach factor: 8.45
+No Sockets found in /var/folders/r3/1hynh7_n19jc68m_fhkn9x6h0000gn/T/.screen.
+
+Processes: 224 total, 2 running, 222 sleeping, 1195 threads 
+2026/04/13 23:23:24
+Load Avg: 1.43, 1.43, 2.81 
+CPU usage: 2.63% user, 7.89% sys, 89.47% idle 
+SharedLibs: 395M resident, 82M data, 96M linkedit.
+MemRegions: 14982 total, 555M resident, 277M private, 446M shared.
+PhysMem: 5025M used (1095M wired, 0B compressor), 11G unused.
+VM: 88T vsize, 5709M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 398104/130M in, 4424/931K out.
+Disks: 113071/1767M read, 53028/639M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH  CSW      PAGEINS IDLEW   POWER INSTRS CYCLES JETPRI USER                 #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2410  head             0.0  00:00.00 1      0   11     960K  0B    0B    2408 2408 sleeping *0[1]     0.00000 0.00000    501 258    58  24      12      131     68       2        1       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2409  top              0.0  00:00.04 1/1    0   17     2544K 0B    0B    2408 2408 running  *0[1]     0.00000 0.00000    0   658    101 43241   21620   1294    23546    3        1       0       0.0   0      0      180    root                 N/A    N/A   N/A   N/A   N/A   N/A  
+2408  zsh              0.0  00:00.01 1      0   22     1920K 0B    0B    2408 2407 sleeping *0[1]     0.00000 0.00000    501 851    205 104     35      601     307      33       6       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2407  sshd-session     0.0  00:00.00 1      0   19     2672K 0B    0B    2405 2405 sleeping *0[1]     0.00000 0.00000    501 345    126 38      18      115     63       11       0       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:36 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:52 c.c
+drwxr-xr-x  7 dwrr  staff    224 Apr 13 23:13 old
+Mach kernel version:
+	 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:43 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 16.00 gigabytes
+Default processor set: 223 tasks, 1194 threads, 10 processors
+Load average: 1.29, Mach factor: 8.69
+No Sockets found in /var/folders/d8/w5z630g93m53dh109v01l77r0000gn/T/.screen.
+
+Processes: 221 total, 2 running, 219 sleeping, 1197 threads 
+2026/04/13 23:23:25
+Load Avg: 1.00, 1.32, 2.76 
+CPU usage: 0.0% user, 11.76% sys, 88.23% idle 
+SharedLibs: 395M resident, 82M data, 96M linkedit.
+MemRegions: 15008 total, 552M resident, 272M private, 450M shared.
+PhysMem: 5237M used (1094M wired, 0B compressor), 10G unused.
+VM: 87T vsize, 5709M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 392414/128M in, 4406/913K out.
+Disks: 114674/1838M read, 52603/647M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH  CSW      PAGEINS IDLEW  POWER INSTRS CYCLES JETPRI USER                 #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2331  head             0.0  00:00.00 1      0   11     960K  0B    0B    2329 2329 sleeping *0[1]     0.00000 0.00000    501 258    58  24      12      131     68       2        1       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2330  top              0.0  00:00.04 1/1    0   17     2560K 0B    0B    2329 2329 running  *0[1]     0.00000 0.00000    0   656    102 42799   21399   1279    23350    3        1       0      0.0   0      0      180    root                 N/A    N/A   N/A   N/A   N/A   N/A  
+2329  zsh              0.0  00:00.01 1      0   22     2064K 0B    0B    2329 2328 sleeping *0[1]     0.00000 0.00000    501 854    202 104     35      601     308      32       6       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2328  sshd-session     0.0  00:00.00 1      0   19     2640K 0B    0B    2326 2326 sleeping *0[1]     0.00000 0.00000    501 344    128 38      18      115     65       11       0       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:36 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:52 c.c
+drwxr-xr-x  7 dwrr  staff    224 Apr 13 23:14 old
+Mach kernel version:
+	 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:43 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 16.00 gigabytes
+Default processor set: 220 tasks, 1196 threads, 10 processors
+Load average: 1.53, Mach factor: 8.46
+No Sockets found in /var/folders/ps/7zljlx7j28l1kgwwwjwhhc4m0000gn/T/.screen.
+
+Processes: 222 total, 2 running, 220 sleeping, 1185 threads 
+2026/04/13 23:23:25
+Load Avg: 1.01, 1.32, 2.73 
+CPU usage: 2.63% user, 7.89% sys, 89.47% idle 
+SharedLibs: 395M resident, 82M data, 96M linkedit.
+MemRegions: 14912 total, 566M resident, 273M private, 452M shared.
+PhysMem: 5091M used (1098M wired, 0B compressor), 11G unused.
+VM: 88T vsize, 5709M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 411878/134M in, 10734/3501K out.
+Disks: 112462/1796M read, 54414/663M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH  CSW      PAGEINS IDLEW  POWER INSTRS CYCLES JETPRI USER                 #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2544  head             0.0  00:00.00 1      0   11     960K  0B    0B    2542 2542 sleeping *0[1]     0.00000 0.00000    501 259    61  24      12      131     66       2        1       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2543  top              0.0  00:00.04 1/1    0   17     2528K 0B    0B    2542 2542 running  *0[1]     0.00000 0.00000    0   656    101 42557   21278   1284    23188    4        1       0      0.0   0      0      180    root                 N/A    N/A   N/A   N/A   N/A   N/A  
+2542  zsh              0.0  00:00.01 1      0   22     1920K 0B    0B    2542 2541 sleeping *0[1]     0.00000 0.00000    501 862    203 104     35      601     309      33       6       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2541  sshd-session     0.0  00:00.00 1      0   19     2640K 0B    0B    2539 2539 sleeping *0[1]     0.00000 0.00000    501 340    125 38      18      115     63       11       0       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:39 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:52 c.c
+drwxr-xr-x  6 dwrr  staff    192 Apr 13 23:15 old
+Mach kernel version:
+	 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:43 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 16.00 gigabytes
+Default processor set: 221 tasks, 1184 threads, 10 processors
+Load average: 1.34, Mach factor: 8.65
+No Sockets found in /var/folders/j_/8j0yy5j524z7l8c773j5cqgc0000gn/T/.screen.
+
+Processes: 230 total, 2 running, 228 sleeping, 1199 threads 
+2026/04/13 23:23:25
+Load Avg: 1.14, 1.41, 2.79 
+CPU usage: 2.63% user, 10.52% sys, 86.84% idle 
+SharedLibs: 395M resident, 82M data, 96M linkedit.
+MemRegions: 15361 total, 555M resident, 286M private, 450M shared.
+PhysMem: 4845M used (1101M wired, 0B compressor), 11G unused.
+VM: 91T vsize, 5709M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 400435/130M in, 4258/897K out.
+Disks: 111873/1769M read, 50476/609M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH  CSW      PAGEINS IDLEW   POWER INSTRS CYCLES JETPRI USER                 #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2435  head             0.0  00:00.00 1      0   11     976K  0B    0B    2433 2433 sleeping *0[1]     0.00000 0.00000    501 258    58  24      12      131     68       2        1       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2434  top              0.0  00:00.04 1/1    0   17     2544K 0B    0B    2433 2433 running  *0[1]     0.00000 0.00000    0   665    101 43797   21898   1324    23846    3        1       0       0.0   0      0      180    root                 N/A    N/A   N/A   N/A   N/A   N/A  
+2433  zsh              0.0  00:00.01 1      0   22     1920K 0B    0B    2433 2432 sleeping *0[1]     0.00000 0.00000    501 867    203 104     35      602     309      32       6       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2432  sshd-session     0.0  00:00.00 1      0   19     2528K 0B    0B    2430 2430 sleeping *0[1]     0.00000 0.00000    501 331    121 38      18      115     65       11       0       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:36 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:52 c.c
+drwxr-xr-x  7 dwrr  staff    224 Apr 13 23:16 old
+Mach kernel version:
+	 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:43 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 16.00 gigabytes
+Default processor set: 229 tasks, 1198 threads, 10 processors
+Load average: 1.57, Mach factor: 8.42
+No Sockets found in /var/folders/j9/z3_nrz395q1gx1yg2lzx_4r40000gn/T/.screen.
+
+Processes: 221 total, 2 running, 219 sleeping, 1194 threads 
+2026/04/13 23:23:26
+Load Avg: 1.04, 1.38, 2.77 
+CPU usage: 2.94% user, 11.76% sys, 85.29% idle 
+SharedLibs: 396M resident, 82M data, 96M linkedit.
+MemRegions: 15094 total, 556M resident, 273M private, 450M shared.
+PhysMem: 4771M used (1098M wired, 0B compressor), 11G unused.
+VM: 87T vsize, 5709M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 403391/131M in, 4837/965K out.
+Disks: 112637/1763M read, 51352/625M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH  CSW      PAGEINS IDLEW   POWER INSTRS CYCLES JETPRI USER                 #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2408  head             0.0  00:00.00 1      0   11     976K  0B    0B    2406 2406 sleeping *0[1]     0.00000 0.00000    501 258    58  24      12      131     68       2        1       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2407  top              0.0  00:00.03 1/1    0   17     2528K 0B    0B    2406 2406 running  *0[1]     0.00000 0.00000    0   656    102 42965   21482   1279    23398    3        1       0       0.0   0      0      180    root                 N/A    N/A   N/A   N/A   N/A   N/A  
+2406  zsh              0.0  00:00.01 1      0   22     1920K 0B    0B    2406 2405 sleeping *0[1]     0.00000 0.00000    501 850    200 104     35      601     308      33       6       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2405  sshd-session     0.0  00:00.00 1      0   19     2688K 0B    0B    2403 2403 sleeping *0[1]     0.00000 0.00000    501 344    123 38      19      115     64       11       0       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:36 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:52 c.c
+drwxr-xr-x  7 dwrr  staff    224 Apr 13 23:17 old
+Mach kernel version:
+	 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:43 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 16.00 gigabytes
+Default processor set: 220 tasks, 1193 threads, 10 processors
+Load average: 1.15, Mach factor: 8.83
+No Sockets found in /var/folders/lr/_b85j1sx71zbr2xbh7hghdfh0000gn/T/.screen.
+
+Processes: 226 total, 2 running, 224 sleeping, 1207 threads 
+2026/04/13 23:23:26
+Load Avg: 0.99, 1.28, 2.73 
+CPU usage: 0.0% user, 7.89% sys, 92.10% idle 
+SharedLibs: 396M resident, 82M data, 96M linkedit.
+MemRegions: 15351 total, 537M resident, 280M private, 449M shared.
+PhysMem: 5580M used (1095M wired, 0B compressor), 10G unused.
+VM: 89T vsize, 5709M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 557513/369M in, 5917/1057K out.
+Disks: 109646/1834M read, 47540/1059M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH  CSW      PAGEINS IDLEW   POWER INSTRS CYCLES JETPRI USER                 #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2441  head             0.0  00:00.00 1      0   11     960K  0B    0B    2439 2439 sleeping *0[1]     0.00000 0.00000    501 258    58  24      12      131     68       3        1       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2440  top              0.0  00:00.04 1/1    0   17     2528K 0B    0B    2439 2439 running  *0[1]     0.00000 0.00000    0   660    102 44099   22049   1304    23993    3        1       0       0.0   0      0      180    root                 N/A    N/A   N/A   N/A   N/A   N/A  
+2439  zsh              0.0  00:00.01 1      0   22     1920K 0B    0B    2439 2438 sleeping *0[1]     0.00000 0.00000    501 864    205 104     35      601     310      32       6       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2438  sshd-session     0.0  00:00.00 1      0   19     2640K 0B    0B    2436 2436 sleeping *0[1]     0.00000 0.00000    501 343    126 38      18      115     63       11       0       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:36 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:52 c.c
+drwxr-xr-x  7 dwrr  staff    224 Apr 13 23:18 old
+Mach kernel version:
+	 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:43 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 16.00 gigabytes
+Default processor set: 225 tasks, 1206 threads, 10 processors
+Load average: 0.72, Mach factor: 9.27
+No Sockets found in /var/folders/ft/mmpxfn1d79994fl4pntwptn00000gn/T/.screen.
+
+Processes: 224 total, 2 running, 222 sleeping, 1194 threads 
+2026/04/13 23:23:27
+Load Avg: 1.17, 1.37, 2.78 
+CPU usage: 2.94% user, 8.82% sys, 88.23% idle 
+SharedLibs: 395M resident, 82M data, 96M linkedit.
+MemRegions: 15255 total, 557M resident, 277M private, 449M shared.
+PhysMem: 4948M used (1100M wired, 0B compressor), 11G unused.
+VM: 88T vsize, 5709M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 397851/130M in, 4444/927K out.
+Disks: 114825/1838M read, 52699/641M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH  CSW      PAGEINS IDLEW  POWER INSTRS CYCLES JETPRI USER                 #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2327  head             0.0  00:00.00 1      0   11     960K  0B    0B    2325 2325 sleeping *0[1]     0.00000 0.00000    501 258    58  24      12      131     68       2        1       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2326  top              0.0  00:00.04 1/1    0   17     2512K 0B    0B    2325 2325 running  *0[1]     0.00000 0.00000    0   658    101 43785   21892   1294    23814    3        1       0      0.0   0      0      180    root                 N/A    N/A   N/A   N/A   N/A   N/A  
+2325  zsh              0.0  00:00.01 1      0   22     1904K 0B    0B    2325 2324 sleeping *0[1]     0.00000 0.00000    501 858    201 104     35      601     309      32       6       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2324  sshd-session     0.0  00:00.00 1      0   19     2640K 0B    0B    2322 2322 sleeping *0[1]     0.00000 0.00000    501 343    129 38      18      115     63       11       0       0      0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:36 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:53 c.c
+drwxr-xr-x  7 dwrr  staff    224 Apr 13 23:19 old
+Mach kernel version:
+	 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:43 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 16.00 gigabytes
+Default processor set: 223 tasks, 1197 threads, 10 processors
+Load average: 1.01, Mach factor: 8.98
+No Sockets found in /var/folders/w7/qnb79hjs1cb7zh9gmfgp49z00000gn/T/.screen.
+
+Processes: 231 total, 2 running, 229 sleeping, 1214 threads 
+2026/04/13 23:23:27
+Load Avg: 1.04, 1.33, 2.71 
+CPU usage: 0.0% user, 9.30% sys, 90.69% idle 
+SharedLibs: 396M resident, 82M data, 96M linkedit.
+MemRegions: 15623 total, 566M resident, 286M private, 449M shared.
+PhysMem: 4968M used (1098M wired, 0B compressor), 11G unused.
+VM: 91T vsize, 5709M framework vsize, 0(0) swapins, 0(0) swapouts.
+Networks: packets: 572052/374M in, 8292/1264K out.
+Disks: 113519/1879M read, 58051/1265M written.
+
+PID   COMMAND          %CPU TIME     #TH    #WQ #PORTS MEM   PURG  CMPRS PGRP PPID STATE    BOOSTS    %CPU_ME %CPU_OTHRS UID FAULTS COW MSGSENT MSGRECV SYSBSD  SYSMACH  CSW      PAGEINS IDLEW   POWER INSTRS CYCLES JETPRI USER                 #MREGS RPRVT VPRVT VSIZE KPRVT KSHRD
+2371  head             0.0  00:00.00 1      0   11     960K  0B    0B    2369 2369 sleeping *0[1]     0.00000 0.00000    501 258    58  24      12      131     68       2        1       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2370  top              0.0  00:00.04 1/1    0   17     2512K 0B    0B    2369 2369 running  *0[1]     0.00000 0.00000    0   663    101 44385   22192   1329    24157    4        1       0       0.0   0      0      180    root                 N/A    N/A   N/A   N/A   N/A   N/A  
+2369  zsh              0.0  00:00.01 1      0   22     1888K 0B    0B    2369 2368 sleeping *0[1]     0.00000 0.00000    501 868    205 104     35      601     309      32       6       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+2368  sshd-session     0.0  00:00.00 1      0   19     2656K 0B    0B    2366 2366 sleeping *0[1]     0.00000 0.00000    501 345    125 38      18      115     65       11       0       0       0.0   0      0      180    dwrr                 N/A    N/A   N/A   N/A   N/A   N/A  
+total 88
+-rwxr-xr-x  1 dwrr  staff    684 Apr 13 22:40 build
+-rw-r--r--  1 dwrr  staff  37044 Apr 13 22:53 c.c
+drwxr-xr-x  6 dwrr  staff    192 Apr 13 23:19 old
+Mach kernel version:
+	 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:43 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8132
+Kernel configured for up to 10 processors.
+10 processors are physically available.
+10 processors are logically available.
+Processor type: arm64e (ARM64E)
+Processors active: 0 1 2 3 4 5 6 7 8 9
+Primary memory available: 16.00 gigabytes
+Default processor set: 230 tasks, 1213 threads, 10 processors
+Load average: 1.00, Mach factor: 8.99
+No Sockets found in /var/folders/p0/ps8s3r8j433778hkvb4bp2480000gn/T/.screen.
+

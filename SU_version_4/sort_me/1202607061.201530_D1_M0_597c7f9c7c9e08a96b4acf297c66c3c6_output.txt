@@ -1,0 +1,33 @@
+1202607061.201530 :: SU: [PID 29870]: [D 1]: [machine 0]: starting search call...
+1202607061.201555 :: ------------ [MACHINE 0] on signal 30: file 1202607061.201530_D1_M0_597c7f9c7c9e08a96b4acf297c66c3c6_output.txt------------
+thread_count = 2, machine_count = 1
+job_digit_count = 5, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = ::1, port = 32768
+
+total job count remaining : jobs 5948 / 6480 : 91.790% remaining
+   0 : 5948
+
+   0 : 012510202105340445411135
+   1 : 014410012305312043421035
+
+SU: [PID = 29870]: searching [D = 1] space...
+1202607061.201618 :: ------------ [MACHINE 0] on signal 30: file 1202607061.201530_D1_M0_597c7f9c7c9e08a96b4acf297c66c3c6_output.txt------------
+thread_count = 2, machine_count = 1
+job_digit_count = 5, total_job_count = 6480
+graph_count = 24, operation_count = 6
+array_size = 1000000, execution_limit = 100000000
+redistribution_delay = 1, max_transfer_amount = 64
+required_difference = 2, UNUSED = 0
+our ip address = ::1, port = 32768
+
+total job count remaining : jobs 5798 / 6480 : 89.475% remaining
+   0 : 5798
+
+   0 : 012410032544354545451125
+   1 : 014510232400350140411125
+
+SU: [PID = 29870]: searching [D = 1] space...

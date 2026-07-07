@@ -28,10 +28,12 @@
 typedef uint64_t nat;
 typedef uint8_t byte;
 
-#define  total_machine_count  3
+#define master_count  1000
 
-#define connect_delay 1
-#define accept_delay 4
+#define total_machine_count  	10
+#define connect_delay 		1
+#define required_difference  	2
+#define max_transfer_amount     64
 
 static const nat server_port = 32768;    //   server_port + mi     that   machine  mi      puts their server on to listen!
 static const char* addresses[10] = {
@@ -47,16 +49,13 @@ static const char* addresses[10] = {
 	"::1",
 };
 
-#define max_transfer_amount     64
 #define packet_size_in_bytes    (8 * (max_transfer_amount + 5))
 #define packet_size_in_nats    (max_transfer_amount + 5)
-#define master_count 20
-#define required_difference  5
 
 static nat our_machine_index = (nat) -1;
 static nat master_job_list[master_count] = {0};
 static nat our_jobs[master_count] = {0};
-
+static int server_socket = 0;
 static _Atomic nat running = 0;
 static _Atomic nat job_count = 0;
 static _Atomic nat global_min_index = 0;
@@ -76,19 +75,19 @@ static void* worker_thread_function(void* unused) {
 loop:; 	const nat is_running = atomic_load_explicit(&running, memory_order_relaxed);
 	if ((nat) ((rand() % 2) * (rand() % 2))) {
 		const nat job = pull_job_if_available();
-		if (job != (nat) -1)  master_job_list[job]++;
+		if (job != (nat) -1)  master_job_list[job]++; 
 		else if (not is_running) goto ret;
 	}
-	usleep(500000);
+	usleep(100000);
 	goto loop;
 ret:	return unused;
 }
 
 static void* server_thread_function(void* unused) {
-	int server = socket(AF_INET6, SOCK_STREAM, 0);
-	if (server < 0) { perror("socket"); exit(1); }
+	server_socket = socket(AF_INET6, SOCK_STREAM, 0);
+	if (server_socket < 0) { perror("socket"); exit(1); }
 	int opt = 1;
-	int r = setsockopt(server, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof opt);
+	int r = setsockopt(server_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof opt);
 	if (r) { perror("setsockopt(SO_REUSEPORT)"); exit(1); }
 	struct sockaddr_in6 client_address = {0};
 	client_address.sin6_family = AF_INET6;
@@ -96,19 +95,18 @@ static void* server_thread_function(void* unused) {
 	client_address.sin6_port = htons((int) (server_port + our_machine_index));
 	client_address.sin6_flowinfo = 0;
 	client_address.sin6_scope_id = 0;
-	r = bind(server, (struct sockaddr *) &client_address, sizeof client_address);
+	r = bind(server_socket, (struct sockaddr *) &client_address, sizeof client_address);
 	if (r < 0) { perror("bind"); exit(1); }
-	r = listen(server, total_machine_count);
+	r = listen(server_socket, total_machine_count);
 	if (r < 0) { perror("listen"); exit(1); }
 	struct sockaddr_in6 client = client_address;
 	int length = sizeof client_address;
 	printf("[server thread running on port %llu]\n", server_port + our_machine_index);
 try_accepting_clients:; 
 	const nat is_running = atomic_load_explicit(&running, memory_order_relaxed);
-	if (not is_running) goto done;	
-	int connection = accept(server, (struct sockaddr *) &client, (socklen_t*) &length);
-	if (connection < 0 and errno != EINTR) { perror("accept"); exit(1); }
-	else if (connection < 0 and errno == EINTR) goto done;
+	if (not is_running) goto done;
+	int connection = accept(server_socket, (struct sockaddr *) &client, (socklen_t*) &length);
+	if (connection < 0) goto done;
 	char ip[INET6_ADDRSTRLEN] = {0};
 	inet_ntop(AF_INET6, &client.sin6_addr, ip, sizeof ip);
 	int port = ntohs(client.sin6_port);
@@ -142,10 +140,7 @@ try_accepting_clients:;
 		else if (n <= 0) { perror("write"); abort(); } 
 		puts("ACCEPTED JOB, SENT ACK");
 	}
-	skip: close(connection);
-	//sleep(accept_delay);
-	usleep(400000);
-	goto try_accepting_clients;
+	skip: close(connection); goto try_accepting_clients;
 	done: return unused;
 }
 
@@ -175,25 +170,6 @@ int main(int argc, const char** argv) {
 	}
 	srand((unsigned) time(NULL));
 
-
-
-
-
-	// set the threshold to zero, 
-
-
-	// then find some way to get all the mac minis on the same page about the fact that truly all the jobs have been processed.. 
-
-		// then it will exit normally, and succesfully.
-
-
-	
-
-
-
-
-
-
 	pthread_t server_thread;
 	int r = pthread_create(&server_thread, NULL, server_thread_function, NULL);
 	if (r) { puts("could not create server thread"); abort(); } 
@@ -203,8 +179,11 @@ int main(int argc, const char** argv) {
 	if (r) { puts("could not create worker thread"); abort(); } 
 
 mainloop:;
-	{ const nat J = atomic_load_explicit(&job_count, memory_order_relaxed);
-	atomic_store_explicit(global_job_counts + our_machine_index, J, memory_order_relaxed); } 
+	usleep(600000);
+	{ 	const nat our_job_count = atomic_load_explicit(&job_count, memory_order_relaxed);
+		if (not our_job_count) goto done;
+		atomic_store_explicit(global_job_counts + our_machine_index, our_job_count, memory_order_relaxed); 
+	} 
 
 	puts("\n\nbar graph: ");
 	for (nat i = 0; i < total_machine_count; i++) {
@@ -219,13 +198,6 @@ mainloop:;
 		min_value = (nat) -1,
 		max_index = (nat) -1,
 		max_value = 0;
-	nat global_sum = 0;
-	for (nat i = 0; i < total_machine_count; i++) {
-		const nat g = atomic_load_explicit(global_job_counts + i, memory_order_relaxed);
-		if (g == (nat) -1) goto skip;
-		global_sum += g;
-	}
-	if (global_sum < halt_job_threshold) goto done; skip:;
 	for (nat i = 0; i < total_machine_count; i++) {
 		const nat g = atomic_load_explicit(global_job_counts + i, memory_order_relaxed);
 		if (g == (nat) -1) continue;
@@ -309,29 +281,19 @@ mainloop:;
 				our_jobs[k] = command[5 + j];
 			}
 		}
-
 		skip_to_next: close(connection);
-	}	
-	//sleep(connect_delay);
-	usleep(400000);
+	}
 	goto mainloop;
-
-done:;
-	atomic_store_explicit(&running, false, memory_order_relaxed);
-	pthread_kill(server_thread, SIGALRM);
+done:	atomic_store_explicit(&running, false, memory_order_relaxed);
+	shutdown(server_socket, SHUT_RD);
+	close(server_socket);
 	puts("joining server thread...");
 	pthread_join(server_thread, NULL);
-
 	puts("joining worker thread...");
 	pthread_join(worker_thread, NULL);
 
-	puts("master job list:");
-	for (nat i = 0; i < master_count; i++) {
-		if (i % 40 == 0) puts("");
-		if (master_job_list[i] > 1) printf("{");
-		printf("%llu", master_job_list[i]);
-		if (master_job_list[i] > 1) printf("}");
-	}
+	puts("master job list:\n");
+	for (nat i = 0; i < master_count; i++) printf("%llu", master_job_list[i]);
 	puts("\n\nutility exited normally.");
 	exit(0);
 }
@@ -353,6 +315,154 @@ done:;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+nat global_sum = 0;
+	for (nat i = 0; i < total_machine_count; i++) {
+		const nat g = atomic_load_explicit(global_job_counts + i, memory_order_relaxed);
+		if (g == (nat) -1) goto mainloop;
+		global_sum += g;
+	}
+	if (global_sum > total_machine_count) goto mainloop;
+
+
+
+
+
+	// set the threshold to zero, 
+
+
+	// then find some way to get all the mac minis on the same page about the fact that truly all the jobs have been processed.. 
+
+		// then it will exit normally, and succesfully.
+
+
+*/
 
 
 

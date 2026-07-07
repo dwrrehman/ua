@@ -80,16 +80,9 @@ typedef uint64_t nat;
 #define max_transfer_amount     64
 
 static const char* ip_addresses[10] = {
-	"fe80::1c3f:ebba:990e:2e30%bridge0", 	// 0
-	"fe80::cb4:c1b3:d25e:9241%bridge0",  	// 1
-	"fe80::dd:4db5:440c:6274%bridge0",  	// 2
-	"fe80::cbb:f438:fde:6242%bridge0",  	// 3
-	"fe80::d8:eb7d:813e:7f5d%bridge0",  	// 4
-	"fe80::449:29c3:416a:6061%bridge0",  	// 5
-	"fe80::b9:c498:c86a:1d57%bridge0",  	// 6
-	"fe80::186a:9d50:d08d:a5f5%bridge0",  	// 7
-	"fe80::1077:f45b:174b:83e4%bridge0",  	// 8
-	"fe80::4e7:9372:195a:8ad6%bridge0",  	// 9
+	machine_count == 1 ? "::1" : "fe80::c73:5188:e761:1f7c",
+	"fe80::10a1:c0b3:d8af:3cf7", 
+	
 };
 
 static nat jobs[maximum_number_of_total_jobs] = {0};
@@ -269,39 +262,51 @@ try_open:;
 }
 
 static void signal_handler(int sig) {
+
 	char progress_string[4096] = {0};
-	int progress_string_length = 0;
+	int string_length = 0;
 	for (nat thread = 0; thread < thread_count; thread++) {
 		const nat g0 = atomic_load_explicit(progress + 3 * thread + 0, memory_order_relaxed);
 		const nat g1 = atomic_load_explicit(progress + 3 * thread + 1, memory_order_relaxed);
 		const nat g2 = atomic_load_explicit(progress + 3 * thread + 2, memory_order_relaxed);
-		progress_string_length += snprintf(progress_string + progress_string_length, sizeof progress_string, 
+		string_length += snprintf(progress_string + string_length, 
+			sizeof progress_string, 
 			" %3llu : ", thread
 		); 
 		get_graphs_z_value(progress_string + string_length, g0, g1, g2);
-		progress_string_length += graph_count;
-		progress_string[progress_string_length++] = 10; 
-		progress_string[progress_string_length] = 0;
+		string_length += graph_count;
+		progress_string[string_length++] = 10; 
+		progress_string[string_length] = 0;
 	}
+
 	char job_count_string[4096] = {0};
 	int job_count_string_length = 0;
 	nat total_amount_of_jobs_remaining = 0;
 	for (nat machine = 0; machine < machine_count; machine++) {
 		const nat value = atomic_load_explicit(global_job_counts + machine, memory_order_relaxed);
-		job_count_string_length += snprintf(job_count_string + job_count_string_length, 
+		string_length += snprintf(job_count_string + job_count_string_length, 
 			sizeof job_count_string, " %3llu : %llu\n", machine, value
 		); 
 		total_amount_of_jobs_remaining += value;
-	}	
+	}
+	
 	snprintf(output_string, sizeof output_string, 
+
 		"------------ [MACHINE %llu] on signal %d: file %s------------\n"
 		"thread_count = %u, machine_count = %u\n"
+
 		"job_digit_count = %u, total_job_count = %llu\n"
+
 		"graph_count = %u, operation_count = %u\n"
+
 		"array_size = %llu, execution_limit = %llu\n"
+
 		"redistribution_delay = %u, max_transfer_amount = %u\n"
+
 		"required_difference = %u, UNUSED = %u\n"
+
 		"our ip address = %s, port = %llu\n"
+
 		"\n"
 		"total job count remaining : jobs %llu / %llu : %1.3lf%% remaining\n"
 		"%s\n"
@@ -309,13 +314,21 @@ static void signal_handler(int sig) {
 		"SU: [PID = %d]: searching [D = %u] space...\n"
 	,
 		machine_index, sig, output_filename, 
+
 		thread_count, machine_count, 
+
 		job_digit_count, total_job_count, 
+
 		graph_count, operation_count, 
+
 		array_size, execution_limit,
+
 		redistribution_delay, max_transfer_amount, 
+
 		required_difference, 0,
+
 		ip_addresses[machine_index], server_port + machine_index, 
+
 		total_amount_of_jobs_remaining, total_job_count, 
 		100.0 * ((double) total_amount_of_jobs_remaining / (double) total_job_count),
 		job_count_string, 
@@ -597,8 +610,8 @@ try_accepting_clients:;
 	if (connection < 0) goto done;
 	char ip[INET6_ADDRSTRLEN] = {0};
 	inet_ntop(AF_INET6, &client.sin6_addr, ip, sizeof ip);
-	int port = ntohs(client.sin6_port);
-	//printf("[connected to [%s:%d]\n", ip, port);
+	//int port = ntohs(client.sin6_port);
+	//printf("connected to [%s:%d]\n", ip, port);
 	nat data[packet_size_in_nats] = {0};
 	ssize_t n = read(connection, data, packet_size_in_bytes);
 	if (n <= 0 and errno == EPIPE) goto done;
