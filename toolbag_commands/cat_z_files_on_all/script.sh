@@ -2,24 +2,37 @@
 # useful script executing commands on a mac mini. 
 # written on 1202604046.204915
 
+cd root/projects/ua/calls/24/
+
+wc -l *z.txt
+echo "-----------------------------------"
+
+cd ~
+exit
 
 
-cd root/projects/ua/calls/21/
-
-cat *z.txt
 
 
 
-#echo "-----------------------------------"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #wc -l *z.txt
 #du -sh *z.txt
 
 
-
-
-
-cd ~
-exit
 
 
 

@@ -1,6 +1,9 @@
 list of acronyms used in the ua project:
 ===================================================
 
+updated on 1202607131.213326 
+
+
 UA . . . . . . universe algorithm.
 
 UAJ . . . . . universe algorithm video journal (UA journal)
@@ -218,17 +221,41 @@ De-Dup . . . de-duplication of lifetime's of z values, ie uniquifying the z list
 
 
 
+added:
 
 
 
+ICG . . . . . isomorphic causality graph pm
 
+MP . . . . . . the monotonic principle pm
 
+SU . . . . . . search utility
 
+RSI . . . . . repetitive star-i increment pm
 
+OS . . . . . operation sequence
 
+MIS . . . . . modnat increment sequence
 
+PG . . . . . . partial graph
 
+LB . . . . . . . large bouts pm
 
+SCI . . . . . . superfluous comparator increment pm
+
+SNCO . . . . . star-n coi optimization constraint pm
+
+SNDI . . . . . star-n no (multiple) incrementing pm
+
+6G . . . . . . instruction 6 on the greater-than case, deadstop normalization pm
+
+RDO . . . . . . redundant duplication operation pm (specific to equal-to case)
+
+LTRDO . . . . . "less-than" modification to the RDO pm
+
+Z-skip . . . . . skipping over many zv's as a result of performing an NF increment higher than LSEPA
+
+LSEPA . . . . . . least-significant-editable PA
 
 
 

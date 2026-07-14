@@ -2,16 +2,12 @@
 # useful script executing commands on a mac mini. 
 # written on 1202604046.204915
 
+echo "--------------------------------------------"
+hostinfo | grep "Load average"
+pmset -g | grep -v -E '(autorestart|displaysleep|Button)'
+pmset -g assertions | grep "   UserIsActive"
 top -l 3 | grep "CPU usage"
-
 top -l 3 | grep "search_run" | cut -c 1-50
-
-hostinfo
-
-pmset -g
-
-pmset -g assertions
-
 exit
 
 

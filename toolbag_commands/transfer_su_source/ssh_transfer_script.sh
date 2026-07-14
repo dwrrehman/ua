@@ -2,16 +2,18 @@
 # useful ssh script to execute commands on all mac minis. 
 # written on 1202604046.203804
 
-scp -r ../../calls/22 dwrr-mini0.local:/Users/dwrr/root/projects/ua/calls/
-scp -r ../../calls/22 dwrr-mini1.local:/Users/dwrr/root/projects/ua/calls/
-scp -r ../../calls/22 dwrr-mini2.local:/Users/dwrr/root/projects/ua/calls/
-scp -r ../../calls/22 dwrr-mini3.local:/Users/dwrr/root/projects/ua/calls/
-scp -r ../../calls/22 dwrr-mini4.local:/Users/dwrr/root/projects/ua/calls/
-scp -r ../../calls/22 dwrr-mini5.local:/Users/dwrr/root/projects/ua/calls/
-scp -r ../../calls/22 dwrr-mini6.local:/Users/dwrr/root/projects/ua/calls/
-scp -r ../../calls/22 dwrr-mini7.local:/Users/dwrr/root/projects/ua/calls/
-scp -r ../../calls/22 dwrr-mini8.local:/Users/dwrr/root/projects/ua/calls/
-scp -r ../../calls/22 dwrr-mini9.local:/Users/dwrr/root/projects/ua/calls/
+SEARCH_CALL_DIR="../../calls/24"
+
+scp -r $SEARCH_CALL_DIR dwrr-mini0.local:/Users/dwrr/root/projects/ua/calls/
+scp -r $SEARCH_CALL_DIR dwrr-mini1.local:/Users/dwrr/root/projects/ua/calls/
+scp -r $SEARCH_CALL_DIR dwrr-mini2.local:/Users/dwrr/root/projects/ua/calls/
+scp -r $SEARCH_CALL_DIR dwrr-mini3.local:/Users/dwrr/root/projects/ua/calls/
+scp -r $SEARCH_CALL_DIR dwrr-mini4.local:/Users/dwrr/root/projects/ua/calls/
+scp -r $SEARCH_CALL_DIR dwrr-mini5.local:/Users/dwrr/root/projects/ua/calls/
+scp -r $SEARCH_CALL_DIR dwrr-mini6.local:/Users/dwrr/root/projects/ua/calls/
+scp -r $SEARCH_CALL_DIR dwrr-mini7.local:/Users/dwrr/root/projects/ua/calls/
+scp -r $SEARCH_CALL_DIR dwrr-mini8.local:/Users/dwrr/root/projects/ua/calls/
+scp -r $SEARCH_CALL_DIR dwrr-mini9.local:/Users/dwrr/root/projects/ua/calls/
 
 
 

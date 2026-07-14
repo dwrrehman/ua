@@ -2,7 +2,7 @@
 # useful script executing commands on a mac mini. 
 # written on 1202604046.204915
 
-cd root/projects/ua/calls/22/
+cd root/projects/ua/calls/24/
 
 ./build release
 
