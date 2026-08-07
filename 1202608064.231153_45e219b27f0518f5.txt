@@ -1,0 +1,142 @@
+1202608064.231159
+new pm idea:      generalizing the    3 2 1 6 2     OS PM  that we added recently, to be something some useful!!! and general
+
+
+
+heres the implementation of  OS PM:
+--------------------------------------------
+
+		//1202608064.225218    prune the OS digit sequence:      starting with      3  2  1  6  2     
+
+		if (e == 0 and op == three and os_sequence_index == 0) os_sequence_index = 1;
+		else if (e == 1 and op == two and os_sequence_index == 1) os_sequence_index = 2;
+		else if (e == 2 and op == one and os_sequence_index == 2) os_sequence_index = 3;
+		else if (e == 3 and op == six and os_sequence_index == 3) os_sequence_index = 4;
+		else if (e == 4 and op == two and os_sequence_index == 4) { return pm_os; }  // printf("pruned zv via pm_os!\n"); getchar(); 
+		else os_sequence_index = 0;
+
+
+
+--------------------------------------------
+
+
+
+
+to generalize this, we need to realize why    3 2 1 6 2 is so bad:
+
+
+		it comes down to     realizing when something is the  "same computational state of the system"    
+
+
+			and we can pin point exactly where these two points in the system     that are equivalent      are      in this OS:
+
+
+
+
+				[3]   |   [2]   |   [1]   |   [6]   |   [2]   |  
+				      ^         ^         ^         ^         ^
+				      A         B         C         D         E
+
+
+
+		so here, i have labeled 5 computational   temporal points in the system     labeled A, B, C, D, E 
+
+
+
+					(where [X] denotes executing the instruction "X")
+
+
+
+
+
+
+
+			here, we can see that    points     C and E    are actually equivalent: 
+
+
+
+						at both   C   and  E 
+
+	
+							*0 has the value 1
+							*1 has the value 0
+							*2 has the value 0, etc...
+	
+							i has the value 1
+	
+							*n has the value 1 
+	
+
+
+					thus, us doing     the last two opertions in this sequence    6 and then 2  
+
+									didnt actually accomplish anything!!!!!
+
+
+
+								thus, is completely removable, and we would still have the exact same state of the system!!!!
+
+
+								YAYYY
+
+
+
+
+
+
+
+
+			so thats the generalized version of the pm:     you know a given set of instructions (ins sequence "S")  between  timesteps    T1 and T2 
+
+
+										are prunable 
+
+
+
+							if,   you can remove them, and have the system still be in the exact same state as it was before   (ignoring program counter state!!!)
+
+
+
+
+
+							(note, T1 is the timestep prior to executing the sequence S,   and T2 is the timestep after executing them.
+
+
+
+
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -4,11 +4,10 @@
 
 cd root/projects/ua/calls/24/
 
-#wc -l *z.txt
-#echo "-----------------------------------"
+wc -l *z.txt
+echo "-----------------------------------"
 
-cat *z.txt
-kill -s USR1 1
+
 
 cd ~
 exit

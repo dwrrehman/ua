@@ -128,6 +128,8 @@ enum pruning_metrics {
 	pm_rmv, pm_csm, pm_pair,
 	pm_bdl1, pm_bdl2, pm_bdl3, pm_xw,
 
+	pm_mri, pm_mrsn,
+
 	pm_count
 };
 
@@ -140,6 +142,8 @@ static const char* pm_spelling[pm_count] = {
 	"pm_h0", "pm_h0s", "pm_h1", "pm_h2", 
 	"pm_rmv", "pm_csm", "pm_pair",
 	"pm_bdl1", "pm_bdl2", "pm_bdl3", "pm_xw",
+
+	"pm_mri", "pm_mrsn",
 };
 
 static const byte loops[4 * 15] = {
@@ -374,6 +378,7 @@ try_open:;
 	close(file);
 }
 
+
 #define max_rsi_count 512
 #define max_oer_repetions 50
 #define max_rmv_modnat_repetions 15
@@ -409,6 +414,10 @@ static nat execute_graph_starting_at(
 	byte has_executed_5 = 0;
 	byte has_executed_6 = 0;
 	nat cdm = 0;
+
+	byte had_recently_expanded_pointer = 0;
+	byte had_recently_expanded_comparator = 0;
+	nat max_sn = 0;
 
 	for (nat e = 0; e < execution_limit; e++) {
 
@@ -447,9 +456,11 @@ static nat execute_graph_starting_at(
 			pointer++;
 
 			if (pointer > xw and pointer < N) { 
+				if (had_recently_expanded_pointer) { puts("pruned via mri"); getchar(); return pm_mri; } 
 				xw = pointer; 
+				had_recently_expanded_pointer = 1;				
 				array[pointer] = 0; 
-				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;
+				if (pointer < max_rsi_count) rsi_counter[pointer] = 0;		
 			}
 		}
 
@@ -502,11 +513,18 @@ static nat execute_graph_starting_at(
 			BDL_ier_at = pointer;
 			PER_ier_at = pointer;
 			pointer = 0;
+			had_recently_expanded_pointer = 0;
 		}
 		else if (op == two) {
 			SNDI_counter++;
 			if (SNDI_counter >= 10) return pm_sndi;
 			comparator++;
+
+			if (comparator > max_sn) {
+				if (had_recently_expanded_comparator) { puts("pruned via mrsn"); getchar(); return pm_mrsn; } 
+				max_sn = comparator;
+				had_recently_expanded_comparator = 1;
+			}
 		}
 		else if (op == six) {
 			if (not has_executed_6) { if (comparator > 1) return pm_mcal; }
@@ -514,6 +532,8 @@ static nat execute_graph_starting_at(
 			if (not comparator) return pm_zr6;
 			SNDI_counter = 0;
 			comparator = 0;
+
+			had_recently_expanded_comparator = 0;
 		}
 		else if (op == three) {
 			if (last_mcal_op == three) return pm_ndi;
@@ -563,7 +583,7 @@ static nat execute_graph_starting_at(
 	*output_cdm = cdm;
 	return z_is_good;
 }
-		
+
 static byte execute_graph(
 	nat g0, nat g1, nat g2, 
 	byte* origin, 
@@ -1216,6 +1236,75 @@ init:	pointer = graph_count - job_digit_count;
 
 
 
+
+
+/*
+
+1202608064.222802
+MRI / MRSN  :    maximum reset on i    or maximum reset on  star-n
+
+---------------
+
+	when we see that i is at its maximum, ie,    xw/le 
+
+	then when we are at that position, we should choose to expand, only by one. if we expand twice or more, we get pruned. 
+
+
+
+	NOTE: invariant:    we know for a fact right after we push our LE further, that       (*XW == 0).
+
+
+				BUTTTT    we know ALWAYS AT ANY POINT THAT  *(XW + 1) is 0.    (ignoring lazy zeroing)
+
+
+
+
+
+	byte had_recently_expanded_pointer = 0;
+	byte had_recently_expanded_comparator = 0;
+
+
+{
+
+	if (op == one) (
+
+		pointer++;
+
+		if (pointer > xw and pointer < N) {
+			if (had_recently_expanded_pointer) { puts("pruned via mri"); getchar(); return pm_mri; } 
+			xw = pointer;
+			had_recently_expanded_pointer = 1;
+		}
+	}
+
+	if (op == two) {
+
+		comparator++;
+
+		if (comparator > max_sn) {
+			if (had_recently_expanded_comparator) { puts("pruned via mrsn"); getchar(); return pm_mrsn; } 
+			max_sn = comparator;
+			had_recently_expanded_comparator = 1;
+		}
+	}
+	
+	if (op == three) { ... }
+
+	if (op == five) {
+		pointer = 0;
+		had_recently_expanded_pointer = 0;
+	}
+
+	if (op == six) {
+		comparator = 0;
+		had_recently_expanded_comparator = 0;
+	}
+
+
+}
+
+
+*/
 
 
 
