@@ -259,6 +259,14 @@ LSEPA . . . . . . least-significant-editable PA
 
 
 
+MRI . . . . . . .  maximum reset on i (pointer)
+
+MRSN . . . . . . .  maximum reset on star-n (comparator)
+
+OSPM  . . . . . . bad operation sequence pruning metric
+
+
+
 
 
 
